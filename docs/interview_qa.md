@@ -24,7 +24,17 @@
 
 **v0.2 evidence**: 当前样例是 KiCad 官方 `pic_programmer`，已能从 `.kicad_sch/.kicad_pcb` 抽出 121 个 registry 项。还没接 BOM/DRC/datasheet。
 
-**v1.0 target**: link to a sample report under `reports/` once Day 7 closes the loop.
+**v1.0 (Slice 2 closed)**: 输入 = KiCad 工程目录（`.kicad_sch` + `.kicad_pcb`）+ `data/checklists/sch_review.yaml`。输出 = 一份 markdown report + 一份 `memory/rules.md` 候选规则池。
+
+具体在 `pic_programmer` 上跑 `uv run hardwise review data/projects/pic_programmer --rules R001,R002`，得到的真实输出：
+
+- Report header："Components reviewed | 121, Rules run | R001, R002, Findings | 7, Sanitizer | 0 unverified refdes wrapped, 0 findings dropped (no evidence)"
+- 7 条 finding 全部由 R002 产生：6 条 medium（C1/C2/C5/C6/C7/C9，value 字段缺 `/V` 耐压后缀）+ 1 条 info（C3=`22uF/25V`，已声明耐压；提示评审者人工对照 80% 规则）
+- R001 出 0 条——`pic_programmer` 是已完成的 KiCad 公开样例，所有真实器件都已 layout，footprint 都填好。这是**诚实输出**，不是 R001 漏判。
+- 每条 finding 都带 `evidence_tokens=["sch:pic_programmer.kicad_sch#C3"]` 这种位号+源文件+refdes 三段式定位
+- `memory/rules.md` 因为 R002 medium 触发了 ≥3 的阈值，写出一条 `STATUS: candidate`，建议人工把"系统性 value 字段缺耐压标注"反馈给器件库维护者
+
+**v1.0 target**: keep this answer in sync with the latest sample report; once Slice 3 lands datasheet evidence, refresh with the new evidence-token forms (`datasheet:PIC16F876.pdf#p23`).
 
 ---
 

@@ -1,6 +1,6 @@
 # Hardwise Architecture
 
-> v0.2 — KiCad registry parser shipped. Sections marked TBD fill in as modules ship.
+> v0.3 — Slice 2 ships R002 (cap rated-voltage field completeness) + Sleep Consolidator. Sections marked TBD fill in as modules ship.
 
 ## Data flow
 
@@ -63,7 +63,13 @@ Slice 1 ships:
   ```
   Every `check_function` returns `list[Finding]`. Refdes Guard inspects `findings[].refdes` and `findings[].message` for hallucinated tokens. Evidence Ledger rejects any `Finding` with empty `evidence_tokens`. Markdown report iterates `findings` to render one row per finding aligned to《SCH_review_feedback_list 汇总表》.
 - `checks/r001_new_component_candidate.py` — first concrete rule.
-- Slice 2+ adds `checks/r002_*.py` etc.; no new finding shape allowed (per DR-008).
+
+Slice 2 ships:
+- `checks/r002_cap_voltage_derating.py` — **scope intentionally narrow**: only the value-side rated-voltage parse. Each cap (`C*`, skipping `#PWR*` and `value=""` / `value="0"`) becomes either:
+  - **`info` finding** when `value` carries `/<num>V` (regex `r"/\s*(\d+(?:\.\d+)?)\s*V\b"`) — reviewer must manually confirm the 80% rule against the cap's net's working voltage.
+  - **`medium` finding** when `value` lacks the suffix — the rule cannot be evaluated; ask the schematic author to suffix `/<num>V`.
+  The `high` branch (full 80% derating comparison) is **deferred to Slice 3+**: it needs `working_voltage` from a KiCad net parser, which is not yet built. The yaml `R002.rule` text reflects this two-stage split so the rule doc never lies about what the code actually does. Same DR-008 raw-schematic input contract as R001.
+- Slice 3+ adds `checks/r003_*.py` etc.; no new finding shape allowed (per DR-008).
 
 ### `store/`
 - `relational.py` — SQLite via SQLAlchemy. Tables: `components`, `nets`, `bom_rows`, `drc_findings`. Refdes is the join key.
@@ -79,8 +85,9 @@ Slice 1 ships:
 - `evidence.py` — defense layer 2: every claim must carry a source token; strip claims without tokens before the report is written.
 
 ### `memory/`
-- `consolidator.py` — Sleep Consolidator: at end of each review, extract pattern candidates ("when X then Y") and append to `rules.md` with `STATUS: candidate`. Human reviewer flips status to `active` to promote.
-- `rules.md` — candidate + active rule pool. Active rules feed back into agent prompts on the next review.
+- `consolidator.py` — Sleep Consolidator (Slice 2 minimum). Pure statistical aggregation: groups findings by `(rule_id, severity)`; emits one `CandidateRule` per bucket whose count meets the `_THRESHOLD = 3`. Each emitted candidate becomes an appended block in `memory/rules.md` with `STATUS: candidate`, a project slug, a timestamp, and a suggested action (template-table lookup; falls back to a generic "produced N findings, worth investigating" when no template matches). No LLM, no embeddings, deterministic over the same input + pinned timestamp. Public signature: `consolidate(findings, project_slug, output_path=Path("memory/rules.md"), now=None) -> list[CandidateRule]`.
+- `rules.md` — candidate-rule pool (gitignored under `memory/*.md`). The header explains the human gate: **candidates never auto-promote**. Promotion is a human action — edit the file, then migrate the candidate to `data/checklists/sch_review.yaml` with `status: active`.
+- Slice 3+ will add smarter pattern extraction (rolling-log triggered). Slice 2's threshold-based stats is intentionally minimal — proves the mechanism without expanding scope.
 
 ## Why this shape
 
@@ -122,9 +129,14 @@ TBD — text-format output from KiCad's design rule check; document parseable fi
 uv run hardwise hello
 uv run hardwise verify-api
 uv run hardwise inspect-kicad data/projects/pic_programmer --limit 25
+uv run hardwise review data/projects/pic_programmer --rules R001,R002
+uv run hardwise review data/projects/pic_programmer --rules R001,R002 --no-consolidate
+uv run hardwise review data/projects/pic_programmer --rules R001,R002 --memory-output /tmp/rules.md
 ```
 
 `inspect-kicad` is the first EDA adapter demo: it prints the registry count and the first N sorted components. On `pic_programmer`, it currently extracts 121 registry items.
+
+`review` runs the requested rules over the schematic-side records, applies Refdes Guard + Evidence Ledger, writes a markdown report aligned to《SCH_review_feedback_list 汇总表》, and (by default) appends Sleep Consolidator candidates to `memory/rules.md`. On `pic_programmer` with `--rules R001,R002`, the output is 7 findings (6 medium + 1 info, all R002) and 1 candidate rule emitted. `--no-consolidate` skips the memory write; `--memory-output PATH` redirects it (used by tests).
 
 ## Module explanation template
 
