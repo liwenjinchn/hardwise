@@ -1,0 +1,38 @@
+[project]
+name = "hardwise"
+version = "0.0.1"
+description = "Hardware R&D review Agent — anti-hallucination by design, provenance-first, memory-consolidating."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Hardwise contributors" }]
+
+dependencies = [
+    "anthropic>=0.40.0",
+    "typer>=0.12.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# Added Day 2-3 (EDA parsing): "kiutils>=1.4.0"
+# Added Day 4-5 (vector + SQL): "chromadb>=0.5.0", "sqlalchemy>=2.0.0", "sentence-transformers>=3.0.0", "pdfplumber>=0.11.0"
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.6.0",
+]
+
+[project.scripts]
+hardwise = "hardwise.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hardwise"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

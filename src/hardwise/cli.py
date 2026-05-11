@@ -1,0 +1,198 @@
+"""Hardwise CLI entry point."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import typer
+
+app = typer.Typer(help="Hardwise — hardware R&D review Agent.")
+
+
+@app.callback()
+def _root() -> None:
+    """Force Typer to treat this as a multi-command app even when only one command is registered."""
+
+
+@app.command()
+def hello() -> None:
+    """Sanity check that the install worked."""
+    typer.echo("hardwise installed.")
+
+
+@app.command(name="verify-api")
+def verify_api() -> None:
+    """Send a one-shot test message to the upstream API; print response and token counts."""
+    import os
+
+    from anthropic import Anthropic
+    from dotenv import load_dotenv
+
+    load_dotenv(override=True)
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    base_url = os.environ.get("ANTHROPIC_BASE_URL", "")
+    model = os.environ.get("HARDWISE_MODEL_NORMAL", "MiMo-V2.5")
+
+    if not api_key or api_key == "replace_me":
+        typer.echo("error: ANTHROPIC_API_KEY missing or unset in .env", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(f"calling {model} via {base_url}")
+
+    client = Anthropic(api_key=api_key, base_url=base_url)
+
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=64,
+            messages=[{"role": "user", "content": "Reply with exactly: hardwise api ok"}],
+        )
+    except Exception as e:
+        typer.echo(f"error: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    text = response.content[0].text if response.content else "(empty)"
+    typer.echo(f"model: {response.model}")
+    typer.echo(f"content: {text}")
+    typer.echo(f"tokens in/out: {response.usage.input_tokens}/{response.usage.output_tokens}")
+
+
+@app.command(name="inspect-kicad")
+def inspect_kicad(
+    project_dir: Path = typer.Argument(..., help="Path to a KiCad project directory."),
+    limit: int = typer.Option(20, "--limit", "-n", help="Number of components to print."),
+) -> None:
+    """Parse a KiCad project and print the initial refdes registry."""
+    from hardwise.adapters.kicad import parse_project
+
+    try:
+        registry = parse_project(project_dir)
+    except Exception as e:
+        typer.echo(f"error: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    typer.echo(f"project: {registry.project_dir}")
+    typer.echo(f"components: {len(registry.components)}")
+    typer.echo("")
+    for component in registry.components[:limit]:
+        footprint = component.footprint or "-"
+        value = component.value or "-"
+        typer.echo(f"{component.refdes:8} {value:16} {footprint}")
+
+
+@app.command()
+def review(
+    project_dir: Path = typer.Argument(..., help="Path to a KiCad project directory."),
+    rules: str = typer.Option(
+        "R001",
+        "--rules",
+        "-r",
+        help="Comma-separated rule IDs to run (default: R001).",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output markdown path (default: reports/<project>-<YYYYMMDD>.md).",
+    ),
+    checklist: Path = typer.Option(
+        Path("data/checklists/sch_review.yaml"),
+        "--checklist",
+        help="Path to the checklist yaml.",
+    ),
+) -> None:
+    """Run a schematic review on a KiCad project and write a markdown report."""
+    from datetime import datetime, timezone
+
+    from hardwise.adapters.kicad import parse_project
+    from hardwise.checklist.checks.r001_new_component_candidate import (
+        check as check_r001,
+    )
+    from hardwise.checklist.finding import Finding
+    from hardwise.checklist.loader import load_rules
+    from hardwise.guards.evidence import strip_unsupported
+    from hardwise.guards.refdes import sanitize_finding
+    from hardwise.report.markdown import render
+
+    requested_ids = {r.strip() for r in rules.split(",") if r.strip()}
+
+    try:
+        registry = parse_project(project_dir)
+    except Exception as e:
+        typer.echo(f"error: failed to parse {project_dir}: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    try:
+        active_rules = load_rules(checklist)
+    except Exception as e:
+        typer.echo(
+            f"error: failed to load checklist {checklist}: {type(e).__name__}: {e}", err=True
+        )
+        raise typer.Exit(1) from e
+
+    rule_dispatch = {
+        "R001": lambda: check_r001(registry.schematic_records),
+    }
+
+    findings: list[Finding] = []
+    rules_run: list[str] = []
+    for rule in active_rules:
+        if rule.id not in requested_ids:
+            continue
+        check_fn = rule_dispatch.get(rule.id)
+        if check_fn is None:
+            typer.echo(
+                f"warning: rule {rule.id} active in yaml but no check function registered",
+                err=True,
+            )
+            continue
+        findings.extend(check_fn())
+        rules_run.append(rule.id)
+
+    if not rules_run:
+        typer.echo(
+            f"warning: no requested rules ({sorted(requested_ids)}) matched any active rule",
+            err=True,
+        )
+
+    findings, dropped = strip_unsupported(findings)
+    sanitized: list[Finding] = []
+    total_wrapped = 0
+    for f in findings:
+        sf, w = sanitize_finding(f, registry)
+        sanitized.append(sf)
+        total_wrapped += w
+    findings = sanitized
+
+    now = datetime.now(timezone.utc)
+    project_meta = {
+        "project_name": project_dir.name,
+        "project_dir": str(registry.project_dir),
+        "components_reviewed": len(registry.components),
+        "rules_run": rules_run,
+        "generated_at": now.isoformat(timespec="seconds"),
+        "sanitize_note": (
+            f"{total_wrapped} unverified refdes wrapped, {dropped} findings dropped (no evidence)"
+        ),
+    }
+
+    md = render(findings, project_meta)
+
+    if output is None:
+        date_stamp = now.strftime("%Y%m%d")
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{project_dir.name}-{date_stamp}.md"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    output.write_text(md, encoding="utf-8")
+    typer.echo(
+        f"report: {output} ({len(findings)} findings, "
+        f"{len(registry.components)} components reviewed)"
+    )
+
+
+if __name__ == "__main__":
+    app()

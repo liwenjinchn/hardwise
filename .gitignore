@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.venv-*/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Env / secrets — .env MUST stay local
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.vscode/
+.idea/
+.codex_work/
+.DS_Store
+*.swp
+
+# Data — public datasheets and KiCad projects are heavy; do not commit
+data/projects/*
+data/datasheets/*
+!data/projects/.gitkeep
+!data/datasheets/.gitkeep
+# Exception: the KiCad public demo project IS shipped with the repo so
+# `uv run hardwise review data/projects/pic_programmer --rules R001` works
+# out of the box for anyone who clones. Other project dirs stay ignored
+# (in case company-internal KiCad workspaces ever live under data/projects/).
+!data/projects/pic_programmer/
+!data/projects/pic_programmer/**
+
+# Local DB / vector store
+data/*.db
+data/chroma/
+
+# Generated reports — local outputs
+reports/*.md
+!reports/.gitkeep

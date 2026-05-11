@@ -1,0 +1,111 @@
+# Hardwise 原理图评审 checklist 规则数据资产
+#
+# 一份规则一个 yaml 文档块。每条 finding 都引用其中一条规则的 id。
+#
+# 字段说明：
+#   id               R000-R999；不复用，废弃用 status: deprecated。
+#   title            人话题目，给评审者看。
+#   source           出处 — "原理图 checklist 第 N 条" 或 "Sleep Consolidator candidate"。
+#   status           active     = 已实现，agent 会实际跑
+#                    planned    = 已规划，对应 slice 还没到，agent 跳过
+#                    candidate  = Sleep Consolidator 沉淀的待人工 gate
+#                    deprecated = 废弃；保留 id 防复用
+#   severity         critical | high | medium | low | info
+#                    info 表示注意力分配（"建议重点 review"），不是问题
+#   required_evidence 列出取证所需的数据源 token；评审节点没有 PLM-grade BOM
+#                    （那是评审之后阶段的产物），所以本文件的所有 required_evidence
+#                    都基于评审阶段真实存在的数据：sch + 上一代 sch + datasheet + DRC。
+#   check_function   实现这条规则的 Python 入口；planned 状态可写预期路径
+#   rule             人话规则描述，用于 LLM prompt 注入
+#   slice            落地的 slice 号；纯进度追踪
+#
+# 红线：本文件中所有举例必须是公开器件类别（"某 I2C 扩展器"），
+# 不写任何公司项目代号、客户名、料号、内部系统名。
+#
+# 5 条规则刻意覆盖 5 种独立取证形态，证明 demo 为什么需要双库 + agent：
+#   R001: EDA 单字段缺失检测（注意力分配 — 给评审者一个"重点关注清单"）
+#   R002: EDA value 字段解析 × 电源域工作电压（跨字段数值阈值）
+#   R003: EDA pin × datasheet 语义查询（跨库语义证据）
+#   R004: nets × datasheet 跨设备语义聚合（多设备对比）
+#   R005: nets × DRC 拓扑查询（图结构分析）
+
+- id: R001
+  title: 新建器件候选识别（footprint 字段缺失）
+  source: 原理图 checklist 第 4 条（新物料 symbol/封装检查）— 利用 footprint 字段缺失作为新建器件的弱信号
+  status: active
+  severity: info
+  required_evidence:
+    - EDA.schematic_record.footprint    # 必须取 parse_schematic 返回的 raw 值，不取 parse_project merge 后的 BoardRegistry.components — 后者会用 .kicad_pcb 的 footprint 回填空字段（见 adapters/kicad.py:30-31），破坏 R001 的判定信号
+  check_function: hardwise.checklist.checks.r001_new_component_candidate.check
+  rule: |
+    遍历 schematic-side 原始 ComponentRecord 列表（不要用 parse_project 的 merged BoardRegistry —
+    它会从 .kicad_pcb 把 footprint 回填到 sch 空字段，破坏 R001 的判定信号），列出 footprint
+    字段为空的 component，标为"新建器件候选"。
+    判定逻辑（弱信号，不是问题）：评审阶段新建器件的 footprint 字段通常为空——
+    要等 PCB layout 团队完成布局并命名后才回填。所以 footprint 空 ≠ 错误，
+    但 ≈ 这颗器件需要评审者重点过 datasheet 的 symbol / 封装尺寸 / pin 定义。
+    输出 finding(severity=info, action="重点关注 datasheet 与 symbol/封装尺寸")。
+    后续扩展（不在 Slice 1）：R001b 加上"是否在 mock 在线库白名单中"作为第二判定信号，
+    与 footprint 空检查取并集形成完整新建器件清单。
+  slice: 1
+
+- id: R002
+  title: 电容耐压 80% 降额
+  source: 原理图 checklist 第 8 条
+  status: planned
+  severity: high
+  required_evidence:
+    - EDA.component.value      # 形如 "100µF/25V"，从 value 字段后缀解析 rated_voltage
+    - EDA.nets.power_domain    # 通过电源域识别 net 工作电压（VCC/VDD/3V3/...)
+  check_function: hardwise.checklist.checks.r002_cap_voltage_derating.check
+  rule: |
+    对每颗电容：从 value 字段解析 rated_voltage（如 "100µF/25V" → 25V），
+    从 net 名称推断 working_voltage（如 +3V3 → 3.3V）。
+    要求：working_voltage <= rated_voltage * 0.8。
+    超过 → finding(severity=high, action=raise_rated_voltage_or_lower_supply)
+    无法解析（value 字段未带 V 后缀） → finding(severity=medium, action=clarify_value_field)
+  slice: 2
+
+- id: R003
+  title: NC pin 处理是否符合 datasheet 规格
+  source: 原理图 checklist 第 9 条
+  status: planned
+  severity: high
+  required_evidence:
+    - EDA.pin_connections
+    - datasheet.section.NC_pin_handling
+  check_function: hardwise.checklist.checks.r003_nc_pin_handling.check
+  rule: |
+    对所有标记 NC 的 pin：
+      - datasheet 要求 must_float → 接地或接电源 → finding
+      - datasheet 要求 tie_to_gnd → 浮空 → finding
+      - datasheet 未明确 → finding(severity=medium, action=confirm_with_vendor)
+  slice: 3
+
+- id: R004
+  title: 同 bus I2C 设备地址冲突
+  source: 原理图 checklist 第 16 条
+  status: planned
+  severity: critical
+  required_evidence:
+    - EDA.nets.i2c_membership
+    - datasheet.i2c_address
+  check_function: hardwise.checklist.checks.r004_i2c_address_collision.check
+  rule: |
+    对每条 I2C bus：枚举所有挂载设备，从 datasheet 提取每个设备的可选 7-bit
+    地址，跨设备求交集。交集非空 → finding(severity=critical, action=set_addr_select_pin)
+  slice: 4
+
+- id: R005
+  title: 单端 / 空网络
+  source: 原理图 checklist 第 10 条
+  status: planned
+  severity: medium
+  required_evidence:
+    - EDA.nets.fanout
+    - DRC.warnings
+  check_function: hardwise.checklist.checks.r005_dangling_nets.check
+  rule: |
+    对每条 net：fanout == 0 → finding(空网络，severity=medium)；
+    fanout == 1 → finding(单端网络，severity=low，需评审者确认是否 intentional)
+  slice: 5
