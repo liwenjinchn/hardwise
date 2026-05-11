@@ -101,6 +101,16 @@ def review(
         "--checklist",
         help="Path to the checklist yaml.",
     ),
+    consolidate_flag: bool = typer.Option(
+        True,
+        "--consolidate/--no-consolidate",
+        help="Run the Sleep Consolidator over the findings and append candidate rules.",
+    ),
+    memory_output: Path = typer.Option(
+        Path("memory/rules.md"),
+        "--memory-output",
+        help="Path to the candidate-rule memory file (default: memory/rules.md).",
+    ),
 ) -> None:
     """Run a schematic review on a KiCad project and write a markdown report."""
     from datetime import datetime, timezone
@@ -109,10 +119,14 @@ def review(
     from hardwise.checklist.checks.r001_new_component_candidate import (
         check as check_r001,
     )
+    from hardwise.checklist.checks.r002_cap_voltage_derating import (
+        check as check_r002,
+    )
     from hardwise.checklist.finding import Finding
     from hardwise.checklist.loader import load_rules
     from hardwise.guards.evidence import strip_unsupported
     from hardwise.guards.refdes import sanitize_finding
+    from hardwise.memory.consolidator import consolidate
     from hardwise.report.markdown import render
 
     requested_ids = {r.strip() for r in rules.split(",") if r.strip()}
@@ -133,6 +147,7 @@ def review(
 
     rule_dispatch = {
         "R001": lambda: check_r001(registry.schematic_records),
+        "R002": lambda: check_r002(registry.schematic_records),
     }
 
     findings: list[Finding] = []
@@ -192,6 +207,13 @@ def review(
         f"report: {output} ({len(findings)} findings, "
         f"{len(registry.components)} components reviewed)"
     )
+
+    if consolidate_flag:
+        candidates = consolidate(findings, project_dir.name, output_path=memory_output, now=now)
+        if candidates:
+            typer.echo(
+                f"consolidator: {len(candidates)} candidate rule(s) appended to {memory_output}"
+            )
 
 
 if __name__ == "__main__":

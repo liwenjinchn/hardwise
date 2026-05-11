@@ -52,18 +52,28 @@
 - id: R002
   title: 电容耐压 80% 降额
   source: 原理图 checklist 第 8 条
-  status: planned
+  status: active           # Slice 2 翻活；当前实现仅做 rated_voltage 字段完整性检查
   severity: high
   required_evidence:
     - EDA.component.value      # 形如 "100µF/25V"，从 value 字段后缀解析 rated_voltage
-    - EDA.nets.power_domain    # 通过电源域识别 net 工作电压（VCC/VDD/3V3/...)
+    - EDA.nets.power_domain    # 通过电源域识别 net 工作电压（VCC/VDD/3V3/...) — Slice 3+ net parser 接入后才取证
   check_function: hardwise.checklist.checks.r002_cap_voltage_derating.check
   rule: |
-    对每颗电容：从 value 字段解析 rated_voltage（如 "100µF/25V" → 25V），
-    从 net 名称推断 working_voltage（如 +3V3 → 3.3V）。
-    要求：working_voltage <= rated_voltage * 0.8。
-    超过 → finding(severity=high, action=raise_rated_voltage_or_lower_supply)
-    无法解析（value 字段未带 V 后缀） → finding(severity=medium, action=clarify_value_field)
+    分两阶段实现，当前在 Slice 2 阶段。
+
+    [Slice 2 — 已实现，本次评审会触发]
+    对每颗电容（refdes 以 C 开头，跳过 #PWR* 虚拟符号，跳过 value="" 与 value="0" 占位）：
+      - 从 value 解析 rated_voltage（regex: /<num>V）。
+      - 解析成功 → finding(severity=info, action=确认所在 net 工作电压 ≤ rated × 0.8)。
+      - 解析失败 → finding(severity=medium, action=clarify_value_field — 在 value 后缀补 /<num>V)。
+    本阶段不会产生 high severity finding——因为 80% 降额比较需要 working_voltage，
+    而 working_voltage 必须从 net 解析得到，net parser 在 Slice 3 接入。
+
+    [Slice 3+ — 待实现]
+    接入 net parser + power_domain 字典之后，补全：
+      - working_voltage 已知 + rated_voltage 已声明 + working_voltage > rated × 0.8
+        → finding(severity=high, action=raise_rated_voltage_or_lower_supply)。
+    在 Slice 3 完成前，high 分支由人工评审者根据 info finding 的提醒手动判定。
   slice: 2
 
 - id: R003
