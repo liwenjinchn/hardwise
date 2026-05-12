@@ -79,17 +79,25 @@
 - id: R003
   title: NC pin 处理是否符合 datasheet 规格
   source: 原理图 checklist 第 9 条
-  status: planned
+  status: active            # Slice 3 翻活；当前实现仅做 EDA-only NC pin 列出
   severity: high
   required_evidence:
     - EDA.pin_connections
     - datasheet.section.NC_pin_handling
   check_function: hardwise.checklist.checks.r003_nc_pin_handling.check
   rule: |
-    对所有标记 NC 的 pin：
-      - datasheet 要求 must_float → 接地或接电源 → finding
-      - datasheet 要求 tie_to_gnd → 浮空 → finding
-      - datasheet 未明确 → finding(severity=medium, action=confirm_with_vendor)
+    分两阶段实现，当前在 Slice 3 阶段。
+
+    [Slice 3 — 已实现，本次评审会触发]
+    解析 schematic 中的 no_connect 标记，通过坐标匹配定位到具体器件 pin。
+    对每个 NC pin：finding(severity=medium, action=确认 datasheet 对该 pin 的处理要求)。
+    本阶段不会产生 high severity finding — 因为 NC pin 是否处理正确需要 datasheet 语义比对。
+
+    [Slice 4+ — 待实现]
+    接入 vector store datasheet 查询后：
+    - datasheet 要求 must_float 但实际接地/接电源 → finding(severity=high)
+    - datasheet 要求 tie_to_gnd 但实际浮空 → finding(severity=high)
+    - datasheet 未明确 → finding(severity=medium, action=confirm_with_vendor)
   slice: 3
 
 - id: R004

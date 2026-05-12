@@ -122,6 +122,9 @@ def review(
     from hardwise.checklist.checks.r002_cap_voltage_derating import (
         check as check_r002,
     )
+    from hardwise.checklist.checks.r003_nc_pin_handling import (
+        check as check_r003,
+    )
     from hardwise.checklist.finding import Finding
     from hardwise.checklist.loader import load_rules
     from hardwise.guards.evidence import strip_unsupported
@@ -148,6 +151,7 @@ def review(
     rule_dispatch = {
         "R001": lambda: check_r001(registry.schematic_records),
         "R002": lambda: check_r002(registry.schematic_records),
+        "R003": lambda: check_r003(registry.nc_pins),
     }
 
     findings: list[Finding] = []

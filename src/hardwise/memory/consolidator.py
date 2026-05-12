@@ -44,6 +44,10 @@ _SUGGESTED_ACTION: dict[tuple[str, Severity], str] = {
         "本项目存在系统性 value 字段缺失耐压标注；建议反馈器件库维护者批量补全 "
         "rated voltage 字段（值 → 值/耐压V 形式）。"
     ),
+    ("R003", "medium"): (
+        "本项目存在大量 NC pin 标记；建议对照 datasheet 逐一确认 NC pin 处理方式"
+        "（浮空 / 接地 / 接电源），尤其注意 datasheet 明确要求 tie_to_gnd 的 pin。"
+    ),
 }
 
 
