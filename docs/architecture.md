@@ -1,6 +1,6 @@
 # Hardwise Architecture
 
-> v0.3 — Slice 2 ships R002 (cap rated-voltage field completeness) + Sleep Consolidator. Sections marked TBD fill in as modules ship.
+> v0.4 — Slice 3 ships R003 (NC pin handling, EDA-only stage) + SQLite relational store (live) + Chroma vector store (demo) + datasheet ingest + Tiered Model Router. Sections marked TBD fill in as modules ship.
 
 ## Data flow
 
@@ -71,14 +71,33 @@ Slice 2 ships:
   The `high` branch (full 80% derating comparison) is **deferred to Slice 3+**: it needs `working_voltage` from a KiCad net parser, which is not yet built. The yaml `R002.rule` text reflects this two-stage split so the rule doc never lies about what the code actually does. Same DR-008 raw-schematic input contract as R001.
 - Slice 3+ adds `checks/r003_*.py` etc.; no new finding shape allowed (per DR-008).
 
-### `store/`
-- `relational.py` — SQLite via SQLAlchemy. Tables: `components`, `nets`, `bom_rows`, `drc_findings`. Refdes is the join key.
-- `vector.py` — Chroma local mode. Holds datasheet chunks with metadata `(part_no, page, source_pdf, section)`.
+Slice 3 ships:
+- `checks/r003_nc_pin_handling.py` — **EDA-only stage**. Consumes `BoardRegistry.nc_pins` (populated by `adapters/kicad_pins.py`) and emits one medium finding per pin marked NC in the schematic. Severity is medium because the Slice 3 check cannot tell whether NC is correct without datasheet semantic comparison; the message and `suggested_action` push the reviewer to verify against the datasheet. The `high` branch (datasheet contradicts schematic NC handling) is **deferred to Slice 4+**: it needs vector-store semantic query against `datasheet.section.NC_pin_handling`. The yaml `R003.rule` text reflects this two-stage split, mirroring the R002 pattern.
 
-### `agent/`
-- `tools.py` — tool definitions for the Claude tool-use loop. Each tool takes a Pydantic input model, returns a Pydantic output model, and is registered in a single manifest.
-- `runner.py` — main loop: pick model tier (mechanism 4), call tools, assemble report.
-- `prompts.py` — system prompts and review templates. The "no claim without source token" rule is encoded here, then enforced by `guards/`.
+### `adapters/kicad_pins.py` (Slice 3)
+Pin + no_connect parser, split from `kicad.py` to stay under the 300-line module limit. Verified algorithm:
+- `pin.at` in `lib_symbols` IS the connectable endpoint (wire attachment point). `length` is geometry only — do NOT add `length × direction`.
+- Absolute position = `symbol_at + rotate(pin.at, symbol_rotation_deg)`; standard 2D rotation; tolerance 0.01 mm.
+- Multi-unit symbols: `<libname>_<unit>_<bodystyle>`; instance's `(unit N)` selects unit-N + shared unit-0 pins.
+
+Public surface: `parse_nc_pins(path: Path) -> list[NcPinRecord]`. `parse_project()` calls it on every `*.kicad_sch` and populates `BoardRegistry.nc_pins`. On `pic_programmer`: 6 NC pins on the main sheet (J1 DB9 pins 4/5/6/9 + LT1373/U4 pins FB- and S/S) + 71 NC pins on `pic_sockets.kicad_sch` (PIC socket area) = 77 total. The pre-existing `grep -c no_connect` count is 77; the parser is exact, not approximate.
+
+See `docs/learning_log.md` (2026-05-12 entry) for the anchor-convention debugging story.
+
+### `store/` (Slice 3)
+Two storage backends — relational for refdes-keyed structured data, vector for datasheet text.
+
+- `relational.py` — SQLite via SQLAlchemy 2.0 ORM. Two tables in Slice 3: `components` (refdes unique-indexed, plus value/footprint/datasheet/source_file/source_kind) and `nc_pins` (refdes, pin_number, pin_name, pin_electrical_type, source_file). Public API: `create_store(db_path) -> Session`, `populate_from_registry(session, registry) -> (n_comp, n_pin)`, `query_components(session) -> list[ComponentRecord]`, `query_nc_pins(session) -> list[NcPinRecord]`. `populate_from_registry` truncates first → idempotent over reruns of the same project. Slice 4+ adds `nets`, `findings` tables. The R003 check does NOT read from SQLite — it consumes the in-memory `BoardRegistry`; the store is a parallel proof that the data round-trips through a relational backend and refdes is queryable.
+- `vector.py` — Chroma 0.5+ local persistent mode. Default embedder is the bundled ONNX `all-MiniLM-L6-v2` (no separate `sentence-transformers` install needed; see `docs/learning_log.md` 2026-05-12). Public API: `create_collection(persist_dir, name) -> Collection`, `ingest_chunks(collection, chunks, part_ref) -> int`, `query_chunks(collection, query, top_k) -> list[dict]`. Each ingested chunk metadata: `{part_ref, source_pdf, page, chunk_index}`. `part_ref` is the join key with the relational store — a finding can reference both `sch:<file>#<refdes>` and `datasheet:<pdf>#p<N>` evidence tokens, and the refdes is the same on both sides.
+
+### `ingest/` (Slice 3)
+- `pdf.py` — `extract_chunks(pdf_path, chunk_size=500, overlap=100) -> list[ChunkRecord]`. Uses `pdfplumber` for page-level text extraction; each page is split into one or more overlapping chunks via `_split_text`. `ChunkRecord` carries `(text, source_pdf, page, chunk_index)` and a `.evidence_token` property formatted `datasheet:<filename>#p<N>`.
+
+### `agent/` (Slice 3 — router only)
+- `router.py` — `ModelRouter(env).select(tier)`. Reads `HARDWISE_MODEL_FAST/NORMAL/DEEP` from the env dict (default `os.environ`); falls back to NORMAL if the requested tier is unset, then to `mimo-v2.5` if NORMAL is also unset. `verify-api --tier {fast,normal,deep}` exercises it end-to-end. The agent code (when it lands in Slice 4) will never hard-code a model id — tier selection lives here, model id lives in `.env`.
+- `tools.py` — TBD (Slice 4): tool manifest for the tool-use loop. Each tool takes a Pydantic input model, returns a Pydantic output model.
+- `runner.py` — TBD (Slice 4): main loop wiring router + tools + Anthropic SDK.
+- `prompts.py` — TBD.
 
 ### `guards/`
 - `refdes.py` — defense layer 1: regex-scan output for refdes-shaped tokens (`\b[A-Z]{1,3}\d{1,4}\b`); verify each against the EDA registry; mark unverified as `⟨?XX99⟩`. Mirrors Wrench Board's `api/agent/sanitize.py`.
@@ -127,16 +146,23 @@ TBD — text-format output from KiCad's design rule check; document parseable fi
 
 ```bash
 uv run hardwise hello
-uv run hardwise verify-api
+uv run hardwise verify-api --tier normal
 uv run hardwise inspect-kicad data/projects/pic_programmer --limit 25
-uv run hardwise review data/projects/pic_programmer --rules R001,R002
-uv run hardwise review data/projects/pic_programmer --rules R001,R002 --no-consolidate
-uv run hardwise review data/projects/pic_programmer --rules R001,R002 --memory-output /tmp/rules.md
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --no-consolidate
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --memory-output /tmp/rules.md
+uv run hardwise review data/projects/pic_programmer --rules R003 --db-path /tmp/pic.db
+uv run hardwise ingest-datasheet data/datasheets/l78.pdf --part-ref U3
+uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
 ```
 
-`inspect-kicad` is the first EDA adapter demo: it prints the registry count and the first N sorted components. On `pic_programmer`, it currently extracts 121 registry items.
+`inspect-kicad` is the first EDA adapter demo: it prints the registry count and the first N sorted components. On `pic_programmer`, it extracts 121 registry items.
 
-`review` runs the requested rules over the schematic-side records, applies Refdes Guard + Evidence Ledger, writes a markdown report aligned to《SCH_review_feedback_list 汇总表》, and (by default) appends Sleep Consolidator candidates to `memory/rules.md`. On `pic_programmer` with `--rules R001,R002`, the output is 7 findings (6 medium + 1 info, all R002) and 1 candidate rule emitted. `--no-consolidate` skips the memory write; `--memory-output PATH` redirects it (used by tests).
+`review` runs the requested rules over the schematic-side records, applies Refdes Guard + Evidence Ledger, writes a markdown report aligned to《SCH_review_feedback_list 汇总表》, and (by default) appends Sleep Consolidator candidates to `memory/rules.md` AND populates a SQLite store at `reports/<project>.db` with components + NC pins. On `pic_programmer` with `--rules R001,R002,R003`, the output is 84 findings (7 R002 + 77 R003) and 2 candidate rules (R002 medium + R003 medium). `--no-consolidate` skips the memory write; `--memory-output PATH` and `--db-path PATH` redirect their respective outputs.
+
+`ingest-datasheet` chunks a PDF page-by-page and upserts into Chroma at `data/chroma/` (default), tagging every chunk with `part_ref=<refdes>`. `query-datasheet` runs a top-k semantic query and prints `[source_pdf pN part=Ux]` provenance — these are the building blocks for the Slice 4 `datasheet:<pdf>#p<N>` evidence token.
+
+`verify-api --tier {fast,normal,deep}` exercises the `ModelRouter` against the upstream API and prints the resolved model id + token counts.
 
 ## Module explanation template
 
