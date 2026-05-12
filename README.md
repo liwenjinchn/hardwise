@@ -72,12 +72,14 @@ The repo ships with a public KiCad sample under `data/projects/pic_programmer/`
 
 ```bash
 uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html
 ```
 
 Produces three artifacts:
 
 ```
 report: reports/pic_programmer-YYYYMMDD.md   (84 findings, 121 components reviewed)
+report: reports/pic_programmer-YYYYMMDD.html (same data, Chinese visual report when --format html)
 store:  reports/pic_programmer.db            (121 components, 77 NC pins)
 memory: memory/rules.md                      (2 candidate rule(s) appended)
 ```
@@ -85,6 +87,9 @@ memory: memory/rules.md                      (2 candidate rule(s) appended)
 Each finding carries `evidence_tokens` like `sch:pic_programmer.kicad_sch#J1`
 that resolve back to the parsed board. Unverified refdes are wrapped as
 `⟨?Xnnn⟩` before the report is written; findings with no evidence are dropped.
+Markdown is the default output for diffable archives; HTML is a self-contained
+Chinese report tuned for hardware-review reading: severity chips, refdes/net
+chips, collapsible rule groups, and evidence-token blocks.
 
 ### Datasheet ingest + semantic search
 

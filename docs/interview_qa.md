@@ -38,6 +38,8 @@
 
 **v1.0 target**: keep this answer in sync with the latest sample report; once Slice 3 lands datasheet evidence, refresh with the new evidence-token forms (`datasheet:PIC16F876.pdf#p23`).
 
+**v3.1 report polish**: 报告现在有两种并存输出：默认 markdown 适合 git diff / 纯文本归档；`--format html` 生成中文单文件 HTML，按 rule 折叠、风险等级色码、位号/网络 chip、证据定位 token 等宽展示，并把 R001/R002/R003 的英文工程字段转成硬件工程师更容易扫读的中文检视意见。两者复用同一个 `Finding` schema，没有引入第二套 finding 形状。
+
 ---
 
 ## Q3. 哪些进向量库，哪些进结构化库？为什么这样分？

@@ -41,6 +41,7 @@ data/chroma/
 
 # Generated reports — local outputs
 reports/*.md
+reports/*.html
 !reports/.gitkeep
 
 # Sleep Consolidator output — local candidate-rule pool, never auto-promoted.

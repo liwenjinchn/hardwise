@@ -107,7 +107,13 @@ def review(
         None,
         "--output",
         "-o",
-        help="Output markdown path (default: reports/<project>-<YYYYMMDD>.md).",
+        help="Output report path (default: reports/<project>-<YYYYMMDD>.<format>).",
+    ),
+    output_format: str = typer.Option(
+        "md",
+        "--format",
+        "-f",
+        help="Report format: md or html. Default: md.",
     ),
     checklist: Path = typer.Option(
         Path("data/checklists/sch_review.yaml"),
@@ -133,7 +139,7 @@ def review(
         ),
     ),
 ) -> None:
-    """Run a schematic review on a KiCad project and write a markdown report."""
+    """Run a schematic review on a KiCad project and write a report."""
     from datetime import datetime, timezone
 
     from hardwise.adapters.kicad import parse_project
@@ -151,7 +157,10 @@ def review(
     from hardwise.guards.evidence import strip_unsupported
     from hardwise.guards.refdes import sanitize_finding
     from hardwise.memory.consolidator import consolidate
-    from hardwise.report.markdown import render
+
+    if output_format not in ("md", "html"):
+        typer.echo(f"error: --format must be md|html, got {output_format!r}", err=True)
+        raise typer.Exit(1)
 
     requested_ids = {r.strip() for r in rules.split(",") if r.strip()}
 
@@ -212,22 +221,29 @@ def review(
         "components_reviewed": len(registry.components),
         "rules_run": rules_run,
         "generated_at": now.isoformat(timespec="seconds"),
+        "unverified_refdes_wrapped": total_wrapped,
+        "findings_dropped_no_evidence": dropped,
         "sanitize_note": (
             f"{total_wrapped} unverified refdes wrapped, {dropped} findings dropped (no evidence)"
         ),
     }
 
-    md = render(findings, project_meta)
+    if output_format == "html":
+        from hardwise.report.html import render
+    else:
+        from hardwise.report.markdown import render
+
+    report_text = render(findings, project_meta)
 
     if output is None:
         date_stamp = now.strftime("%Y%m%d")
         reports_dir = Path("reports")
         reports_dir.mkdir(exist_ok=True)
-        output = reports_dir / f"{project_dir.name}-{date_stamp}.md"
+        output = reports_dir / f"{project_dir.name}-{date_stamp}.{output_format}"
     else:
         output.parent.mkdir(parents=True, exist_ok=True)
 
-    output.write_text(md, encoding="utf-8")
+    output.write_text(report_text, encoding="utf-8")
     typer.echo(
         f"report: {output} ({len(findings)} findings, "
         f"{len(registry.components)} components reviewed)"
