@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from hardwise.adapters.base import BoardRegistry, ComponentRecord
+from hardwise.adapters.base import BoardRegistry, ComponentRecord, NcPinRecord
 
 Sexp = str | list["Sexp"]
 
@@ -15,7 +15,8 @@ def parse_project(project_dir: Path) -> BoardRegistry:
     project_dir = project_dir.expanduser().resolve()
     schematic_components: dict[str, ComponentRecord] = {}
 
-    for schematic_path in sorted(project_dir.glob("*.kicad_sch")):
+    schematic_paths = sorted(project_dir.glob("*.kicad_sch"))
+    for schematic_path in schematic_paths:
         for component in parse_schematic(schematic_path):
             schematic_components[component.refdes] = component
 
@@ -30,11 +31,18 @@ def parse_project(project_dir: Path) -> BoardRegistry:
         if not existing.footprint:
             merged[refdes] = existing.model_copy(update={"footprint": pcb_component.footprint})
 
+    from hardwise.adapters.kicad_pins import parse_nc_pins
+
+    nc_pins: list[NcPinRecord] = []
+    for schematic_path in schematic_paths:
+        nc_pins.extend(parse_nc_pins(schematic_path))
+
     return BoardRegistry(
         project_dir=project_dir,
         components=sorted(merged.values(), key=_refdes_sort_key),
         schematic_records=list(schematic_components.values()),
         pcb_records=list(pcb_components.values()),
+        nc_pins=nc_pins,
     )
 
 

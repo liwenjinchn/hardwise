@@ -18,6 +18,16 @@ class ComponentRecord(BaseModel):
     source_kind: str
 
 
+class NcPinRecord(BaseModel):
+    """A pin that has a no_connect marker placed on it."""
+
+    refdes: str
+    pin_number: str
+    pin_name: str
+    pin_electrical_type: str
+    source_file: Path
+
+
 class BoardRegistry(BaseModel):
     """Refdes registry used by tools and guardrails."""
 
@@ -25,6 +35,7 @@ class BoardRegistry(BaseModel):
     components: list[ComponentRecord] = Field(default_factory=list)
     schematic_records: list[ComponentRecord] = Field(default_factory=list)
     pcb_records: list[ComponentRecord] = Field(default_factory=list)
+    nc_pins: list[NcPinRecord] = Field(default_factory=list)
 
     @property
     def refdes_set(self) -> set[str]:
