@@ -21,9 +21,11 @@ Three rules running over the public KiCad demo `pic_programmer`: 7 R002 cap-volt
 
 ## What it is
 
-Hardwise is an AI Agent for the schematic review node of hardware R&D. It reads a KiCad project plus BOM and relevant datasheet PDFs, then produces a review report where every conclusion carries a source token (EDA / BOM / datasheet page / checklist rule) and every reference designator is verified against the parsed board, never fabricated.
+Hardwise is an AI Agent for the schematic review node of hardware R&D. It reads a KiCad project and relevant datasheet PDFs, then produces a review report where every conclusion carries a source token (`sch:` / `datasheet:` / `rule:`) and every reference designator is verified against the parsed board, never fabricated.
 
-It compresses the slow link of "翻 datasheet → 对位号 → 查 BOM → 写报告" into a tool-use loop with two anti-hallucination guards and a memory consolidation loop.
+It compresses the slow link of "翻 datasheet → 对位号 → 写报告" into a tool-use loop with two anti-hallucination guards and a memory consolidation loop.
+
+> A note on BOM: schematic review happens *before* PCB layout, so the only "BOM" available at this node is the refdes list exported from the schematic — not a PLM-grade BOM with manufacturer part numbers, supplier lifecycle, etc. That BOM appears later in the flow (post-Gerber) and is out of scope. See [`docs/review_node.md`](docs/review_node.md) for the input-data contract at the review node.
 
 ## What it isn't
 
@@ -34,7 +36,7 @@ It compresses the slow link of "翻 datasheet → 对位号 → 查 BOM → 写�
 
 ## Why
 
-Initial schematic review on a real board takes a hardware engineer 1–2 days, mostly information shuffling: cross-checking refdes against datasheets, validating BOM, writing the review note. The judgment work — *is this design correct?* — is a small fraction. Hardwise automates the shuffle so the human spends time judging, not searching.
+Initial schematic review on a real board takes a hardware engineer 1–2 days, mostly information shuffling: cross-checking refdes against datasheets, walking pin lists, writing the review note. The judgment work — *is this design correct?* — is a small fraction. Hardwise automates the shuffle so the human spends time judging, not searching.
 
 ## Five mechanisms
 
