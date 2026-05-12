@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>李汶晋 · 硬件工程师 · 简历 (2026.05)</title>
+<style>
+  :root {
+    --text: #1f2937;
+    --text-soft: #4b5563;
+    --text-dim: #6b7280;
+    --line: #e5e7eb;
+    --line-soft: #f1f5f9;
+    --accent: #1d4ed8;
+    --accent-soft: #eff6ff;
+    --tag-bg: #eef2ff;
+    --tag-fg: #3730a3;
+    --tag-2-bg: #ecfeff;
+    --tag-2-fg: #0e7490;
+    --highlight: #0f172a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: #f8fafc;
+    color: var(--text);
+    font-family: "PingFang SC", "Noto Sans SC", -apple-system, BlinkMacSystemFont,
+                 "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif;
+    font-size: 10.6px;
+    line-height: 1.36;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 16px auto;
+    background: #fff;
+    padding: 9mm 10mm 8mm;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06),
+                0 8px 24px rgba(15, 23, 42, 0.05);
+    border-radius: 4px;
+  }
+
+  /* Header */
+  header.top {
+    text-align: center;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--line);
+  }
+  header.top h1 {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--highlight);
+  }
+  header.top .contact {
+    margin-top: 3px;
+    font-size: 10.4px;
+    color: var(--text-soft);
+  }
+  header.top .contact span { margin: 0 4px; }
+  header.top .pitch {
+    margin-top: 5px;
+    font-size: 10.2px;
+    color: var(--text-dim);
+    letter-spacing: 0.2px;
+  }
+  header.top .pitch b { color: var(--accent); font-weight: 600; }
+
+  /* Sections */
+  section { margin-top: 9px; }
+  h2.section-title {
+    font-size: 11.4px;
+    font-weight: 700;
+    color: var(--highlight);
+    padding-bottom: 2px;
+    border-bottom: 2px solid var(--highlight);
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Entry block (work / project / education) */
+  .entry { margin-bottom: 7px; }
+  .entry:last-child { margin-bottom: 0; }
+  .entry-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 1px;
+  }
+  .entry-head .left { font-weight: 700; font-size: 10.9px; color: var(--highlight); }
+  .entry-head .right { font-size: 9.8px; color: var(--text-dim); white-space: nowrap; }
+  .entry-sub {
+    font-size: 9.9px;
+    color: var(--text-soft);
+    margin-bottom: 3px;
+  }
+  .entry-sub .role { color: var(--text); }
+  .entry-sub .stack { color: var(--accent); }
+
+  .project-tagline {
+    font-size: 9.9px;
+    color: var(--text-soft);
+    font-style: italic;
+    margin: 2px 0 3px;
+    padding-left: 7px;
+    border-left: 2px solid var(--accent-soft);
+  }
+
+  .subhead {
+    font-weight: 600;
+    font-size: 10.2px;
+    color: var(--highlight);
+    margin: 4px 0 1px;
+  }
+
+  ol, ul { padding-left: 15px; margin-top: 1px; }
+  li { margin-bottom: 1px; }
+  li::marker { color: var(--text-dim); }
+  .entry b, li b { color: var(--accent); font-weight: 600; }
+
+  /* Tags */
+  .tags { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 6px; vertical-align: middle; }
+  .tag {
+    display: inline-block;
+    font-size: 8.8px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  .tag.cool { background: var(--tag-2-bg); color: var(--tag-2-fg); }
+
+  /* Skills grid */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 3px 10px;
+    align-items: baseline;
+  }
+  .skills-grid .label {
+    font-weight: 600;
+    color: var(--highlight);
+    font-size: 10.1px;
+  }
+  .skills-grid .body {
+    color: var(--text-soft);
+    font-size: 10.1px;
+  }
+  .skills-grid .body code {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 9.4px;
+    background: var(--line-soft);
+    padding: 0 4px;
+    border-radius: 3px;
+    color: var(--highlight);
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Print */
+  @media print {
+    html, body { background: #fff; }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0;
+      box-shadow: none;
+      border-radius: 0;
+      padding: 8mm 9mm 7mm;
+    }
+    section { break-inside: auto; page-break-inside: auto; }
+    .entry { break-inside: avoid; page-break-inside: avoid; }
+    a { color: var(--text); text-decoration: none; }
+  }
+  @page { size: A4; margin: 0; }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header class="top">
+    <h1>李 汶 晋</h1>
+    <div class="contact">
+      <span>Tel · 18617281726</span>
+      <span>·</span>
+      <span>E-mail · 314561413@qq.com</span>
+      <span>·</span>
+      <span>深圳</span>
+    </div>
+    <div class="pitch">
+      5 年服务器硬件工程师 · 正向 <b>硬件 × AI Agent × EDA 效能</b> 方向转型 · 公开作品 <b>Hardwise</b>
+    </div>
+  </header>
+
+  <!-- ============ 工作经历 ============ -->
+  <section>
+    <h2 class="section-title">工作经历</h2>
+
+    <div class="entry">
+      <div class="entry-head">
+        <div class="left">服务器硬件研发经历</div>
+        <div class="right">2021.07 – 至今 · 深圳</div>
+      </div>
+      <div class="entry-sub"><span class="role">硬件工程师 · 服务器研发方向</span></div>
+
+      <div class="subhead">服务器整机硬件交付</div>
+      <ol>
+        <li>参与服务器整机与板卡硬件方案设计、原理图设计、单元测试、生产资料输出和试产问题闭环，覆盖从需求确认到工厂导入的交付链路；</li>
+        <li>对接产品、系统工程、结构、供应商和工厂等角色，推进器件导入、测试验证、生产问题定位与交付风险收敛。</li>
+      </ol>
+
+      <div class="subhead">板卡设计与问题定位</div>
+      <ol>
+        <li>负责多类服务器板卡的硬件设计与单元测试，输出方案、原理图、BOM、生产资料、测试方案和问题分析记录；</li>
+        <li>检视 PCB Layout、线序和关键接口实现，参与 PCIe 误码、内存 UCE、PCIe 降带宽等复杂硬件问题分析定位；</li>
+        <li>多次参与工厂试产跟线，协调研发各领域处理生产端问题，形成问题总结并推动生产效率提升。</li>
+      </ol>
+
+      <div class="subhead">硬件流程与调研</div>
+      <ol>
+        <li>参与服务器技术趋势调研，梳理服务器芯片、关键部件和硬件平台演进方向，输出分析材料；</li>
+        <li>在工作中持续沉淀原理图检视、BOM 核对、生产资料检查和测试问题闭环等流程经验，为 Hardwise 的公开 demo 选题提供业务抽象。</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ 个人项目 ============ -->
+  <section>
+    <h2 class="section-title">
+      个人项目 · 硬件 × AI × 效能
+      <span class="tags">
+        <span class="tag">开源</span>
+        <span class="tag cool">DJI JD 兑现</span>
+      </span>
+    </h2>
+
+    <div class="entry">
+      <div class="entry-head">
+        <div class="left">Hardwise — 硬件原理图评审 AI Agent</div>
+        <div class="right">2026.05 · 公开 GitHub</div>
+      </div>
+      <div class="entry-sub">
+        <span class="role">独立设计与实现</span> ·
+        <span class="stack">Python 3.11 · Anthropic SDK · KiCad · Chroma · SQLite + SQLAlchemy 2.0 · pdfplumber</span>
+      </div>
+      <div class="project-tagline">
+        把硬件工程师"原理图初评 1–2 天"的搬运链（翻 datasheet、对位号、写报告）压成一条 CLI；每条评审意见都带可验证的证据来源。
+      </div>
+      <ul>
+        <li>在公开 KiCad 工程 <code>pic_programmer</code> 上端到端跑通 3 条评审规则（新建器件 / 电容耐压 / NC pin 处理），解析 <b>121 个 component + 77 个 NC pin</b>，输出 <b>84 条 finding</b> 的 markdown 评审报告；</li>
+        <li>手写 <b>KiCad S-expression 解析器</b>（无 kiutils 依赖，~350 行 Python）+ 坐标匹配 <code>no_connect</code> 标记反查 refdes/pin，结构上杜绝 pin 级幻觉；</li>
+        <li>自建 <b>SQLite + Chroma 双库</b>（refdes 作为跨库 join key）：结构化数据走 SQLAlchemy 2.0、datasheet 走 Chroma local persistent + ONNX MiniLM 本地 embedding；</li>
+        <li>双层反幻觉守卫：<b>Refdes Guard</b>（正则扫描所有输出 token，未命中 EDA registry 即 wrap 为 <code>⟨?U999⟩</code>）+ <b>Evidence Ledger</b>（无 <code>sch:</code>/<code>datasheet:</code> token 的 finding 不输出）；</li>
+        <li>实现 <b>Sleep Consolidator</b> 候选规则池（统计聚合 → 人工 gate 后才激活，避免 memory 污染）+ 3 档 <b>ModelRouter</b>（fast/normal/deep 通过环境变量解耦模型 ID）；</li>
+        <li>架构借鉴 Anthropic Build with Opus 4.7 Hackathon 第 2 名 Wrench Board（README 公开 attribution，无代码复制；不同领域：板级维修 vs. 设计评审）；</li>
+        <li>工程纪律：vertical slice 推进、conventional commits、ruff + pytest 全绿、每个 slice 有 learning log 调试条目。</li>
+      </ul>
+    </div>
+
+  </section>
+
+  <!-- ============ 教育经历 ============ -->
+  <section>
+    <h2 class="section-title">教育经历</h2>
+    <div class="entry">
+      <div class="entry-head">
+        <div class="left">
+          暨南大学
+          <span class="tags">
+            <span class="tag">211</span>
+            <span class="tag cool">双一流</span>
+          </span>
+        </div>
+        <div class="right">2016.08 – 2021.07</div>
+      </div>
+      <div class="entry-sub">
+        <span class="role">电气工程及其自动化 · 本科 · 国际能源学院</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 技能 ============ -->
+  <section>
+    <h2 class="section-title">技能</h2>
+    <div class="skills-grid">
+      <div class="label">硬件设计</div>
+      <div class="body">
+        原理图设计（<code>Cadence</code> / <code>KiCad</code>）· PCB Layout 检视 · CPLD 逻辑（<code>Verilog</code>）· 信号完整性问题定位（PCIe 误码 / 内存 UCE / PCIe 降带宽）· 服务器单板与整机方案设计
+      </div>
+
+      <div class="label">AI × 效能</div>
+      <div class="body">
+        <code>Python 3.11</code> · <code>Anthropic SDK</code> tool-use 循环 · <code>Pydantic</code> schema 校验 · 向量数据库 <code>Chroma</code> · 结构化数据库 <code>SQLite + SQLAlchemy 2.0</code> · datasheet 切页与语义检索 · EDA 工具脚本化（KiCad S-expression 手写解析器，<code>uv</code> 包管理）
+      </div>
+
+      <div class="label">流程 &amp; 协作</div>
+      <div class="body">
+        服务器整机/单板研发全流程 · 工厂试产端问题定位与闭环 · 跨域协调（SE / 结构 / CPU 供应商 / 工厂） · BOM 与生产资料输出 · 出差工厂跟线
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>
