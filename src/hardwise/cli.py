@@ -21,24 +21,37 @@ def hello() -> None:
 
 
 @app.command(name="verify-api")
-def verify_api() -> None:
+def verify_api(
+    tier: str = typer.Option(
+        "normal",
+        "--tier",
+        "-t",
+        help="Model tier (fast | normal | deep). Default: normal.",
+    ),
+) -> None:
     """Send a one-shot test message to the upstream API; print response and token counts."""
     import os
 
     from anthropic import Anthropic
     from dotenv import load_dotenv
 
+    from hardwise.agent.router import ModelRouter
+
     load_dotenv(override=True)
+
+    if tier not in ("fast", "normal", "deep"):
+        typer.echo(f"error: tier must be fast|normal|deep, got {tier!r}", err=True)
+        raise typer.Exit(1)
 
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     base_url = os.environ.get("ANTHROPIC_BASE_URL", "")
-    model = os.environ.get("HARDWISE_MODEL_NORMAL", "MiMo-V2.5")
+    model = ModelRouter().select(tier)  # type: ignore[arg-type]
 
     if not api_key or api_key == "replace_me":
         typer.echo("error: ANTHROPIC_API_KEY missing or unset in .env", err=True)
         raise typer.Exit(1)
 
-    typer.echo(f"calling {model} via {base_url}")
+    typer.echo(f"calling {model} (tier={tier}) via {base_url}")
 
     client = Anthropic(api_key=api_key, base_url=base_url)
 
