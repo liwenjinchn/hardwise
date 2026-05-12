@@ -111,6 +111,14 @@ def review(
         "--memory-output",
         help="Path to the candidate-rule memory file (default: memory/rules.md).",
     ),
+    db_path: Path | None = typer.Option(
+        None,
+        "--db-path",
+        help=(
+            "SQLite DB path; populated with components + NC pins. "
+            "Default: reports/<project>.db. Use empty string to skip."
+        ),
+    ),
 ) -> None:
     """Run a schematic review on a KiCad project and write a markdown report."""
     from datetime import datetime, timezone
@@ -212,12 +220,89 @@ def review(
         f"{len(registry.components)} components reviewed)"
     )
 
+    if db_path is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        db_path = reports_dir / f"{project_dir.name}.db"
+    if str(db_path):
+        from hardwise.store.relational import create_store, populate_from_registry
+
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        if db_path.exists():
+            db_path.unlink()
+        session = create_store(db_path)
+        try:
+            n_comp, n_pin = populate_from_registry(session, registry)
+        finally:
+            session.close()
+        typer.echo(f"store: {db_path} ({n_comp} components, {n_pin} NC pins)")
+
     if consolidate_flag:
         candidates = consolidate(findings, project_dir.name, output_path=memory_output, now=now)
         if candidates:
             typer.echo(
                 f"consolidator: {len(candidates)} candidate rule(s) appended to {memory_output}"
             )
+
+
+@app.command(name="ingest-datasheet")
+def ingest_datasheet(
+    pdf_path: Path = typer.Argument(..., help="Path to a datasheet PDF."),
+    part_ref: str = typer.Option(
+        ..., "--part-ref", help="Refdes the datasheet belongs to (e.g. U3)."
+    ),
+    persist_dir: Path = typer.Option(
+        Path("data/chroma"),
+        "--persist-dir",
+        help="Chroma persistence directory.",
+    ),
+    chunk_size: int = typer.Option(500, "--chunk-size"),
+    overlap: int = typer.Option(100, "--overlap"),
+) -> None:
+    """Ingest a datasheet PDF into the local Chroma vector store."""
+    from hardwise.ingest.pdf import extract_chunks
+    from hardwise.store.vector import create_collection, ingest_chunks
+
+    if not pdf_path.exists():
+        typer.echo(f"error: pdf not found: {pdf_path}", err=True)
+        raise typer.Exit(1)
+
+    try:
+        chunks = extract_chunks(pdf_path, chunk_size=chunk_size, overlap=overlap)
+    except Exception as e:
+        typer.echo(f"error: pdf extract failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    collection = create_collection(persist_dir)
+    n = ingest_chunks(collection, chunks, part_ref=part_ref)
+    typer.echo(f"ingest: {pdf_path.name} → {persist_dir} ({n} chunks, part_ref={part_ref})")
+
+
+@app.command(name="query-datasheet")
+def query_datasheet(
+    query: str = typer.Argument(..., help="Natural-language query."),
+    top_k: int = typer.Option(5, "--top-k", "-k"),
+    persist_dir: Path = typer.Option(
+        Path("data/chroma"),
+        "--persist-dir",
+        help="Chroma persistence directory.",
+    ),
+) -> None:
+    """Retrieve top-k datasheet chunks by semantic similarity (demo)."""
+    from hardwise.store.vector import create_collection, query_chunks
+
+    collection = create_collection(persist_dir)
+    results = query_chunks(collection, query, top_k=top_k)
+    if not results:
+        typer.echo(f"no results for query: {query!r}")
+        return
+    for i, row in enumerate(results, start=1):
+        meta = row["metadata"]
+        snippet = row["text"].strip().replace("\n", " ")[:120]
+        typer.echo(
+            f"{i}. [{meta.get('source_pdf')} p{meta.get('page')} "
+            f"part={meta.get('part_ref')}] {snippet}…"
+        )
 
 
 if __name__ == "__main__":

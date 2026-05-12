@@ -27,6 +27,7 @@ data/projects/*
 data/datasheets/*
 !data/projects/.gitkeep
 !data/datasheets/.gitkeep
+!data/datasheets/README.md
 # Exception: the KiCad public demo project IS shipped with the repo so
 # `uv run hardwise review data/projects/pic_programmer --rules R001` works
 # out of the box for anyone who clones. Other project dirs stay ignored
@@ -35,7 +36,7 @@ data/datasheets/*
 !data/projects/pic_programmer/**
 
 # Local DB / vector store
-data/*.db
+*.db
 data/chroma/
 
 # Generated reports — local outputs
