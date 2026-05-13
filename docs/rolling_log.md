@@ -75,26 +75,6 @@ Move the trigger off this file once shipped.
 
 ---
 
-## Triggered by first tool registered in `agent/tools.py`
-
-**Where it lands**: `CLAUDE.md` → new "Tool manifest" section (between Models and Run/test/lint).
-
-**What to add**: Enumerate each tool by name with a one-line input/output contract. Example shape (from Wrench Board's lead):
-
-```
-| Tool | Input | Output | Notes |
-|---|---|---|---|
-| list_components | filter? | list[Component] | refdes, value, footprint, datasheet ref |
-| get_net          | net_name | Net or {found:false, closest:[...]} | refuses unknown nets |
-| search_datasheet | query, part_no? | list[Chunk(page, text, score)] | vector search |
-| check_bom        | refdes | BomRow or {found:false} | qty, manufacturer, MPN |
-| lookup_drc       | severity? | list[Finding] | from KiCad ERC/DRC report |
-```
-
-The tool count and exact names are deferred until the first tool actually ships — names always drift in the first iteration.
-
----
-
 ## Triggered by Day 4 — both stores wired up
 
 **Where it lands**: `CLAUDE.md` → new "On-disk layout" section (after Layout).
@@ -152,4 +132,4 @@ Each anti-rule must reference a real moment when reality tried to violate it. An
 
 > When an item moves out of this file, leave a one-line entry below noting where it landed.
 
-(none yet — this file was created on Day 1)
+- 2026-05-13 — "first tool registered in `agent/tools.py`" trigger landed → `CLAUDE.md` gained a "Tool manifest" section (between Models and Run/test/lint); 4 tools shipped (`list_components` / `get_component` / `get_nc_pins` / `search_datasheet`) with the `closest_matches` discriminated-union pattern replacing the original `get_net / check_bom / lookup_drc` placeholder shape. Names drifted as predicted; manifest reflects the actual Slice 3 store surface.

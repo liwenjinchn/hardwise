@@ -59,6 +59,19 @@ Default mapping (per `.env.example`):
 
 Tier selection lives in `src/hardwise/agent/runner.py`. Default for any review run is `normal`; `deep` must be explicitly opted into per task.
 
+## Tool manifest
+
+The agent loop calls these four tools in `src/hardwise/agent/tools.py`. Each input is a Pydantic model; each output carries a `found: bool` (or discriminated-union) branch for unknowns — tools never fabricate.
+
+| Tool | Input | Output | Unknown branch |
+|---|---|---|---|
+| `list_components` | `name_filter?`, `refdes_prefix?` | `ComponentSummary[]` + total | `found=false, components=[]` |
+| `get_component` | `refdes` | `ComponentFound{component}` | `ComponentNotFound{refdes, closest_matches}` |
+| `get_nc_pins` | `refdes_filter?` | `NcPinSummary[]` + total | `found=false, pins=[]` |
+| `search_datasheet` | `query`, `part_ref?`, `top_k` | `DatasheetHit[]` (page, source_pdf, part_ref) | `found=false, hits=[], query` |
+
+`TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[…]` shape ready for `messages.create`.
+
 ## Run / test / lint
 
 ```bash
