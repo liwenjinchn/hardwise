@@ -102,6 +102,39 @@ uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
 Returns chunks with `[<pdf> p<N> part=<refdes>]` provenance — the building
 block for `datasheet:<pdf>#p<N>` evidence tokens in Slice 4 R003 upgrade.
 
+### Use PostgreSQL instead of SQLite
+
+The relational store goes through SQLAlchemy 2.0, so any backend with a
+SQLAlchemy driver works. Default is SQLite (`reports/<project>.db`); set
+`HARDWISE_DB_URL` to override.
+
+```bash
+# 1. install the Postgres driver (optional dep group)
+uv sync --extra postgres
+
+# 2a. start Postgres via Homebrew (Mac, no Docker needed)
+brew install postgresql@16
+brew services start postgresql@16
+createdb hardwise
+export HARDWISE_DB_URL="postgresql+psycopg2://$USER@localhost:5432/hardwise"
+
+# 2b. ...or via Docker (cross-platform)
+# docker run -d --name hardwise-pg \
+#   -e POSTGRES_PASSWORD=hardwise -e POSTGRES_DB=hardwise \
+#   -p 5432:5432 postgres:16
+# export HARDWISE_DB_URL="postgresql+psycopg2://postgres:hardwise@localhost:5432/hardwise"
+
+# 3. re-run review against PG
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
+# store: postgresql+psycopg2://... (121 components, 77 NC pins)
+
+# 4. verify directly with psql
+psql -d hardwise -c "SELECT COUNT(*) FROM components; SELECT COUNT(*) FROM nc_pins;"
+# 121, 77
+```
+
+MySQL works the same way — install `pymysql` and set `HARDWISE_DB_URL=mysql+pymysql://...`.
+
 ### Other commands
 
 ```bash
