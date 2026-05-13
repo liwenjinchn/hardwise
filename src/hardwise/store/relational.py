@@ -1,8 +1,14 @@
-"""SQLite relational store — components + NC pins.
+"""Relational store — components + NC pins.
+
+Default backend is SQLite (file or :memory:); any SQLAlchemy URL is
+accepted, so the same store code runs on PostgreSQL / MySQL when
+`HARDWISE_DB_URL` (or `--db-path` with a URL string) points there.
+The schema uses only database-neutral SQLAlchemy 2.0 declarative types,
+so switching backends is a connection-string change, not a rewrite.
 
 Slice 3 minimum: prove the relational-store concept for Gate B.
 R003's check function still reads from in-memory BoardRegistry; the store
-is a parallel proof that the data round-trips through SQLite and can be
+is a parallel proof that the data round-trips through SQL and can be
 queried by refdes (the join key with the future vector store).
 """
 
@@ -43,10 +49,30 @@ class NcPinRow(Base):
     source_file = Column(String, default="")
 
 
-def create_store(db_path: Path | str) -> Session:
-    """Create or open a SQLite store; create tables; return a session."""
-    url = f"sqlite:///{db_path}" if str(db_path) != ":memory:" else "sqlite:///:memory:"
-    engine = create_engine(url, future=True)
+def _resolve_url(value: str | Path) -> str:
+    """Coerce a path-or-URL into a SQLAlchemy connection URL.
+
+    Strings containing ``://`` are treated as full SQLAlchemy URLs
+    (e.g. ``postgresql+psycopg2://user:pw@host/db``). Anything else is
+    treated as a SQLite filesystem path and wrapped with ``sqlite:///``;
+    the literal ``:memory:`` becomes the in-memory SQLite URL.
+    """
+    s = str(value)
+    if s == ":memory:":
+        return "sqlite:///:memory:"
+    if "://" in s:
+        return s
+    return f"sqlite:///{s}"
+
+
+def create_store(db_url_or_path: str | Path) -> Session:
+    """Open (or create) a relational store and return a session.
+
+    Accepts either a SQLAlchemy URL (``postgresql+psycopg2://...``,
+    ``mysql+pymysql://...``) or a filesystem path / ``Path`` object for
+    SQLite. Tables are created if they don't exist.
+    """
+    engine = create_engine(_resolve_url(db_url_or_path), future=True)
     Base.metadata.create_all(engine)
     session_factory = sessionmaker(bind=engine, future=True)
     return session_factory()

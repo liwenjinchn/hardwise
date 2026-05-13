@@ -135,7 +135,9 @@ def review(
         "--db-path",
         help=(
             "SQLite DB path; populated with components + NC pins. "
-            "Default: reports/<project>.db. Use empty string to skip."
+            "Default: reports/<project>.db. Use empty string to skip. "
+            "Override the whole backend by setting the HARDWISE_DB_URL "
+            "env var to any SQLAlchemy URL (e.g. postgresql+psycopg2://...)."
         ),
     ),
 ) -> None:
@@ -249,22 +251,35 @@ def review(
         f"{len(registry.components)} components reviewed)"
     )
 
-    if db_path is None:
-        reports_dir = Path("reports")
-        reports_dir.mkdir(exist_ok=True)
-        db_path = reports_dir / f"{project_dir.name}.db"
-    if str(db_path):
+    import os
+
+    env_url = os.environ.get("HARDWISE_DB_URL", "").strip()
+    if env_url:
         from hardwise.store.relational import create_store, populate_from_registry
 
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        if db_path.exists():
-            db_path.unlink()
-        session = create_store(db_path)
+        session = create_store(env_url)
         try:
             n_comp, n_pin = populate_from_registry(session, registry)
         finally:
             session.close()
-        typer.echo(f"store: {db_path} ({n_comp} components, {n_pin} NC pins)")
+        typer.echo(f"store: {env_url} ({n_comp} components, {n_pin} NC pins)")
+    else:
+        if db_path is None:
+            reports_dir = Path("reports")
+            reports_dir.mkdir(exist_ok=True)
+            db_path = reports_dir / f"{project_dir.name}.db"
+        if str(db_path):
+            from hardwise.store.relational import create_store, populate_from_registry
+
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            if db_path.exists():
+                db_path.unlink()
+            session = create_store(db_path)
+            try:
+                n_comp, n_pin = populate_from_registry(session, registry)
+            finally:
+                session.close()
+            typer.echo(f"store: {db_path} ({n_comp} components, {n_pin} NC pins)")
 
     if consolidate_flag:
         candidates = consolidate(findings, project_dir.name, output_path=memory_output, now=now)

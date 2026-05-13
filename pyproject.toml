@@ -25,6 +25,9 @@ dev = [
     "pytest>=8.0.0",
     "ruff>=0.6.0",
 ]
+postgres = [
+    "psycopg2-binary>=2.9.9",
+]
 
 [project.scripts]
 hardwise = "hardwise.cli:app"
