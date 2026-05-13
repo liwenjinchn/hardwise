@@ -29,8 +29,8 @@ Every code change should strengthen one of these. If it doesn't, defer.
 | 1 | Refdes Guard | `src/hardwise/guards/refdes.py` | Anti-hallucination by design |
 | 2 | Evidence Ledger | `src/hardwise/guards/evidence.py` | Provenance |
 | 3 | Sleep Consolidator | `src/hardwise/memory/consolidator.py` | Memory consolidation |
-| 4 | Tiered Model Routing | `src/hardwise/agent/runner.py` + `.env` | Cost-aware orchestration |
-| 5 | Prompt Caching | `src/hardwise/agent/runner.py` (Anthropic `cache_control`) | Cache-warmed long context |
+| 4 | Tiered Model Routing | `src/hardwise/agent/router.py` + `.env` | Cost-aware orchestration |
+| 5 | Prompt Caching | `src/hardwise/agent/prompts.py` (`cache_control`) + `agent/runner.py` (usage accounting) | Cache-warmed long context |
 
 See `docs/architecture.md` for module-level detail.
 
@@ -57,7 +57,7 @@ Default mapping (per `.env.example`):
 
 **Upstream**: MiMo (Xiaomi), served via the `xiaomimimo.com` proxy that speaks Anthropic message format on `/anthropic/*`. The `anthropic` Python SDK is a generic Anthropic-protocol client; the upstream identity is set by `ANTHROPIC_BASE_URL` and the model name in the `messages.create` call. **API model identifiers are lowercase** (`mimo-v2.5`, not `MiMo-V2.5`); list available models with `curl -H "x-api-key: $KEY" https://token-plan-sgp.xiaomimimo.com/v1/models`. A `mimo-v2.5-pro` variant exists if a real "deep" tier is later needed.
 
-Tier selection lives in `src/hardwise/agent/runner.py`. Default for any review run is `normal`; `deep` must be explicitly opted into per task.
+Tier selection lives in `src/hardwise/agent/router.py`. Default for any review run is `normal`; `deep` must be explicitly opted into per task. `agent/runner.py` consumes the router when running the tool-use loop.
 
 ## Tool manifest
 

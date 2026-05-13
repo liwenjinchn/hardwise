@@ -1,6 +1,6 @@
 # Hardwise Architecture
 
-> v0.4 — Slice 3 ships R003 (NC pin handling, EDA-only stage) + SQLite relational store (live) + Chroma vector store (demo) + datasheet ingest + Tiered Model Router. Sections marked TBD fill in as modules ship.
+> v0.5 — Slice 4 ships the agent tool-use loop (`agent/runner.py` + `agent/prompts.py` + `cli.py:ask`) on top of Slice 3's stores + tools. Mechanism #5 (Prompt Caching) has measured `cache_read_input_tokens` on MiMo proxy. Sections marked TBD fill in as modules ship.
 
 ## Data flow
 
@@ -93,11 +93,12 @@ Two storage backends — relational for refdes-keyed structured data, vector for
 ### `ingest/` (Slice 3)
 - `pdf.py` — `extract_chunks(pdf_path, chunk_size=500, overlap=100) -> list[ChunkRecord]`. Uses `pdfplumber` for page-level text extraction; each page is split into one or more overlapping chunks via `_split_text`. `ChunkRecord` carries `(text, source_pdf, page, chunk_index)` and a `.evidence_token` property formatted `datasheet:<filename>#p<N>`.
 
-### `agent/` (Slice 3 — router only)
-- `router.py` — `ModelRouter(env).select(tier)`. Reads `HARDWISE_MODEL_FAST/NORMAL/DEEP` from the env dict (default `os.environ`); falls back to NORMAL if the requested tier is unset, then to `mimo-v2.5` if NORMAL is also unset. `verify-api --tier {fast,normal,deep}` exercises it end-to-end. The agent code (when it lands in Slice 4) will never hard-code a model id — tier selection lives here, model id lives in `.env`.
-- `tools.py` — Slice 4 prep: tool manifest for the tool-use loop. Four tools wired against the Slice 3 stores: `list_components` (relational read with optional value-substring / refdes-prefix filter), `get_component` (single-refdes lookup with a `Found{component}` / `NotFound{refdes, closest_matches}` discriminated-union return — `closest_matches` comes from `difflib.get_close_matches` over `BoardRegistry.refdes_set`, so the agent picks from suggestions, never fabricates), `get_nc_pins` (relational read, optional refdes filter), `search_datasheet` (Chroma vector query, optional `part_ref` filter, returns `DatasheetHit[]` with `page` + `source_pdf` + `part_ref` provenance). Inputs and outputs are Pydantic models; `TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[…]` shape ready for `messages.create`. The module is the front-door for mechanisms #1 (Refdes Guard receives `closest_matches` here) and #2 (Evidence Ledger receives `source_pdf` + `page` here). Library-only this round; CLI wiring waits for runner.py.
-- `runner.py` — TBD (Slice 4): main loop wiring router + tools + Anthropic SDK.
-- `prompts.py` — TBD.
+### `agent/` (Slice 3 — router; Slice 4 — tools + runner + prompts)
+- `router.py` — `ModelRouter(env).select(tier)`. Reads `HARDWISE_MODEL_FAST/NORMAL/DEEP` from the env dict (default `os.environ`); falls back to NORMAL if the requested tier is unset, then to `mimo-v2.5` if NORMAL is also unset. `verify-api --tier {fast,normal,deep}` and `ask --tier` exercise it end-to-end. The agent code never hard-codes a model id — tier selection lives here, model id lives in `.env`.
+- `tools.py` — Slice 4 prep: tool manifest for the tool-use loop. Four tools wired against the Slice 3 stores: `list_components` (relational read with optional value-substring / refdes-prefix filter), `get_component` (single-refdes lookup with a `Found{component}` / `NotFound{refdes, closest_matches}` discriminated-union return — `closest_matches` comes from `difflib.get_close_matches` over `BoardRegistry.refdes_set`, so the agent picks from suggestions, never fabricates), `get_nc_pins` (relational read, optional refdes filter), `search_datasheet` (Chroma vector query, optional `part_ref` filter, returns `DatasheetHit[]` with `page` + `source_pdf` + `part_ref` provenance). Inputs and outputs are Pydantic models; `TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[…]` shape consumed by runner.py. The module is the front-door for mechanisms #1 (Refdes Guard receives `closest_matches` here) and #2 (Evidence Ledger receives `source_pdf` + `page` here).
+- `prompts.py` — Slice 4: the static system prompt. Spells out role + 4-tool catalogue + anti-fabrication rules + evidence discipline + Chinese-by-default output convention. `build_system_blocks()` wraps the prompt in a single `cache_control: ephemeral` text block — the upstream proxy (or Claude proper) can serve it from prompt cache across iterations. Mechanism #5 wiring lives here.
+- `runner.py` — Slice 4: `Runner(client, router, session, registry, collection?, tier="normal")`. `run(user_message) -> RunResult` runs the finite tool-use loop — `messages.create(tools=TOOL_DEFINITIONS, system=cache_control_blocks, ...)`, dispatches `tool_use` blocks to the tools.py functions, feeds `tool_result` back, capped at `MAX_ITERATIONS=10`. Accumulates `input_tokens / output_tokens / cache_creation_tokens / cache_read_tokens` from each `response.usage`; returns a `ToolCallTrace[]` for audit. `collection=None` makes `search_datasheet` return a structured "not configured" payload — the agent learns to back off without crashing. Unknown tools and tool exceptions surface as `is_error=True` tool_result blocks so the model can self-correct.
+- `cli.py:ask` — Slice 4: `hardwise ask <project_dir> "<question>"` builds session+registry, optionally opens Chroma (`--vector`), constructs Runner, prints answer + per-tool trace + token line (including cache create/read when nonzero). Live verified on MiMo-V2.5 via `xiaomimimo.com/anthropic`: `cache_read_input_tokens` ≠ 0 on three pic_programmer queries, confirming mechanism #5 has real numbers, not just wiring (see `learning_log.md` 2026-05-13 entry).
 
 ### `guards/`
 - `refdes.py` — defense layer 1: regex-scan output for refdes-shaped tokens (`\b[A-Z]{1,3}\d{1,4}\b`); verify each against the EDA registry; mark unverified as `⟨?XX99⟩`. Mirrors Wrench Board's `api/agent/sanitize.py`.
@@ -120,11 +121,11 @@ Two storage backends — relational for refdes-keyed structured data, vector for
 
 | Mechanism | Lives in |
 |---|---|
-| 1. Refdes Guard | `guards/refdes.py` |
-| 2. Evidence Ledger | `guards/evidence.py` + `agent/prompts.py` |
+| 1. Refdes Guard | `guards/refdes.py` + `agent/tools.py:get_component` (closest_matches) |
+| 2. Evidence Ledger | `guards/evidence.py` + `agent/tools.py:search_datasheet` (source_pdf + page) + `agent/prompts.py` |
 | 3. Sleep Consolidator | `memory/consolidator.py` + `memory/rules.md` |
-| 4. Tiered Model Routing | `agent/runner.py` + `.env` (`HARDWISE_MODEL_FAST/NORMAL/DEEP`) |
-| 5. Prompt Caching | `agent/runner.py` (Anthropic `cache_control` in system prompt + datasheet blocks) |
+| 4. Tiered Model Routing | `agent/router.py` + `.env` (`HARDWISE_MODEL_FAST/NORMAL/DEEP`) |
+| 5. Prompt Caching | `agent/prompts.py:build_system_blocks` (cache_control=ephemeral) + `agent/runner.py` token accounting |
 
 ## KiCad file structure notes
 
@@ -154,6 +155,9 @@ uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --mem
 uv run hardwise review data/projects/pic_programmer --rules R003 --db-path /tmp/pic.db
 uv run hardwise ingest-datasheet data/datasheets/l78.pdf --part-ref U3
 uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
+uv run hardwise ask data/projects/pic_programmer "U3 是什么器件？"
+uv run hardwise ask data/projects/pic_programmer "U4 这颗器件有几个 NC 脚？" --max-iterations 6
+uv run hardwise ask data/projects/pic_programmer "找一下 U3 最大输入电压" --vector
 ```
 
 `inspect-kicad` is the first EDA adapter demo: it prints the registry count and the first N sorted components. On `pic_programmer`, it extracts 121 registry items.
@@ -163,6 +167,8 @@ uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
 `ingest-datasheet` chunks a PDF page-by-page and upserts into Chroma at `data/chroma/` (default), tagging every chunk with `part_ref=<refdes>`. `query-datasheet` runs a top-k semantic query and prints `[source_pdf pN part=Ux]` provenance — these are the building blocks for the Slice 4 `datasheet:<pdf>#p<N>` evidence token.
 
 `verify-api --tier {fast,normal,deep}` exercises the `ModelRouter` against the upstream API and prints the resolved model id + token counts.
+
+`ask <project_dir> "<question>"` is the Slice 4 entry point to the agent loop: parses the KiCad project, builds an in-memory SQLite session + registry, optionally opens a Chroma collection (`--vector`), constructs a `Runner`, runs `messages.create(tools=TOOL_DEFINITIONS, ...)` in a finite tool-use loop, and prints the answer + one line per tool call + a token line (including `cache_create/read` when nonzero). Three live runs on pic_programmer with `mimo-v2.5` exercise (1) known-refdes `get_component`, (2) unknown-refdes `get_component → ComponentNotFound` (model honors anti-fabrication), and (3) `get_nc_pins --refdes_filter U4` returning 2 NC pins — all three runs report nonzero `cache_read_input_tokens`.
 
 ## Module explanation template
 
