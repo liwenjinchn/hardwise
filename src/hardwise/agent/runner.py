@@ -46,6 +46,7 @@ from hardwise.agent.tools import (
     list_components,
     search_datasheet,
 )
+from hardwise.guards.refdes import sanitize_args, sanitize_text
 
 MAX_ITERATIONS = 10
 MAX_TOKENS = 2048
@@ -53,16 +54,28 @@ MAX_TOKENS = 2048
 
 @dataclass
 class ToolCallTrace:
-    """One executed tool call: name, input args, short summary of output."""
+    """One executed tool call: name, input args, short summary of output.
+
+    The `input` and `output_summary` fields are user-visible *copies* that have
+    been passed through the refdes guard — unverified refdes are wrapped as
+    `⟨?XXX⟩`. The raw payload returned to the model is kept separately and never
+    sanitized (preserving the tool-fact channel invariant).
+    """
 
     name: str
     input: dict
     output_summary: str
+    wrapped: int = 0
 
 
 @dataclass
 class RunResult:
-    """Outcome of one Runner.run() invocation."""
+    """Outcome of one Runner.run() invocation.
+
+    `text` is the final assistant message after refdes-guard sanitization
+    (user-visible). `text_wrapped` counts unverified refdes that were wrapped
+    in `text`; per-trace wraps live on each `ToolCallTrace.wrapped`.
+    """
 
     text: str
     tool_calls: list[ToolCallTrace] = field(default_factory=list)
@@ -72,6 +85,7 @@ class RunResult:
     cache_creation_tokens: int = 0
     cache_read_tokens: int = 0
     stopped_at_cap: bool = False
+    text_wrapped: int = 0
 
 
 class Runner:
@@ -121,7 +135,10 @@ class Runner:
             tool_uses = [b for b in response.content if getattr(b, "type", None) == "tool_use"]
 
             if not tool_uses:
-                result.text = self._extract_text(response.content)
+                raw_text = self._extract_text(response.content)
+                sanitized, wrapped = sanitize_text(raw_text, self.registry)
+                result.text = sanitized
+                result.text_wrapped = wrapped
                 result.iterations = iteration
                 return result
 
@@ -139,7 +156,12 @@ class Runner:
         return result
 
     def _dispatch(self, tool_use: Any) -> tuple[dict, ToolCallTrace]:
-        """Run one tool call; return (tool_result block, trace entry)."""
+        """Run one tool call; return (tool_result block, trace entry).
+
+        The tool_result block carries the raw payload (model-facing, never
+        sanitized — protects the tool-fact channel). The trace entry is the
+        user-visible copy with refdes-shaped tokens passed through the guard.
+        """
         name = tool_use.name
         args = dict(tool_use.input) if tool_use.input else {}
         try:
@@ -179,7 +201,7 @@ class Runner:
                         "content": json.dumps({"error": summary}),
                         "is_error": True,
                     },
-                    ToolCallTrace(name=name, input=args, output_summary=summary),
+                    self._build_trace(name, args, summary),
                 )
         except Exception as e:  # noqa: BLE001 — surface any tool error to the model
             summary = f"tool error: {type(e).__name__}: {e}"
@@ -190,7 +212,7 @@ class Runner:
                     "content": json.dumps({"error": summary}),
                     "is_error": True,
                 },
-                ToolCallTrace(name=name, input=args, output_summary=summary),
+                self._build_trace(name, args, summary),
             )
 
         return (
@@ -199,7 +221,23 @@ class Runner:
                 "tool_use_id": tool_use.id,
                 "content": payload,
             },
-            ToolCallTrace(name=name, input=args, output_summary=summary),
+            self._build_trace(name, args, summary),
+        )
+
+    def _build_trace(self, name: str, args: dict, summary: str) -> ToolCallTrace:
+        """Assemble a user-visible ToolCallTrace from raw tool inputs/output.
+
+        Sanitizes the args dict and the summary text through the refdes guard so
+        unverified refdes-shaped tokens are wrapped in the copy shown to the user.
+        The raw `args` and `summary` passed in are not mutated.
+        """
+        clean_args, w_args = sanitize_args(args, self.registry)
+        clean_summary, w_sum = sanitize_text(summary, self.registry)
+        return ToolCallTrace(
+            name=name,
+            input=clean_args,
+            output_summary=clean_summary,
+            wrapped=w_args + w_sum,
         )
 
     @staticmethod

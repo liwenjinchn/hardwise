@@ -131,7 +131,11 @@ def test_runner_text_only_returns_text() -> None:
         [FakeResponse(content=[FakeTextBlock(text="U3 是 LM7805 稳压器")])]
     )
     result = runner.run("U3 是什么?")
-    assert result.text == "U3 是 LM7805 稳压器"
+    # LM7805 matches the refdes regex shape (2 letters + 4 digits) but isn't in the
+    # registry — sanitizer wraps it on egress (false-positive on part numbers is the
+    # documented trade-off; under-wrapping would leak hallucinated refdes).
+    assert result.text == "U3 是 ⟨?LM7805⟩ 稳压器"
+    assert result.text_wrapped == 1
     assert result.tool_calls == []
     assert result.iterations == 1
     assert result.input_tokens == 100
@@ -150,7 +154,9 @@ def test_runner_single_tool_use_dispatches_then_text() -> None:
         ]
     )
     result = runner.run("U3 是什么?")
-    assert result.text == "U3 是 LM7805，封装 TO-220"
+    # LM7805 wrapped as a part-number false positive (see test above).
+    assert result.text == "U3 是 ⟨?LM7805⟩，封装 TO-220"
+    assert result.text_wrapped == 1
     assert result.iterations == 2
     assert len(result.tool_calls) == 1
     assert result.tool_calls[0].name == "get_component"

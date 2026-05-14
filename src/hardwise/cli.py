@@ -388,7 +388,6 @@ def ask(
     from hardwise.adapters.kicad import parse_project
     from hardwise.agent.router import ModelRouter
     from hardwise.agent.runner import Runner
-    from hardwise.guards.refdes import sanitize_text
     from hardwise.store.relational import create_store, populate_from_registry
 
     load_dotenv(override=True)
@@ -452,10 +451,9 @@ def ask(
     finally:
         session.close()
 
-    if result.text:
-        answer, wrapped = sanitize_text(result.text, registry)
-    else:
-        answer, wrapped = "(no text returned)", 0
+    answer = result.text if result.text else "(no text returned)"
+    trace_wrapped = sum(tc.wrapped for tc in result.tool_calls)
+    total_wrapped = result.text_wrapped + trace_wrapped
     typer.echo(answer)
     typer.echo("---")
     typer.echo(
@@ -467,7 +465,7 @@ def ask(
             if result.cache_creation_tokens or result.cache_read_tokens
             else ""
         )
-        + (f" | unverified refdes wrapped: {wrapped}" if wrapped else "")
+        + (f" | unverified refdes wrapped: {total_wrapped}" if total_wrapped else "")
         + (" | STOPPED AT CAP" if result.stopped_at_cap else "")
     )
     if show_trace and result.tool_calls:

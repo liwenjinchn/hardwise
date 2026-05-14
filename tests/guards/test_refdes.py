@@ -2,7 +2,7 @@ from pathlib import Path
 
 from hardwise.adapters.base import BoardRegistry, ComponentRecord
 from hardwise.checklist.finding import Finding
-from hardwise.guards.refdes import sanitize_finding, sanitize_text
+from hardwise.guards.refdes import sanitize_args, sanitize_finding, sanitize_text
 
 
 def _registry(refdes_list: list[str]) -> BoardRegistry:
@@ -77,3 +77,23 @@ def test_sanitize_finding_passthrough_when_all_verified() -> None:
     assert wrapped == 0
     assert sanitized.refdes == "U7"
     assert "⟨" not in sanitized.message
+
+
+def test_sanitize_args_wraps_string_values_only() -> None:
+    reg = _registry(["U3"])
+    args = {"refdes": "U999", "top_k": 5, "query": "U3 pin function", "filter": None}
+
+    sanitized, wrapped = sanitize_args(args, reg)
+
+    assert sanitized["refdes"] == "⟨?U999⟩"
+    assert sanitized["query"] == "U3 pin function"  # U3 verified, untouched
+    assert sanitized["top_k"] == 5  # non-string passthrough
+    assert sanitized["filter"] is None
+    assert wrapped == 1
+
+
+def test_sanitize_args_empty_dict() -> None:
+    reg = _registry(["U1"])
+    sanitized, wrapped = sanitize_args({}, reg)
+    assert sanitized == {}
+    assert wrapped == 0

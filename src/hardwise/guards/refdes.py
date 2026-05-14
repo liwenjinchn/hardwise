@@ -35,6 +35,26 @@ def sanitize_text(text: str, registry: BoardRegistry) -> tuple[str, int]:
     return REFDES_PATTERN.sub(_wrap, text), wrapped
 
 
+def sanitize_args(args: dict, registry: BoardRegistry) -> tuple[dict, int]:
+    """Wrap unverified refdes in string-valued fields of a tool-args dict.
+
+    Used when assembling user-visible *copies* of tool calls (e.g. `ToolCallTrace.input`).
+    The tool itself sees the raw, untouched `args` — this function only sanitizes the
+    display copy. Non-string values pass through unchanged.
+    """
+
+    wrapped_total = 0
+    new_args: dict = {}
+    for key, value in args.items():
+        if isinstance(value, str):
+            new_value, wrapped = sanitize_text(value, registry)
+            new_args[key] = new_value
+            wrapped_total += wrapped
+        else:
+            new_args[key] = value
+    return new_args, wrapped_total
+
+
 def sanitize_finding(f: Finding, registry: BoardRegistry) -> tuple[Finding, int]:
     """Apply the refdes guard to every text-bearing field of a Finding.
 
