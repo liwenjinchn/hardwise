@@ -54,6 +54,12 @@
 
 **v1.0 target (Slice 4)**: 一条真实 R003 finding 跨双库取证——`sch:` 和 `datasheet:` 两个 token 同时出现在 evidence_tokens 列表里，证明 NC pin handling 与 datasheet 规格一致或不一致。
 
+**v4.0 (R003 datasheet closure shipped — DR-009)**: R003 现在按 DR-009 写两个新字段——结构化 `evidence_chain: list[EvidenceStep]` + 机器判断 `decision`，跟流程状态 `status` 严格分离。`hardwise review pic_programmer --rules R003 --vector` 在 77 个 NC pin 上跑 R003 闭环：每条 finding 都先按 refdes → `component.value` 推 part_ref，按 `pin {N} {name}` 做向量检索，得到 hits 后用 `\bpin\s*N\b` + `\b(NC|no.connect|not connected)\b` 两个正则在 hit 文本里筛 → 命中 NC 关键词 = `likely_ok`；命中 pin 但无 NC 关键词 = `likely_issue`；无相关命中 = `reviewer_to_confirm`。
+
+`pic_programmer` 当前 Chroma 只有 L78 datasheet (part_ref="U3", 157 chunks)，而 U3 是 3 pin 稳压器无 NC pin；77 条真实 NC pin 都在 U4/J1 等没 ingest datasheet 的器件上 → R003 全部输出 `decision=reviewer_to_confirm` + evidence_chain 只含 EDA step。这是**结构上正确的诚实输出**：没有可用证据时不瞎判，等 reviewer 上手。**单元测试**里有人造的 likely_ok / likely_issue / reviewer_to_confirm 三条 path，证明启发式在三个分支都按预期分类（`tests/checklist/test_r003.py` 17 项）。
+
+设计上两个关键决策写进 DR-009：(a) `decision` 与 `status` 分离——一个 finding 可以同时 `decision=likely_ok`（机器结论）+ `status=open`（人没看）+ 之后 `status=rejected`（人否决机器），三值都能并存；(b) `EvidenceStep.source: Literal['eda','datasheet','rule']` 用 Literal 把证据通道收敛到三个真实通道，杜绝后人加 `'intuition'` 类的非证据来源。
+
 ---
 
 ## Q4. Agent 有哪些工具？为什么不让模型自由回答？

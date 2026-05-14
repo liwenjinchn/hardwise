@@ -140,6 +140,21 @@ def review(
             "env var to any SQLAlchemy URL (e.g. postgresql+psycopg2://...)."
         ),
     ),
+    use_vector: bool = typer.Option(
+        False,
+        "--vector/--no-vector",
+        help=(
+            "Enable datasheet evidence chain for R003 (queries the local "
+            "Chroma store for NC-pin hits, attaches evidence_chain + decision "
+            "to findings). Off by default — turn on after `ingest-datasheet` "
+            "has populated chunks for the relevant parts."
+        ),
+    ),
+    persist_dir: Path = typer.Option(
+        Path("data/chroma"),
+        "--persist-dir",
+        help="Chroma persistence directory (only used with --vector).",
+    ),
 ) -> None:
     """Run a schematic review on a KiCad project and write a report."""
     from datetime import datetime, timezone
@@ -180,10 +195,18 @@ def review(
         )
         raise typer.Exit(1) from e
 
+    collection = None
+    if use_vector:
+        from hardwise.store.vector import create_collection
+
+        collection = create_collection(persist_dir)
+
     rule_dispatch = {
         "R001": lambda: check_r001(registry.schematic_records),
         "R002": lambda: check_r002(registry.schematic_records),
-        "R003": lambda: check_r003(registry.nc_pins),
+        "R003": lambda: check_r003(
+            registry.nc_pins, registry=registry, collection=collection
+        ),
     }
 
     findings: list[Finding] = []

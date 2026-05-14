@@ -53,11 +53,23 @@ def render(findings: list[Finding], project_meta: dict[str, Any]) -> str:
     )
     lines.append("|---|---|---|---|---|---|---|---|---|")
     for i, f in enumerate(findings, start=1):
-        evidence = "<br>".join(f.evidence_tokens) if f.evidence_tokens else "—"
+        # Evidence column: prefer the structured chain when populated (DR-009),
+        # fall back to legacy evidence_tokens otherwise.
+        if f.evidence_chain:
+            evidence_parts = [
+                f"[{step.source}] {step.claim} `{step.token}`" for step in f.evidence_chain
+            ]
+            evidence = "<br>".join(evidence_parts)
+        else:
+            evidence = "<br>".join(f.evidence_tokens) if f.evidence_tokens else "—"
         refdes = f.refdes if f.refdes else "—"
         net = f.net if f.net else "—"
         suggested = f.suggested_action if f.suggested_action else "—"
-        message = _escape_pipe(f.message)
+        # When the rule recorded a decision (likely_ok / likely_issue /
+        # reviewer_to_confirm), prefix it onto the message so reviewers see the
+        # rule-side verdict alongside the description.
+        message = f"**[{f.decision}]** {f.message}" if f.decision else f.message
+        message = _escape_pipe(message)
         suggested = _escape_pipe(suggested)
         evidence = _escape_pipe(evidence)
         lines.append(
