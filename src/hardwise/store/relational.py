@@ -16,10 +16,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from hardwise.adapters.base import BoardRegistry, ComponentRecord, NcPinRecord
+from hardwise.adapters.base import (
+    BoardRegistry,
+    ComponentRecord,
+    NcPinRecord,
+    NetMemberRecord,
+    PcbNetRecord,
+)
 
 
 class Base(DeclarativeBase):
@@ -47,6 +53,25 @@ class NcPinRow(Base):
     pin_name = Column(String, default="")
     pin_electrical_type = Column(String, default="")
     source_file = Column(String, default="")
+
+
+class PcbNetRow(Base):
+    __tablename__ = "pcb_nets"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=False, index=True)
+    source_file = Column(String, default="")
+
+
+class PcbNetMemberRow(Base):
+    __tablename__ = "pcb_net_members"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    net_id = Column(
+        Integer, ForeignKey("pcb_nets.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    refdes = Column(String, nullable=False, index=True)
+    pad = Column(String, default="")
 
 
 def _resolve_url(value: str | Path) -> str:
@@ -79,11 +104,15 @@ def create_store(db_url_or_path: str | Path) -> Session:
 
 
 def populate_from_registry(session: Session, registry: BoardRegistry) -> tuple[int, int]:
-    """Insert components and NC pins from the registry.
+    """Insert components, NC pins, and PCB nets from the registry.
 
-    Truncates both tables first so repeated runs are idempotent. Returns
-    `(components_inserted, nc_pins_inserted)`.
+    Truncates the component, NC-pin, pcb-net, and pcb-net-member tables
+    first so repeated runs are idempotent. Returns ``(components_inserted,
+    nc_pins_inserted)``; PCB-net counts are queryable via
+    ``query_pcb_nets``.
     """
+    session.query(PcbNetMemberRow).delete()
+    session.query(PcbNetRow).delete()
     session.query(ComponentRow).delete()
     session.query(NcPinRow).delete()
 
@@ -108,6 +137,12 @@ def populate_from_registry(session: Session, registry: BoardRegistry) -> tuple[i
                 source_file=str(p.source_file),
             )
         )
+    for n in registry.pcb_nets:
+        net_row = PcbNetRow(name=n.name, source_file=str(n.source_file))
+        session.add(net_row)
+        session.flush()
+        for m in n.members:
+            session.add(PcbNetMemberRow(net_id=net_row.id, refdes=m.refdes, pad=m.pad))
     session.commit()
     return (len(registry.components), len(registry.nc_pins))
 
@@ -140,4 +175,26 @@ def query_nc_pins(session: Session) -> list[NcPinRecord]:
             source_file=Path(r.source_file or ""),
         )
         for r in rows
+    ]
+
+
+def query_pcb_nets(session: Session) -> list[PcbNetRecord]:
+    """Read PCB nets back as PcbNetRecord objects with their pad members."""
+    net_rows = session.query(PcbNetRow).order_by(PcbNetRow.name).all()
+    members_by_net: dict[int, list[NetMemberRecord]] = {}
+    for m in (
+        session.query(PcbNetMemberRow)
+        .order_by(PcbNetMemberRow.refdes, PcbNetMemberRow.pad)
+        .all()
+    ):
+        members_by_net.setdefault(m.net_id, []).append(
+            NetMemberRecord(refdes=m.refdes, pad=m.pad or "")
+        )
+    return [
+        PcbNetRecord(
+            name=r.name,
+            members=members_by_net.get(r.id, []),
+            source_file=Path(r.source_file or ""),
+        )
+        for r in net_rows
     ]

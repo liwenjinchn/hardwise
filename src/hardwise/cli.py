@@ -75,9 +75,27 @@ def verify_api(
 def inspect_kicad(
     project_dir: Path = typer.Argument(..., help="Path to a KiCad project directory."),
     limit: int = typer.Option(20, "--limit", "-n", help="Number of components to print."),
+    show_nets: bool = typer.Option(
+        False,
+        "--net",
+        help=(
+            "Print PCB-side net summary instead of components. Reads from .kicad_pcb; "
+            "this is a diagnostic on already-laid-out projects, not pre-Layout "
+            "schematic-review evidence. Defaults to signal nets only (KiCad's auto "
+            "unconnected-(Ref-Pad) entries hidden); pass --all-nets for the full count."
+        ),
+    ),
+    all_nets: bool = typer.Option(
+        False,
+        "--all-nets",
+        help=(
+            "With --net, include unconnected-(Ref-Pad) entries so the count matches "
+            "KiCad's PCB Net Inspector. No effect without --net."
+        ),
+    ),
 ) -> None:
     """Parse a KiCad project and print the initial refdes registry."""
-    from hardwise.adapters.kicad import parse_project
+    from hardwise.adapters.kicad import parse_project, pcb_signal_nets
 
     try:
         registry = parse_project(project_dir)
@@ -87,6 +105,27 @@ def inspect_kicad(
 
     typer.echo(f"project: {registry.project_dir}")
     typer.echo(f"components: {len(registry.components)}")
+    if show_nets:
+        all_count = len(registry.pcb_nets)
+        signal = pcb_signal_nets(registry.pcb_nets)
+        unconnected = all_count - len(signal)
+        typer.echo(
+            f"pcb nets: {len(signal)} signal "
+            f"(+{unconnected} unconnected = {all_count} total in PCB)"
+        )
+        typer.echo("source: .kicad_pcb (post-Layout fact; not pre-Layout review evidence)")
+        nets_to_show = registry.pcb_nets if all_nets else signal
+        note = (
+            "showing all PCB nets (use without --all-nets for signal-only)"
+            if all_nets
+            else "showing PCB signal nets only (pass --all-nets to include unconnected-*)"
+        )
+        typer.echo(note)
+        typer.echo("")
+        top = sorted(nets_to_show, key=lambda n: (-len(n.members), n.name))[:limit]
+        for net in top:
+            typer.echo(f"{net.name:32} {len(net.members):4d} members")
+        return
     typer.echo("")
     for component in registry.components[:limit]:
         footprint = component.footprint or "-"
@@ -204,9 +243,7 @@ def review(
     rule_dispatch = {
         "R001": lambda: check_r001(registry.schematic_records),
         "R002": lambda: check_r002(registry.schematic_records),
-        "R003": lambda: check_r003(
-            registry.nc_pins, registry=registry, collection=collection
-        ),
+        "R003": lambda: check_r003(registry.nc_pins, registry=registry, collection=collection),
     }
 
     findings: list[Finding] = []
