@@ -8,6 +8,35 @@
 
 ---
 
+## 2026-05-15 · Slice 5 task 3 · "net parser" 实际读的是 `.kicad_pcb`，与 pre-Layout 评审锚点冲突——降级为 PCB-side diagnostic
+
+**Symptom**
+
+按 Slice 5 task 3 的工单实现了 `parse_nets()` + `BoardRegistry.nets` + SQLite `nets/net_members` + `inspect-kicad --net`，跑 `pic_programmer` 输出 111 nets（34 signal + 77 unconnected），ruff/pytest 全绿。功能上完全正常。但写完准备登记 docs 时被一句话拦下：「评审阶段还没有 pcb 文件」。一翻代码，`parse_nets()` 里 `for pcb_path in sorted(project_dir.glob("*.kicad_pcb"))` 写得明明白白——这个 parser 的输入是 `.kicad_pcb`，是已布完线的 PCB 文件。
+
+**Root cause**
+
+把 KiCad demo 项目的「项目目录里碰巧 PCB 已经画完」当成了 schematic-review 节点的合法输入。CLAUDE.md 的 Hard rule #5 明文写「Demo anchor: schematic-review node only ... 任何 cross-node feature ... 是 out of scope」，`docs/review_node.md` 也定义了节点输入只有 `.kicad_sch` + datasheet + checklist。但 demo 数据集 `pic_programmer` 里 `.kicad_sch` 和 `.kicad_pcb` 同时存在——不写一行话明确「parser 拒绝读 `.kicad_pcb`」，就会自动顺着 KiCad 文件结构走最容易解析的那一面（PCB 里 net 是显式聚合好的；schematic 里 net 是 wire + label + hierarchical label + symbol pin endpoint 拓扑推断出来的，难度高一个量级）。
+
+**HW analogy**：QA 阶段还没有第一版 PCB，但工程师拿到了上一版的 layout 数据，于是用它「先验证一下 net 拓扑工具好不好用」——工具确实能跑，但 QA 流程的合法证据来源被悄悄掉包了，下游谁拿这份「net 拓扑结论」去查 R005 dangling-net 都是无效证据。
+
+**Fix**
+
+不删现有实现——它对「已完成 KiCad 项目的 PCB 网络读取 / SQLite round-trip 证明」是有价值的。但立刻降级它的叙事地位、改名防止误用：
+
+- `parse_nets` → `parse_pcb_nets`，docstring 显式标「Not valid as pre-Layout schematic-review evidence」
+- `NetRecord` → `PcbNetRecord`；`BoardRegistry.nets` → `pcb_nets`（为未来 `schematic_nets` 留位）
+- SQL 表 `nets / net_members` → `pcb_nets / pcb_net_members`；`query_nets` → `query_pcb_nets`
+- `signal_nets` / `is_unconnected_net` → `pcb_signal_nets` / `is_unconnected_pcb_net`
+- CLI `inspect-kicad --net` 的 header 加一行 `source: .kicad_pcb (post-Layout fact; not pre-Layout review evidence)`
+- `docs/rolling_log.md` 把 R005 dangling-net 的前置条件改成「需要 schematic net parser（wire + local/global label + hierarchical label + symbol pin endpoint 解析）」，不能凭 PCB-side 数据上 R005
+
+**Takeaway**
+
+Pre-Layout 评审节点的合法证据来源**只有** `.kicad_sch` / datasheet / checklist。任何新 parser 写完前先问一句「这个 parser 读的是哪个文件后缀？是不是评审节点那一刻能拿到的？」KiCad demo 项目「碰巧 PCB 已画完」是数据集污染，不是输入合法性的依据。CLAUDE.md 里 Hard rule #5 加一句「pre-Layout 评审证据只能来自 `.kicad_sch` / datasheet / checklist」会更难走错——但 CLAUDE.md 是 reference 不是 changelog，本身已经隐含了这条，更落地的做法是任何 PCB-side parser 函数名都带 `pcb_` 前缀，让命名层就拒绝混淆。
+
+---
+
 ## 2026-05-14 · Slice 5 prep · R003 datasheet 闭环上线后，77 条 finding 全部 `reviewer_to_confirm`——这是对的
 
 **Symptom**
