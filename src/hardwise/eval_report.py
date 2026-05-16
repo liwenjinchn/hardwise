@@ -9,6 +9,7 @@ def render_eval_html(summary: Any) -> str:
     """Render a small self-contained eval summary."""
 
     rows = "\n".join(_render_result_row(r) for r in summary.results)
+    guardrail_section = _render_guardrail_section(summary.unverified_refdes_samples)
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -54,6 +55,7 @@ def render_eval_html(summary: Any) -> str:
         {rows}
       </tbody>
     </table>
+    {guardrail_section}
   </main>
 </body>
 </html>
@@ -75,6 +77,18 @@ def _render_result_row(result: Any) -> str:
         f"<td>{_esc(result.error or '')}</td>"
         "</tr>"
     )
+
+
+def _render_guardrail_section(samples: list[str]) -> str:
+    if not samples:
+        return ""
+    items = "\n".join(f"<li><code>{_esc(sample)}</code></li>" for sample in samples)
+    return f"""
+    <section>
+      <h2>Guardrail Samples</h2>
+      <ul>{items}</ul>
+    </section>
+"""
 
 
 def _esc(value: Any) -> str:

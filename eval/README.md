@@ -41,3 +41,15 @@ The comparison gate is intentionally narrow for MVP. It fails on parser/project
 failures, new unverified refdes wrapping, or newly dropped unsupported findings.
 Finding-count changes are reported as observations because a useful rule change
 can legitimately add or remove findings.
+
+Current public smoke result:
+
+- 5 public repos from `eval/manifest.yaml`
+- 16 discovered KiCad project directories
+- 1707 parsed components
+- 437 deterministic findings
+- 0 project failures
+- 0 unverified refdes wrapped
+- 0 findings dropped for missing evidence
+
+Treat these as harness health metrics, not expert correctness scores.

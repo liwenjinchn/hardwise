@@ -43,6 +43,10 @@ packages = ["src/hardwise"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+exclude = [
+    "eval/projects",
+    "reports/eval",
+]
 
 [tool.pytest.ini_options]
 markers = [

@@ -64,6 +64,29 @@ def test_sanitize_text_leaves_multi_function_pin_names_untouched() -> None:
     assert wrapped == 0
 
 
+def test_sanitize_text_leaves_connector_nc_pin_list_untouched() -> None:
+    reg = _registry(["J1"])
+    out, wrapped = sanitize_text(
+        "J1 has 1 NC pins (A4) on a connector-like part", reg
+    )
+
+    assert "A4" in out
+    assert "⟨?" not in out
+    assert wrapped == 0
+
+
+def test_sanitize_text_leaves_alphanumeric_pin_numbers_untouched() -> None:
+    reg = _registry(["XA1"])
+    out, wrapped = sanitize_text(
+        "XA1 pin A4 (A4) and XA1 pin GND3 (GND) marked NC", reg
+    )
+
+    assert "A4" in out
+    assert "GND3" in out
+    assert "⟨?" not in out
+    assert wrapped == 0
+
+
 def test_sanitize_finding_wraps_message_action_and_refdes_field() -> None:
     reg = _registry(["U23"])
     f = Finding(

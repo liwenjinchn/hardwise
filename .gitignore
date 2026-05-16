@@ -42,7 +42,12 @@ data/chroma/
 # Generated reports — local outputs
 reports/*.md
 reports/*.html
+reports/eval/
 !reports/.gitkeep
+
+# Eval corpus checkouts — public but large/generated locally
+eval/projects/
+eval/baselines/*.json
 
 # Sleep Consolidator output — local candidate-rule pool, never auto-promoted.
 # `memory/rules.md` is generated at runtime; do not commit a project's worth

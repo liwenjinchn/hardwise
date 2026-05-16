@@ -639,3 +639,65 @@ a non-existent perfect gold dataset. The eval pack should be presented as a reli
 and noise-control harness first; expert correctness can be a later tier.
 
 ---
+
+## 2026-05-16 · Harness surfaced connector pin names that look like refdes
+
+**Symptom**
+
+The first external eval smoke on `Jana-Marie/analog-toolkit` passed structurally, but
+reported `unverified_refdes_wrapped=1`. The wrapped token came from an R003 connector
+summary: `J1 has 1 NC pins (A4) ...`, where `A4` is a connector pin name, not a
+component reference designator.
+
+**Root cause**
+
+Refdes Guard correctly scans broad tokens like `A4`, because real designs can use short
+reference designators. But connector pin naming also commonly uses row/position names
+like `A4` or `B7`. The earlier pin-name bypass only covered IC-style forms such as
+`pin 17 (RA0)` and missed generated NC pin-list summaries.
+
+**Fix**
+
+The pin-name context filter now also treats tokens inside generated `NC pins (...)`
+parentheticals as pin names, and recognizes alphanumeric pin identifiers in forms like
+`pin A4 (A4)` / `pin GND3 (GND)`. Eval summaries also carry
+`unverified_refdes_samples`, so a future nonzero guardrail count points directly to the
+offending finding instead of requiring ad hoc reproduction.
+
+**Verification**
+
+Full public-corpus smoke (`eval/manifest.yaml`, 5 repos / 16 discovered KiCad project
+directories) passed structurally: 1707 components parsed, 231 NC pins, 437 findings,
+`unverified_refdes_wrapped=0`, `findings_dropped_no_evidence=0`.
+
+**Takeaway**
+
+This is exactly what the eval harness should do: expose a real integration boundary, not
+just print a bigger-looking score. Guardrail metrics need examples attached, otherwise
+they are not actionable for engineering review.
+
+---
+
+## 2026-05-16 · Eval corpus checkouts must not enter repo lint scope
+
+**Symptom**
+
+After downloading the public eval corpus under `eval/projects`, `uv run ruff check .`
+started reporting lint errors from third-party files inside the checked-out projects.
+
+**Root cause**
+
+The eval corpus is input data for Hardwise, not source code owned by this repo. Running
+repo lint over those checkouts conflates upstream project style with Hardwise quality.
+
+**Fix**
+
+Ignored local eval checkouts and generated eval reports in `.gitignore`, and added
+`eval/projects` / `reports/eval` to Ruff's exclude list.
+
+**Takeaway**
+
+Harness artifacts need their own boundary. Public corpus data should be reproducible and
+pinned, but it should not become part of the product's lint/test ownership surface.
+
+---

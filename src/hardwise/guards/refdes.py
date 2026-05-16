@@ -43,6 +43,10 @@ def _looks_like_pin_name(text: str, start: int, end: int) -> bool:
     Handles both single-function pins `(RA0)` and multi-function pins `(GP4/OSC2)`.
     """
 
+    direct_prefix = text[max(0, start - 8) : start]
+    if re.search(r"\bpin\s*$", direct_prefix, re.IGNORECASE):
+        return True
+
     # Look backward for the opening paren and forward for the closing paren
     open_paren = text.rfind("(", 0, start)
     close_paren = text.find(")", end)
@@ -50,9 +54,14 @@ def _looks_like_pin_name(text: str, start: int, end: int) -> bool:
     if open_paren == -1 or close_paren == -1:
         return False
 
-    # Check if there's a "pin N" pattern before the opening paren
+    # Check if there's a "pin N/name" pattern before the opening paren
     prefix = text[max(0, open_paren - 18) : open_paren]
-    return bool(re.search(r"\bpin\s+\d+\s*$", prefix, re.IGNORECASE))
+    if re.search(r"\bpin\s+[A-Z0-9_/-]+\s*$", prefix, re.IGNORECASE):
+        return True
+
+    # Connector pin names can be alphanumeric (`A4`, `B7`) and appear in
+    # generated R003 connector summaries as `NC pins (A4, B7)`.
+    return bool(re.search(r"\bNC\s+pins?\s*$", prefix, re.IGNORECASE))
 
 
 def sanitize_args(args: dict, registry: BoardRegistry) -> tuple[dict, int]:

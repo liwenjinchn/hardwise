@@ -61,6 +61,7 @@ class EvalProjectResult(BaseModel):
     findings_by_severity: dict[str, int] = Field(default_factory=dict)
     findings_by_decision: dict[str, int] = Field(default_factory=dict)
     unverified_refdes_wrapped: int = 0
+    unverified_refdes_samples: list[str] = Field(default_factory=list)
     findings_dropped_no_evidence: int = 0
     error: str | None = None
 
@@ -85,6 +86,7 @@ class EvalRunSummary(BaseModel):
     findings_by_severity: dict[str, int] = Field(default_factory=dict)
     findings_by_decision: dict[str, int] = Field(default_factory=dict)
     unverified_refdes_wrapped: int
+    unverified_refdes_samples: list[str] = Field(default_factory=list)
     findings_dropped_no_evidence: int
     results: list[EvalProjectResult]
 
@@ -236,11 +238,16 @@ def _run_one_project(project_dir: Path, repo_name: str, rules: list[str]) -> Eva
 
         findings, dropped = strip_unsupported(findings)
         wrapped_total = 0
+        wrapped_samples: list[str] = []
         sanitized: list[Finding] = []
         for finding in findings:
             sanitized_finding, wrapped = sanitize_finding(finding, registry)
             sanitized.append(sanitized_finding)
             wrapped_total += wrapped
+            if wrapped:
+                wrapped_samples.append(
+                    f"{finding.rule_id} {finding.refdes}: {sanitized_finding.message}"
+                )
 
         decisions = Counter(f.decision for f in sanitized if f.decision is not None)
         return EvalProjectResult(
@@ -254,6 +261,7 @@ def _run_one_project(project_dir: Path, repo_name: str, rules: list[str]) -> Eva
             findings_by_severity=dict(Counter(f.severity for f in sanitized)),
             findings_by_decision=dict(decisions),
             unverified_refdes_wrapped=wrapped_total,
+            unverified_refdes_samples=wrapped_samples[:10],
             findings_dropped_no_evidence=dropped,
         )
     except Exception as e:  # noqa: BLE001
@@ -294,6 +302,9 @@ def _build_summary(
         findings_by_severity=dict(severity_counts),
         findings_by_decision=dict(decision_counts),
         unverified_refdes_wrapped=sum(r.unverified_refdes_wrapped for r in passed),
+        unverified_refdes_samples=[
+            sample for result in passed for sample in result.unverified_refdes_samples
+        ][:20],
         findings_dropped_no_evidence=sum(r.findings_dropped_no_evidence for r in passed),
         results=results,
     )

@@ -28,6 +28,7 @@ def test_run_eval_against_local_project(tmp_path: Path) -> None:
     assert outputs.summary.findings_by_rule["R002"] == 7
     assert "R003" in outputs.summary.findings_by_rule
     assert outputs.summary.unverified_refdes_wrapped == 0
+    assert outputs.summary.unverified_refdes_samples == []
     assert outputs.summary_path.exists()
     assert outputs.html_path.exists()
 
