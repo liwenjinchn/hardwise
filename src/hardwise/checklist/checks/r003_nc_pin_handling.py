@@ -182,9 +182,9 @@ def check(
                     for h in raw_hits
                     if (h.get("metadata") or {}).get("part_ref") == part_ref
                 ]
-                # If part_ref filtering nukes every hit, fall back to unfiltered
-                # so reviewer_to_confirm still surfaces something to look at.
-                hits = filtered or raw_hits
+                # Do not fall back to other parts: a "pin 8" hit from a different
+                # datasheet is worse than no datasheet evidence at all.
+                hits = filtered
             else:
                 hits = raw_hits
 

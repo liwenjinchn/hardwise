@@ -195,7 +195,7 @@ def test_no_relevant_pin_hit_yields_reviewer_to_confirm() -> None:
 
 
 def test_part_ref_filter_drops_other_parts() -> None:
-    """Hit for a different part is filtered out, falls back to no part-match → reviewer."""
+    """Hit for a different part must not classify the current refdes."""
     coll = _FakeCollection(
         [
             {
@@ -207,10 +207,9 @@ def test_part_ref_filter_drops_other_parts() -> None:
     findings = check(
         [_nc_pin("U1", "2")], registry=_registry(component_value="LM7805"), collection=coll
     )
-    # Part_ref filter rules out the only hit; fallback path takes unfiltered
-    # hits; that single unfiltered hit mentions "pin 2" + "NC" so we get likely_ok.
-    # This documents the part_ref fallback behavior (see _classify docstring).
-    assert findings[0].decision == "likely_ok"
+    assert findings[0].decision == "reviewer_to_confirm"
+    assert len(findings[0].evidence_chain) == 1
+    assert findings[0].evidence_chain[0].source == "eda"
 
 
 def test_classify_caps_at_three_datasheet_steps() -> None:
