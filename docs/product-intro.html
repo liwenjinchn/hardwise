@@ -109,7 +109,62 @@
       background: rgba(15, 74, 58, .10);
       filter: blur(30px);
     }
-    .poster img { display: block; width: 100%; border: 1px solid rgba(18, 21, 20, .08); border-radius: 28px; box-shadow: var(--shadow); }
+    .mock-card {
+      display: grid;
+      gap: 20px;
+      width: 100%;
+      min-height: 420px;
+      padding: 24px;
+      border: 1px solid rgba(18, 21, 20, .08);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .78);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+    .mock-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .mock-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+    .mock-pill { padding: 6px 10px; border: 1px solid var(--hairline); border-radius: 999px; color: var(--muted); font-size: 12px; }
+    .mock-body { display: grid; grid-template-columns: .74fr 1fr .72fr; gap: 14px; min-height: 250px; }
+    .mock-rail, .mock-review { padding: 14px; border: 1px solid var(--hairline); border-radius: 18px; background: rgba(248, 250, 247, .76); }
+    .mock-rail { display: grid; align-content: start; gap: 12px; color: var(--muted); font-size: 13px; }
+    .mock-rail span { padding: 10px 12px; border-radius: 12px; }
+    .mock-rail span:first-child { background: #e9f1ed; color: var(--green); font-weight: 700; }
+    .mock-schematic {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--hairline);
+      border-radius: 18px;
+      background:
+        linear-gradient(90deg, rgba(15, 74, 58, .12) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(15, 74, 58, .10) 1px, transparent 1px),
+        #fffdf8;
+      background-size: 28px 28px;
+    }
+    .chip {
+      position: absolute;
+      inset: 28% 22%;
+      display: grid;
+      place-items: center;
+      border: 2px solid rgba(15, 74, 58, .45);
+      border-radius: 8px;
+      background: #eff6f2;
+      color: var(--green);
+      font-family: var(--mono);
+      font-weight: 800;
+    }
+    .wire { position: absolute; height: 2px; background: rgba(15, 74, 58, .42); }
+    .wire.w1 { left: 8%; right: 63%; top: 35%; }
+    .wire.w2 { left: 62%; right: 8%; top: 35%; }
+    .wire.w3 { left: 18%; right: 18%; top: 62%; }
+    .part { position: absolute; color: var(--muted); font: 12px/1 var(--mono); }
+    .part.c2 { left: 10%; top: 24%; }
+    .part.u4 { left: 43%; top: 47%; color: var(--green); font-weight: 800; }
+    .part.r11 { right: 14%; bottom: 20%; }
+    .mock-review { display: grid; align-content: start; gap: 10px; }
+    .mock-review h3 { margin: 0; font-size: 16px; }
+    .finding-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px; border: 1px solid var(--hairline); border-radius: 12px; background: #fff; font-size: 13px; }
+    .finding-row b { color: var(--green); }
+    .finding-row em { color: var(--copper); font-style: normal; font-size: 12px; }
     .metrics {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -185,7 +240,8 @@
       .hero-inner, .cards, .demo { grid-template-columns: 1fr; }
       .copy { max-width: none; }
       .metrics { grid-template-columns: repeat(2, 1fr); margin-top: 12px; padding: 0; }
-      .poster img { border-radius: 22px; }
+      .mock-card { border-radius: 22px; }
+      .mock-body { grid-template-columns: 1fr; }
       .bubble { max-width: 100%; }
       .footer-note { flex-direction: column; }
     }
@@ -221,10 +277,38 @@
         </div>
 
         <div class="poster" aria-label="Hardwise 产品海报">
-          <img src="./assets/hardwise-product-card.png" alt="Hardwise 原理图检视 AI Agent 产品介绍卡片">
+          <div class="mock-card" aria-label="Hardwise 原理图检视 AI Agent 产品介绍卡片">
+            <div class="mock-top">
+              <div class="mock-brand"><span class="mark">⌁</span><span>Hardwise</span></div>
+              <span class="mock-pill">公开 KiCad demo</span>
+            </div>
+            <div class="mock-body">
+              <div class="mock-rail">
+                <span>工程概览</span>
+                <span>器件检视</span>
+                <span>NC 脚位</span>
+                <span>证据定位</span>
+              </div>
+              <div class="mock-schematic" aria-hidden="true">
+                <span class="wire w1"></span>
+                <span class="wire w2"></span>
+                <span class="wire w3"></span>
+                <span class="chip">U4</span>
+                <span class="part c2">C2 220uF</span>
+                <span class="part u4">FB- / S/S</span>
+                <span class="part r11">R11 10k</span>
+              </div>
+              <div class="mock-review">
+                <h3>检视清单</h3>
+                <div class="finding-row"><b>U4 NC 脚</b><em>需确认</em></div>
+                <div class="finding-row"><b>C2 耐压字段</b><em>需补充</em></div>
+                <div class="finding-row"><b>连接器 NC</b><em>已聚合</em></div>
+              </div>
+            </div>
+          </div>
           <div class="metrics" aria-label="样例工程结果">
             <div class="metric"><strong>121</strong><span>个器件</span></div>
-            <div class="metric"><strong>84</strong><span>条检视意见</span></div>
+            <div class="metric"><strong>28</strong><span>条检视意见</span></div>
             <div class="metric"><strong>77</strong><span>个 NC 脚位</span></div>
             <div class="metric"><strong>逐条</strong><span>证据定位</span></div>
           </div>

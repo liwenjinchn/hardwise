@@ -16,7 +16,7 @@ uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --for
 样例输出摘要：
 
 ```text
-report: reports/pic_programmer-YYYYMMDD.html (84 findings, 121 components reviewed)
+report: reports/pic_programmer-YYYYMMDD.html (28 findings, 121 components reviewed)
 store:  reports/pic_programmer.db (121 components, 77 NC pins)
 consolidator: 2 candidate rule(s) appended to memory/rules.md
 ```
@@ -34,7 +34,7 @@ consolidator: 2 candidate rule(s) appended to memory/rules.md
 | 指标 | demo 结果 | 意义 |
 |---|---:|---|
 | Components reviewed | 121 | 从 KiCad 工程真实解析，不是手填样例 |
-| Findings | 84 | 7 条电容耐压字段检查 + 77 条 NC pin 复核 |
+| Findings | 28 | 6 条电容耐压字段检查 + 22 条 NC pin 复核；连接器/插座类批量 NC 已聚合降噪 |
 | NC pins | 77 | 用 no-connect 坐标反查到具体 refdes/pin |
 | Evidence tokens | 每条 finding 至少 1 个 | 支撑“无证据不输出” |
 | Sanitizer | 未验证位号会包成 `⟨?U999⟩` | 防止模型幻觉流到报告 |

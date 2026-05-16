@@ -3,7 +3,7 @@
 Covers:
   - Both rules dispatched and reflected in the report
   - R002 finding counts match the real pic_programmer schematic data
-    (6 medium + 1 info for caps; C4="0" skipped)
+    (6 medium missing-voltage findings; C3 has /V and C4="0" is skipped)
   - Sleep Consolidator appends a candidate rule to a tmp file when triggered
   - `--no-consolidate` and `--memory-output` switches behave as documented
 
@@ -41,19 +41,20 @@ def test_slice2_review_writes_r001_r002_report_and_consolidates(tmp_path: Path) 
     )
 
     assert result.exit_code == 0, result.output
-    assert "7 findings" in result.output, result.output
+    assert "6 findings" in result.output, result.output
     assert "121 components reviewed" in result.output, result.output
     assert "consolidator: 1 candidate rule(s) appended" in result.output, result.output
     assert f"trace: {tmp_path / 'trace.jsonl'}" in result.output
 
     md = report_path.read_text(encoding="utf-8")
     assert "Rules run | R001, R002" in md
-    assert "Findings | 7" in md
+    assert "Findings | 6" in md
     # All 6 medium-severity caps appear in the report.
     for refdes in ["C1", "C2", "C5", "C6", "C7", "C9"]:
         assert refdes in md, f"{refdes} should appear in the R002 medium findings"
-    # C3 is the lone info-severity cap (rated voltage declared).
-    assert "C3" in md
+    assert "likely_issue" in md
+    # C3 has a rated-voltage suffix and should not consume reviewer attention.
+    assert "| C3 |" not in md
     # C4 is "value=0" and must be skipped, not appearing as a finding row.
     # We can't simply assert "C4" not in md because evidence tokens might
     # name nothing else like that; instead assert no R002 row with refdes C4.
@@ -75,9 +76,10 @@ def test_slice2_review_writes_r001_r002_report_and_consolidates(tmp_path: Path) 
     assert trace["requested_rules"] == ["R001", "R002"]
     assert trace["rules_run"] == ["R001", "R002"]
     assert trace["output_path"] == str(report_path)
-    assert trace["findings_total"] == 7
-    assert trace["findings_by_rule"] == {"R002": 7}
-    assert trace["findings_by_severity"] == {"medium": 6, "info": 1}
+    assert trace["findings_total"] == 6
+    assert trace["findings_by_rule"] == {"R002": 6}
+    assert trace["findings_by_severity"] == {"medium": 6}
+    assert trace["findings_by_decision"] == {"likely_issue": 6}
     assert trace["components_reviewed"] == 121
     assert trace["store"]["backend"] == "sqlite"
     assert trace["store"]["components"] == 121

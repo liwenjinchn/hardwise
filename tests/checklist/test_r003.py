@@ -111,6 +111,8 @@ def test_check_on_pic_programmer_nc_pins() -> None:
     ic_findings = [f for f in findings if f.severity == "medium"]
     assert len(connector_findings) == 3
     assert len(ic_findings) == 19
+    assert {f.decision for f in connector_findings} == {"likely_ok"}
+    assert {f.decision for f in ic_findings} == {"reviewer_to_confirm"}
 
 
 # ─── DR-009 datasheet closure tests ─────────────────────────────────────────
@@ -123,11 +125,11 @@ def test_no_registry_or_collection_degrades_to_eda_only() -> None:
     assert findings[0].decision is None
 
 
-def test_registry_only_no_collection_still_degrades() -> None:
-    """Both inputs needed for closure; one alone is not enough."""
+def test_registry_only_no_collection_marks_reviewer_to_confirm() -> None:
+    """Registry gives enough context to distinguish an IC from connector noise."""
     findings = check([_nc_pin("U1", "3")], registry=_registry())
     assert findings[0].evidence_chain == []
-    assert findings[0].decision is None
+    assert findings[0].decision == "reviewer_to_confirm"
 
 
 def test_collection_only_no_registry_still_degrades() -> None:

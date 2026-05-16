@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardwise 面试叙事</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #20211d; --soft-ink: #5f625b; --faint: #8c8a7d;
+      --paper: #fbf6e8; --paper-edge: #efe3c8; --desk: #d7d0c1;
+      --line: rgba(69, 61, 43, .18); --green: #173e35; --green-soft: #dfe9df;
+      --red: #9c3d2e; --red-soft: #f1d8cf; --blue: #31475f;
+      --shadow: 0 34px 70px rgba(38, 34, 25, .2);
+      --serif: "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif;
+      --sans: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --mono: "SFMono-Regular", "Cascadia Code", "Menlo", monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; color: var(--ink); font-family: var(--sans); line-height: 1.72;
+      background:
+        repeating-linear-gradient(90deg, rgba(67, 55, 35, .025) 0 1px, transparent 1px 9px),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, .22) 0 2px, transparent 2px 7px),
+        linear-gradient(135deg, #e5dfd1 0%, var(--desk) 46%, #c8beaa 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    code {
+      padding: .08rem .32rem; border: 1px solid rgba(49, 71, 95, .12);
+      border-radius: 5px; color: #263a56; background: rgba(49, 71, 95, .08);
+      font-family: var(--mono); font-size: .92em;
+    }
+    .workspace {
+      display: grid; grid-template-columns: 270px minmax(0, 860px); gap: 28px;
+      width: min(1220px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 44px;
+    }
+    .toc {
+      position: sticky; top: 24px; align-self: start; min-height: 520px; padding: 24px 22px;
+      color: #2d322e; background: #f3ead6; border: 1px solid rgba(74, 62, 39, .2);
+      box-shadow: 0 22px 46px rgba(54, 43, 25, .14); transform: rotate(-.45deg);
+    }
+    .toc::before {
+      content: ""; position: absolute; inset: 9px; pointer-events: none;
+      border: 1px dashed rgba(94, 79, 48, .22);
+    }
+    .toc-kicker {
+      margin: 0 0 18px; color: var(--red); font: 700 12px/1.2 var(--mono);
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .toc h1 {
+      margin: 0 0 10px; font-family: var(--serif); font-size: 28px;
+      line-height: 1.14; letter-spacing: 0;
+    }
+    .toc p { margin: 0 0 18px; color: var(--soft-ink); font-size: 14px; }
+    .toc nav { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .toc a {
+      display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: baseline;
+      min-height: 34px; color: var(--green); font-size: 14px;
+    }
+    .toc a span:first-child { color: var(--faint); font: 12px var(--mono); }
+    .print {
+      width: 100%; min-height: 42px; margin-top: 22px; border: 1px solid rgba(23, 62, 53, .34);
+      background: var(--green); color: #fffaf0; cursor: pointer; font: 700 14px var(--sans);
+      box-shadow: 0 8px 0 rgba(23, 62, 53, .16);
+    }
+    .paper {
+      position: relative; overflow: hidden; padding: 60px clamp(28px, 5vw, 72px) 70px;
+      background:
+        linear-gradient(90deg, rgba(156, 61, 46, .15) 0 1px, transparent 1px 100%),
+        repeating-linear-gradient(0deg, transparent 0 31px, rgba(54, 74, 94, .09) 31px 32px),
+        var(--paper);
+      border: 1px solid var(--paper-edge); box-shadow: var(--shadow);
+    }
+    .paper::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .42;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(80, 67, 41, .09) 0 1px, transparent 2px),
+        radial-gradient(circle at 70% 52%, rgba(80, 67, 41, .06) 0 1px, transparent 2px),
+        radial-gradient(circle at 42% 88%, rgba(80, 67, 41, .05) 0 1px, transparent 2px);
+      background-size: 29px 31px, 37px 43px, 53px 47px;
+    }
+    .paper::after {
+      content: ""; position: absolute; top: 0; left: 38px; bottom: 0;
+      border-left: 1px solid rgba(156, 61, 46, .22);
+    }
+    .binder { position: absolute; left: 13px; top: 70px; display: grid; gap: 86px; }
+    .binder i {
+      width: 14px; height: 14px; border-radius: 50%; background: #d9cdae;
+      box-shadow: inset 0 2px 4px rgba(62, 45, 23, .28), 0 1px 0 #fff7e8;
+    }
+    main { position: relative; z-index: 1; }
+    .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+    .tag {
+      padding: 5px 10px; border: 1px solid var(--line); color: var(--soft-ink);
+      background: rgba(255, 255, 255, .45); font: 700 12px var(--mono);
+    }
+    .headline {
+      max-width: 760px; margin: 0 0 22px; font-family: var(--serif);
+      font-size: clamp(38px, 6vw, 76px); line-height: 1.02; letter-spacing: 0;
+    }
+    .lead {
+      max-width: 700px; margin: 0 0 34px; color: #36372f; font-family: var(--serif);
+      font-size: clamp(20px, 2.8vw, 27px); line-height: 1.62;
+    }
+    .stamp {
+      display: inline-block; margin: 4px 0 34px; padding: 10px 14px;
+      color: var(--red); border: 3px double rgba(156, 61, 46, .72);
+      background: rgba(241, 216, 207, .22); font: 800 17px/1.2 var(--serif);
+      transform: rotate(-2deg);
+    }
+    section {
+      display: grid; grid-template-columns: 122px minmax(0, 1fr); gap: 24px;
+      padding: 34px 0; border-top: 1px solid rgba(68, 59, 40, .15);
+    }
+    .num { color: var(--red); font: 800 18px/1 var(--mono); padding-top: 9px; }
+    h2 {
+      margin: 0 0 16px; font-family: var(--serif); font-size: clamp(25px, 3vw, 36px);
+      line-height: 1.18; letter-spacing: 0;
+    }
+    p { margin: 0 0 16px; }
+    blockquote {
+      margin: 22px 0; padding: 18px 20px; color: #1d332d;
+      background: rgba(223, 233, 223, .7); border-left: 5px solid var(--green);
+      font-family: var(--serif); font-size: 22px; line-height: 1.55;
+    }
+    .script, .note-card {
+      padding: 18px 20px; border: 1px solid rgba(49, 71, 95, .18);
+      background: rgba(255, 255, 255, .38);
+    }
+    .callout {
+      margin-top: 18px; padding: 16px 18px; color: #4c332b;
+      background: rgba(156, 61, 46, .08); border: 1px solid rgba(156, 61, 46, .2);
+    }
+    ol, ul { margin: 0 0 16px; padding-left: 1.2rem; }
+    li { margin: 8px 0; }
+    pre {
+      overflow-x: auto; margin: 16px 0; padding: 16px; color: #f7f1e4; background: #223028;
+      border: 1px solid rgba(18, 34, 28, .35); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05);
+    }
+    pre code { color: inherit; background: none; border: 0; padding: 0; }
+    .facts { display: grid; grid-template-columns: repeat(5, minmax(96px, 1fr)); gap: 10px; margin: 18px 0 24px; }
+    .fact { min-height: 96px; padding: 14px 12px; background: rgba(255, 255, 255, .48); border: 1px solid var(--line); }
+    .fact strong { display: block; color: var(--green); font: 800 25px var(--serif); }
+    .fact span { display: block; margin-top: 6px; color: var(--soft-ink); font-size: 12px; }
+    .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .note-card h3 { margin: 0 0 10px; color: var(--green); font: 800 17px var(--sans); letter-spacing: 0; }
+    .closing { margin-top: 18px; padding: 22px; color: #fff9ed; background: var(--green); font-family: var(--serif); font-size: 25px; line-height: 1.5; }
+    @media (max-width: 920px) {
+      .workspace { grid-template-columns: 1fr; width: min(100% - 20px, 860px); padding-top: 12px; }
+      .toc { position: relative; top: auto; min-height: auto; transform: none; }
+      .toc nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      section { grid-template-columns: 1fr; gap: 8px; }
+      .num { padding-top: 0; }
+      .facts, .two-col { grid-template-columns: 1fr; }
+      .paper { padding: 44px 24px 52px; }
+      .paper::after { left: 26px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .workspace { display: block; width: 100%; padding: 0; }
+      .toc, .binder, .print { display: none; }
+      .paper { border: 0; box-shadow: none; padding: 18mm 16mm; }
+      section { break-inside: avoid; }
+      pre { white-space: pre-wrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="workspace">
+    <aside class="toc" aria-label="页面目录">
+      <p class="toc-kicker">Interview brief</p>
+      <h1>Hardwise 面试叙事</h1>
+      <p>纸质讲稿版。先读主线，再看 demo，最后记住边界。</p>
+      <nav>
+        <a href="#position"><span>01</span><span>核心定位</span></a>
+        <a href="#opening"><span>02</span><span>30 秒开场</span></a>
+        <a href="#story"><span>03</span><span>2 分钟版本</span></a>
+        <a href="#demo"><span>04</span><span>Demo 顺序</span></a>
+        <a href="#emphasis"><span>05</span><span>重点与红线</span></a>
+        <a href="#bigger"><span>06</span><span>为什么不做大</span></a>
+      </nav>
+      <button class="print" type="button" onclick="window.print()">打印 / 保存 PDF</button>
+    </aside>
+    <article class="paper">
+      <div class="binder" aria-hidden="true"><i></i><i></i><i></i></div>
+      <main>
+        <div class="meta"><span class="tag">PRE-LAYOUT</span><span class="tag">REGISTRY-VERIFIED</span><span class="tag">EVIDENCE-GATED</span></div>
+        <h1 class="headline">让模型先不能发明这块板子</h1>
+        <p class="lead">Hardwise 的面试主线：不是证明 AI 可以独立评审硬件，而是证明硬件评审 Agent 必须被工具事实和证据链约束。</p>
+        <div class="stamp">最小可信闭环</div>
+
+        <section id="position"><div class="num">01</div><div>
+          <h2>核心定位</h2>
+          <p>Hardwise 不是在证明“大模型可以独立评审完整硬件设计”。它证明的是一个更窄但更重要的点：</p>
+          <blockquote>硬件评审 Agent 不能自由发明工程对象。所有 refdes 必须来自 EDA registry，所有 finding 必须带 evidence token。</blockquote>
+          <p>所以这个项目的核心不是“功能很多”，而是“边界很硬”。确定性的 Python 工具负责解析公开 KiCad 工程，形成可信的位号、pin、datasheet 证据记录；模型负责解释、组织、查询这些记录，但不能自己生成元件、pin 或 datasheet 结论。</p>
+        </div></section>
+
+        <section id="opening"><div class="num">02</div><div>
+          <h2>30 秒开场</h2>
+          <div class="script">
+            <p>我做 Hardwise 是为了验证一个硬件 AI Agent 的最小可信闭环，不是为了两周内做一个完整硬件评审平台。</p>
+            <p>我选了一个很窄的节点：pre-layout 原理图评审。这个节点里最危险的问题不是模型说错一句话，而是它编出一个看起来很像真的位号、pin 或 datasheet 参数。所以我把模型放到两个约束后面：第一，用户可见的 refdes 必须命中 KiCad 解析出来的 EDA registry；第二，每条 finding 必须带 <code>sch:&lt;file&gt;#&lt;refdes&gt;</code> 或 <code>datasheet:&lt;pdf&gt;#p&lt;N&gt;</code> 这样的 evidence token。</p>
+            <p>当前 demo 在公开 KiCad <code>pic_programmer</code> 项目上能解析 121 个 components，定位 77 个 NC pins，输出 28 条 review findings，并且 0 个未验证 refdes、0 条无证据 finding。</p>
+          </div>
+          <div class="facts"><div class="fact"><strong>121</strong><span>components reviewed</span></div><div class="fact"><strong>77</strong><span>NC pins located</span></div><div class="fact"><strong>28</strong><span>review findings</span></div><div class="fact"><strong>0</strong><span>unverified refdes</span></div><div class="fact"><strong>0</strong><span>evidence-less findings</span></div></div>
+        </div></section>
+
+        <section id="story"><div class="num">03</div><div>
+          <h2>2 分钟版本</h2>
+          <p>这个项目起点是硬件原理图评审里的一个真实痛点：评审人不是只看一个错误，而是在 SCH、位号、value 字段、pin 连接、datasheet 和 checklist 之间反复交叉确认。LLM 如果自由回答，最危险的失败不是措辞不专业，而是把不存在的工程事实说得很像真的。</p>
+          <p>所以我把 MVP 收窄到一个工作流节点：公开 KiCad 工程上的 pre-layout schematic review。我有意不做 PCB review、仿真、PLM、GitHub PR comment，也不使用任何公司内部硬件数据。在这个窄节点里，我实现了一个最小闭环：</p>
+          <ol><li>解析 KiCad schematic，生成真实 refdes 和 pin 事实的 registry。</li><li>跑确定性规则，统一输出 <code>Finding</code> schema。</li><li>报告出口经过 Refdes Guard 和 Evidence Ledger。</li><li>Agent 问答只能通过 <code>get_component</code>、<code>get_nc_pins</code>、<code>search_datasheet</code> 这类结构化工具。</li></ol>
+          <p>比如模型不能自己判断 <code>U999</code> 是否存在。它必须调用 <code>get_component</code>，工具查 registry 后返回 <code>found=false</code> 和可能的 closest matches。模型可以解释“没找到这个位号”，但不能编一个合法器件记录出来。</p>
+          <div class="callout">Eval Pack 只讲 regression / guardrail：5 个公开仓库、16 个 KiCad project、1707 个 parsed components；不包装成专家准确率 benchmark。</div>
+        </div></section>
+
+        <section id="demo"><div class="num">04</div><div>
+          <h2>Demo 顺序</h2>
+          <p>面试屏幕共享时按这个顺序讲：</p>
+          <pre><code>uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003</code></pre>
+          <ol><li>先指出主输出：121 components reviewed、28 findings、relational store 写入 121 components + 77 NC pins。</li><li>打开 report 看一条 R002：refdes 是真实电容，message 指出 value 字段缺额定耐压后缀，evidence token 指回 <code>sch:pic_programmer.kicad_sch#C2</code>。</li><li>再看一条 R003：NC pin 来自 KiCad <code>no_connect</code> marker 和 pin 坐标匹配；connector/socket 批量 NC 聚合成低优先级 <code>likely_ok</code>；IC/module NC 在没有 datasheet 证据时保持 <code>reviewer_to_confirm</code>。</li><li>最后跑 unknown path，重点不是模型文采，而是工具返回 structured miss，不让模型编造 <code>U999</code>。</li></ol>
+          <pre><code>uv run hardwise ask data/projects/pic_programmer "What is U999?"</code></pre>
+        </div></section>
+
+        <section id="emphasis"><div class="num">05</div><div>
+          <h2>重点与红线</h2>
+          <div class="two-col"><div class="note-card"><h3>重点讲</h3><ul><li>只做 pre-layout schematic review 这一个节点。</li><li>只使用公开 KiCad 项目和公开 datasheet。</li><li>确定性事实抽取和模型推理分开。</li><li>Unknown 是一等结果，不把“不知道”藏起来。</li><li>Pydantic 工具 schema 都有 typed miss path。</li><li><code>decision</code> 和人工 review <code>status</code> 分离。</li></ul></div><div class="note-card"><h3>不要这么说</h3><ul><li>不说 Hardwise 已经能完整评审硬件设计。</li><li>不说 eval pack 证明专家级准确率。</li><li>不把 prompt caching 或 tiered routing 讲成主创新。</li><li>不说 R004/R005 或 schematic net parser 已完成。</li><li>不暗示 demo 里每颗器件都有 datasheet 证据。</li><li>不说 Sleep Consolidator 会自动晋升规则。</li></ul></div></div>
+        </div></section>
+
+        <section id="bigger"><div class="num">06</div><div>
+          <h2>被问“为什么不继续做大？”</h2>
+          <p>因为硬件 AI 的难点不是功能堆叠，而是 trust boundary。一个能自由编造工程对象的大平台，可信度反而不如一个窄但诚实的闭环。</p>
+          <p>两周内我选择先证明最重要、也最可防守的部分：Agent 只能谈 registry-verified objects 和 evidence-backed findings。schematic-side net parser、I2C 地址冲突、PCB review、GitHub PR comment 都是合理的 post-MVP 工作，但不应该抢在核心 anti-hallucination contract 讲清楚之前。</p>
+          <div class="closing">Hardwise 的核心回答是：在让模型评审一块板子之前，先让它在结构上不能发明这块板子。</div>
+        </div></section>
+      </main>
+    </article>
+  </div>
+</body>
+</html>

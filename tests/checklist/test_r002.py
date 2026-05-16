@@ -41,17 +41,10 @@ def test_parse_rated_voltage_branches(value: str, expected: float | None) -> Non
     assert parse_rated_voltage(value) == expected
 
 
-def test_check_with_declared_voltage_returns_info_finding() -> None:
+def test_check_with_declared_voltage_returns_no_finding() -> None:
     findings = check([_record("C3", value="22uF/25V")])
 
-    assert len(findings) == 1
-    f = findings[0]
-    assert f.rule_id == "R002"
-    assert f.severity == "info"
-    assert f.refdes == "C3"
-    assert "25" in f.message
-    assert f.evidence_tokens, "info finding must still carry evidence"
-    assert "20" in f.suggested_action  # 25 * 0.8
+    assert findings == []
 
 
 def test_check_without_voltage_returns_medium_finding() -> None:
@@ -62,6 +55,7 @@ def test_check_without_voltage_returns_medium_finding() -> None:
     assert f.rule_id == "R002"
     assert f.severity == "medium"
     assert f.refdes == "C1"
+    assert f.decision == "likely_issue"
     assert "100uF" in f.message
     assert "rated voltage" in f.message.lower()
 
@@ -95,21 +89,21 @@ def test_check_skips_virtual_kicad_markers() -> None:
     assert findings == []
 
 
-def test_check_on_pic_programmer_yields_six_medium_one_info() -> None:
+def test_check_on_pic_programmer_yields_six_missing_voltage_findings() -> None:
     """Reality check against the public pic_programmer sample.
 
     Caps in pic_programmer: C1(100µF), C2(220uF), C3(22uF/25V), C4(0),
-    C5(10nF), C6(100nF), C7(100nF), C9(220nF). C3 → info; C4 → skipped;
-    others (6) → medium. Total = 7 findings."""
+    C5(10nF), C6(100nF), C7(100nF), C9(220nF). C3 has a rated-voltage suffix
+    and C4 is skipped by convention; the other 6 findings are likely_issue."""
     registry = parse_project(Path("data/projects/pic_programmer"))
     findings = check(registry.schematic_records)
 
-    by_severity: dict[str, set[str]] = {"info": set(), "medium": set()}
+    by_severity: dict[str, set[str]] = {"medium": set()}
     for f in findings:
         assert f.rule_id == "R002"
         assert f.refdes is not None
+        assert f.decision == "likely_issue"
         by_severity.setdefault(f.severity, set()).add(f.refdes)
 
-    assert by_severity["info"] == {"C3"}
     assert by_severity["medium"] == {"C1", "C2", "C5", "C6", "C7", "C9"}
-    assert len(findings) == 7
+    assert len(findings) == 6

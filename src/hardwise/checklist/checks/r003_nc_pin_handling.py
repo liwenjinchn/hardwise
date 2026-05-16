@@ -10,8 +10,10 @@ registry and a Chroma collection, the finding carries:
     from whether the relevant hits contain NC-keywords.
 
 When `registry` or `collection` is None, R003 degrades to the Slice 3 EDA-only
-shape (no `evidence_chain`, no `decision`) — used by checks-only tests and by
-`hardwise review` runs without `--vector`.
+shape when no registry is available. When a registry is available but no vector
+collection is configured, R003 still writes `reviewer_to_confirm` for
+IC/module pins and `likely_ok` for connector summaries so the eval harness can
+measure attention cost without pretending datasheet evidence exists.
 
 `decision` is the rule-side machine judgment; `status` (default `open`) is the
 human review flow state. R003 writes the former, never the latter (DR-009 §3).
@@ -137,10 +139,21 @@ def check(
                     "against the design intent."
                 ),
                 evidence_tokens=[f"sch:{first.source_file.name}#{refdes}"],
+                evidence_chain=[
+                    EvidenceStep(
+                        source="eda",
+                        claim=(
+                            f"{refdes} has {len(grouped)} connector-like NC pins "
+                            f"marked in schematic: {pin_list}."
+                        ),
+                        token=f"sch:{first.source_file.name}#{refdes}",
+                    )
+                ],
                 suggested_action=(
                     "For sockets/connectors, confirm the unused pins are intentionally "
                     "left NC and do not carry a required signal."
                 ),
+                decision="likely_ok",
             )
         )
 
@@ -191,6 +204,8 @@ def check(
                         token=f"pdf:{src}#p{page}",
                     )
                 )
+        elif registry is not None:
+            decision = "reviewer_to_confirm"
 
         findings.append(
             Finding(

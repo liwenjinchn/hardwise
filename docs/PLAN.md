@@ -13,20 +13,35 @@
 
 ---
 
+## Submission boundary
+
+Hardwise is now in **submission closeout**, not feature expansion. The MVP claim is:
+
+> A public KiCad schematic can be parsed into a trusted registry; deterministic checks can produce evidence-gated findings; and the agent can answer schematic questions only through structured tools, with unverified refdes blocked before reaching the user.
+
+The submission demo is complete when the following remain true:
+
+1. `hardwise review data/projects/pic_programmer --rules R001,R002,R003` produces a report with registry-verified refdes and evidence tokens.
+2. `hardwise ask ...` demonstrates the tool-use loop, including an unknown-refdes path such as `get_component("U999") -> not_found`.
+3. `uv run pytest -q` and `uv run ruff check .` pass.
+4. README, interview answers, and resume materials describe the narrow proof honestly.
+
+R004/R005, schematic-side net parsing, GitHub Action packaging, larger gold-label evaluation, Cadence/Allegro adapters, and PR-comment workflows are **post-MVP**. They can remain in backlog documents, but they are no longer submission gates.
+
 ## Sprint goal
 
 In two weeks, ship a CLI tool `hardwise review <project> --rules R001[,R002,...]` that:
 
-1. Reads a public KiCad project + a checklist of 5 schematic-review rules from `data/checklists/sch_review.yaml`
-2. Runs an Anthropic tool-use loop where every rule is evidence-driven via structured tools, never free-form
-3. Produces a markdown review report aligned to the structure of《SCH_review_feedback_list 汇总表》— every refdes registry-verified, every claim carries a source token
+1. Reads a public KiCad project + active schematic-review rules from `data/checklists/sch_review.yaml`
+2. Runs deterministic checks and an Anthropic-format tool-use loop where board objects come from structured tools, never free-form generation
+3. Produces a markdown/HTML review report aligned to the structure of《SCH_review_feedback_list 汇总表》— every refdes registry-verified, every finding carries a source token
 4. Records candidate review rules to `memory/rules.md` for human gate
 
 **Each slice ends with a runnable end-to-end demo and a screencast.** Never wait until "Day N" to see something work — see DR-006.
 
 ---
 
-## Slice route (replaces day-by-day)
+## Slice route (historical build route)
 
 | Slice | Focus | Deliverable | New mechanism |
 |---|---|---|---|
@@ -34,19 +49,19 @@ In two weeks, ship a CLI tool `hardwise review <project> --rules R001[,R002,...]
 | 1 | First end-to-end loop (R001 新建器件候选识别) | `hardwise review --rules R001` → markdown report + tests + screencast; `checklist/finding.py` 统一 Finding 数据模型在此 slice 立 | Refdes Guard + Evidence Ledger |
 | 2 | R002 电容耐压 80% | `--rules R001,R002` + first Sleep Consolidator candidates | Sleep Consolidator |
 | 3 | R003 NC pin + 双库进场 | chromadb + sentence-transformers + pdfplumber installed; datasheet ingest; first datasheet-evidence finding | Tiered Model Routing |
-| 4 | R004 I2C 地址冲突 | `--rules R001..R004`; cache-hit observable in run log | Prompt Caching |
-| 5 | R005 单端/空网络 + 报告固化 | All 5 rules run; report visually aligns with SCH_review_feedback_list | none |
-| 6 | Demo 收口 | README quickstart / 3-min screencast / `interview_qa.md` v1.0 / `jd_alignment.md` filled / 简历 / 投递 | none |
+| 4 | Agent loop + prompt caching | `hardwise ask` with 4 tools; unknown-refdes path; cache-read observable in run log | Prompt Caching |
+| 5 | Submission closeout | README quickstart / demo pages / `interview_qa.md` / `jd_alignment.md` / resume materials | none |
+| Post-MVP | Schematic net parser + R004/R005 | Net-aware checks after `.kicad_sch` topology parser exists | none |
 
 ## Application gates
 
-The slice route is the build plan, not the job-application gate. Do **not** wait for Slice 5 to start applying.
+The slice route is the build plan, not the job-application gate. Do **not** wait for post-MVP net-aware work to start applying.
 
 | Gate | Required slices | What it proves | Action |
 |---|---|---|---|
 | A — runnable proof | Slice 0 + Slice 1 | A real schematic-review rule can run end-to-end: rule -> tool/evidence -> finding -> report, with Refdes Guard + Evidence Ledger | OK for internal demo rehearsal and README draft; not the preferred DJI submission gate |
 | B — submission MVP | Slice 0 + Slice 1 + Slice 3-lite + submission closeout | EDA registry, structured store, vector datasheet evidence, tool-use report, JD alignment, and interview answers all have concrete proof | **Start DJI application here** |
-| C — stronger follow-up demo | Slice 4-5 + polished Slice 6 | More rules, prompt caching, report polish, 3-min demo video | Continue while waiting for recruiter / interview feedback |
+| C — stronger follow-up demo | Slice 4 + submission closeout | Tool-use loop, prompt caching, report polish, demo pages | Continue while waiting for recruiter / interview feedback |
 
 **Slice 3-lite definition**: if full R003 takes too long, the minimum acceptable database proof is:
 1. SQLite or equivalent relational store contains components/rules/findings from the public KiCad project
@@ -54,7 +69,7 @@ The slice route is the build plan, not the job-application gate. Do **not** wait
 3. One finding carries both a structured evidence token and a text evidence token
 4. `docs/jd_alignment.md`, `docs/interview_qa.md`, README quickstart, resume bullet, and GitHub hygiene are updated
 
-After Gate B, pull the useful parts of Slice 6 forward: README, GitHub, resume, and interview prep. Leave the 3-minute video and Slice 4-5 polish as follow-up work.
+After Gate B, pull the useful parts of closeout forward: README, GitHub, resume, and interview prep. Leave net-aware rules, GitHub Action packaging, and larger evaluation as follow-up work.
 
 **Slice acceptance template** — every slice closes when:
 1. CLI 一行命令出可演示物（report / screencast / log）
@@ -62,7 +77,7 @@ After Gate B, pull the useful parts of Slice 6 forward: README, GitHub, resume, 
 3. `docs/interview_qa.md` 至少 1 题更新到 v(slice_n).0
 4. `docs/learning_log.md` 写一条"今天证明了什么"
 
-**Buffer rule**: if a slice stalls 4 hours → cut new mechanism first (keep the rule); still stuck → mock the data source (e.g. `nets.json` instead of parser); still stuck → skip to next slice. Floor delivery is Slice 0 + Slice 1 + pulled-forward Slice 6 materials — that qualifies as an internal defendable demo. Preferred DJI submission remains Gate B.
+**Buffer rule**: if a post-MVP feature stalls 4 hours → stop expanding and return to the submission boundary above. The defensible demo is already the R001/R002/R003 report + guarded tool-use loop + passing tests/lint; extra rules are not required for submission.
 
 ---
 

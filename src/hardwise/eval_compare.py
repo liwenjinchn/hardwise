@@ -64,6 +64,22 @@ def compare_summaries(
         if delta:
             observations.append(f"findings_by_rule.{rule} changed by {delta:+d}")
 
+    for decision, delta in _counter_deltas(
+        getattr(baseline, "findings_by_decision", {}),
+        getattr(current, "findings_by_decision", {}),
+    ).items():
+        if delta:
+            observations.append(f"findings_by_decision.{decision} changed by {delta:+d}")
+
+    for rule, decision, delta in _rule_decision_deltas(
+        getattr(baseline, "findings_by_rule_decision", {}),
+        getattr(current, "findings_by_rule_decision", {}),
+    ):
+        if delta:
+            observations.append(
+                f"findings_by_rule_decision.{rule}.{decision} changed by {delta:+d}"
+            )
+
     return EvalComparison(
         status="failed" if regressions else "passed",
         baseline_path=str(baseline_path),
@@ -97,6 +113,20 @@ def _counter_deltas(
 ) -> dict[str, int]:
     keys = sorted(set(baseline) | set(current))
     return {key: current.get(key, 0) - baseline.get(key, 0) for key in keys}
+
+
+def _rule_decision_deltas(
+    baseline: dict[str, dict[str, int]],
+    current: dict[str, dict[str, int]],
+) -> list[tuple[str, str, int]]:
+    rows: list[tuple[str, str, int]] = []
+    for rule in sorted(set(baseline) | set(current)):
+        for decision, delta in _counter_deltas(
+            baseline.get(rule, {}),
+            current.get(rule, {}),
+        ).items():
+            rows.append((rule, decision, delta))
+    return rows
 
 
 def _classify_lower_is_better(

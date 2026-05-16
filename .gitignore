@@ -18,6 +18,7 @@ dist/
 # IDE / OS
 .vscode/
 .idea/
+.claude/
 .codex_work/
 .DS_Store
 *.swp
@@ -42,6 +43,7 @@ data/chroma/
 # Generated reports — local outputs
 reports/*.md
 reports/*.html
+reports/*.jsonl
 reports/eval/
 !reports/.gitkeep
 

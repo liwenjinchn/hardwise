@@ -43,6 +43,7 @@ def check(schematic_records: list[ComponentRecord]) -> list[Finding]:
                     "datasheet symbol/footprint dimensions and pinout before "
                     "sign-off."
                 ),
+                decision="reviewer_to_confirm",
             )
         )
     return findings

@@ -8,6 +8,71 @@
 
 ---
 
+## 2026-05-16 · Submission closeout · 停止用功能数量证明项目价值
+
+**Symptom**
+
+Hardwise 已经能跑 `review`、`ask`、eval smoke、trace、HTML report 和双库，但 README / PLAN / interview answers 仍然残留“继续补 R004/R005、继续扩平台”的语气。项目看起来像没做完的大系统，而不是已经收束的 portfolio MVP。
+
+**Root cause**
+
+最初的叙事把五大机制、五条规则、双库、prompt cache、consolidator、eval harness 都放到同一层级。这样会稀释真正的主张：硬件评审 Agent 的可信度首先来自对象层和证据层约束，而不是规则数量。R004/R005 又依赖 schematic-side net parser，一旦把它们当提交门槛，项目会重新滑回无底洞。
+
+**Fix**
+
+README 改为 “Core Proof”：Refdes Guard、Evidence Ledger、Structured Tool Loop 是主角；Sleep Consolidator、Tiered Routing、Prompt Caching 降级为 supporting mechanisms。PLAN 增加 Submission boundary，明确 R004/R005、GitHub Action、larger gold-label eval、Cadence/Allegro adapter 都是 post-MVP。interview_qa 增加 final answer shape，把 Q6 改成“先补可信度和可交付性，不先加更多规则”。
+
+**Takeaway**
+
+项目收束本身就是工程判断力。两周 MVP 的价值不是证明“我能把硬件评审平台做大”，而是证明“我知道哪些部分可解、哪些部分不能在当前证据条件下硬讲”。功能数量是配角，trust boundary 是主线。
+
+---
+
+## 2026-05-16 · Synthetic must-catch · MVP 先锁 false negative safety floor
+
+**Symptom**
+
+Noise-Control Harness v0 已经能在 public corpus 上给出 decision 分布，但它仍然不能单独证明“已知重大问题不会漏”。Public corpus 是真实工程压力测试，不是专家 gold-label 答案集；人工标注 calibration 又需要额外定义标准和投入时间。
+
+**Root cause**
+
+MVP 的验证目标被拆成两类：public corpus 证明真实项目可复现、能定位 regression；synthetic must-catch 证明关键已知场景不会在 rule 演进中退化。前者是广度，后者是安全底线。把这两件事混成一个“准确率”指标，反而会让招聘叙事变虚。
+
+**Fix**
+
+新增 `tests/harness/test_must_catch.py`，用最小 `ComponentRecord` / `NcPinRecord` / `BoardRegistry` 构造 5 个产品级 must-catch 场景：R001 新器件无 footprint、R002 电容缺 `/V`、R002 电容已有 `/V` 不报、R003 IC NC 无 datasheet → `reviewer_to_confirm`、R003 connector 批量 NC → 1 条 `likely_ok` low finding。为支持最后一条，R003 connector summary 补了一条 EDA `evidence_chain`，不引入 datasheet 证据。
+
+**Takeaway**
+
+Synthetic cases 不是为了替代真实 corpus，而是给 harness 加一块可自动回归的 safety floor。MVP 阶段先保证“已知关键问题不能漏、已知低价值提醒不能回流”，比先做 20-30 条人工标注更直接；human-labeled calibration 仍然是下一层，用来量化 precision/recall。
+
+---
+
+## 2026-05-16 · Noise-Control Harness v0 · finding 数不够，还要看 decision 分布
+
+**Symptom**
+
+Public corpus harness 已经跑出 5 repos / 16 KiCad projects / 1707 components / 437 findings，但总数本身不能回答硬件工程师真正关心的问题：哪些是明确需要修的字段，哪些只是证据不足需要确认，哪些是连接器/模块上通常合理的低优先级提示。
+
+**Root cause**
+
+R001/R002/R003 的 rule 输出里已经有 `decision` 字段，但 public eval 主要看 `findings_by_rule` 和 guardrail 计数。也就是说 harness 能证明“没有崩、没有 refdes 幻觉”，但还不能证明“没有把 reviewer 注意力浪费在低价值提醒上”。另外 R002 旧行为会对已写 `/V` 后缀的电容生成 info finding；这在单 demo 里有教学价值，但放到 corpus 噪音控制里会消耗注意力。
+
+**Fix**
+
+- R001 空 footprint 写 `decision=reviewer_to_confirm`。
+- R002 只对缺额定电压后缀的电容生成 `likely_issue`；已有 `/V` 后缀不再生成 finding。
+- R003 在 registry-only eval 路径里给 IC/module NC 写 `reviewer_to_confirm`，connector-like NC summary 写 `likely_ok`。
+- Eval summary 增加 `findings_by_rule_decision: dict[str, dict[str, int]]`，HTML 增加全局 + per-rule 两张 decision 表，CLI 输出 decision counts + percentage。
+- 完整 public smoke 当前 decision split：298 likely_issue / 99 reviewer_to_confirm / 40 likely_ok / 0 undecided。
+- 完整 public corpus checkout 后，pytest 会递归进第三方 repo 自带测试；本地 `.claude/worktrees` 也会制造重复 test module。把 `eval/projects` 和 `.claude` 加入 pytest `norecursedirs`，与 Ruff exclude 保持同一边界。
+
+**Takeaway**
+
+Eval harness 的第一层是可重复跑，第二层是 guardrail 不退化，第三层才是 attention allocation。MVP 不需要先做大 gold-label 数据集；先把机器结论分桶，让每次 rule 调整都能看到 likely_issue / reviewer_to_confirm / likely_ok 的迁移方向。`likely_ok` 占比高不自动代表系统过度乐观，公开 corpus 里 connector/header/module 多时它会自然偏高，关键是 per-rule matrix 能定位这种偏差来自哪里。
+
+---
+
 ## 2026-05-16 · P0 trace.jsonl · 运行记录不能从 CLI stdout 反推
 
 **Symptom**

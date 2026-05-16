@@ -2,6 +2,7 @@ from pathlib import Path
 
 import yaml
 
+from hardwise.eval_report import render_eval_html
 from hardwise.eval_pack import compare_summaries, load_manifest, run_eval
 
 
@@ -25,8 +26,28 @@ def test_run_eval_against_local_project(tmp_path: Path) -> None:
 
     assert outputs.summary.projects_total == 1
     assert outputs.summary.projects_passed == 1
-    assert outputs.summary.findings_by_rule["R002"] == 7
+    assert outputs.summary.findings_by_rule["R002"] == 6
     assert "R003" in outputs.summary.findings_by_rule
+    assert outputs.summary.findings_by_decision == {
+        "likely_issue": 6,
+        "reviewer_to_confirm": 19,
+        "likely_ok": 3,
+        "undecided": 0,
+    }
+    assert outputs.summary.findings_by_rule_decision == {
+        "R002": {
+            "likely_issue": 6,
+            "reviewer_to_confirm": 0,
+            "likely_ok": 0,
+            "undecided": 0,
+        },
+        "R003": {
+            "likely_issue": 0,
+            "reviewer_to_confirm": 19,
+            "likely_ok": 3,
+            "undecided": 0,
+        },
+    }
     assert outputs.summary.unverified_refdes_wrapped == 0
     assert outputs.summary.unverified_refdes_samples == []
     assert outputs.summary_path.exists()
@@ -80,6 +101,57 @@ def test_compare_summaries_flags_guardrail_regression(tmp_path: Path) -> None:
 
     assert comparison.status == "failed"
     assert comparison.regressions == ["unverified_refdes_wrapped worsened by +2"]
+
+
+def test_compare_summaries_reports_decision_deltas_as_observations(tmp_path: Path) -> None:
+    manifest_path = _write_local_manifest(tmp_path)
+    projects_root = _link_local_project(tmp_path)
+    outputs = run_eval(
+        manifest_path=manifest_path,
+        projects_root=projects_root,
+        output_dir=tmp_path / "reports",
+    )
+    current = outputs.summary.model_copy(
+        update={
+            "findings_by_decision": {
+                "likely_issue": 7,
+                "reviewer_to_confirm": 18,
+                "likely_ok": 3,
+                "undecided": 0,
+            }
+        }
+    )
+
+    comparison = compare_summaries(
+        baseline=outputs.summary,
+        current=current,
+        baseline_path=tmp_path / "baseline.json",
+        current_path=outputs.summary_path,
+    )
+
+    assert comparison.status == "passed"
+    assert "findings_by_decision.likely_issue changed by +1" in comparison.observations
+    assert (
+        "findings_by_decision.reviewer_to_confirm changed by -1"
+        in comparison.observations
+    )
+
+
+def test_eval_html_renders_decision_metric_tables(tmp_path: Path) -> None:
+    manifest_path = _write_local_manifest(tmp_path)
+    projects_root = _link_local_project(tmp_path)
+    outputs = run_eval(
+        manifest_path=manifest_path,
+        projects_root=projects_root,
+        output_dir=tmp_path / "reports",
+    )
+
+    html = render_eval_html(outputs.summary)
+
+    assert "Decision Metrics" in html
+    assert "<th>Decision</th><th>Count</th><th>Percentage</th>" in html
+    assert "<th>Rule</th><th>likely_issue</th>" in html
+    assert "<td>R002</td>" in html
 
 
 def _write_local_manifest(tmp_path: Path) -> Path:

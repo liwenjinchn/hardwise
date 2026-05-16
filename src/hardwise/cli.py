@@ -556,6 +556,7 @@ def eval_pack(
         f"({summary.projects_passed}/{summary.projects_total} projects passed, "
         f"{summary.findings_total} findings)"
     )
+    _echo_decision_counts(summary.findings_by_decision, summary.findings_total)
     typer.echo(f"summary: {outputs.summary_path}")
     typer.echo(f"html: {outputs.html_path}")
     if outputs.comparison is not None and outputs.comparison_path is not None:
@@ -570,6 +571,14 @@ def eval_pack(
             raise typer.Exit(2)
     if accept_baseline and baseline is not None:
         typer.echo(f"baseline accepted: {baseline}")
+
+
+def _echo_decision_counts(counts: dict[str, int], total: int) -> None:
+    typer.echo("decisions:")
+    for decision in ("likely_issue", "reviewer_to_confirm", "likely_ok", "undecided"):
+        count = int(counts.get(decision, 0))
+        percentage = (count / total * 100) if total else 0.0
+        typer.echo(f"  {decision}: {count} ({percentage:.1f}%)")
 
 
 @app.command()

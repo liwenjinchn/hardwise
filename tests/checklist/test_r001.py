@@ -24,6 +24,7 @@ def test_real_component_with_empty_footprint_is_flagged() -> None:
     assert f.rule_id == "R001"
     assert f.severity == "info"
     assert f.refdes == "U7"
+    assert f.decision == "reviewer_to_confirm"
     assert f.evidence_tokens, "evidence_tokens must not be empty"
     assert "sch:" in f.evidence_tokens[0]
 

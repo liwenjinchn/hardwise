@@ -1,8 +1,14 @@
 # Interview Q&A — Hardwise
 
-> Day 1 v0.1 — refine after each module ships. Goal: concise, defensible answers by Day 14.
+> Start with `docs/interview_narrative.md` for the concise interview story.
+> Use `docs/interview_narrative.html` when you want the paper-style reading view.
+> This file is the longer evidence bank behind that story.
 
-> Iteration discipline: each question has a `v0.1` (Day 1 first guess) and a `v1.0 target` (what it should become once the module backing it actually runs). Update as you build.
+## 主叙事
+
+Hardwise 不是在证明“大模型可以独立评审完整硬件设计”。它证明的是一个更窄但更可信的闭环：在 pre-layout 原理图评审节点，Agent 只能通过工具查询 EDA registry 和 evidence store；所有用户可见 refdes 必须 registry-verified，所有 finding 必须有 evidence token。模型负责解释和组织证据，不能自由发明元件、pin 或 datasheet 结论。
+
+面试时优先讲这条主线：`review` 一行命令跑公开 KiCad 项目，输出带证据 token 的 report；`ask` 通过 structured tools 回答问题；`get_component("U999")` 这类 unknown path 会返回 `found=false`，而不是让模型编造。Eval Pack 只作为 regression / guardrail smoke，不包装成专家准确率 benchmark。
 
 ---
 
@@ -14,11 +20,13 @@
 
 **v0.5 (Slice 1 evidence)**: 真实评审输入瘦到 2 类——sch + 通用 checklist（其它"软硬件接口/Connector_pin_define/FMEA/仿真建议"都是评审之后才出的下游产物）。Slice 1 跑通的最小闭环：CLI `hardwise review pic_programmer --rules R001` → 解析 121 个 component → 跑 R001 (新建器件候选识别) → 经 Refdes Guard + Evidence Ledger → 输出对齐《SCH_review_feedback_list 汇总表》的 markdown 报告。在已完成的公开样例 `pic_programmer` 上结果是"0 candidate findings, 121 components reviewed"——这是**诚实输出**，因为 KiCad 公开 demo 的所有真实器件都已 layout 完成、footprint 字段都填好。
 
-**v3.0 (Slice 3 evidence)**: R003 NC pin handling 接入后，注意力分配清单从单字段变成跨字段+跨 unit 的 pin 级别。第一版 `hardwise review ... --rules R001,R002,R003` 在 pic_programmer 上产 84 条 finding（7 R002 + 77 R003），R003 覆盖 6 个主表 NC pin（J1 DB9 上 4 个 + LT1373 上 2 个）+ 71 个 PIC 插座 NC pin。后续按 review 视角收敛噪音：连接器/插座类 NC pin 聚合成低风险摘要，IC 类 NC pin 继续逐 pin 保留；当前同一 demo 输出 29 条有效 finding，且 sanitizer 为 0 个未验证 refdes 包裹。所有 NC pin 用"坐标匹配"从 `no_connect` 标记反查到具体 refdes/pin_number，不依赖 model 输出 pin 信息，从结构上杜绝 pin 级幻觉。
+**v3.0 (Slice 3 evidence)**: R003 NC pin handling 接入后，注意力分配清单从单字段变成跨字段+跨 unit 的 pin 级别。第一版 `hardwise review ... --rules R001,R002,R003` 在 pic_programmer 上产 84 条 finding（7 R002 + 77 R003），R003 覆盖 6 个主表 NC pin（J1 DB9 上 4 个 + LT1373 上 2 个）+ 71 个 PIC 插座 NC pin。后续按 review 视角收敛噪音：连接器/插座类 NC pin 聚合成低风险摘要，IC 类 NC pin 继续逐 pin 保留；R002 对已声明 `/V` 的电容不再生成提醒行。当前同一 demo 输出 28 条有效 finding，且 sanitizer 为 0 个未验证 refdes 包裹。所有 NC pin 用"坐标匹配"从 `no_connect` 标记反查到具体 refdes/pin_number，不依赖 model 输出 pin 信息，从结构上杜绝 pin 级幻觉。
 
-**v3.2 eval harness evidence**: 为了避免只靠单 demo 自证，新增 `hardwise eval`：从 public KiCad corpus manifest 跑 R001/R002/R003，写 `eval-summary.json/html`；再用 `--baseline ... --accept-baseline` 接受一个已检查结果，后续运行自动生成 `eval-comparison.json`。MVP gate 只挡明显工程回归：project parse failure、新增 unverified refdes wrapping、新增 evidence dropped；finding 数量变化先作为观察项，因为有用规则也可能合法增加/减少 finding。当前完整 public smoke 是 5 个 repo / 16 个 KiCad project / 1707 components，全部解析通过；输出 437 条 finding，guard/evidence 两个硬指标都是 0（`unverified_refdes_wrapped=0`, `findings_dropped_no_evidence=0`）。这不是专家 gold-label 正确率，而是“真实公开工程上可重复跑、可定位回归”的工程可用性证据。
+**v3.2 eval harness evidence**: 为了避免只靠单 demo 自证，新增 `hardwise eval`：从 public KiCad corpus manifest 跑 R001/R002/R003，写 `eval-summary.json/html`；再用 `--baseline ... --accept-baseline` 接受一个已检查结果，后续运行自动生成 `eval-comparison.json`。MVP gate 只挡明显工程回归：project parse failure、新增 unverified refdes wrapping、新增 evidence dropped；finding 数量变化先作为观察项，因为有用规则也可能合法增加/减少 finding。当前完整 public smoke 是 5 个 repo / 16 个 KiCad project / 1707 components，全部解析通过；输出 437 条 finding，其中 decision split 是 298 likely_issue / 99 reviewer_to_confirm / 40 likely_ok / 0 undecided，guard/evidence 两个硬指标都是 0（`unverified_refdes_wrapped=0`, `findings_dropped_no_evidence=0`）。这不是专家 gold-label 正确率，而是“真实公开工程上可重复跑、可定位注意力分配回归”的工程可用性证据。
 
-**v1.0 target**: replace "1–2 天" with a measured number from a real review on the Olimex demo.
+**v3.3 synthetic safety floor**: Eval Pack v0 现在是两层：public corpus 负责真实项目上的 parser/guardrail/noise regression，`tests/harness/test_must_catch.py` 负责 synthetic must-catch safety floor。后者手工构造 5 个已知关键场景（新器件无 footprint、电容缺 `/V`、电容已有 `/V` 不应报、IC NC 无 datasheet、connector 批量 NC），用 pytest 锁住“这些已知重大边界不能漏/不能回流噪音”。人工标注的 20-30 条 calibration set 是下一步，用来量化 decision precision/recall。
+
+**final answer shape**: 它不替代硬件工程师下判断，而是把“原理图里哪些对象需要看、这些对象来自哪里、每条意见有没有证据”先整理成可审计清单。工程师省掉的是查位号、对 pin、整理证据和排除模型胡编对象的搬运时间；最终是否接受 finding 仍由人审。
 
 ---
 
@@ -32,13 +40,13 @@
 
 具体在 `pic_programmer` 上跑 `uv run hardwise review data/projects/pic_programmer --rules R001,R002`，得到的真实输出：
 
-- Report header："Components reviewed | 121, Rules run | R001, R002, Findings | 7, Sanitizer | 0 unverified refdes wrapped, 0 findings dropped (no evidence)"
-- 7 条 finding 全部由 R002 产生：6 条 medium（C1/C2/C5/C6/C7/C9，value 字段缺 `/V` 耐压后缀）+ 1 条 info（C3=`22uF/25V`，已声明耐压；提示评审者人工对照 80% 规则）
+- Report header："Components reviewed | 121, Rules run | R001, R002, Findings | 6, Sanitizer | 0 unverified refdes wrapped, 0 findings dropped (no evidence)"
+- 6 条 finding 全部由 R002 产生：C1/C2/C5/C6/C7/C9 的 value 字段缺 `/V` 耐压后缀，全部是 `decision=likely_issue`；C3=`22uF/25V` 已声明耐压，不再生成低价值提醒行
 - R001 出 0 条——`pic_programmer` 是已完成的 KiCad 公开样例，所有真实器件都已 layout，footprint 都填好。这是**诚实输出**，不是 R001 漏判。
-- 每条 finding 都带 `evidence_tokens=["sch:pic_programmer.kicad_sch#C3"]` 这种位号+源文件+refdes 三段式定位
+- 每条 finding 都带 `evidence_tokens=["sch:pic_programmer.kicad_sch#C2"]` 这种位号+源文件+refdes 三段式定位
 - `memory/rules.md` 因为 R002 medium 触发了 ≥3 的阈值，写出一条 `STATUS: candidate`，建议人工把"系统性 value 字段缺耐压标注"反馈给器件库维护者
 
-**v1.0 target**: keep this answer in sync with the latest sample report; once Slice 3 lands datasheet evidence, refresh with the new evidence-token forms (`datasheet:PIC16F876.pdf#p23`).
+**final answer shape**: 输入是公开 KiCad 工程、公开 datasheet 和 checklist；输出是 markdown/HTML review report、SQLite/PG 结构化 store、可选 trace ledger。面试时只展示主 report 和一条 `ask` 问答，不把 memory/trace/store 都讲成主产品。
 
 **v3.1 report polish**: 报告现在有两种并存输出：默认 markdown 适合 git diff / 纯文本归档；`--format html` 生成中文单文件 HTML，按 rule 折叠、风险等级色码、位号/网络 chip、证据定位 token 等宽展示，并把 R001/R002/R003 的英文工程字段转成硬件工程师更容易扫读的中文检视意见。两者复用同一个 `Finding` schema，没有引入第二套 finding 形状。
 
@@ -53,8 +61,6 @@
 - **关系库（SQLite + SQLAlchemy）**：`src/hardwise/store/relational.py`，两张表 `components`（refdes 唯一索引，value/footprint/datasheet/source_file/source_kind）+ `nc_pins`（refdes/pin_number/pin_name/pin_electrical_type）。在 `pic_programmer` 上跑 `uv run hardwise review ... --rules R001,R002,R003` 后写入 121 个 components + 77 个 NC pins。
 - **向量库（Chroma local persistent + ONNX MiniLM）**：`src/hardwise/store/vector.py`，每个 chunk 的 metadata 至少 `{part_ref, source_pdf, page, chunk_index}`。`hardwise ingest-datasheet data/datasheets/l78.pdf --part-ref U3` 切页 → chunks → upsert，`hardwise query-datasheet "absolute maximum input voltage"` 返回 top-k 带 `[l78.pdf p7 part=U3]` 的 provenance 行。
 - **Join key = refdes**：U3 在关系库 `components` 表里有 `value=7805, datasheet=www.st.com/.../l78.pdf` 一行，在向量库里有 `part_ref=U3` 的 N 个 chunks。一条评审意见想"对位号 U3 引用 datasheet 第 7 页"，就要同时给 `sch:pic_programmer.kicad_sch#U3` 和 `datasheet:l78.pdf#p7` 两个 evidence token——两条都验得过才会被 Evidence Ledger 放行。混存会破坏这种 token 三段式定位。
-
-**v1.0 target (Slice 4)**: 一条真实 R003 finding 跨双库取证——`sch:` 和 `datasheet:` 两个 token 同时出现在 evidence_tokens 列表里，证明 NC pin handling 与 datasheet 规格一致或不一致。
 
 **v4.0 (R003 datasheet closure shipped — DR-009)**: R003 现在按 DR-009 写两个新字段——结构化 `evidence_chain: list[EvidenceStep]` + 机器判断 `decision`，跟流程状态 `status` 严格分离。`hardwise review pic_programmer --rules R003 --vector` 在 77 个 NC pin 上跑 R003 闭环：每条 finding 都先按 refdes → `component.value` 推 part_ref，按 `pin {N} {name}` 做向量检索，得到 hits 后用 `\bpin\s*N\b` + `\b(NC|no.connect|not connected)\b` 两个正则在 hit 文本里筛 → 命中 NC 关键词 = `likely_ok`；命中 pin 但无 NC 关键词 = `likely_issue`；无相关命中 = `reviewer_to_confirm`。
 
@@ -118,8 +124,6 @@ ComponentNotFound(
 
 结论要讲准：MiMo 证明了 prompt cache **read path** 确实生效，第二次几乎不再付长 prompt 的 input tokens；但它没有回传 creation 计数，`cache_creation_input_tokens` 是 `null` 而不是非零。因此当前证据不能说"creation 字段已验过非零"，只能说"cache_control 被执行、read hit 可观测；creation accounting 需要换官方 Anthropic 或另一个会暴露该字段的 endpoint 复验"。
 
-**v1.0 target**: cite the real tool manifest in `src/hardwise/agent/tools.py`, include count and one input/output sample.
-
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？
@@ -134,7 +138,7 @@ ComponentNotFound(
 - 报告头部一行 sanitizer note 公开数字："N unverified refdes wrapped, M findings dropped (no evidence)"。Slice 1 demo 跑 pic_programmer 是 `0 / 0`（合理：R001 deterministic check，所有 finding 的 refdes 都来自实解析的 `BoardRegistry`），但单测覆盖了真假混合的反例。
 - 总测试 28 条全过（含 4 条 refdes guard + 3 条 evidence ledger + 2 条 e2e）。
 
-**v1.0 target**: show a concrete example — model attempts to reference U99 (not in registry), guard wraps it as `⟨?U99⟩`, evidence ledger drops the claim.
+**final answer shape**: 防线不是一句 prompt，而是三层合同：(1) 工具层 unknown refdes 返回 `found=false` 和 `closest_matches`；(2) 输出层 sanitizer 把未注册 refdes 包成 `⟨?...⟩`；(3) 报告层 Evidence Ledger 丢掉没有 source token 的 finding。例子是 `U999`：registry 查不到，工具返回 not_found，模型不能把它解释成真实器件。
 
 ---
 
@@ -142,23 +146,21 @@ ComponentNotFound(
 
 **v0.1**: Cadence 适配器（企业环境接入）、pin 定义/接口表结构化解析、检视意见闭环状态、通用 checklist 规则包、Sleep Consolidator 从人工 gate 升级到带 evaluation set 的半自动晋升。PCB/EMC 检查仍放到更后面。
 
-**v1.0 (midpoint rerank)**: 按 2 周实际遇到的边界重排优先级：
+**final answer shape**: 我不会先加更多规则。再做一个月，优先补“可信度”和“可交付性”：
 
-1. **Schematic net parser**（wire + label + hierarchical label + symbol pin endpoint 拓扑推断）— 当前 `parse_pcb_nets` 读的是 `.kicad_pcb`（post-Layout 数据），不能作为 pre-Layout 评审证据。真正的 schematic net parser 要从 `.kicad_sch` 推断连接拓扑，这是 R004 net-aware I2C 地址冲突 + R005 dangling-net + R006/R007 net naming 的共同前置。工程量 6-8h，但解锁 4 条规则。
-2. **DecisionTrace 可审计 artifact**（per-finding 工具调用链 + datasheet hit + 命中片段沉淀到报告旁注）— 当前 `Runner` 已累积 `ToolCallTrace[]` 但只用在 stdout；把它沉淀成 per-finding 旁注，整个 agent 决策路径变成可审计 artifact。面试官问"为什么这个 finding 会出现"时有现成答案。
-3. **Oracle benchmark + 半自动 gate**（≥50 条真实 finding 的人工标注 + LLM 模式提取 + eval set）— Sleep Consolidator 当前是纯阈值统计 + 人工 gate；有了 oracle 可以升级到半自动晋升，但仍保留人工 gate 防止 memory pollution。
-4. **Cadence adapter**（工作机 Windows + Cadence Skill 绑定）— 在 Mac 上做这件事会被环境吃掉时间；真有 DJI 面试要求 Cadence 现场跑，工作机上 1-2 天能加。
+1. **人工标注 calibration set**：从公开项目里抽 20-30 条 finding，请硬件工程师标成 true issue / needs review / noise，用来量化 precision/recall。现在的 eval pack 是 regression smoke，不是专家准确率。
+2. **Schematic net parser**：只在 `.kicad_sch` 上解析 wire、label、power symbol 和 symbol pin endpoint；这之后才允许做 R004/R005。已经实现的 `parse_pcb_nets` 明确只是 post-Layout diagnostic，不能喂 pre-Layout review。
+3. **Decision trace polish**：把每条 finding 的工具调用、EDA token、datasheet hit 固化到报告旁注，面试官问“为什么出现这条 finding”时能直接追溯。
+4. **Cadence/Allegro adapter**：如果岗位现场需要企业 EDA 证明，再在 Windows + Cadence Skill 环境补一个 adapter；MVP 阶段不在 Mac 上假装能完成企业闭环。
 
-**不做什么**：PCB review / 仿真 / 测试结果回灌 / BOM 管理 / FMEA / PLM — 这些都是 cross-node feature，CLAUDE.md Hard rule #5 锁死的边界。
-
-**v1.1 (run-trace foundation shipped)**: 顺序再细化一层：先补 `trace.jsonl`，再做 rules list，再考虑 CLI split，最后进 schematic net parser。原因很具体：`trace.jsonl` 把一次 `review` 的输入、规则、finding 计数、guard 计数、store/consolidator 结果固化成机器可读记录；`rules list` 可以直接读这份 ledger 展示"哪些规则最近跑过、命中多少、有没有 evidence/guard 问题"，不用解析 stdout。CLI split 只有在 rules list 之后 `cli.py` 明显胀大时才做；R004/R005 仍依赖 schematic net parser 路线明确后再上。
+**明确不做**：PCB review、仿真、测试结果回灌、BOM/PLM/FMEA、GitHub Action PR bot。这些会把作品从“窄而真”推回“广而浅”。
 
 ---
 
 ## Bonus talking points (优先级低，但可加分)
 
 ### Tiered model routing
-"三档路由：Haiku 处理 intent classification 和简单 lookup，Sonnet 跑 review 主流程，Opus 只用于难推理。Wrench Board 同款架构（fast/normal/deep tier）。成本和延迟是 Agent 落地的现实约束，不是研究玩具。"
+"三档路由不是绑定某个供应商型号，而是把 fast/normal/deep 三个运行槽留在 `.env`。当前 MiMo 只有一个主力模型时三档可以指向同一个 id；以后有更小/更强模型时只改配置，不改 agent 代码。成本和延迟是 Agent 落地的现实约束，不是研究玩具。"
 
 ### Adapter pattern at EDA boundary
 "`adapters/base.py` 定义接口，`kicad.py` 是 v0.1 实现。Cadence/Allegro 是一个新文件，不是重构。Wrench Board 的 13 个 boardview parser 走的就是这个模式——adding a format = one new file。"

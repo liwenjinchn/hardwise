@@ -9,6 +9,7 @@ def render_eval_html(summary: Any) -> str:
     """Render a small self-contained eval summary."""
 
     rows = "\n".join(_render_result_row(r) for r in summary.results)
+    decision_section = _render_decision_section(summary)
     guardrail_section = _render_guardrail_section(summary.unverified_refdes_samples)
     return f"""<!doctype html>
 <html lang="en">
@@ -31,6 +32,7 @@ def render_eval_html(summary: Any) -> str:
     code {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }}
     .ok {{ color: #17693b; font-weight: 700; }}
     .bad {{ color: #9b2c2c; font-weight: 700; }}
+    section {{ margin-top: 24px; }}
   </style>
 </head>
 <body>
@@ -47,6 +49,7 @@ def render_eval_html(summary: Any) -> str:
       <div class="metric"><span>Findings</span><strong>{summary.findings_total}</strong></div>
       <div class="metric"><span>Refdes Wrapped</span><strong>{summary.unverified_refdes_wrapped}</strong></div>
     </section>
+    {decision_section}
     <table>
       <thead>
         <tr><th>Repo</th><th>Project</th><th>Status</th><th>Components</th><th>NC Pins</th><th>Findings</th><th>Rules</th><th>Error</th></tr>
@@ -77,6 +80,69 @@ def _render_result_row(result: Any) -> str:
         f"<td>{_esc(result.error or '')}</td>"
         "</tr>"
     )
+
+
+def _render_decision_section(summary: Any) -> str:
+    total = max(int(summary.findings_total), 0)
+    decisions = getattr(summary, "findings_by_decision", {}) or {}
+    global_rows = "\n".join(
+        "<tr>"
+        f"<td>{_esc(decision)}</td>"
+        f"<td>{int(decisions.get(decision, 0))}</td>"
+        f"<td>{_percentage(int(decisions.get(decision, 0)), total)}</td>"
+        "</tr>"
+        for decision in ("likely_issue", "reviewer_to_confirm", "likely_ok", "undecided")
+    )
+    per_rule = getattr(summary, "findings_by_rule_decision", {}) or {}
+    per_rule_rows = "\n".join(
+        _render_rule_decision_row(rule, counts)
+        for rule, counts in sorted(per_rule.items())
+    )
+    if not per_rule_rows:
+        per_rule_rows = (
+            '<tr><td colspan="6">No rule decision metrics recorded.</td></tr>'
+        )
+    return f"""
+    <section>
+      <h2>Decision Metrics</h2>
+      <table>
+        <thead>
+          <tr><th>Decision</th><th>Count</th><th>Percentage</th></tr>
+        </thead>
+        <tbody>{global_rows}</tbody>
+      </table>
+      <table>
+        <thead>
+          <tr><th>Rule</th><th>likely_issue</th><th>reviewer_to_confirm</th><th>likely_ok</th><th>undecided</th><th>Total</th></tr>
+        </thead>
+        <tbody>{per_rule_rows}</tbody>
+      </table>
+    </section>
+"""
+
+
+def _render_rule_decision_row(rule: str, counts: dict[str, int]) -> str:
+    likely_issue = int(counts.get("likely_issue", 0))
+    reviewer = int(counts.get("reviewer_to_confirm", 0))
+    likely_ok = int(counts.get("likely_ok", 0))
+    undecided = int(counts.get("undecided", 0))
+    total = likely_issue + reviewer + likely_ok + undecided
+    return (
+        "<tr>"
+        f"<td>{_esc(rule)}</td>"
+        f"<td>{likely_issue}</td>"
+        f"<td>{reviewer}</td>"
+        f"<td>{likely_ok}</td>"
+        f"<td>{undecided}</td>"
+        f"<td>{total}</td>"
+        "</tr>"
+    )
+
+
+def _percentage(count: int, total: int) -> str:
+    if total <= 0:
+        return "0.0%"
+    return f"{(count / total) * 100:.1f}%"
 
 
 def _render_guardrail_section(samples: list[str]) -> str:

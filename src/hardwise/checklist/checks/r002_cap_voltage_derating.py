@@ -8,13 +8,13 @@ classic 80% derating rule). That comparison needs two facts:
   2. working_voltage of the cap's net (requires a net parser).
 
 Slice 2 ships only #1. KiCad net parsing is deferred to Slice 3 per
-`docs/PLAN.md` DR-006 / Slice 2 plan. So this check produces:
+`docs/PLAN.md` DR-006 / Slice 2 plan. So this check now produces:
 
-  - `info` finding when rated_voltage is declared — reviewer is reminded to
-    confirm the 80% rule manually against actual working voltage.
   - `medium` finding when rated_voltage is missing — the value field is
     incomplete and the rule cannot even be attempted; ask the schematic
     author to suffix `/<num>V`.
+  - no finding when rated_voltage is declared — the MVP harness treats that as
+    sufficiently documented until schematic-side working-voltage evidence lands.
 
 The `high` severity branch (rated_voltage parsed AND working_voltage known
 AND working_voltage > rated_voltage × 0.8) is intentionally not implemented
@@ -71,43 +71,26 @@ def check(schematic_records: list[ComponentRecord]) -> list[Finding]:
         if not value or value == "0":
             continue
 
-        evidence = [f"sch:{record.source_file.name}#{record.refdes}"]
         rated_voltage = parse_rated_voltage(value)
 
         if rated_voltage is not None:
-            findings.append(
-                Finding(
-                    rule_id="R002",
-                    severity="info",
-                    refdes=record.refdes,
-                    message=(
-                        f"{record.refdes} rated voltage = {rated_voltage:g} V detected from "
-                        f"value '{value}'. Reviewer must confirm the 80% derating rule against "
-                        f"the actual working voltage on this cap's net "
-                        f"(net parser not yet available — manual check)."
-                    ),
-                    evidence_tokens=evidence,
-                    suggested_action=(
-                        f"Confirm working voltage on this cap's net does not exceed "
-                        f"{rated_voltage * 0.8:g} V."
-                    ),
-                )
+            continue
+
+        findings.append(
+            Finding(
+                rule_id="R002",
+                severity="medium",
+                refdes=record.refdes,
+                message=(
+                    f"{record.refdes} value field '{value}' does not declare rated voltage "
+                    f"(missing '/<num>V' suffix). The 80% derating rule cannot be "
+                    f"evaluated without it."
+                ),
+                evidence_tokens=[f"sch:{record.source_file.name}#{record.refdes}"],
+                suggested_action=(
+                    "Clarify rated voltage by suffixing the value field, e.g. '100uF/25V'."
+                ),
+                decision="likely_issue",
             )
-        else:
-            findings.append(
-                Finding(
-                    rule_id="R002",
-                    severity="medium",
-                    refdes=record.refdes,
-                    message=(
-                        f"{record.refdes} value field '{value}' does not declare rated voltage "
-                        f"(missing '/<num>V' suffix). The 80% derating rule cannot be "
-                        f"evaluated without it."
-                    ),
-                    evidence_tokens=evidence,
-                    suggested_action=(
-                        "Clarify rated voltage by suffixing the value field, e.g. '100uF/25V'."
-                    ),
-                )
-            )
+        )
     return findings

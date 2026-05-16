@@ -24,6 +24,7 @@ from hardwise.guards.evidence import strip_unsupported
 from hardwise.guards.refdes import sanitize_finding
 
 EVAL_SCHEMA_VERSION = 1
+DECISION_BUCKETS = ("likely_issue", "reviewer_to_confirm", "likely_ok", "undecided")
 
 
 class EvalRepo(BaseModel):
@@ -60,6 +61,7 @@ class EvalProjectResult(BaseModel):
     findings_by_rule: dict[str, int] = Field(default_factory=dict)
     findings_by_severity: dict[str, int] = Field(default_factory=dict)
     findings_by_decision: dict[str, int] = Field(default_factory=dict)
+    findings_by_rule_decision: dict[str, dict[str, int]] = Field(default_factory=dict)
     unverified_refdes_wrapped: int = 0
     unverified_refdes_samples: list[str] = Field(default_factory=list)
     findings_dropped_no_evidence: int = 0
@@ -85,6 +87,7 @@ class EvalRunSummary(BaseModel):
     findings_by_rule: dict[str, int] = Field(default_factory=dict)
     findings_by_severity: dict[str, int] = Field(default_factory=dict)
     findings_by_decision: dict[str, int] = Field(default_factory=dict)
+    findings_by_rule_decision: dict[str, dict[str, int]] = Field(default_factory=dict)
     unverified_refdes_wrapped: int
     unverified_refdes_samples: list[str] = Field(default_factory=list)
     findings_dropped_no_evidence: int
@@ -249,7 +252,7 @@ def _run_one_project(project_dir: Path, repo_name: str, rules: list[str]) -> Eva
                     f"{finding.rule_id} {finding.refdes}: {sanitized_finding.message}"
                 )
 
-        decisions = Counter(f.decision for f in sanitized if f.decision is not None)
+        decisions = _decision_counts(sanitized)
         return EvalProjectResult(
             repo=repo_name,
             project_dir=str(project_dir),
@@ -260,6 +263,7 @@ def _run_one_project(project_dir: Path, repo_name: str, rules: list[str]) -> Eva
             findings_by_rule=dict(Counter(f.rule_id for f in sanitized)),
             findings_by_severity=dict(Counter(f.severity for f in sanitized)),
             findings_by_decision=dict(decisions),
+            findings_by_rule_decision=_rule_decision_counts(sanitized),
             unverified_refdes_wrapped=wrapped_total,
             unverified_refdes_samples=wrapped_samples[:10],
             findings_dropped_no_evidence=dropped,
@@ -280,10 +284,13 @@ def _build_summary(
     rule_counts: Counter[str] = Counter()
     severity_counts: Counter[str] = Counter()
     decision_counts: Counter[str] = Counter()
+    rule_decision_counts: dict[str, Counter[str]] = {}
     for result in passed:
         rule_counts.update(result.findings_by_rule)
         severity_counts.update(result.findings_by_severity)
         decision_counts.update(result.findings_by_decision)
+        for rule, counts in result.findings_by_rule_decision.items():
+            rule_decision_counts.setdefault(rule, Counter()).update(counts)
 
     return EvalRunSummary(
         generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -300,7 +307,11 @@ def _build_summary(
         findings_total=sum(r.findings_total for r in passed),
         findings_by_rule=dict(rule_counts),
         findings_by_severity=dict(severity_counts),
-        findings_by_decision=dict(decision_counts),
+        findings_by_decision=_normalize_decision_counts(decision_counts),
+        findings_by_rule_decision={
+            rule: _normalize_decision_counts(counts)
+            for rule, counts in sorted(rule_decision_counts.items())
+        },
         unverified_refdes_wrapped=sum(r.unverified_refdes_wrapped for r in passed),
         unverified_refdes_samples=[
             sample for result in passed for sample in result.unverified_refdes_samples
@@ -308,3 +319,24 @@ def _build_summary(
         findings_dropped_no_evidence=sum(r.findings_dropped_no_evidence for r in passed),
         results=results,
     )
+
+
+def _decision_counts(findings: list[Finding]) -> Counter[str]:
+    counts: Counter[str] = Counter()
+    for finding in findings:
+        counts[finding.decision or "undecided"] += 1
+    return Counter(_normalize_decision_counts(counts))
+
+
+def _rule_decision_counts(findings: list[Finding]) -> dict[str, dict[str, int]]:
+    counts: dict[str, Counter[str]] = {}
+    for finding in findings:
+        counts.setdefault(finding.rule_id, Counter())[finding.decision or "undecided"] += 1
+    return {
+        rule: _normalize_decision_counts(rule_counts)
+        for rule, rule_counts in sorted(counts.items())
+    }
+
+
+def _normalize_decision_counts(counts: Counter[str] | dict[str, int]) -> dict[str, int]:
+    return {bucket: int(counts.get(bucket, 0)) for bucket in DECISION_BUCKETS}

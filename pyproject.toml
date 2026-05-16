@@ -53,3 +53,4 @@ markers = [
     "slow: tests that take >1s or pull heavyweight deps (e.g. chromadb embedder)",
 ]
 addopts = "-m 'not slow'"
+norecursedirs = [".claude", "eval/projects"]

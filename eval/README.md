@@ -48,8 +48,28 @@ Current public smoke result:
 - 16 discovered KiCad project directories
 - 1707 parsed components
 - 437 deterministic findings
+- decision split: 298 likely_issue / 99 reviewer_to_confirm / 40 likely_ok / 0 undecided
 - 0 project failures
 - 0 unverified refdes wrapped
 - 0 findings dropped for missing evidence
 
-Treat these as harness health metrics, not expert correctness scores.
+Treat these as harness health and attention-allocation metrics, not expert
+correctness scores. Public-corpus connector/header/module density can make
+`likely_ok` look high; that is a corpus feature to inspect, not automatic proof
+that the rule is too optimistic.
+
+## Synthetic Must-Catch Cases
+
+The public corpus is paired with a small synthetic must-catch harness in
+`tests/harness/test_must_catch.py`. These tests use minimal schematic records
+rather than full KiCad fixtures and lock known review safety cases:
+
+- new real component without a footprint must be reported as `reviewer_to_confirm`
+- capacitor value missing a rated-voltage suffix must be `likely_issue`
+- capacitor value with a rated-voltage suffix must not produce a low-value finding
+- IC/module NC pin without datasheet evidence must be `reviewer_to_confirm`
+- connector-like batch NC pins must be grouped as one low-priority `likely_ok` finding
+
+This is not an expert gold-label accuracy benchmark. It is the MVP
+false-negative guardrail for known critical scenarios; a human-labeled
+calibration set can be added later to measure precision/recall.
