@@ -518,9 +518,23 @@ def eval_pack(
         "--limit-projects",
         help="Stop after N discovered project directories. Useful while iterating.",
     ),
+    baseline: Path | None = typer.Option(
+        None,
+        "--baseline",
+        help="Accepted eval-summary.json to compare against.",
+    ),
+    accept_baseline: bool = typer.Option(
+        False,
+        "--accept-baseline",
+        help="Copy this run's summary to --baseline after the run.",
+    ),
 ) -> None:
     """Run the public-corpus Hardwise Eval Pack MVP."""
     from hardwise.eval_pack import run_eval
+
+    if accept_baseline and baseline is None:
+        typer.echo("error: --accept-baseline requires --baseline", err=True)
+        raise typer.Exit(1)
 
     try:
         outputs = run_eval(
@@ -529,6 +543,8 @@ def eval_pack(
             output_dir=output_dir,
             download=download,
             limit_projects=limit_projects,
+            baseline_path=baseline,
+            accept_baseline=accept_baseline,
         )
     except Exception as e:
         typer.echo(f"error: eval failed: {type(e).__name__}: {e}", err=True)
@@ -542,6 +558,18 @@ def eval_pack(
     )
     typer.echo(f"summary: {outputs.summary_path}")
     typer.echo(f"html: {outputs.html_path}")
+    if outputs.comparison is not None and outputs.comparison_path is not None:
+        typer.echo(
+            f"comparison: {outputs.comparison_path} "
+            f"({outputs.comparison.status}, "
+            f"{len(outputs.comparison.regressions)} regressions)"
+        )
+        if outputs.comparison.status == "failed":
+            for regression in outputs.comparison.regressions:
+                typer.echo(f"regression: {regression}", err=True)
+            raise typer.Exit(2)
+    if accept_baseline and baseline is not None:
+        typer.echo(f"baseline accepted: {baseline}")
 
 
 @app.command()

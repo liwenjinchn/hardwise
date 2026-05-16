@@ -1,14 +1,9 @@
-"""Small public-corpus evaluation harness for Hardwise rules.
-
-The MVP intentionally measures reproducible behavior on public KiCad projects,
-not expert-level correctness. External corpora such as kicad-happy provide the
-repo selection and pinned commits; Hardwise records its own R001/R002/R003
-outputs over local checkouts.
-"""
+"""Small public-corpus evaluation harness for Hardwise rules."""
 
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 from collections import Counter
 from dataclasses import dataclass
@@ -23,6 +18,7 @@ from hardwise.checklist.checks.r001_new_component_candidate import check as chec
 from hardwise.checklist.checks.r002_cap_voltage_derating import check as check_r002
 from hardwise.checklist.checks.r003_nc_pin_handling import check as check_r003
 from hardwise.checklist.finding import Finding
+from hardwise.eval_compare import EvalComparison, compare_summaries
 from hardwise.eval_report import render_eval_html
 from hardwise.guards.evidence import strip_unsupported
 from hardwise.guards.refdes import sanitize_finding
@@ -100,6 +96,8 @@ class EvalOutputs:
     summary_path: Path
     html_path: Path
     summary: EvalRunSummary
+    comparison_path: Path | None = None
+    comparison: EvalComparison | None = None
 
 
 def load_manifest(path: Path) -> EvalManifest:
@@ -150,6 +148,8 @@ def run_eval(
     output_dir: Path,
     download: bool = False,
     limit_projects: int | None = None,
+    baseline_path: Path | None = None,
+    accept_baseline: bool = False,
 ) -> EvalOutputs:
     """Run Hardwise checks over the manifest and write JSON + HTML summaries."""
 
@@ -187,7 +187,40 @@ def run_eval(
         encoding="utf-8",
     )
     html_path.write_text(render_eval_html(summary), encoding="utf-8")
-    return EvalOutputs(summary_path=summary_path, html_path=html_path, summary=summary)
+
+    comparison_path: Path | None = None
+    comparison: EvalComparison | None = None
+    if baseline_path is not None:
+        if baseline_path.exists():
+            baseline = load_summary(baseline_path)
+            comparison = compare_summaries(
+                baseline=baseline,
+                current=summary,
+                baseline_path=baseline_path,
+                current_path=summary_path,
+            )
+            comparison_path = output_dir / "eval-comparison.json"
+            comparison_path.write_text(
+                json.dumps(comparison.model_dump(mode="json"), ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        if accept_baseline:
+            baseline_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(summary_path, baseline_path)
+
+    return EvalOutputs(
+        summary_path=summary_path,
+        html_path=html_path,
+        summary=summary,
+        comparison_path=comparison_path,
+        comparison=comparison,
+    )
+
+
+def load_summary(path: Path) -> EvalRunSummary:
+    """Load an eval summary JSON file."""
+
+    return EvalRunSummary.model_validate_json(path.read_text(encoding="utf-8"))
 
 
 def _run_one_project(project_dir: Path, repo_name: str, rules: list[str]) -> EvalProjectResult:
