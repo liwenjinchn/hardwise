@@ -12,8 +12,13 @@
 
 If you only have 90 seconds, start here:
 
-- **Product intro:** [`docs/product-intro.html`](docs/product-intro.html) — polished Chinese landing page for resume reviewers.
-- **Visual demo:** [`docs/hardware-demo.html`](docs/hardware-demo.html) — Chinese one-page view for hardware reviewers.
+![Hardwise product intro](docs/assets/hardwise-product-card.png)
+
+GitHub shows HTML files as source. Use the screenshot above for a quick scan,
+or open the rendered GitHub Pages demo after Pages finishes publishing:
+
+- **Product intro:** [liwenjinchn.github.io/hardwise/product-intro.html](https://liwenjinchn.github.io/hardwise/product-intro.html) — polished Chinese landing page for resume reviewers.
+- **Visual demo:** [liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html) — Chinese one-page view for hardware reviewers.
 - **Technical snapshot:** [`docs/demo.html`](docs/demo.html) — one-page snapshot of the review output and engineering mechanisms.
 - **Short read:** [`docs/demo.md`](docs/demo.md) — what the demo proves, in resume-reviewer language.
 - **Reproduce locally:** `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html`
