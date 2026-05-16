@@ -491,6 +491,59 @@ def query_datasheet(
         )
 
 
+@app.command(name="eval")
+def eval_pack(
+    manifest: Path = typer.Option(
+        Path("eval/manifest.yaml"),
+        "--manifest",
+        help="Eval manifest YAML.",
+    ),
+    projects_root: Path = typer.Option(
+        Path("eval/projects"),
+        "--projects-root",
+        help="Directory containing checked-out public eval repos.",
+    ),
+    output_dir: Path = typer.Option(
+        Path("reports/eval"),
+        "--output-dir",
+        help="Directory for eval-summary.json/html.",
+    ),
+    download: bool = typer.Option(
+        False,
+        "--download/--no-download",
+        help="Clone missing repos from the manifest at their pinned commits.",
+    ),
+    limit_projects: int | None = typer.Option(
+        None,
+        "--limit-projects",
+        help="Stop after N discovered project directories. Useful while iterating.",
+    ),
+) -> None:
+    """Run the public-corpus Hardwise Eval Pack MVP."""
+    from hardwise.eval_pack import run_eval
+
+    try:
+        outputs = run_eval(
+            manifest_path=manifest,
+            projects_root=projects_root,
+            output_dir=output_dir,
+            download=download,
+            limit_projects=limit_projects,
+        )
+    except Exception as e:
+        typer.echo(f"error: eval failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    summary = outputs.summary
+    typer.echo(
+        f"eval: {summary.manifest_name} "
+        f"({summary.projects_passed}/{summary.projects_total} projects passed, "
+        f"{summary.findings_total} findings)"
+    )
+    typer.echo(f"summary: {outputs.summary_path}")
+    typer.echo(f"html: {outputs.html_path}")
+
+
 @app.command()
 def ask(
     project_dir: Path = typer.Argument(..., help="Path to a KiCad project directory."),

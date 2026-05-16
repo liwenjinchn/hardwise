@@ -592,3 +592,50 @@ After running `hardwise review` on pic_programmer:
 Generalizes: any rule that produces >10 findings of the same pattern on one component should ask "is this component class different?" before generating the full list.
 
 ---
+
+## 2026-05-16 · Eval Pack v0 uses public regression oracle, not expert gold labels
+
+**Symptom**
+
+The single `pic_programmer` demo was doing too much work in the story: parser fixture,
+rule demo, and evidence of product reliability. That made the project feel more fragile
+than it is, because every sample-specific quirk changed the headline number.
+
+**Root cause**
+
+There is no ready-made public "expert gold-label schematic review findings" dataset for
+KiCad. The closest public resource is `kicad-happy-testharness`: real KiCad projects,
+pinned commits, regression baselines, assertions, and Layer 3 findings. Its own docs are
+explicit that most assertions are consistency checks, not independent correctness proof.
+
+**HW analogy**: treating one completed reference board as the whole validation plan is like
+qualifying a power design from one known-good bench unit. It proves the flow can work, but
+not that the process is robust across board families.
+
+**Fix**
+
+Added a small `Hardwise Eval Pack v0`:
+
+1. `eval/manifest.yaml` selects five public repos from the kicad-happy smoke/corpus lists,
+   pinned to their upstream commits.
+2. `hardwise eval` can clone missing repos with `--download`, discover KiCad project
+   directories, run R001/R002/R003, and write `eval-summary.json` + `eval-summary.html`.
+3. The report labels the trust boundary as "public regression oracle / pseudo-gold, not
+   expert gold labels" so the project does not overclaim.
+4. `--limit-projects` was fixed to stop before cloning later repos, so iteration can run
+   one external project without downloading the whole manifest.
+
+**Verification**
+
+- Local harness test against `data/projects/pic_programmer`: 1/1 project passed, refdes
+  wrapped count stayed 0.
+- External smoke with `Jana-Marie/analog-toolkit` from the kicad-happy-selected corpus:
+  1/1 project passed, 26 findings, JSON and HTML summaries generated.
+
+**Takeaway**
+
+For this MVP, "public, pinned, reproducible, and honest about trust level" beats chasing
+a non-existent perfect gold dataset. The eval pack should be presented as a reliability
+and noise-control harness first; expert correctness can be a later tier.
+
+---

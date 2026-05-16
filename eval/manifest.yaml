@@ -1,0 +1,38 @@
+schema_version: 1
+name: hardwise-eval-pack-v0
+description: >
+  MVP public-corpus evaluation pack. Repo selection is borrowed from the
+  kicad-happy-testharness smoke/corpus lists; Hardwise runs only its own
+  deterministic R001/R002/R003 checks and reports behavior, not expert-level
+  correctness.
+upstream:
+  corpus: https://github.com/aklofas/kicad-happy-testharness
+  smoke_pack: https://github.com/aklofas/kicad-happy-testharness/blob/main/reference/smoke_pack.md
+  methodology: https://github.com/aklofas/kicad-happy-testharness/blob/main/methodology.md
+  trust_boundary: public regression oracle / pseudo-gold, not expert gold labels
+rules:
+  - R001
+  - R002
+  - R003
+repos:
+  - name: Jana-Marie/analog-toolkit
+    url: https://github.com/Jana-Marie/analog-toolkit
+    commit: c97bcc3512fb96a0b8f981e363db583b22aa6423
+    tags: [smoke, spice_rich, analog]
+    project_dirs: ["."]
+  - name: skot/bitaxe
+    url: https://github.com/skot/bitaxe
+    commit: 942bbd97aab09b12d826c6e82c64f3fb91246c4c
+    tags: [smoke, gerber_edgecase, production_like]
+  - name: greatscottgadgets/hackrf
+    url: https://github.com/greatscottgadgets/hackrf
+    commit: 8e9b06ba1b3ae2d4253bbb54d8ea4c4d9f4cb6bd
+    tags: [smoke, dense_pcb, rf]
+  - name: ClemensElflein/OpenMower
+    url: https://github.com/ClemensElflein/OpenMower
+    commit: 4f11e685f3011ab97c067595259cb078baa500be
+    tags: [smoke, hierarchical, robotics]
+  - name: sparkfun/SparkFun_IoT_RedBoard-RP2350
+    url: https://github.com/sparkfun/SparkFun_IoT_RedBoard-RP2350
+    commit: a2c9e028f1406ef94c75cd55d4f4f02612ba63c4
+    tags: [smoke, kicad_9, rp2350]
