@@ -107,6 +107,15 @@ ComponentNotFound(
 
 `hardwise ask data/projects/pic_programmer "..."` 是面试现场可演示的一条命令——比"我设计了 5 个机制" 强得多。8 条 fast tests 覆盖 `Runner` 用 fake Anthropic client 跑 text-only / 单工具 / 多工具 / unknown-refdes closest_matches / 无 collection / 未知工具 / iteration cap / token 累加路径，no API key needed。
 
+**v4.1 (2026-05-16 cold-start probe)**: 追加做了一次真正的冷启动隔离验证：用唯一 system prompt 绕开已热缓存，连续两次调用 MiMo Anthropic-format proxy（`mimo-v2.5`）。raw `usage`：
+
+| run | input/output | cache_creation_input_tokens | cache_read_input_tokens |
+|---|---:|---:|---:|
+| 1 | 5445/16 | `null` | `null` |
+| 2 | 5/16 | `null` | **5440** |
+
+结论要讲准：MiMo 证明了 prompt cache **read path** 确实生效，第二次几乎不再付长 prompt 的 input tokens；但它没有回传 creation 计数，`cache_creation_input_tokens` 是 `null` 而不是非零。因此当前证据不能说"creation 字段已验过非零"，只能说"cache_control 被执行、read hit 可观测；creation accounting 需要换官方 Anthropic 或另一个会暴露该字段的 endpoint 复验"。
+
 **v1.0 target**: cite the real tool manifest in `src/hardwise/agent/tools.py`, include count and one input/output sample.
 
 ---
@@ -131,7 +140,16 @@ ComponentNotFound(
 
 **v0.1**: Cadence 适配器（企业环境接入）、pin 定义/接口表结构化解析、检视意见闭环状态、通用 checklist 规则包、Sleep Consolidator 从人工 gate 升级到带 evaluation set 的半自动晋升。PCB/EMC 检查仍放到更后面。
 
-**v1.0 target**: rerank top-2 based on what actually felt missing during 2-week build.
+**v1.0 (midpoint rerank)**: 按 2 周实际遇到的边界重排优先级：
+
+1. **Schematic net parser**（wire + label + hierarchical label + symbol pin endpoint 拓扑推断）— 当前 `parse_pcb_nets` 读的是 `.kicad_pcb`（post-Layout 数据），不能作为 pre-Layout 评审证据。真正的 schematic net parser 要从 `.kicad_sch` 推断连接拓扑，这是 R004 net-aware I2C 地址冲突 + R005 dangling-net + R006/R007 net naming 的共同前置。工程量 6-8h，但解锁 4 条规则。
+2. **DecisionTrace 可审计 artifact**（per-finding 工具调用链 + datasheet hit + 命中片段沉淀到报告旁注）— 当前 `Runner` 已累积 `ToolCallTrace[]` 但只用在 stdout；把它沉淀成 per-finding 旁注，整个 agent 决策路径变成可审计 artifact。面试官问"为什么这个 finding 会出现"时有现成答案。
+3. **Oracle benchmark + 半自动 gate**（≥50 条真实 finding 的人工标注 + LLM 模式提取 + eval set）— Sleep Consolidator 当前是纯阈值统计 + 人工 gate；有了 oracle 可以升级到半自动晋升，但仍保留人工 gate 防止 memory pollution。
+4. **Cadence adapter**（工作机 Windows + Cadence Skill 绑定）— 在 Mac 上做这件事会被环境吃掉时间；真有 DJI 面试要求 Cadence 现场跑，工作机上 1-2 天能加。
+
+**不做什么**：PCB review / 仿真 / 测试结果回灌 / BOM 管理 / FMEA / PLM — 这些都是 cross-node feature，CLAUDE.md Hard rule #5 锁死的边界。
+
+**v1.1 (run-trace foundation shipped)**: 顺序再细化一层：先补 `trace.jsonl`，再做 rules list，再考虑 CLI split，最后进 schematic net parser。原因很具体：`trace.jsonl` 把一次 `review` 的输入、规则、finding 计数、guard 计数、store/consolidator 结果固化成机器可读记录；`rules list` 可以直接读这份 ledger 展示"哪些规则最近跑过、命中多少、有没有 evidence/guard 问题"，不用解析 stdout。CLI split 只有在 rules list 之后 `cli.py` 明显胀大时才做；R004/R005 仍依赖 schematic net parser 路线明确后再上。
 
 ---
 

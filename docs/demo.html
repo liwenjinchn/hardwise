@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardwise Resume Demo</title>
+  <style>
+    :root {
+      --ink: #171b19; --muted: #5f6a66; --line: #d6d8d0; --paper: #f3f0e7;
+      --panel: #fffdf7; --rail: #233831; --copper: #b05d32; --blue: #286d86;
+      --green: #4f7452; --mono: "SFMono-Regular", "Cascadia Code", monospace;
+      --sans: "Avenir Next", "Segoe UI", sans-serif; --serif: "Iowan Old Style", Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink); font-family: var(--sans); line-height: 1.45;
+      background:
+        linear-gradient(90deg, rgba(35,56,49,.08) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(35,56,49,.06) 1px, transparent 1px),
+        var(--paper);
+      background-size: 32px 32px;
+    }
+    main { width: min(1160px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 48px; }
+    .sheet { background: rgba(255,253,247,.94); border: 1px solid var(--line); box-shadow: 0 22px 60px rgba(29,38,34,.14); }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); border-bottom: 1px solid var(--line); }
+    .title { padding: 38px 42px; border-left: 10px solid var(--rail); }
+    .eyebrow { margin: 0 0 14px; color: var(--muted); font: 700 12px/1 var(--mono); text-transform: uppercase; }
+    h1 { margin: 0; max-width: 780px; font-family: var(--serif); font-size: clamp(44px, 7vw, 84px); line-height: .95; letter-spacing: 0; }
+    .lede { margin: 22px 0 0; max-width: 740px; color: #303934; font-size: 18px; }
+    .metrics { display: grid; grid-template-columns: 1fr 1fr; border-left: 1px solid var(--line); background: #faf8f1; }
+    .metric { min-height: 150px; padding: 22px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .metric:nth-child(2n) { border-right: 0; }
+    .metric span, .step span { display: block; color: var(--muted); font: 700 11px/1.2 var(--mono); text-transform: uppercase; }
+    .metric strong { display: block; margin-top: 10px; font-family: var(--serif); font-size: 52px; line-height: .95; }
+    .metric code { display: block; margin-top: 12px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+    .band { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(0, 1.1fr); border-bottom: 1px solid var(--line); }
+    .panel { padding: 28px 34px; border-right: 1px solid var(--line); }
+    .panel:last-child { border-right: 0; }
+    h2 { margin: 0 0 16px; font-size: 18px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 9px; }
+    .chip {
+      display: inline-flex; align-items: center; min-height: 32px; padding: 6px 10px;
+      border: 1px solid var(--line); background: #fffaf0; font-family: var(--mono); font-size: 12px;
+    }
+    .chip b { margin-left: 8px; color: var(--ink); font-size: 14px; }
+    .blue { color: var(--blue); } .green { color: var(--green); } .copper { color: var(--copper); }
+    .report { padding: 24px; border-bottom: 1px solid var(--line); }
+    .report-grid { display: grid; grid-template-columns: 104px minmax(0, 1fr) minmax(220px, .44fr); border: 1px solid var(--line); background: var(--panel); }
+    .side { padding: 18px; border-right: 1px solid var(--line); background: #faf7ef; }
+    .idx { display: block; margin-bottom: 14px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
+    .severity { display: inline-block; padding: 5px 8px; border: 1px solid currentColor; color: var(--copper); font: 700 11px/1 var(--mono); text-transform: uppercase; }
+    .finding-main { padding: 18px 20px; min-width: 0; }
+    .targets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .target { padding: 4px 8px; border: 1px solid var(--line); background: #fffaf0; font-family: var(--mono); font-size: 12px; }
+    .message { margin: 0 0 14px; font-size: 15px; }
+    .action { margin: 0; padding-left: 14px; border-left: 3px solid var(--copper); color: #403a32; font-size: 14px; }
+    .evidence { padding: 18px; border-left: 1px solid var(--line); background: #fcfbf6; }
+    .evidence h3 { margin: 0 0 10px; color: var(--muted); font: 700 11px/1 var(--mono); text-transform: uppercase; }
+    .token { display: block; padding: 8px; background: #edf3f0; color: #24352f; font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+    .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--line); border-top: 1px solid var(--line); }
+    .step { min-height: 136px; padding: 18px; background: var(--panel); }
+    .step b { display: block; margin: 10px 0 8px; font-size: 15px; }
+    .step p, .note { margin: 0; color: #46504b; font-size: 13px; }
+    .commands { padding: 28px 34px 34px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr); gap: 24px; }
+    pre { margin: 0; padding: 18px; overflow: auto; background: #1d2a25; color: #f3f0e7; font: 13px/1.55 var(--mono); }
+    .commands .note { font-size: 15px; }
+    @media (max-width: 860px) {
+      main { width: min(100% - 20px, 1160px); padding: 16px 0 32px; }
+      .hero, .band, .report-grid, .commands { grid-template-columns: 1fr; }
+      .title { padding: 28px 24px; }
+      .metrics { border-left: 0; }
+      .panel, .side, .evidence { border-right: 0; border-left: 0; }
+      .flow { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="sheet" aria-label="Hardwise resume demo">
+      <header class="hero">
+        <div class="title">
+          <p class="eyebrow">Hardwise / Resume demo</p>
+          <h1>Hardware schematic review agent</h1>
+          <p class="lede">把公开 KiCad 原理图解析成可验证 registry，让 Agent 通过工具生成带证据的检视报告；重点是防位号幻觉、证据链和可复现 demo。</p>
+        </div>
+        <div class="metrics" aria-label="demo metrics">
+          <div class="metric"><span>Findings</span><strong>84</strong><code>R002 + R003</code></div>
+          <div class="metric"><span>Components</span><strong>121</strong><code>KiCad parsed</code></div>
+          <div class="metric"><span>NC pins</span><strong>77</strong><code>coordinate matched</code></div>
+          <div class="metric"><span>Evidence</span><strong>100%</strong><code>token-gated output</code></div>
+        </div>
+      </header>
+
+      <section class="band">
+        <div class="panel">
+          <h2>What this proves</h2>
+          <div class="chips">
+            <span class="chip blue">Tool-use loop <b>live</b></span>
+            <span class="chip green">Refdes Guard <b>live</b></span>
+            <span class="chip copper">Evidence Ledger <b>live</b></span>
+            <span class="chip blue">Prompt caching <b>measured</b></span>
+            <span class="chip green">Public data only <b>yes</b></span>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>One-sentence pitch</h2>
+          <p class="note">Hardwise does not ask a model to “look smart”; it constrains the model with KiCad-derived tools, then publishes every claim with a source token so hardware reviewers can audit the output quickly.</p>
+        </div>
+      </section>
+
+      <section class="report" aria-label="sample finding">
+        <div class="report-grid">
+          <div class="side"><span class="idx">#001</span><span class="severity">需确认</span></div>
+          <div class="finding-main">
+            <div class="targets">
+              <span class="target">规则：R002</span><span class="target">位号：C2</span><span class="target">网络：-</span>
+            </div>
+            <p class="message">C2 value field '220uF' does not declare rated voltage. The 80% derating rule cannot be evaluated without it.</p>
+            <p class="action">建议补充耐压后缀，例如 `100uF/25V`，再由评审人核对实际工作电压。</p>
+          </div>
+          <aside class="evidence">
+            <h3>Evidence token</h3>
+            <code class="token">sch:pic_programmer.kicad_sch#C2</code>
+          </aside>
+        </div>
+      </section>
+
+      <section class="flow" aria-label="mechanisms">
+        <div class="step"><span>01</span><b>Parse KiCad</b><p>从公开工程构建 component / pin / NC registry。</p></div>
+        <div class="step"><span>02</span><b>Run checks</b><p>R001/R002/R003 输出结构化 Finding，而不是自由文本。</p></div>
+        <div class="step"><span>03</span><b>Guard refdes</b><p>未命中 registry 的位号会被包成 `⟨?U999⟩`。</p></div>
+        <div class="step"><span>04</span><b>Gate evidence</b><p>没有 `sch:` / `datasheet:` / `rule:` token 的结论不进报告。</p></div>
+        <div class="step"><span>05</span><b>Write report</b><p>生成 markdown / HTML 报告和 SQLite 结构化库。</p></div>
+      </section>
+
+      <section class="commands">
+        <pre><code>uv sync
+uv run hardwise review data/projects/pic_programmer \
+  --rules R001,R002,R003 \
+  --format html
+
+# output
+report: reports/pic_programmer-YYYYMMDD.html
+store:  reports/pic_programmer.db</code></pre>
+        <p class="note">Demo 输入只使用公开 KiCad 样例和公开 datasheet。项目边界锁定在 pre-Layout schematic review；PCB review、PLM、FMEA 和公司内部硬件数据都不进入这个 MVP。</p>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

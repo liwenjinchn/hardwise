@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardwise 产品介绍</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #121514;
+      --muted: #68716c;
+      --hairline: rgba(28, 35, 32, .12);
+      --paper: #f7f6f2;
+      --card: rgba(255, 255, 255, .78);
+      --green: #0f4a3a;
+      --green-2: #dfe9e4;
+      --copper: #b06d45;
+      --shadow: 0 28px 70px rgba(29, 39, 35, .13);
+      --sans: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --serif: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
+      --mono: "SFMono-Regular", "Cascadia Code", monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.5;
+      background:
+        radial-gradient(circle at 24% 8%, rgba(15, 74, 58, .14), transparent 26rem),
+        radial-gradient(circle at 78% 28%, rgba(176, 109, 69, .12), transparent 24rem),
+        linear-gradient(180deg, #fbfaf7 0%, var(--paper) 48%, #eeeee9 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 46px;
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 44px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 700; }
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #0d5a45, #082e25);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(15, 74, 58, .26);
+      font-family: var(--mono);
+      font-size: 18px;
+    }
+    .nav-links { display: flex; gap: 18px; }
+    .hero {
+      min-height: calc(100vh - 28px);
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    .hero-inner {
+      display: grid;
+      grid-template-columns: minmax(0, .92fr) minmax(420px, 1.08fr);
+      gap: 34px;
+      align-items: center;
+      padding: 34px 0 28px;
+    }
+    .copy { max-width: 590px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .58);
+      color: #365148;
+      font-size: 13px;
+      backdrop-filter: blur(18px);
+    }
+    h1 { margin: 24px 0 0; font-family: var(--serif); font-size: clamp(48px, 7.3vw, 104px); line-height: .98; letter-spacing: 0; }
+    .lead {
+      margin: 26px 0 0;
+      max-width: 520px;
+      color: #39413d;
+      font-size: clamp(18px, 2.2vw, 24px);
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 18px; border: 1px solid var(--hairline); border-radius: 999px; background: rgba(255, 255, 255, .68); box-shadow: 0 12px 34px rgba(35, 43, 39, .08); font-weight: 700; }
+    .button.primary { background: #111614; color: #fff; }
+    .poster {
+      position: relative;
+      isolation: isolate;
+    }
+    .poster::before {
+      content: "";
+      position: absolute;
+      inset: 9% 7% -4% 3%;
+      z-index: -1;
+      border-radius: 36px;
+      background: rgba(15, 74, 58, .10);
+      filter: blur(30px);
+    }
+    .poster img { display: block; width: 100%; border: 1px solid rgba(18, 21, 20, .08); border-radius: 28px; box-shadow: var(--shadow); }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: -34px;
+      position: relative;
+      z-index: 2;
+      padding: 0 24px;
+    }
+    .metric { min-height: 94px; padding: 18px; border: 1px solid var(--hairline); border-radius: 22px; background: rgba(255, 255, 255, .74); backdrop-filter: blur(22px); box-shadow: 0 14px 34px rgba(35, 43, 39, .10); }
+    .metric strong { display: block; font-size: 30px; line-height: 1; }
+    .metric span { display: block; margin-top: 9px; color: var(--muted); font-size: 13px; }
+    .section { padding: 34px 0 0; }
+    .section-title { max-width: 760px; margin: 0 0 18px; font-family: var(--serif); font-size: clamp(30px, 4vw, 54px); line-height: 1.08; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .card { min-height: 224px; padding: 24px; border: 1px solid var(--hairline); border-radius: 26px; background: var(--card); backdrop-filter: blur(20px); box-shadow: 0 16px 40px rgba(35, 43, 39, .08); }
+    .card h2 { margin: 18px 0 10px; font-size: 22px; }
+    .card p { margin: 0; color: var(--muted); }
+    .icon {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      background: var(--green-2);
+      color: var(--green);
+      font-family: var(--mono);
+      font-weight: 800;
+    }
+    .demo {
+      display: grid;
+      grid-template-columns: minmax(280px, .76fr) minmax(0, 1.24fr);
+      gap: 14px;
+    }
+    .panel { padding: 24px; border: 1px solid var(--hairline); border-radius: 26px; background: rgba(255, 255, 255, .72); box-shadow: 0 16px 40px rgba(35, 43, 39, .08); }
+    .panel h2 { margin: 0 0 12px; font-size: 22px; }
+    .panel p { margin: 0; color: var(--muted); }
+    .chat { display: grid; gap: 10px; }
+    .bubble {
+      max-width: 78%;
+      padding: 14px 16px;
+      border: 1px solid var(--hairline);
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(35, 43, 39, .07);
+    }
+    .bubble.answer {
+      justify-self: end;
+      background: #edf5f1;
+      color: #15382f;
+    }
+    .bubble b { display: block; margin-bottom: 5px; color: var(--muted); font-size: 12px; }
+    .footer-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      margin-top: 14px;
+      padding: 22px 24px;
+      border: 1px solid var(--hairline);
+      border-radius: 26px;
+      background: #111614;
+      color: #fff;
+    }
+    .footer-note span { color: rgba(255, 255, 255, .68); }
+    @media (max-width: 900px) {
+      .page { width: min(100% - 20px, 1180px); padding-top: 16px; }
+      .nav-links { display: none; }
+      .hero { min-height: auto; }
+      .hero-inner, .cards, .demo { grid-template-columns: 1fr; }
+      .copy { max-width: none; }
+      .metrics { grid-template-columns: repeat(2, 1fr); margin-top: 12px; padding: 0; }
+      .poster img { border-radius: 22px; }
+      .bubble { max-width: 100%; }
+      .footer-note { flex-direction: column; }
+    }
+    @media (max-width: 520px) {
+      .actions { display: grid; }
+      .button { width: 100%; }
+      .metrics { grid-template-columns: 1fr; }
+      .card, .panel, .footer-note { border-radius: 20px; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero" aria-label="Hardwise 产品介绍">
+      <nav class="nav" aria-label="页面导航">
+        <a class="brand" href="./product-intro.html"><span class="mark">⌁</span><span>Hardwise</span></a>
+        <div class="nav-links">
+          <a href="#value">能力</a>
+          <a href="#demo">问答</a>
+          <a href="./hardware-demo.html">详细 Demo</a>
+        </div>
+      </nav>
+
+      <div class="hero-inner">
+        <div class="copy">
+          <span class="eyebrow">原理图检视 AI Agent</span>
+          <h1>让原理图评审先清晰起来</h1>
+          <p class="lead">读取公开 KiCad 工程，整理可追溯检视清单，也能直接追问器件、脚位和证据。给硬件工程师一个更快进入判断的入口。</p>
+          <div class="actions">
+            <a class="button primary" href="./hardware-demo.html">查看完整展示</a>
+            <a class="button" href="#demo">看问答效果</a>
+          </div>
+        </div>
+
+        <div class="poster" aria-label="Hardwise 产品海报">
+          <img src="./assets/hardwise-product-card.png" alt="Hardwise 原理图检视 AI Agent 产品介绍卡片">
+          <div class="metrics" aria-label="样例工程结果">
+            <div class="metric"><strong>121</strong><span>个器件</span></div>
+            <div class="metric"><strong>84</strong><span>条检视意见</span></div>
+            <div class="metric"><strong>77</strong><span>个 NC 脚位</span></div>
+            <div class="metric"><strong>逐条</strong><span>证据定位</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="value" class="section" aria-label="核心能力">
+      <h2 class="section-title">不是泛泛聊天，而是围绕原理图做查证。</h2>
+      <div class="cards">
+        <article class="card">
+          <div class="icon">01</div>
+          <h2>先读懂工程</h2>
+          <p>从 KiCad 工程里拿到真实位号、器件值、封装和脚位信息，回答前先查表。</p>
+        </article>
+        <article class="card">
+          <div class="icon">02</div>
+          <h2>生成检视清单</h2>
+          <p>把电容耐压、NC 脚位、新器件确认这类高频问题整理成短报告。</p>
+        </article>
+        <article class="card">
+          <div class="icon">03</div>
+          <h2>保留证据位置</h2>
+          <p>每条意见都尽量带回原理图对象，方便工程师继续判断，而不是只看结论。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="demo" class="section demo" aria-label="问答示例">
+      <aside class="panel">
+        <h2>工程师可以这样问</h2>
+        <p>直接展示输入、输出和边界：能回答什么，遇到不存在的位号时如何处理。</p>
+      </aside>
+      <div class="panel chat">
+        <div class="bubble"><b>工程师</b>U4 这颗器件有几个 NC 脚？</div>
+        <div class="bubble answer"><b>Hardwise</b>U4 有 2 个 NC 脚：3 脚 FB-、4 脚 S/S。建议结合数据手册确认这些脚应悬空、接地还是接电源。</div>
+        <div class="bubble"><b>工程师</b>U999 是什么器件？</div>
+        <div class="bubble answer"><b>Hardwise</b>原理图注册表里没有 U999。系统不会编造器件，会提示确认位号或从相近结果里选择。</div>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      <strong>从原理图到可追溯检视结果</strong>
+      <span>完整展示页继续展示报告样例、工作流和可复现命令。</span>
+    </div>
+  </main>
+</body>
+</html>

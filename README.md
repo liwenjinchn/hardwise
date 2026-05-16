@@ -8,6 +8,16 @@
 
 ---
 
+## Resume demo
+
+If you only have 90 seconds, start here:
+
+- **Product intro:** [`docs/product-intro.html`](docs/product-intro.html) — polished Chinese landing page for resume reviewers.
+- **Visual demo:** [`docs/hardware-demo.html`](docs/hardware-demo.html) — Chinese one-page view for hardware reviewers.
+- **Technical snapshot:** [`docs/demo.html`](docs/demo.html) — one-page snapshot of the review output and engineering mechanisms.
+- **Short read:** [`docs/demo.md`](docs/demo.md) — what the demo proves, in resume-reviewer language.
+- **Reproduce locally:** `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html`
+
 ## At a glance
 
 ```bash
@@ -46,7 +56,7 @@ Initial schematic review on a real board takes a hardware engineer 1–2 days, m
 | 2 | **Evidence Ledger** | Every claim carries a source token: `sch:<file>#<refdes>` / `datasheet:<pdf>#p<N>` / `rule:R001` etc. No token, no claim. | ✅ live (`src/hardwise/guards/evidence.py`) |
 | 3 | **Sleep Consolidator** | Each review session deposits *candidate* rules to `memory/rules.md`. Human gate before any rule activates. | ✅ live (`src/hardwise/memory/consolidator.py`) |
 | 4 | **Tiered Model Routing** | Three runtime slots (`fast` / `normal` / `deep`) read from env vars; agent code never hard-codes a model id. | ✅ live (`src/hardwise/agent/router.py`) |
-| 5 | **Prompt Caching** | Datasheet + EDA registry shared across review turns are cached. | ⏳ Slice 4 |
+| 5 | **Prompt Caching** | Static agent prompt is cache-controlled; live `ask` runs report nonzero `cache_read_input_tokens`; current MiMo proxy does not expose nonzero `cache_creation_input_tokens`. | ✅ live (`src/hardwise/agent/prompts.py` + `runner.py`) |
 
 Mechanisms 1, 2, 4 are direct architectural borrows from Wrench Board's "defense in depth, two layers" + tiered runtime. Mechanism 3 is a scope-shrunk cousin of Wrench Board's `microsolder-evolve` overnight loops — they auto-commit patches against an oracle benchmark; we sediment review feedback into human-gated rule candidates. Same direction, MVP-fit scope.
 
@@ -66,22 +76,25 @@ cp .env.example .env  # then fill in ANTHROPIC_API_KEY
 ```
 
 The repo ships with a public KiCad sample under `data/projects/pic_programmer/`
-(KiCad official demo). All commands below should work out of the box.
+(KiCad official demo). Local review / inspect commands work after `uv sync`; API commands require `.env`, and datasheet search requires a public PDF you add locally.
 
 ### Review a schematic
 
 ```bash
 uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
 uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html
+# After ingesting public datasheets for the relevant parts:
+uv run hardwise review data/projects/pic_programmer --rules R003 --vector
 ```
 
-Produces three artifacts:
+Produces four artifacts:
 
 ```
 report: reports/pic_programmer-YYYYMMDD.md   (84 findings, 121 components reviewed)
 report: reports/pic_programmer-YYYYMMDD.html (same data, Chinese visual report when --format html)
 store:  reports/pic_programmer.db            (121 components, 77 NC pins)
 memory: memory/rules.md                      (2 candidate rule(s) appended)
+trace:  reports/trace.jsonl                  (append-only machine-readable run ledger)
 ```
 
 Each finding carries `evidence_tokens` like `sch:pic_programmer.kicad_sch#J1`
@@ -100,7 +113,9 @@ uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
 ```
 
 Returns chunks with `[<pdf> p<N> part=<refdes>]` provenance — the building
-block for `datasheet:<pdf>#p<N>` evidence tokens in Slice 4 R003 upgrade.
+block for `datasheet:<pdf>#p<N>` evidence tokens. Add `--vector` to `review`
+after ingesting relevant public datasheets to attach R003 `evidence_chain` and
+`decision` fields.
 
 ### Use PostgreSQL instead of SQLite
 
@@ -143,6 +158,26 @@ uv run hardwise verify-api --tier normal                        # tiered router
 uv run hardwise inspect-kicad data/projects/pic_programmer      # registry dump
 ```
 
+### Prompt cache verification
+
+`hardwise ask` reports token accounting from the Anthropic-format `usage`
+object, including `cache_creation_input_tokens` and
+`cache_read_input_tokens` when the upstream returns them.
+
+Latest live cold-start probe on 2026-05-16 used the configured MiMo
+Anthropic-format proxy (`mimo-v2.5`) with a unique cacheable system prompt:
+
+| Run | Input/output tokens | cache create/read | Result |
+|---|---:|---:|---|
+| 1 | 5445 / 16 | `null` / `null` | cold prompt billed as normal input |
+| 2 | 5 / 16 | `null` / **5440** | same prompt immediately hit cache |
+
+Conclusion: MiMo demonstrably serves cached prompt reads (`cache_read_input_tokens`
+nonzero), but this endpoint currently leaves `cache_creation_input_tokens` null
+instead of reporting a nonzero write count. A strict "creation nonzero, then read
+hit" audit needs the same probe against Anthropic's official API or another
+Anthropic-compatible endpoint that exposes creation accounting.
+
 ## Architecture
 
 See [`docs/architecture.md`](docs/architecture.md). Adapter pattern at the EDA boundary (`src/hardwise/adapters/`) means a future Cadence/Allegro adapter is one new file, not a rewrite.
@@ -157,9 +192,9 @@ The 2-week MVP is sliced vertically — each slice ends in a runnable demo. See 
 | 1 — R001 + Guards | ✅ | New-component candidate check; Refdes Guard + Evidence Ledger; markdown report aligned to《SCH_review_feedback_list 汇总表》 |
 | 2 — R002 + Consolidator | ✅ | Cap rated-voltage field check; Sleep Consolidator with human gate |
 | 3 — R003 + Dual store + Router | ✅ | NC pin handling (coordinate-matched 77 NC pins); SQLite + Chroma live; PDF ingest + semantic search; tiered ModelRouter |
-| 4 — R004 + Prompt caching | ⏳ | I2C address collision (first cross-store rule using vector datasheet evidence); prompt-cache hit observable in run log |
-| 5 — R005 + Report polish | ⏳ | Dangling-net detection; report visually aligns with SCH_review_feedback_list |
-| 6 — Demo closeout | ⏳ | 3-min screencast, finalized interview answers, README polish |
+| 4 — Agent loop + Prompt caching | ✅ | `hardwise ask` command; tool-use loop with 4 tools; cache hit measured on live API |
+| 5 — Submission closeout | ⏳ | README/GitHub hygiene, resume bullet, final interview answers |
+| 6 — Follow-up polish | ⏳ | 3-min screencast, stronger report polish, schematic-side net parser exploration |
 
 Beyond MVP: Cadence/Allegro adapter (one new file, not a rewrite), evaluation set for the consolidator's promotion gate, EMC/DFM rule packs.
 
