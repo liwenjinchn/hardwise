@@ -41,6 +41,29 @@ def test_sanitize_text_handles_no_refdes_in_text() -> None:
     assert out == "plain prose with no designators here"
 
 
+def test_sanitize_text_leaves_pin_name_parentheses_untouched() -> None:
+    reg = _registry(["U1"])
+    out, wrapped = sanitize_text("U1 pin 17 (RA0) and U1 pin 18 (RB1)", reg)
+
+    assert "RA0" in out
+    assert "RB1" in out
+    assert "⟨?" not in out
+    assert wrapped == 0
+
+
+def test_sanitize_text_leaves_multi_function_pin_names_untouched() -> None:
+    reg = _registry(["U5", "U6"])
+    out, wrapped = sanitize_text(
+        "U5 pin 12 (ICSPC/RB6) and U6 pin 3 (GP4/OSC2)", reg
+    )
+
+    assert "RB6" in out
+    assert "GP4" in out
+    assert "OSC2" in out
+    assert "⟨?" not in out
+    assert wrapped == 0
+
+
 def test_sanitize_finding_wraps_message_action_and_refdes_field() -> None:
     reg = _registry(["U23"])
     f = Finding(

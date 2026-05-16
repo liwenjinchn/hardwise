@@ -97,11 +97,20 @@ def test_check_on_pic_programmer_nc_pins() -> None:
     from hardwise.adapters.kicad import parse_project
 
     registry = parse_project(Path("data/projects/pic_programmer"))
-    findings = check(registry.nc_pins)
-    assert len(findings) == 77
+    findings = check(registry.nc_pins, registry=registry)
+    assert len(findings) == 22
     refdes_set = {f.refdes for f in findings}
     assert "J1" in refdes_set
+    assert "P2" in refdes_set
+    assert "P3" in refdes_set
+    assert "U1" in refdes_set
     assert "U4" in refdes_set
+    assert "U5" in refdes_set
+    assert "U6" in refdes_set
+    connector_findings = [f for f in findings if f.severity == "low"]
+    ic_findings = [f for f in findings if f.severity == "medium"]
+    assert len(connector_findings) == 3
+    assert len(ic_findings) == 19
 
 
 # ─── DR-009 datasheet closure tests ─────────────────────────────────────────
@@ -264,4 +273,3 @@ def test_empty_collection_handles_gracefully() -> None:
     )
     assert findings[0].decision == "reviewer_to_confirm"
     assert len(findings[0].evidence_chain) == 1
-

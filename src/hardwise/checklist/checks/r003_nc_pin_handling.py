@@ -28,6 +28,9 @@ from hardwise.checklist.finding import EvidenceStep, Finding, FindingDecision
 NC_PATTERN = re.compile(
     r"\b(?:N\.?C\.?|no[\s_-]?connect(?:ed)?|not\s+connected)\b", re.IGNORECASE
 )
+CONNECTOR_PREFIXES = ("J", "P", "CN")
+IC_PREFIXES = ("U", "IC")
+CONNECTOR_FOOTPRINT_HINTS = ("Connector", "Jumper", "MountingHole")
 
 
 def _part_ref_for(refdes: str, registry: BoardRegistry) -> str | None:
@@ -71,6 +74,24 @@ def _classify(pin_number: str, hits: list[dict]) -> tuple[FindingDecision, list[
     return "reviewer_to_confirm", []
 
 
+def _is_connector_like(refdes: str, registry: BoardRegistry) -> bool:
+    """Return True for connectors/sockets where bulk NC pins are usually intentional.
+
+    ICs in DIP sockets (footprint contains "Socket") are still ICs — the socket
+    is mechanical packaging, not an indicator that NC pins are benign.
+    """
+
+    if refdes.startswith(IC_PREFIXES):
+        return False
+    if refdes.startswith(CONNECTOR_PREFIXES):
+        return True
+    for comp in registry.components:
+        if comp.refdes == refdes:
+            footprint = f"{comp.footprint} {comp.value}"
+            return any(hint.lower() in footprint.lower() for hint in CONNECTOR_FOOTPRINT_HINTS)
+    return False
+
+
 def check(
     nc_pins: list[NcPinRecord],
     registry: BoardRegistry | None = None,
@@ -88,8 +109,42 @@ def check(
 
     findings: list[Finding] = []
     use_datasheet = registry is not None and collection is not None
+    connector_groups: dict[str, list[NcPinRecord]] = {}
+    remaining_pins = nc_pins
 
-    for pin in nc_pins:
+    if registry is not None:
+        connector_groups = {}
+        ic_pins: list[NcPinRecord] = []
+        for pin in nc_pins:
+            if _is_connector_like(pin.refdes, registry):
+                connector_groups.setdefault(pin.refdes, []).append(pin)
+            else:
+                ic_pins.append(pin)
+        remaining_pins = ic_pins
+
+    for refdes in sorted(connector_groups):
+        grouped = connector_groups[refdes]
+        first = grouped[0]
+        pin_list = ", ".join(pin.pin_number for pin in grouped)
+        findings.append(
+            Finding(
+                rule_id="R003",
+                severity="low",
+                refdes=refdes,
+                message=(
+                    f"{refdes} has {len(grouped)} NC pins ({pin_list}) on a connector-like "
+                    "part; these are typically intentional and should be checked only "
+                    "against the design intent."
+                ),
+                evidence_tokens=[f"sch:{first.source_file.name}#{refdes}"],
+                suggested_action=(
+                    "For sockets/connectors, confirm the unused pins are intentionally "
+                    "left NC and do not carry a required signal."
+                ),
+            )
+        )
+
+    for pin in remaining_pins:
         legacy_token = f"sch:{pin.source_file.name}#{pin.refdes}"
         eda_chain_token = f"sch:{pin.source_file.name}#{pin.refdes}.{pin.pin_number}"
         eda_claim = (

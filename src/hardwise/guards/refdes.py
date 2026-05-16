@@ -27,12 +27,32 @@ def sanitize_text(text: str, registry: BoardRegistry) -> tuple[str, int]:
     def _wrap(match: re.Match[str]) -> str:
         nonlocal wrapped
         token = match.group(0)
+        if _looks_like_pin_name(text, match.start(), match.end()):
+            return token
         if registry.has_refdes(token):
             return token
         wrapped += 1
         return f"⟨?{token}⟩"
 
     return REFDES_PATTERN.sub(_wrap, text), wrapped
+
+
+def _looks_like_pin_name(text: str, start: int, end: int) -> bool:
+    """Skip tokens inside a pin-name parenthetical: `pin 17 (RA0)` or `pin 12 (ICSPC/RB6)`.
+
+    Handles both single-function pins `(RA0)` and multi-function pins `(GP4/OSC2)`.
+    """
+
+    # Look backward for the opening paren and forward for the closing paren
+    open_paren = text.rfind("(", 0, start)
+    close_paren = text.find(")", end)
+
+    if open_paren == -1 or close_paren == -1:
+        return False
+
+    # Check if there's a "pin N" pattern before the opening paren
+    prefix = text[max(0, open_paren - 18) : open_paren]
+    return bool(re.search(r"\bpin\s+\d+\s*$", prefix, re.IGNORECASE))
 
 
 def sanitize_args(args: dict, registry: BoardRegistry) -> tuple[dict, int]:

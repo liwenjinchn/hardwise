@@ -279,6 +279,17 @@ def _friendly_message(finding: Finding) -> str:
             "被标为 NC。需要按 datasheet 确认该脚允许悬空，还是必须接地、上拉或接到固定电平。"
         )
 
+    r003_grouped = re.match(
+        r"(?P<refdes>\S+) has (?P<count>\d+) NC pins \((?P<pins>[^)]+)\) on a connector-like part;",
+        finding.message,
+    )
+    if finding.rule_id == "R003" and r003_grouped:
+        return (
+            f"{r003_grouped.group('refdes')} 有 {r003_grouped.group('count')} 个 NC 脚"
+            f"（{r003_grouped.group('pins')}）集中在连接器/插座类器件上。"
+            "这通常是设计意图的一部分，但仍建议确认未遗漏必须使用的信号。"
+        )
+
     return finding.message
 
 

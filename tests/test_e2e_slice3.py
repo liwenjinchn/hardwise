@@ -48,7 +48,7 @@ def test_slice3_r003_only(tmp_path: Path) -> None:
         ],
     )
     assert result.exit_code == 0, result.output
-    assert "77 findings" in result.output
+    assert "22 findings" in result.output
     text = report.read_text()
     assert "R003" in text
     assert "J1" in text
@@ -72,7 +72,7 @@ def test_slice3_review_can_write_html_report(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0, result.output
-    assert "77 findings" in result.output
+    assert "22 findings" in result.output
     text = report.read_text()
     assert "<!doctype html>" in text
     assert "Hardwise 原理图检视报告" in text
