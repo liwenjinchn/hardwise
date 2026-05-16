@@ -13,6 +13,7 @@ All filesystem writes go through `tmp_path` — the real `reports/` and
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -43,6 +44,7 @@ def test_slice2_review_writes_r001_r002_report_and_consolidates(tmp_path: Path) 
     assert "7 findings" in result.output, result.output
     assert "121 components reviewed" in result.output, result.output
     assert "consolidator: 1 candidate rule(s) appended" in result.output, result.output
+    assert f"trace: {tmp_path / 'trace.jsonl'}" in result.output
 
     md = report_path.read_text(encoding="utf-8")
     assert "Rules run | R001, R002" in md
@@ -65,6 +67,21 @@ def test_slice2_review_writes_r001_r002_report_and_consolidates(tmp_path: Path) 
     assert "- count: 6" in rules_text
     assert "- STATUS: candidate" in rules_text
     assert "pic_programmer" in rules_text
+
+    trace = json.loads((tmp_path / "trace.jsonl").read_text(encoding="utf-8"))
+    assert trace["schema_version"] == 1
+    assert trace["command"] == "review"
+    assert trace["project_name"] == "pic_programmer"
+    assert trace["requested_rules"] == ["R001", "R002"]
+    assert trace["rules_run"] == ["R001", "R002"]
+    assert trace["output_path"] == str(report_path)
+    assert trace["findings_total"] == 7
+    assert trace["findings_by_rule"] == {"R002": 7}
+    assert trace["findings_by_severity"] == {"medium": 6, "info": 1}
+    assert trace["components_reviewed"] == 121
+    assert trace["store"]["backend"] == "sqlite"
+    assert trace["store"]["components"] == 121
+    assert trace["consolidator"]["candidate_count"] == 1
 
 
 def test_slice2_no_consolidate_flag_skips_memory_write(tmp_path: Path) -> None:
@@ -91,6 +108,59 @@ def test_slice2_no_consolidate_flag_skips_memory_write(tmp_path: Path) -> None:
     assert "consolidator:" not in result.output
     assert report_path.exists()
     assert not memory_path.exists(), "no-consolidate must not write the memory file"
+
+
+def test_slice2_no_run_trace_flag_skips_trace_write(tmp_path: Path) -> None:
+    runner = CliRunner()
+    report_path = tmp_path / "no_trace.md"
+
+    result = runner.invoke(
+        app,
+        [
+            "review",
+            "data/projects/pic_programmer",
+            "--rules",
+            "R001,R002",
+            "--output",
+            str(report_path),
+            "--no-consolidate",
+            "--no-run-trace",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "trace:" not in result.output
+    assert report_path.exists()
+    assert not (tmp_path / "trace.jsonl").exists()
+
+
+def test_slice2_trace_write_failure_warns_without_failing(tmp_path: Path, monkeypatch) -> None:
+    runner = CliRunner()
+    report_path = tmp_path / "trace_warning.md"
+
+    def fail_append(*args, **kwargs) -> None:
+        raise PermissionError("read-only trace target")
+
+    monkeypatch.setattr("hardwise.run_trace.append_jsonl", fail_append)
+
+    result = runner.invoke(
+        app,
+        [
+            "review",
+            "data/projects/pic_programmer",
+            "--rules",
+            "R001,R002",
+            "--output",
+            str(report_path),
+            "--no-consolidate",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert report_path.exists()
+    assert "warning: failed to write run trace" in result.output
+    assert "PermissionError: read-only trace target" in result.output
+    assert f"trace: {tmp_path / 'trace.jsonl'}" not in result.output
 
 
 def test_slice2_r001_only_does_not_trigger_consolidator(tmp_path: Path) -> None:

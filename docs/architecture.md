@@ -1,6 +1,6 @@
 # Hardwise Architecture
 
-> v0.5 — Slice 4 ships the agent tool-use loop (`agent/runner.py` + `agent/prompts.py` + `cli.py:ask`) on top of Slice 3's stores + tools. Mechanism #5 (Prompt Caching) has measured `cache_read_input_tokens` on MiMo proxy. Sections marked TBD fill in as modules ship.
+> v0.6 — Review runs now append a machine-readable `trace.jsonl` record beside the report. This gives rules-list / demo / audit views a stable source of truth instead of parsing CLI stdout.
 
 ## Data flow
 
@@ -18,6 +18,8 @@ Datasheet PDFs ─→ ingest/pdf.py     ─→ store/vector.py (Chroma)
                                               │
                                               ▼
                                        reports/<project>-<date>.md
+                                              │
+                                              ├─→ trace.jsonl (run record)
                                               │
                                               ▼
                                        memory/consolidator.py → memory/rules.md
@@ -99,7 +101,10 @@ Two storage backends — relational for refdes-keyed structured data, vector for
 - `tools.py` — Slice 4 prep: tool manifest for the tool-use loop. Four tools wired against the Slice 3 stores: `list_components` (relational read with optional value-substring / refdes-prefix filter), `get_component` (single-refdes lookup with a `Found{component}` / `NotFound{refdes, closest_matches}` discriminated-union return — `closest_matches` comes from `difflib.get_close_matches` over `BoardRegistry.refdes_set`, so the agent picks from suggestions, never fabricates), `get_nc_pins` (relational read, optional refdes filter), `search_datasheet` (Chroma vector query, optional `part_ref` filter, returns `DatasheetHit[]` with `page` + `source_pdf` + `part_ref` provenance). Inputs and outputs are Pydantic models; `TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[…]` shape consumed by runner.py. The module is the front-door for mechanisms #1 (Refdes Guard receives `closest_matches` here) and #2 (Evidence Ledger receives `source_pdf` + `page` here).
 - `prompts.py` — Slice 4: the static system prompt. Spells out role + 4-tool catalogue + anti-fabrication rules + evidence discipline + Chinese-by-default output convention. `build_system_blocks()` wraps the prompt in a single `cache_control: ephemeral` text block — the upstream proxy (or Claude proper) can serve it from prompt cache across iterations. Mechanism #5 wiring lives here.
 - `runner.py` — Slice 4: `Runner(client, router, session, registry, collection?, tier="normal")`. `run(user_message) -> RunResult` runs the finite tool-use loop — `messages.create(tools=TOOL_DEFINITIONS, system=cache_control_blocks, ...)`, dispatches `tool_use` blocks to the tools.py functions, feeds `tool_result` back, capped at `MAX_ITERATIONS=10`. Accumulates `input_tokens / output_tokens / cache_creation_tokens / cache_read_tokens` from each `response.usage`; returns a `ToolCallTrace[]` for audit. `collection=None` makes `search_datasheet` return a structured "not configured" payload — the agent learns to back off without crashing. Unknown tools and tool exceptions surface as `is_error=True` tool_result blocks so the model can self-correct.
-- `cli.py:ask` — Slice 4: `hardwise ask <project_dir> "<question>"` builds session+registry, optionally opens Chroma (`--vector`), constructs Runner, prints answer + per-tool trace + token line (including cache create/read when nonzero). Live verified on MiMo-V2.5 via `xiaomimimo.com/anthropic`: `cache_read_input_tokens` ≠ 0 on three pic_programmer queries, confirming mechanism #5 has real numbers, not just wiring (see `learning_log.md` 2026-05-13 entry).
+- `cli.py:ask` — Slice 4: `hardwise ask <project_dir> "<question>"` builds session+registry, optionally opens Chroma (`--vector`), constructs Runner, prints answer + per-tool trace + token line (including cache create/read when nonzero). Live verified on MiMo-V2.5 via `xiaomimimo.com/anthropic`: `cache_read_input_tokens` ≠ 0 on three pic_programmer queries, confirming mechanism #5 has real numbers, not just wiring (see `learning_log.md` 2026-05-13 entry). A 2026-05-16 cold-start probe further showed immediate read hits (`cache_read_input_tokens=5440`) but MiMo leaves `cache_creation_input_tokens` null, so creation accounting requires another endpoint to verify.
+
+### `run_trace.py`
+Append-only JSONL trace for `hardwise review`. `ReviewRunSummary` collects structured facts inside the CLI before rendering the trace; `build_review_trace()` turns that summary into one stable Pydantic object: requested/running rules, report path, component and NC-pin counts, finding totals grouped by rule/severity/decision, guard counters, vector flag, store result, and consolidator result. `append_jsonl()` writes one JSON object per line to `<report-dir>/trace.jsonl` by default; `review --trace-output PATH` redirects it and `--no-run-trace` disables it. Trace write failures warn on stderr but do not fail the review, because the report is the primary artifact. P0 stores paths as supplied by the CLI and assumes single-process writes (no file lock). This is intentionally not a report renderer: it is the machine-readable run ledger that later `rules list` and CLI split work can consume without scraping human text.
 
 ### `guards/`
 - `refdes.py` — defense layer 1: regex-scan output for refdes-shaped tokens (`\b[A-Z]{1,3}\d{1,4}\b`); verify each against the EDA registry; mark unverified as `⟨?XX99⟩`. Mirrors Wrench Board's `api/agent/sanitize.py`.
@@ -154,6 +159,7 @@ uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
 uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --no-consolidate
 uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --memory-output /tmp/rules.md
 uv run hardwise review data/projects/pic_programmer --rules R003 --db-path /tmp/pic.db
+uv run hardwise review data/projects/pic_programmer --rules R003 --trace-output /tmp/trace.jsonl
 uv run hardwise ingest-datasheet data/datasheets/l78.pdf --part-ref U3
 uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
 uv run hardwise ask data/projects/pic_programmer "U3 是什么器件？"
@@ -163,7 +169,7 @@ uv run hardwise ask data/projects/pic_programmer "找一下 U3 最大输入电�
 
 `inspect-kicad` is the first EDA adapter demo: it prints the registry count and the first N sorted components. On `pic_programmer`, it extracts 121 registry items.
 
-`review` runs the requested rules over the schematic-side records, applies Refdes Guard + Evidence Ledger, writes a markdown report aligned to《SCH_review_feedback_list 汇总表》, and (by default) appends Sleep Consolidator candidates to `memory/rules.md` AND populates a SQLite store at `reports/<project>.db` with components + NC pins. On `pic_programmer` with `--rules R001,R002,R003`, the output is 84 findings (7 R002 + 77 R003) and 2 candidate rules (R002 medium + R003 medium). `--no-consolidate` skips the memory write; `--memory-output PATH` and `--db-path PATH` redirect their respective outputs.
+`review` runs the requested rules over the schematic-side records, applies Refdes Guard + Evidence Ledger, writes a markdown report aligned to《SCH_review_feedback_list 汇总表》, and (by default) appends Sleep Consolidator candidates to `memory/rules.md`, populates a SQLite store at `reports/<project>.db` with components + NC pins, and appends one machine-readable run record to `trace.jsonl`. On `pic_programmer` with `--rules R001,R002,R003`, the output is 84 findings (7 R002 + 77 R003) and 2 candidate rules (R002 medium + R003 medium). `--no-consolidate` skips the memory write; `--memory-output PATH`, `--db-path PATH`, and `--trace-output PATH` redirect their respective outputs.
 
 `ingest-datasheet` chunks a PDF page-by-page and upserts into Chroma at `data/chroma/` (default), tagging every chunk with `part_ref=<refdes>`. `query-datasheet` runs a top-k semantic query and prints `[source_pdf pN part=Ux]` provenance — these are the building blocks for the Slice 4 `datasheet:<pdf>#p<N>` evidence token.
 

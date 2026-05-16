@@ -194,6 +194,16 @@ def review(
         "--persist-dir",
         help="Chroma persistence directory (only used with --vector).",
     ),
+    trace_output: Path | None = typer.Option(
+        None,
+        "--trace-output",
+        help="JSONL run trace path (default: <report-dir>/trace.jsonl).",
+    ),
+    write_run_trace: bool = typer.Option(
+        True,
+        "--run-trace/--no-run-trace",
+        help="Append a machine-readable review run record to trace.jsonl.",
+    ),
 ) -> None:
     """Run a schematic review on a KiCad project and write a report."""
     from datetime import datetime, timezone
@@ -218,7 +228,8 @@ def review(
         typer.echo(f"error: --format must be md|html, got {output_format!r}", err=True)
         raise typer.Exit(1)
 
-    requested_ids = {r.strip() for r in rules.split(",") if r.strip()}
+    requested_rules = [r.strip() for r in rules.split(",") if r.strip()]
+    requested_ids = set(requested_rules)
 
     try:
         registry = parse_project(project_dir)
@@ -314,6 +325,7 @@ def review(
     import os
 
     env_url = os.environ.get("HARDWISE_DB_URL", "").strip()
+    store_trace: dict[str, object] = {"enabled": False}
     if env_url:
         from hardwise.store.relational import create_store, populate_from_registry
 
@@ -322,6 +334,13 @@ def review(
             n_comp, n_pin = populate_from_registry(session, registry)
         finally:
             session.close()
+        store_trace = {
+            "enabled": True,
+            "target": env_url,
+            "backend": "sqlalchemy_url",
+            "components": n_comp,
+            "nc_pins": n_pin,
+        }
         typer.echo(f"store: {env_url} ({n_comp} components, {n_pin} NC pins)")
     else:
         if db_path is None:
@@ -339,14 +358,77 @@ def review(
                 n_comp, n_pin = populate_from_registry(session, registry)
             finally:
                 session.close()
+            store_trace = {
+                "enabled": True,
+                "target": str(db_path),
+                "backend": "sqlite",
+                "components": n_comp,
+                "nc_pins": n_pin,
+            }
             typer.echo(f"store: {db_path} ({n_comp} components, {n_pin} NC pins)")
 
+    consolidator_trace: dict[str, object] = {"enabled": False}
     if consolidate_flag:
         candidates = consolidate(findings, project_dir.name, output_path=memory_output, now=now)
+        consolidator_trace = {
+            "enabled": True,
+            "output_path": str(memory_output),
+            "candidate_count": len(candidates),
+        }
         if candidates:
             typer.echo(
                 f"consolidator: {len(candidates)} candidate rule(s) appended to {memory_output}"
             )
+
+    if write_run_trace:
+        from hardwise.run_trace import ReviewRunSummary, append_jsonl, build_review_trace
+
+        trace_path = trace_output or (output.parent / "trace.jsonl")
+        summary = ReviewRunSummary(
+            generated_at=project_meta["generated_at"],
+            project_name=project_dir.name,
+            project_dir=str(registry.project_dir),
+            requested_rules=requested_rules,
+            rules_run=rules_run,
+            output_path=output,
+            output_format=output_format,
+            components_reviewed=len(registry.components),
+            nc_pins_reviewed=len(registry.nc_pins),
+            findings=findings,
+            unverified_refdes_wrapped=total_wrapped,
+            findings_dropped_no_evidence=dropped,
+            vector_enabled=use_vector,
+            store=store_trace,
+            consolidator=consolidator_trace,
+        )
+        trace = build_review_trace(
+            generated_at=summary.generated_at,
+            project_name=summary.project_name,
+            project_dir=summary.project_dir,
+            requested_rules=summary.requested_rules,
+            rules_run=summary.rules_run,
+            output_path=summary.output_path,
+            output_format=summary.output_format,
+            components_reviewed=summary.components_reviewed,
+            nc_pins_reviewed=summary.nc_pins_reviewed,
+            findings=summary.findings,
+            unverified_refdes_wrapped=summary.unverified_refdes_wrapped,
+            findings_dropped_no_evidence=summary.findings_dropped_no_evidence,
+            vector_enabled=summary.vector_enabled,
+            store=summary.store,
+            consolidator=summary.consolidator,
+        )
+        try:
+            append_jsonl(trace_path, trace)
+        except OSError as e:
+            # The report is the primary artifact; trace is auxiliary run-history
+            # data, so disk/permission failures warn without failing review.
+            typer.echo(
+                f"warning: failed to write run trace {trace_path}: {type(e).__name__}: {e}",
+                err=True,
+            )
+        else:
+            typer.echo(f"trace: {trace_path}")
 
 
 @app.command(name="ingest-datasheet")
