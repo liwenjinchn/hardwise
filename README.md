@@ -12,10 +12,10 @@
 
 If you only have 90 seconds, start here:
 
-![Hardwise product intro](docs/assets/hardwise-product-card.png)
+[![Hardwise product intro page screenshot](docs/assets/hardwise-product-intro-screenshot.png)](https://liwenjinchn.github.io/hardwise/product-intro.html)
 
 GitHub shows HTML files as source. Use the screenshot above for a quick scan,
-or open the rendered GitHub Pages demo after Pages finishes publishing:
+or click the image / links below to open the rendered GitHub Pages demo:
 
 - **Product intro:** [https://liwenjinchn.github.io/hardwise/product-intro.html](https://liwenjinchn.github.io/hardwise/product-intro.html) — polished Chinese landing page for resume reviewers.
 - **Visual demo:** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html) — Chinese one-page view for hardware reviewers.
