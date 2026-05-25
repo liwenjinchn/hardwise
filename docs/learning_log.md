@@ -766,3 +766,18 @@ Harness artifacts need their own boundary. Public corpus data should be reproduc
 pinned, but it should not become part of the product's lint/test ownership surface.
 
 ---
+
+## 2026-05-25 — V2.1 IR foundation closed
+
+**Symptom:** none (greenfield slice).
+
+**What shipped:** `src/hardwise/ir/{__init__.py, types.py, build.py}` plus `tests/ir/{test_types.py, test_build.py}`. `Pin / Component / Net / Design` BaseModels + `build_design(registry)` KiCad aggregator. 190 tests pass, ruff clean. `hardwise review` CLI behavior unchanged (V2.1 only adds new modules).
+
+**Two reconciliations with the V2 spec made during planning:**
+
+1. Spec used `@dataclass` for IR types; existing codebase (`adapters/base.py`, `checklist/finding.py`) uses pydantic `BaseModel`. Plan chose BaseModel for codebase consistency + JSON round-trip headroom V2.4 will need.
+2. Spec §3.7 DS001 example referenced `Finding.pin_number`, which doesn't exist on the `Finding` BaseModel. V2.1 deferred this — V2.2 plan will add `pin_number: str | None = None` to `Finding` as a backward-compatible optional field (mirrors the DR-009 extension pattern).
+
+**Takeaway:** When the brainstorm uses informal `@dataclass` sketches, the implementation plan should reconcile against the codebase's actual model framework. Carrying the inconsistency forward would force a mid-sub-slice refactor.
+
+**Next:** V2.2 plan (per-component check flip + `Finding.pin_number` extension + R001-R003 outer-loop rewrite). To be drafted in a fresh planning session.
