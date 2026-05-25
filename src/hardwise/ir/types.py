@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from hardwise.checklist.finding import Finding
 
@@ -30,8 +30,6 @@ class Pin(BaseModel):
     V2.4 datasheet-driven checks. ``findings`` accumulates pin-scoped
     review issues — the runner attaches them during V2.2.
     """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     number: str
     name: str
