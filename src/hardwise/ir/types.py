@@ -14,6 +14,7 @@ so the IR layer commits to the same serialisation foundation.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -98,3 +99,26 @@ class Net(BaseModel):
     nodes: list[tuple[str, str]] = Field(default_factory=list)
     is_power_rail: bool = False
     voltage_hint: Optional[float] = None
+
+
+SourceEda = Literal["kicad", "allegro_netlist"]
+
+
+class Design(BaseModel):
+    """The whole component-centric view of one schematic / netlist.
+
+    ``components`` is keyed by refdes for O(1) lookup. ``refdes_set``
+    is the compatibility hook the Refdes Guard uses — it must keep the
+    same semantics as BoardRegistry.refdes_set so the guard does not
+    need to learn about Design.
+    """
+
+    components: dict[str, Component] = Field(default_factory=dict)
+    nets: dict[str, Net] = Field(default_factory=dict)
+    project_path: Path
+    source_eda: SourceEda
+
+    @property
+    def refdes_set(self) -> set[str]:
+        """Set of refdes for guard / sanitizer compatibility."""
+        return set(self.components.keys())

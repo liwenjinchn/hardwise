@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from hardwise.ir.types import Component, Net, Pin
+from pathlib import Path
+
+from hardwise.ir.types import Component, Design, Net, Pin
 
 
 def test_pin_minimal_construction() -> None:
@@ -141,3 +143,65 @@ def test_net_with_nodes() -> None:
     assert ("U1", "8") in net.nodes
     assert net.is_power_rail is True
     assert net.voltage_hint == 5.0
+
+
+def test_design_minimal_construction() -> None:
+    """Design with empty components and nets."""
+    d = Design(
+        components={},
+        nets={},
+        project_path=Path("/tmp/foo"),
+        source_eda="kicad",
+    )
+    assert d.components == {}
+    assert d.nets == {}
+    assert d.source_eda == "kicad"
+
+
+def test_design_refdes_set_property() -> None:
+    """``refdes_set`` returns the set of component refdes — Refdes Guard hook."""
+    d = Design(
+        components={
+            "U1": Component(refdes="U1", value="L7805"),
+            "C1": Component(refdes="C1", value="0.33uF"),
+        },
+        nets={},
+        project_path=Path("/tmp/foo"),
+        source_eda="kicad",
+    )
+    assert d.refdes_set == {"U1", "C1"}
+
+
+def test_design_refdes_set_empty() -> None:
+    """``refdes_set`` is empty when no components are loaded."""
+    d = Design(
+        components={},
+        nets={},
+        project_path=Path("/tmp/foo"),
+        source_eda="kicad",
+    )
+    assert d.refdes_set == set()
+
+
+def test_design_source_eda_literal_accepts_kicad_and_allegro() -> None:
+    """``source_eda`` only accepts the two adapters Hardwise ships."""
+    Design(components={}, nets={}, project_path=Path("/tmp"), source_eda="kicad")
+    Design(
+        components={},
+        nets={},
+        project_path=Path("/tmp"),
+        source_eda="allegro_netlist",
+    )
+
+
+def test_ir_package_exports() -> None:
+    """``from hardwise.ir import Pin, Component, Net, Design`` works."""
+    from hardwise.ir import Component as ImpComponent
+    from hardwise.ir import Design as ImpDesign
+    from hardwise.ir import Net as ImpNet
+    from hardwise.ir import Pin as ImpPin
+
+    assert ImpPin is Pin
+    assert ImpComponent is Component
+    assert ImpNet is Net
+    assert ImpDesign is Design
