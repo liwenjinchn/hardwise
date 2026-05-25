@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from hardwise.ir.types import Component, Pin
+from hardwise.ir.types import Component, Net, Pin
 
 
 def test_pin_minimal_construction() -> None:
@@ -118,3 +118,26 @@ def test_component_decision_literal_accepts_pass_warn_fail() -> None:
     Component(refdes="U1", value="L7805", decision="pass")
     Component(refdes="U1", value="L7805", decision="warn")
     Component(refdes="U1", value="L7805", decision="fail")
+
+
+def test_net_minimal_construction() -> None:
+    """Net with only the required ``name`` and empty ``nodes``."""
+    net = Net(name="+5V", nodes=[])
+    assert net.name == "+5V"
+    assert net.nodes == []
+    assert net.is_power_rail is False
+    assert net.voltage_hint is None
+
+
+def test_net_with_nodes() -> None:
+    """Net carries refdes/pin tuples as nodes."""
+    net = Net(
+        name="VCC",
+        nodes=[("U1", "8"), ("C1", "1"), ("C2", "1")],
+        is_power_rail=True,
+        voltage_hint=5.0,
+    )
+    assert len(net.nodes) == 3
+    assert ("U1", "8") in net.nodes
+    assert net.is_power_rail is True
+    assert net.voltage_hint == 5.0

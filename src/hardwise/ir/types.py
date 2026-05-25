@@ -82,3 +82,19 @@ class Component(BaseModel):
         to change later.
         """
         return next((p for p in self.pins if p.name == name), None)
+
+
+class Net(BaseModel):
+    """A schematic / netlist net.
+
+    V2.1 only builds Designs from KiCad pre-Layout parsing which does
+    not yet expose schematic nets — so ``Design.nets`` is empty in V2.1.
+    V2.5's Allegro netlist adapter is the first path that actually
+    populates nets. Power-rail metadata (``is_power_rail``,
+    ``voltage_hint``) is reserved for V3 power-rail-audit work.
+    """
+
+    name: str
+    nodes: list[tuple[str, str]] = Field(default_factory=list)
+    is_power_rail: bool = False
+    voltage_hint: Optional[float] = None
