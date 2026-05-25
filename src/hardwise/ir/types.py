@@ -14,7 +14,7 @@ so the IR layer commits to the same serialisation foundation.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -38,3 +38,47 @@ class Pin(BaseModel):
     net: Optional[str] = None
     datasheet_function: Optional[str] = None
     findings: list[Finding] = Field(default_factory=list)
+
+
+ComponentDecision = Literal["pass", "warn", "fail"]
+
+
+class Component(BaseModel):
+    """One component (refdes-keyed) on the schematic — V2 first-class entity.
+
+    The Design holds a dict[refdes -> Component]. A Component owns its
+    Pin list and accumulates findings (component-scoped) plus a rolled-up
+    ``decision`` written by the V2.2 runner. V2.4 will attach
+    ``datasheet_profile`` once an extracted profile JSON exists.
+
+    ``datasheet_profile`` is left as Optional[object] in V2.1 — the
+    actual ``DatasheetProfile`` BaseModel ships in V2.4. Typing it as
+    Optional[object] here lets V2.1 round-trip JSON without depending
+    on a type that does not exist yet.
+    """
+
+    refdes: str
+    value: str = ""
+    package: Optional[str] = None
+    part_number: Optional[str] = None
+    manufacturer: Optional[str] = None
+    datasheet_path: Optional[str] = None
+    datasheet_profile: Optional[object] = None
+    pins: list[Pin] = Field(default_factory=list)
+    properties: dict[str, Optional[str]] = Field(default_factory=dict)
+    findings: list[Finding] = Field(default_factory=list)
+    decision: Optional[ComponentDecision] = None
+
+    def pin_by_number(self, number: str) -> Optional[Pin]:
+        """Return the Pin with ``number`` matching, else None."""
+        return next((p for p in self.pins if p.number == number), None)
+
+    def pin_by_name(self, name: str) -> Optional[Pin]:
+        """Return the Pin with ``name`` matching exactly, else None.
+
+        V2.1 note: only NC pins are populated — non-NC pins like "Vin"
+        won't be found until V2.4 extends kicad pin parsing. This method
+        already supports the V2.4 use-case so callers (DS001) don't have
+        to change later.
+        """
+        return next((p for p in self.pins if p.name == name), None)
