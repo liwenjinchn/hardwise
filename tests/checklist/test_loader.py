@@ -24,6 +24,15 @@ def test_load_rules_r001_fields_intact() -> None:
     assert r001.required_evidence  # at least one evidence source listed
 
 
+def test_load_rules_includes_ds001_as_active_datasheet_driven_rule() -> None:
+    rules = load_rules(Path("data/checklists/sch_review.yaml"))
+    ds001 = next(r for r in rules if r.id == "DS001")
+
+    assert ds001.status == "active"
+    assert ds001.slice == 4
+    assert "datasheet.profile.abs_max.vin" in ds001.required_evidence
+
+
 def test_load_rules_missing_file_raises() -> None:
     with pytest.raises(FileNotFoundError):
         load_rules(Path("data/checklists/does_not_exist.yaml"))

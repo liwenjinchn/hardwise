@@ -114,6 +114,21 @@
     地址，跨设备求交集。交集非空 → finding(severity=critical, action=set_addr_select_pin)
   slice: 4
 
+- id: DS001
+  title: Datasheet Vin absolute maximum check
+  source: V2 datasheet-driven check example
+  status: active
+  severity: medium
+  required_evidence:
+    - datasheet.profile.abs_max.vin
+    - EDA.component.datasheet
+  check_function: hardwise.checklist.checks.ds001_vin_abs_max.check_component
+  rule: |
+    If a component has a structured DatasheetProfile with abs_max.vin, compare the
+    inferred Vin rail against the datasheet absolute maximum. If schematic-side net
+    voltage is unavailable, emit reviewer_to_confirm rather than guessing.
+  slice: 4
+
 - id: R005
   title: 单端 / 空网络
   source: 原理图 checklist 第 10 条

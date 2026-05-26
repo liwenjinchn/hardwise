@@ -93,6 +93,11 @@ def test_finding_refdes_is_set() -> None:
     assert findings[0].refdes == "J1"
 
 
+def test_pin_scoped_finding_sets_pin_number() -> None:
+    findings = check([_nc_pin("U1", "9")], registry=_registry())
+    assert findings[0].pin_number == "9"
+
+
 def test_check_on_pic_programmer_nc_pins() -> None:
     from hardwise.adapters.kicad import parse_project
 

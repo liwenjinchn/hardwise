@@ -18,32 +18,58 @@ from __future__ import annotations
 
 from hardwise.adapters.base import ComponentRecord
 from hardwise.checklist.finding import Finding
+from hardwise.checklist.protocols import CheckContext, CheckSpec
+from hardwise.ir.types import Component, Design
+
+
+def applies_to(component: Component) -> bool:
+    """R001 applies to real schematic components only."""
+    return not component.refdes.startswith("#")
+
+
+def check_component(
+    component: Component,
+    _design: Design,
+    context: CheckContext,
+) -> list[Finding]:
+    """Check one component for an empty raw schematic footprint."""
+    record = context.schematic_record_for(component.refdes)
+    if record is None:
+        return []
+    return _check_record(record)
+
+
+def _check_record(record: ComponentRecord) -> list[Finding]:
+    if record.refdes.startswith("#"):
+        return []
+    if record.footprint:
+        return []
+    return [
+        Finding(
+            rule_id="R001",
+            severity="info",
+            refdes=record.refdes,
+            message=(
+                f"{record.refdes} has empty Footprint field — likely a "
+                "new-build part still awaiting the layout team's footprint "
+                "assignment."
+            ),
+            evidence_tokens=[f"sch:{record.source_file.name}#{record.refdes}"],
+            suggested_action=(
+                "Treat as new-component candidate; review the part's "
+                "datasheet symbol/footprint dimensions and pinout before "
+                "sign-off."
+            ),
+            decision="reviewer_to_confirm",
+        )
+    ]
 
 
 def check(schematic_records: list[ComponentRecord]) -> list[Finding]:
     findings: list[Finding] = []
     for record in schematic_records:
-        if record.refdes.startswith("#"):
-            continue
-        if record.footprint:
-            continue
-        findings.append(
-            Finding(
-                rule_id="R001",
-                severity="info",
-                refdes=record.refdes,
-                message=(
-                    f"{record.refdes} has empty Footprint field — likely a "
-                    "new-build part still awaiting the layout team's footprint "
-                    "assignment."
-                ),
-                evidence_tokens=[f"sch:{record.source_file.name}#{record.refdes}"],
-                suggested_action=(
-                    "Treat as new-component candidate; review the part's "
-                    "datasheet symbol/footprint dimensions and pinout before "
-                    "sign-off."
-                ),
-                decision="reviewer_to_confirm",
-            )
-        )
+        findings.extend(_check_record(record))
     return findings
+
+
+R001_SPEC = CheckSpec(rule_id="R001", applies_to=applies_to, check=check_component)

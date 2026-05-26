@@ -20,6 +20,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 from hardwise.checklist.finding import Finding
+from hardwise.ir.profile import DatasheetProfile
 
 
 class Pin(BaseModel):
@@ -52,10 +53,9 @@ class Component(BaseModel):
     ``decision`` written by the V2.2 runner. V2.4 will attach
     ``datasheet_profile`` once an extracted profile JSON exists.
 
-    ``datasheet_profile`` is left as Optional[object] in V2.1 — the
-    actual ``DatasheetProfile`` BaseModel ships in V2.4. Typing it as
-    Optional[object] here lets V2.1 round-trip JSON without depending
-    on a type that does not exist yet.
+    ``datasheet_profile`` holds structured limits extracted from a
+    public datasheet. Missing profile means datasheet-driven checks skip
+    the component instead of guessing.
     """
 
     refdes: str
@@ -64,7 +64,7 @@ class Component(BaseModel):
     part_number: Optional[str] = None
     manufacturer: Optional[str] = None
     datasheet_path: Optional[str] = None
-    datasheet_profile: Optional[object] = None
+    datasheet_profile: Optional[DatasheetProfile] = None
     pins: list[Pin] = Field(default_factory=list)
     properties: dict[str, Optional[str]] = Field(default_factory=dict)
     findings: list[Finding] = Field(default_factory=list)

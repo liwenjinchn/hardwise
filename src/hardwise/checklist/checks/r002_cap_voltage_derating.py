@@ -34,6 +34,8 @@ import re
 
 from hardwise.adapters.base import ComponentRecord
 from hardwise.checklist.finding import Finding
+from hardwise.checklist.protocols import CheckContext, CheckSpec
+from hardwise.ir.types import Component, Design
 
 # Match "/25V", "/ 25 V", "/4.7V" etc. anywhere in the value string.
 # The `/` is the conventional cap-value separator in EE notation.
@@ -60,37 +62,61 @@ def parse_rated_voltage(value: str) -> float | None:
     return float(match.group(1))
 
 
+def applies_to(component: Component) -> bool:
+    """R002 applies to real capacitor components."""
+    return component.refdes.startswith("C") and not component.refdes.startswith("#")
+
+
+def check_component(
+    component: Component,
+    _design: Design,
+    context: CheckContext,
+) -> list[Finding]:
+    """Check one capacitor for a rated-voltage suffix."""
+    record = context.schematic_record_for(component.refdes)
+    if record is None:
+        return []
+    return _check_record(record)
+
+
+def _check_record(record: ComponentRecord) -> list[Finding]:
+    if not record.refdes.startswith("C"):
+        return []
+    if record.refdes.startswith("#"):
+        return []
+    value = record.value.strip()
+    if not value or value == "0":
+        return []
+
+    rated_voltage = parse_rated_voltage(value)
+
+    if rated_voltage is not None:
+        return []
+
+    return [
+        Finding(
+            rule_id="R002",
+            severity="medium",
+            refdes=record.refdes,
+            message=(
+                f"{record.refdes} value field '{value}' does not declare rated voltage "
+                f"(missing '/<num>V' suffix). The 80% derating rule cannot be "
+                f"evaluated without it."
+            ),
+            evidence_tokens=[f"sch:{record.source_file.name}#{record.refdes}"],
+            suggested_action=(
+                "Clarify rated voltage by suffixing the value field, e.g. '100uF/25V'."
+            ),
+            decision="likely_issue",
+        )
+    ]
+
+
 def check(schematic_records: list[ComponentRecord]) -> list[Finding]:
     findings: list[Finding] = []
     for record in schematic_records:
-        if not record.refdes.startswith("C"):
-            continue
-        if record.refdes.startswith("#"):
-            continue
-        value = record.value.strip()
-        if not value or value == "0":
-            continue
-
-        rated_voltage = parse_rated_voltage(value)
-
-        if rated_voltage is not None:
-            continue
-
-        findings.append(
-            Finding(
-                rule_id="R002",
-                severity="medium",
-                refdes=record.refdes,
-                message=(
-                    f"{record.refdes} value field '{value}' does not declare rated voltage "
-                    f"(missing '/<num>V' suffix). The 80% derating rule cannot be "
-                    f"evaluated without it."
-                ),
-                evidence_tokens=[f"sch:{record.source_file.name}#{record.refdes}"],
-                suggested_action=(
-                    "Clarify rated voltage by suffixing the value field, e.g. '100uF/25V'."
-                ),
-                decision="likely_issue",
-            )
-        )
+        findings.extend(_check_record(record))
     return findings
+
+
+R002_SPEC = CheckSpec(rule_id="R002", applies_to=applies_to, check=check_component)

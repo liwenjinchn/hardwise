@@ -10,6 +10,7 @@ def test_finding_minimum_construction() -> None:
     assert f.rule_id == "R001"
     assert f.severity == "info"
     assert f.refdes is None
+    assert f.pin_number is None
     assert f.net is None
     assert f.evidence_tokens == []
     assert f.suggested_action == ""
@@ -21,6 +22,7 @@ def test_finding_full_construction() -> None:
         rule_id="R002",
         severity="high",
         refdes="C7",
+        pin_number="1",
         net="+3V3",
         message="cap rated voltage too low",
         evidence_tokens=["sch:main.kicad_sch#C7", "datasheet:cap.pdf#p3"],
@@ -28,6 +30,7 @@ def test_finding_full_construction() -> None:
         status="accepted",
     )
     assert f.refdes == "C7"
+    assert f.pin_number == "1"
     assert len(f.evidence_tokens) == 2
     assert f.status == "accepted"
 

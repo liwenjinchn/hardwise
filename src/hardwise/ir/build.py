@@ -9,7 +9,11 @@ a separate plan; this module will grow a second top-level function.
 
 from __future__ import annotations
 
+from pathlib import Path
+from urllib.parse import urlparse
+
 from hardwise.adapters.base import BoardRegistry, NcPinRecord
+from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Pin
 
 
@@ -29,7 +33,7 @@ def _build_pin_from_nc(nc: NcPinRecord) -> Pin:
     )
 
 
-def build_design(registry: BoardRegistry) -> Design:
+def build_design(registry: BoardRegistry, profile_dir: Path | None = None) -> Design:
     """Aggregate a KiCad-parsed BoardRegistry into a V2 Design.
 
     Each ComponentRecord becomes one Component. NcPinRecord rows are
@@ -50,6 +54,7 @@ def build_design(registry: BoardRegistry) -> Design:
             value=record.value,
             package=record.footprint or None,
             datasheet_path=record.datasheet or None,
+            datasheet_profile=_try_load_profile(record.datasheet, profile_dir),
             pins=pins,
         )
 
@@ -59,3 +64,27 @@ def build_design(registry: BoardRegistry) -> Design:
         project_path=registry.project_dir,
         source_eda="kicad",
     )
+
+
+def _try_load_profile(
+    datasheet_path: str,
+    profile_dir: Path | None = None,
+) -> DatasheetProfile | None:
+    """Load a datasheet profile by datasheet basename, if present."""
+
+    if not datasheet_path:
+        return None
+    basename = _datasheet_stem(datasheet_path)
+    if not basename:
+        return None
+    root = profile_dir or Path("data/datasheet_profiles")
+    path = root / f"{basename}.json"
+    if not path.exists():
+        return None
+    return DatasheetProfile.load(path)
+
+
+def _datasheet_stem(datasheet_path: str) -> str:
+    parsed = urlparse(datasheet_path)
+    path = parsed.path if parsed.scheme else datasheet_path
+    return Path(path).stem

@@ -22,6 +22,7 @@ from hardwise.checklist.finding import EvidenceStep, Finding
 def test_finding_default_evidence_chain_empty_and_decision_none() -> None:
     """Backward-compat: existing checks can construct Finding as before."""
     f = Finding(rule_id="R001", severity="info", message="hello")
+    assert f.pin_number is None
     assert f.evidence_chain == []
     assert f.decision is None
     assert f.status == "open"
@@ -37,6 +38,7 @@ def test_finding_default_omits_new_fields_from_dump_dict_when_unused() -> None:
     dumped = f.model_dump(exclude_defaults=True)
     assert "evidence_chain" not in dumped
     assert "decision" not in dumped
+    assert "pin_number" not in dumped
 
 
 def test_finding_with_evidence_chain_and_decision_serializes() -> None:
@@ -45,6 +47,7 @@ def test_finding_with_evidence_chain_and_decision_serializes() -> None:
         rule_id="R003",
         severity="medium",
         refdes="U4",
+        pin_number="2",
         message="pin 2 marked NC; datasheet confirms NC status",
         evidence_chain=[
             EvidenceStep(
@@ -64,11 +67,13 @@ def test_finding_with_evidence_chain_and_decision_serializes() -> None:
     assert f.evidence_chain[0].source == "eda"
     assert f.evidence_chain[1].source == "datasheet"
     assert f.decision == "likely_ok"
+    assert f.pin_number == "2"
     # Rule/status split: rule writes decision, status stays default.
     assert f.status == "open"
 
     dumped = f.model_dump()
     assert dumped["decision"] == "likely_ok"
+    assert dumped["pin_number"] == "2"
     assert dumped["status"] == "open"
     assert len(dumped["evidence_chain"]) == 2
     assert dumped["evidence_chain"][0]["token"] == "sch:main.kicad_sch#U4.2"

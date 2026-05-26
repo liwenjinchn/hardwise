@@ -154,6 +154,11 @@ def review(
         "-f",
         help="Report format: md or html. Default: md.",
     ),
+    report_style: str = typer.Option(
+        "classic",
+        "--report-style",
+        help="Report style: classic or component. Component style is markdown-only in V2.3.",
+    ),
     checklist: Path = typer.Option(
         Path("data/checklists/sch_review.yaml"),
         "--checklist",
@@ -209,23 +214,29 @@ def review(
     from datetime import datetime, timezone
 
     from hardwise.adapters.kicad import parse_project
-    from hardwise.checklist.checks.r001_new_component_candidate import (
-        check as check_r001,
-    )
-    from hardwise.checklist.checks.r002_cap_voltage_derating import (
-        check as check_r002,
-    )
-    from hardwise.checklist.checks.r003_nc_pin_handling import (
-        check as check_r003,
-    )
+    from hardwise.checklist.checks import CHECK_SPECS
     from hardwise.checklist.finding import Finding
     from hardwise.checklist.loader import load_rules
+    from hardwise.checklist.protocols import CheckContext, run_component_checks
     from hardwise.guards.evidence import strip_unsupported
     from hardwise.guards.refdes import sanitize_finding
+    from hardwise.ir.build import build_design
     from hardwise.memory.consolidator import consolidate
 
     if output_format not in ("md", "html"):
         typer.echo(f"error: --format must be md|html, got {output_format!r}", err=True)
+        raise typer.Exit(1)
+    if report_style not in ("classic", "component"):
+        typer.echo(
+            f"error: --report-style must be classic|component, got {report_style!r}",
+            err=True,
+        )
+        raise typer.Exit(1)
+    if output_format == "html" and report_style == "component":
+        typer.echo(
+            "error: --report-style component is only supported with --format md in V2.3",
+            err=True,
+        )
         raise typer.Exit(1)
 
     requested_rules = [r.strip() for r in rules.split(",") if r.strip()]
@@ -251,26 +262,29 @@ def review(
 
         collection = create_collection(persist_dir)
 
-    rule_dispatch = {
-        "R001": lambda: check_r001(registry.schematic_records),
-        "R002": lambda: check_r002(registry.schematic_records),
-        "R003": lambda: check_r003(registry.nc_pins, registry=registry, collection=collection),
-    }
-
-    findings: list[Finding] = []
-    rules_run: list[str] = []
+    spec_by_id = {spec.rule_id: spec for spec in CHECK_SPECS}
+    selected_specs = []
     for rule in active_rules:
         if rule.id not in requested_ids:
             continue
-        check_fn = rule_dispatch.get(rule.id)
-        if check_fn is None:
+        spec = spec_by_id.get(rule.id)
+        if spec is None:
             typer.echo(
                 f"warning: rule {rule.id} active in yaml but no check function registered",
                 err=True,
             )
             continue
-        findings.extend(check_fn())
-        rules_run.append(rule.id)
+        selected_specs.append(spec)
+
+    design = build_design(registry)
+    context = CheckContext(registry=registry, collection=collection)
+    findings: list[Finding]
+    findings, rules_run = run_component_checks(
+        design=design,
+        specs=selected_specs,
+        requested_rule_ids=requested_ids,
+        context=context,
+    )
 
     if not rules_run:
         typer.echo(
@@ -303,10 +317,16 @@ def review(
 
     if output_format == "html":
         from hardwise.report.html import render
+
+        report_text = render(findings, project_meta)
+    elif report_style == "component":
+        from hardwise.report.component_markdown import render
+
+        report_text = render(findings, project_meta, design)
     else:
         from hardwise.report.markdown import render
 
-    report_text = render(findings, project_meta)
+        report_text = render(findings, project_meta)
 
     if output is None:
         date_stamp = now.strftime("%Y%m%d")
@@ -444,6 +464,16 @@ def ingest_datasheet(
     ),
     chunk_size: int = typer.Option(500, "--chunk-size"),
     overlap: int = typer.Option(100, "--overlap"),
+    extract_profile: bool = typer.Option(
+        False,
+        "--extract-profile",
+        help="Also extract a deterministic V2.4 DatasheetProfile JSON when supported.",
+    ),
+    profile_output_dir: Path = typer.Option(
+        Path("data/datasheet_profiles"),
+        "--profile-output-dir",
+        help="Directory for extracted profile JSON files.",
+    ),
 ) -> None:
     """Ingest a datasheet PDF into the local Chroma vector store."""
     from hardwise.ingest.pdf import extract_chunks
@@ -462,6 +492,20 @@ def ingest_datasheet(
     collection = create_collection(persist_dir)
     n = ingest_chunks(collection, chunks, part_ref=part_ref)
     typer.echo(f"ingest: {pdf_path.name} → {persist_dir} ({n} chunks, part_ref={part_ref})")
+    if extract_profile:
+        from hardwise.ir.profile import extract_l78_profile
+
+        try:
+            profile = extract_l78_profile(pdf_path)
+        except Exception as e:
+            typer.echo(
+                f"warning: profile extraction skipped: {type(e).__name__}: {e}",
+                err=True,
+            )
+        else:
+            profile_path = profile_output_dir / f"{pdf_path.stem}.json"
+            profile.save(profile_path)
+            typer.echo(f"profile: {profile_path} (part={profile.part_number})")
 
 
 @app.command(name="query-datasheet")

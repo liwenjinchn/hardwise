@@ -49,6 +49,7 @@ class Finding(BaseModel):
     rule_id: str
     severity: Severity
     refdes: str | None = None
+    pin_number: str | None = None
     net: str | None = None
     message: str
     evidence_tokens: list[str] = Field(default_factory=list)

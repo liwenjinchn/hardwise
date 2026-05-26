@@ -103,6 +103,27 @@ def test_build_design_keys_components_by_refdes() -> None:
     assert u1.pins == []  # no NC pins in this registry
 
 
+def test_build_design_loads_datasheet_profile_by_datasheet_basename() -> None:
+    components = [
+        ComponentRecord(
+            refdes="U3",
+            value="7805",
+            footprint="TO-220",
+            datasheet="www.st.com/resource/en/datasheet/l78.pdf",
+            source_file=Path("/tmp/proj/main.kicad_sch"),
+            source_kind="schematic",
+        )
+    ]
+    registry = _make_registry(Path("/tmp/proj"), components, [])
+
+    design = build_design(registry, profile_dir=Path("data/datasheet_profiles"))
+
+    profile = design.components["U3"].datasheet_profile
+    assert profile is not None
+    assert profile.part_number == "L7805"
+    assert profile.abs_max["vin"] == 35.0
+
+
 def test_build_design_attaches_nc_pins_to_correct_component() -> None:
     """NcPinRecord rows route to the matching Component by refdes."""
     components = [

@@ -26,6 +26,8 @@ from typing import Any
 
 from hardwise.adapters.base import BoardRegistry, NcPinRecord
 from hardwise.checklist.finding import EvidenceStep, Finding, FindingDecision
+from hardwise.checklist.protocols import CheckContext, CheckSpec
+from hardwise.ir.types import Component, Design
 
 NC_PATTERN = re.compile(
     r"\b(?:N\.?C\.?|no[\s_-]?connect(?:ed)?|not\s+connected)\b", re.IGNORECASE
@@ -92,6 +94,25 @@ def _is_connector_like(refdes: str, registry: BoardRegistry) -> bool:
             footprint = f"{comp.footprint} {comp.value}"
             return any(hint.lower() in footprint.lower() for hint in CONNECTOR_FOOTPRINT_HINTS)
     return False
+
+
+def applies_to(component: Component) -> bool:
+    """R003 applies to components that have explicit schematic NC pins."""
+    return any(pin.is_nc for pin in component.pins)
+
+
+def check_component(
+    component: Component,
+    _design: Design,
+    context: CheckContext,
+) -> list[Finding]:
+    """Check one component's NC pins."""
+    return check(
+        context.nc_pins_for(component.refdes),
+        registry=context.registry,
+        collection=context.collection,
+        top_k=context.top_k,
+    )
 
 
 def check(
@@ -212,6 +233,7 @@ def check(
                 rule_id="R003",
                 severity="medium",
                 refdes=pin.refdes,
+                pin_number=pin.pin_number,
                 message=(
                     f"{pin.refdes} pin {pin.pin_number} ({pin.pin_name}) "
                     f"marked NC (type: {pin.pin_electrical_type}). "
@@ -227,3 +249,6 @@ def check(
             )
         )
     return findings
+
+
+R003_SPEC = CheckSpec(rule_id="R003", applies_to=applies_to, check=check_component)

@@ -1,0 +1,34 @@
+{
+  "part_number": "L7805",
+  "abs_max": {
+    "vin": 35.0,
+    "iout": "internally limited",
+    "power_dissipation": "internally limited",
+    "tj": 125.0
+  },
+  "recommended": {
+    "vin_min": 7.5,
+    "vin_max": 25.0,
+    "iout_max": 1.5
+  },
+  "pin_function": {
+    "1": "VI (input)",
+    "2": "GND (ground)",
+    "3": "VO (5 V output)"
+  },
+  "evidence": {
+    "abs_max.vin": "datasheet:l78.pdf#p4",
+    "abs_max.iout": "datasheet:l78.pdf#p4",
+    "abs_max.power_dissipation": "datasheet:l78.pdf#p4",
+    "abs_max.tj": "datasheet:l78.pdf#p4",
+    "recommended.vin_min": "datasheet:l78.pdf#p6",
+    "recommended.vin_max": "datasheet:l78.pdf#p6",
+    "recommended.iout_max": "datasheet:l78.pdf#p6",
+    "pin_function.1": "datasheet:l78.pdf#p3",
+    "pin_function.2": "datasheet:l78.pdf#p3",
+    "pin_function.3": "datasheet:l78.pdf#p3"
+  },
+  "extracted_at": "2026-05-26T00:00:00+00:00",
+  "extracted_model": "deterministic-l78-v2.4",
+  "schema_version": "v1"
+}

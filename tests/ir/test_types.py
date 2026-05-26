@@ -38,6 +38,22 @@ def test_pin_with_all_optional_fields() -> None:
     assert pin.datasheet_function == "GPIO with internal pull-up"
 
 
+def test_pin_json_round_trip_preserves_fields() -> None:
+    """Pin can round-trip through JSON for later profile/cache artifacts."""
+    pin = Pin(
+        number="A2",
+        name="GPIO_A2",
+        electrical_type="bidirectional",
+        is_nc=False,
+        net="LED_DRIVE",
+        datasheet_function="GPIO with internal pull-up",
+    )
+
+    restored = Pin.model_validate_json(pin.model_dump_json())
+
+    assert restored == pin
+
+
 def test_pin_nc_flag_true() -> None:
     """Pin marked as no-connect — schematic NC marker present."""
     pin = Pin(
@@ -145,6 +161,14 @@ def test_net_with_nodes() -> None:
     assert net.voltage_hint == 5.0
 
 
+def test_net_nodes_order_is_preserved() -> None:
+    """Net nodes stay in parser order for deterministic diagnostics."""
+    nodes = [("U1", "8"), ("C1", "1"), ("R3", "2")]
+    net = Net(name="VCC", nodes=nodes)
+
+    assert net.nodes == nodes
+
+
 def test_design_minimal_construction() -> None:
     """Design with empty components and nets."""
     d = Design(
@@ -197,11 +221,14 @@ def test_design_source_eda_literal_accepts_kicad_and_allegro() -> None:
 def test_ir_package_exports() -> None:
     """``from hardwise.ir import Pin, Component, Net, Design`` works."""
     from hardwise.ir import Component as ImpComponent
+    from hardwise.ir import DatasheetProfile as ImpDatasheetProfile
     from hardwise.ir import Design as ImpDesign
     from hardwise.ir import Net as ImpNet
     from hardwise.ir import Pin as ImpPin
+    from hardwise.ir.profile import DatasheetProfile
 
     assert ImpPin is Pin
     assert ImpComponent is Component
+    assert ImpDatasheetProfile is DatasheetProfile
     assert ImpNet is Net
     assert ImpDesign is Design
