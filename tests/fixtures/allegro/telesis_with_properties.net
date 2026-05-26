@@ -1,0 +1,16 @@
+$PACKAGES
+  ! '0r22_1__r_2512_6332metric' ! '0R22 1%' ; R1, R2,
+    R6,
+    R7
+  ! 'SOIC8' ! 'MCU_CTRL' ; U1
+$A_PROPERTIES
+  'ROOM' '/' ; R6, R7
+  'ROOM' '/SubBlock1/' ; R1, R2,
+    U1
+$NETS
+  '/SUBBLOCK1/PIN1' ; R1.2, R6.1,
+    R7.1
+  '/SUBBLOCK1/PIN2' ; R2.1, R6.2, R7.2
+  'NET-(R1-PAD1)' ; R1.1, R2.2
+  'CTRL.EN' ; U1.1, U1.2
+$END

@@ -1,12 +1,13 @@
 # Hardwise Architecture
 
-> v0.6 — Review runs now append a machine-readable `trace.jsonl` record beside the report. This gives rules-list / demo / audit views a stable source of truth instead of parsing CLI stdout.
+> v0.7 — V2.5 adds Allegro schematic netlist adapters for Telesis third-party ASCII and Capture/Allegro PST exports. They populate IR topology (`Design.components`, `Design.nets`, connected `Pin.net`) from schematic netlist text only; `.brd`, boardview, placement, routing, and PCB geometry remain out of scope.
 
 ## Data flow
 
 ```
 KiCad project ─┐
                ├─→ adapters/kicad.py ─→ store/relational.py (SQLite)
+Allegro schematic netlist ─→ adapters/allegro_netlist.py / allegro_pst.py ─→ ir/build.py
                                               │
 Datasheet PDFs ─→ ingest/pdf.py     ─→ store/vector.py (Chroma)
                                               │
@@ -28,7 +29,7 @@ Datasheet PDFs ─→ ingest/pdf.py     ─→ store/vector.py (Chroma)
 ## Modules (one paragraph each as they ship)
 
 ### `adapters/`
-Adapter pattern at the EDA boundary. `base.py` defines the first stable data shapes: `ComponentRecord` and `BoardRegistry`. `kicad.py` is the v0.1 implementation: it parses KiCad S-expression files directly, extracts schematic symbol instances plus PCB footprints, and merges them into a refdes registry. Future `cadence.py` is one new file, not a rewrite. Borrowed from Wrench Board's "adding a format = one new file" boardview parser pattern.
+Adapter pattern at the EDA boundary. `base.py` defines the first stable KiCad registry shapes: `ComponentRecord` and `BoardRegistry`. `kicad.py` parses KiCad S-expression files directly, extracts schematic symbol instances plus PCB footprints, and merges them into a refdes registry. V2.5 adds two Allegro schematic-netlist adapters: `allegro_netlist.py` parses Telesis third-party ASCII netlists (`$PACKAGES`, optional `$A_PROPERTIES`, `$NETS`), and `allegro_pst.py` parses Capture/Allegro PST handoff files (`pstxprt.dat`, `pstxnet.dat`, optional `pstchip.dat`). Both feed IR aggregation without parsing PCB data. Borrowed from Wrench Board's "adding a format = one new file" parser pattern, but Hardwise does not copy Wrench Board code.
 
 #### Day 2 shipped module I/O
 
@@ -41,10 +42,15 @@ Adapter pattern at the EDA boundary. `base.py` defines the first stable data sha
 | `parse_project(project_dir)` in `adapters/kicad.py` | Merge schematic and PCB views into one registry | KiCad project directory containing `.kicad_sch` / `.kicad_pcb` | `BoardRegistry` sorted for human-readable CLI output, including `pcb_nets` when a PCB file exists | Agent tools should ask one registry, not parse files ad hoc every time | `inspect-kicad` extracts 121 registry items from `pic_programmer` |
 | `parse_pcb_nets(path)` in `adapters/kicad.py` | Read already-laid-out PCB connectivity | `.kicad_pcb` text file | `PcbNetRecord` list with `(refdes, pad)` members | Diagnostic only: this is post-Layout data, not legal pre-Layout schematic-review evidence | Tests lock 111 PCB nets on `pic_programmer` |
 | `inspect-kicad` in `cli.py` | Human-visible smoke test for EDA ingestion | Project path + optional print limit, plus optional `--net` | Registry count and first N components, or PCB-side net summary | Lets user see the parser result without reading code or opening KiCad | `uv run hardwise inspect-kicad data/projects/pic_programmer --net` |
+| `parse_allegro_netlist(path)` in `adapters/allegro_netlist.py` | Read schematic topology from Allegro/Telesis text netlists | `.net` / `.txt` third-party ASCII netlist with `$PACKAGES` + `$NETS` | `AllegroNetlistRegistry` with packages, optional properties, nets, and `refdes_set` | Proves the IR is not KiCad-only while staying inside pre-Layout schematic-review evidence | 11 adapter tests cover quoted names, `$A_PROPERTIES`, continuation, duplicate/unknown refdes errors |
+| `build_design_from_netlist(registry)` in `ir/build.py` | Aggregate Allegro netlist records into V2 IR | `AllegroNetlistRegistry` | `Design(source_eda="allegro_netlist")` with components, nets, connected pins | Keeps parsing and semantic aggregation separate; datasheet fields stay empty instead of guessed | 7 IR tests cover component count, pins, nets, and duplicate pin-on-two-nets rejection |
+| `parse_allegro_pst(path)` in `adapters/allegro_pst.py` | Read schematic topology from Capture/Allegro PST exports | Directory or member file containing `pstxprt.dat` + `pstxnet.dat`, with optional `pstchip.dat` | `AllegroPstRegistry` with placed parts, nets, pin names, primitive properties, and `refdes_set` | Covers the common OrCAD/Capture-to-Allegro handoff format while staying pre-Layout | 7 adapter tests plus a public smoke parse of 4010 components / 3422 nets |
+| `build_design_from_pst(registry)` in `ir/build.py` | Aggregate PST records into V2 IR | `AllegroPstRegistry` | `Design(source_eda="allegro_netlist")` with components, nets, connected pins, and primitive properties | Reuses the same component-centric IR for both Allegro text formats | 6 IR tests cover property mapping, pin names, nets, and duplicate pin-on-two-nets rejection |
+| `inspect-allegro-netlist` in `cli.py` | Human-visible smoke test for V2.5 adapter | Telesis netlist path, PST directory, or PST member file + optional net print limit | Component/net/property counts plus largest nets | Shows netlist topology without implying `.brd` or boardview support | Synthetic Telesis fixture; synthetic PST fixture; public PST directory smoke |
 
 **Hardware-engineer explanation:** this module is the project's 位号台账 plus a PCB-side diagnostic net reader. Before AI can review a board, it must know which U/C/R/D/J designators really exist. The parser turns KiCad files into that trusted table. Later, if the model says "U999 has a decoupling issue", Refdes Guard can reject it because `U999` is not in `BoardRegistry`.
 
-**What it does not do yet:** it does not parse schematic-side nets, BOM rows, DRC/ERC results, or datasheet PDFs. `pcb_nets` come from `.kicad_pcb` and are post-Layout diagnostics only; R005/R006/R007 need a separate `.kicad_sch` parser that resolves wires, labels, power symbols, hierarchical labels, and symbol pin endpoints.
+**What it does not do yet:** it does not parse BOM rows, DRC/ERC results, datasheet PDFs, Allegro `.brd`, boardview data, placement, routing, or PCB geometry. `pcb_nets` come from `.kicad_pcb` and are post-Layout diagnostics only. The Allegro adapters read schematic-exported topology only; they cannot infer datasheet identity, and a net literally named `NC` is still just a net name unless a future format supplies explicit no-connect semantics. For netlist-only inputs, the next layer is a BOM matcher that joins CSV/XLSX rows to `Design.components` by refdes to improve part/datasheet matching.
 
 **Slice 1 work item (per PLAN DR-008):** `parse_project()` currently merges `.kicad_pcb` footprints into `.kicad_sch` records when the schematic field is empty (see `kicad.py:30-31`). This backfill is correct for Refdes Guard but **breaks R001's "footprint-empty → new-component candidate" judgement** — every PCB-laid-out part stops looking new. Slice 1 must either (a) add `BoardRegistry.schematic_records` / `pcb_records` raw fields and have R001 read `schematic_records`, or (b) have R001 bypass `BoardRegistry` and call `parse_schematic` directly. Pick one in Slice 1, document the choice here.
 

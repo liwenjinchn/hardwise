@@ -8,6 +8,30 @@
 
 ---
 
+## 2026-05-26 · V2.5 · Allegro netlists give topology, BOM gives identity
+
+**Symptom**
+
+V2.5 最初只写了 Allegro `$PACKAGES + $NETS` adapter。Grok Search 调研 EDA.cn / 华秋设计审查工具和 CADY 后发现，成熟产品的 non-native EDA 入口通常是 **netlist + BOM**：网表负责连接关系，BOM 负责器件型号 / MPN / datasheet 匹配。随后公开 Allegro 样本暴露出另一个现实格式：OrCAD/Capture 到 Allegro 的常见导出不是 Telesis 单文件，而是 PST 三件套 `pstxprt.dat` / `pstxnet.dat` / `pstchip.dat`。
+
+**Root cause**
+
+把 “Allegro support” 说成单一 parser 很容易滑偏：如果只解析一种网表，会漏掉真实 Capture/Allegro handoff；如果把 BOM 解析塞进 netlist adapter，又会污染 EDA boundary。正确分层是：adapter 只读 EDA 导出的结构事实；BOM 是 component-matching layer，用 refdes join 到 `Design.components`。
+
+**Fix**
+
+新增 `src/hardwise/adapters/allegro_netlist.py`，按 Telesis / Allegro third-party ASCII netlist 解析 `$PACKAGES`、optional `$A_PROPERTIES`、`$NETS`，支持 quoted names、comma-separated lists、trailing-comma continuation，并对 duplicate refdes、unknown net refdes、pin on multiple nets 直接报错。又新增 `src/hardwise/adapters/allegro_pst.py`，解析 Capture/Allegro PST 的 `pstxprt.dat` placed parts、`pstxnet.dat` nets / `NODE_NAME` endpoints、可选 `pstchip.dat` primitive properties。两条路径都聚合成 `Design(source_eda="allegro_netlist")`，只填 components / nets / connected pins；datasheet 字段保持空，等待后续 BOM matcher 或 profile 层补。
+
+**Verification**
+
+`uv run pytest tests/adapters/test_allegro_netlist.py tests/ir/test_build_allegro_netlist.py tests/adapters/test_allegro_pst.py tests/ir/test_build_allegro_pst.py tests/test_cli_allegro_netlist.py -q` covers both adapters and CLI detection. `uv run hardwise inspect-allegro-netlist tests/fixtures/allegro/minimal_third_party.net` 输出 4 components / 4 nets；PST fixture 输出 3 components / 3 nets / 9 properties。公开 PST 样本目录输出 4010 components / 3422 nets / 12030 properties，最大网 `GND` 有 5973 members。Final gate: `uv run pytest -q` 和 `uv run ruff check .` clean。
+
+**Takeaway**
+
+网表不是 BOM，BOM 也不是 PLM。对 Hardwise 来说，Telesis/PST netlist 是“谁连谁”的 topology，BOM 是“这个位号到底是什么器件”的 identity。二者都重要，但必须分层接入。PST 里名为 `NC` 的 net 也仍然只是一个 net name，不能自动等价成 datasheet no-connect pin 结论。
+
+---
+
 ## 2026-05-26 · V2.4 · Datasheet profile must follow PDF evidence, not old plan text
 
 **Symptom**

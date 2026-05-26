@@ -8,6 +8,32 @@
 
 ---
 
+## Triggered by V2.5 — Allegro/Telesis netlist adapter shipping
+
+**Where it lands**: future V2.x plan + `src/hardwise/bom/` (or equivalent) + `docs/architecture.md`.
+
+**What to add**: A BOM matcher layer for netlist-only inputs. Public product research (EDA.cn / 华秋 and CADY) shows a common non-native EDA path: upload **netlist + BOM**. The netlist supplies topology (`refdes.pin -> net`); BOM supplies component identity (`refdes -> MPN/value/manufacturer/specs`) so datasheet/profile matching is accurate.
+
+Minimum shape:
+
+```
+BomRow(
+    refdes: str,
+    quantity: int | None,
+    value: str | None,
+    manufacturer: str | None,
+    part_number: str | None,
+    description: str | None,
+    source_file: Path,
+)
+```
+
+Join rule: split grouped refdes cells (`R1,R2,R6` or `R1 R2 R6`) into one row per refdes, validate every refdes against `Design.refdes_set`, and attach identity fields to `Design.components[refdes]` without overwriting netlist topology.
+
+Hard boundary: this is **component matching**, not PLM-grade BOM governance. Do not add lifecycle/cost/supplier-risk checks under this trigger. Do not put BOM parsing inside `adapters/allegro_netlist.py`; the EDA adapter owns topology only.
+
+---
+
 ## Triggered by Slice 5 — KiCad schematic net parser shipping (R005 dangling-nets)
 
 **Where it lands**: `data/checklists/sch_review.yaml` → R005 (dangling / unexpected unconnected schematic nets), R006 (通用 net 命名规则), and R007 (分类 net 命名规则).

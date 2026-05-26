@@ -133,6 +133,51 @@ def inspect_kicad(
         typer.echo(f"{component.refdes:8} {value:16} {footprint}")
 
 
+@app.command(name="inspect-allegro-netlist")
+def inspect_allegro_netlist(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help=(
+            "Path to an Allegro/Telesis third-party ASCII netlist, or a "
+            "Capture/Allegro PST directory/file containing pstxnet.dat + pstxprt.dat."
+        ),
+    ),
+    limit: int = typer.Option(20, "--limit", "-n", help="Number of nets to print."),
+) -> None:
+    """Parse an Allegro schematic netlist and print topology."""
+    from hardwise.adapters.allegro_netlist import parse_allegro_netlist
+    from hardwise.adapters.allegro_pst import is_allegro_pst_input, parse_allegro_pst
+    from hardwise.ir.build import build_design_from_netlist, build_design_from_pst
+
+    try:
+        if is_allegro_pst_input(netlist_path):
+            registry = parse_allegro_pst(netlist_path)
+            design = build_design_from_pst(registry)
+            source = registry.source_dir
+            input_type = "Cadence Capture/Allegro PST schematic netlist topology"
+            property_count = sum(len(part.properties) for part in registry.parts)
+        else:
+            registry = parse_allegro_netlist(netlist_path)
+            design = build_design_from_netlist(registry)
+            source = registry.source_file
+            input_type = "Allegro/Telesis schematic netlist topology"
+            property_count = len(registry.properties)
+    except Exception as e:
+        typer.echo(f"error: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    typer.echo(f"source: {source}")
+    typer.echo(f"type: {input_type}")
+    typer.echo("scope: pre-Layout connectivity only; no .brd, boardview, or PCB geometry parsed")
+    typer.echo(f"components: {len(design.components)}")
+    typer.echo(f"nets: {len(design.nets)}")
+    typer.echo(f"properties: {property_count}")
+    typer.echo("")
+    top = sorted(design.nets.values(), key=lambda n: (-len(n.nodes), n.name))[:limit]
+    for net in top:
+        typer.echo(f"{net.name:32} {len(net.nodes):4d} members")
+
+
 @app.command()
 def review(
     project_dir: Path = typer.Argument(..., help="Path to a KiCad project directory."),

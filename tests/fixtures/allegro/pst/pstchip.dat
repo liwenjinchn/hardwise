@@ -1,0 +1,43 @@
+FILE_TYPE=LIBRARY_PARTS;
+{ Synthetic public fixture for Hardwise tests. }
+primitive 'GW_CAPACITOR_C0402_0.1UF 25V';
+  pin
+    '1':
+      PIN_NUMBER='(1)';
+    '2':
+      PIN_NUMBER='(2)';
+  end_pin;
+  body
+    PART_NAME='GW_CAPACITOR';
+    JEDEC_TYPE='C0402';
+    VALUE='0.1uF 25V';
+  end_body;
+end_primitive;
+primitive 'GW_RESISTOR_R0402_10K';
+  pin
+    '1':
+      PIN_NUMBER='(1)';
+    '2':
+      PIN_NUMBER='(2)';
+  end_pin;
+  body
+    PART_NAME='GW_RESISTOR';
+    JEDEC_TYPE='R0402';
+    VALUE='10K';
+  end_body;
+end_primitive;
+primitive 'TBD210419';
+  pin
+    '1':
+      PIN_NUMBER='(1)';
+    '4':
+      PIN_NUMBER='(4)';
+    '8':
+      PIN_NUMBER='(8)';
+  end_pin;
+  body
+    PART_NAME='TBD210419';
+    JEDEC_TYPE='TSSOP8';
+    VALUE='TBD210419';
+  end_body;
+end_primitive;

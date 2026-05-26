@@ -1,0 +1,10 @@
+$PACKAGES
+  ! 'C0805' ! C0805 ; C1, C2
+  ! 'SOIC8' ! SOIC8 ; U1
+  ! 'CONN4' ! CONN4 ; J1
+$NETS
+  'VCC_5V' ; U1.8, C1.1, J1.1
+  'GND' ; U1.4, C1.2, C2.2, J1.2
+  'I2C_SCL' ; U1.1, J1.3
+  'I2C_SDA' ; U1.2, J1.4
+$END
