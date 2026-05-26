@@ -47,6 +47,10 @@ reports/*.jsonl
 reports/eval/
 !reports/.gitkeep
 
+# Submission package — resumes and role-specific materials are delivered
+# separately by email/cloud drive, not committed to the repo.
+docs/submission/
+
 # Eval corpus checkouts — public but large/generated locally
 eval/projects/
 eval/baselines/*.json
