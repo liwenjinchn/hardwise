@@ -5,7 +5,7 @@ description = "Hardware R&D review Agent — anti-hallucination by design, prove
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "Hardwise contributors" }]
+authors = [{ name = "liwenjin" }]
 
 dependencies = [
     "anthropic>=0.40.0",
