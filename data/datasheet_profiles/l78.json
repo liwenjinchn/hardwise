@@ -9,6 +9,7 @@
   "recommended": {
     "vin_min": 7.5,
     "vin_max": 25.0,
+    "vout_nominal": 5.0,
     "iout_max": 1.5
   },
   "pin_function": {
@@ -23,6 +24,7 @@
     "abs_max.tj": "datasheet:l78.pdf#p4",
     "recommended.vin_min": "datasheet:l78.pdf#p6",
     "recommended.vin_max": "datasheet:l78.pdf#p6",
+    "recommended.vout_nominal": "datasheet:l78.pdf#p6",
     "recommended.iout_max": "datasheet:l78.pdf#p6",
     "pin_function.1": "datasheet:l78.pdf#p3",
     "pin_function.2": "datasheet:l78.pdf#p3",

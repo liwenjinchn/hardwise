@@ -1,0 +1,37 @@
+[
+  {
+    "profile_part_number": "PCA9548A",
+    "accepted_bom_values": ["PCA9548A", "PCA9548APW"],
+    "manufacturer": "NXP",
+    "profile_path": "data/datasheet_profiles/pca9548a.json",
+    "validation_template": "pca9548a"
+  },
+  {
+    "profile_part_number": "PCA9617A",
+    "accepted_bom_values": ["PCA9617A", "PCA9617ADP"],
+    "manufacturer": "NXP",
+    "profile_path": "data/datasheet_profiles/pca9617a.json",
+    "validation_template": "pca9617a"
+  },
+  {
+    "profile_part_number": "L7805",
+    "accepted_bom_values": ["L7805", "7805", "L78"],
+    "manufacturer": "ST",
+    "profile_path": "data/datasheet_profiles/l78.json",
+    "validation_template": "regulator"
+  },
+  {
+    "profile_part_number": "LN2312LT1G",
+    "accepted_bom_values": ["LN2312LT1G", "S-LN2312LT1G", "LN2312"],
+    "manufacturer": "LRC",
+    "profile_path": "data/datasheet_profiles/ln2312lt1g.json",
+    "validation_template": "nmos"
+  },
+  {
+    "profile_part_number": "74LV165",
+    "accepted_bom_values": ["74LV165", "74LV165PW", "74LV165PW,112", "74LV165PW,118"],
+    "manufacturer": "Nexperia",
+    "profile_path": "data/datasheet_profiles/74lv165.json",
+    "validation_template": "74lv165"
+  }
+]

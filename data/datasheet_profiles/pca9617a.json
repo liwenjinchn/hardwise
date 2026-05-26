@@ -1,0 +1,37 @@
+{
+  "part_number": "PCA9617A",
+  "abs_max": {},
+  "recommended": {
+    "vcca_min": 0.8,
+    "vcca_max": 5.5,
+    "vccb_min": 2.2,
+    "vccb_max": 5.5
+  },
+  "pin_function": {
+    "1": "VCCA (Port A supply voltage)",
+    "2": "SCLA (Port A serial clock input/output)",
+    "3": "SDAA (Port A serial data input/output)",
+    "4": "GND (ground)",
+    "5": "EN (active HIGH repeater enable input referenced to VCCB)",
+    "6": "SDAB (Port B serial data input/output)",
+    "7": "SCLB (Port B serial clock input/output)",
+    "8": "VCCB (Port B supply voltage)"
+  },
+  "evidence": {
+    "recommended.vcca_min": "datasheet:pca9617a.pdf#p1",
+    "recommended.vcca_max": "datasheet:pca9617a.pdf#p1",
+    "recommended.vccb_min": "datasheet:pca9617a.pdf#p1",
+    "recommended.vccb_max": "datasheet:pca9617a.pdf#p1",
+    "pin_function.1": "datasheet:pca9617a.pdf#p4",
+    "pin_function.2": "datasheet:pca9617a.pdf#p4",
+    "pin_function.3": "datasheet:pca9617a.pdf#p4",
+    "pin_function.4": "datasheet:pca9617a.pdf#p4",
+    "pin_function.5": "datasheet:pca9617a.pdf#p4",
+    "pin_function.6": "datasheet:pca9617a.pdf#p4",
+    "pin_function.7": "datasheet:pca9617a.pdf#p4",
+    "pin_function.8": "datasheet:pca9617a.pdf#p4"
+  },
+  "extracted_at": "2026-05-26T00:00:00+00:00",
+  "extracted_model": "deterministic-pca9617a-v3.6",
+  "schema_version": "v1"
+}

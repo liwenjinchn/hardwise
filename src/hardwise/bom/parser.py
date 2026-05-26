@@ -13,7 +13,7 @@ from hardwise.bom.types import Bom, BomItem, BomParseError, split_refdes
 def parse_bom(path: Path) -> Bom:
     """Parse a schematic BOM text report or simple CSV/TSV export."""
 
-    text = path.read_text(encoding="utf-8-sig", errors="replace")
+    text = _read_bom_text(path)
     suffix = path.suffix.lower()
     if suffix == ".csv":
         return Bom(source_file=path, items=_parse_delimited_bom(path, text, ","))
@@ -24,7 +24,7 @@ def parse_bom(path: Path) -> Bom:
 
 def _parse_cadence_report_bom(path: Path, text: str) -> list[BomItem]:
     lines = text.splitlines()
-    header_index = _find_cadence_header(lines)
+    header_index, columns = _find_cadence_header(lines)
     items: list[BomItem] = []
     current: dict[str, object] | None = None
     refdes_parts: list[str] = []
@@ -32,14 +32,22 @@ def _parse_cadence_report_bom(path: Path, text: str) -> list[BomItem]:
     for line_no, raw_line in enumerate(lines[header_index + 1 :], start=header_index + 2):
         if not raw_line.strip() or set(raw_line.strip()) <= {"_", "-"}:
             continue
-        item_cell, quantity_cell, reference_cell, part_cell = _tab_cells(raw_line, min_len=4)[:4]
+        cells = _tab_cells(raw_line, min_len=max(columns.values()) + 1)
+        item_cell = _cell(cells, columns, "item")
+        quantity_cell = _cell(cells, columns, "quantity")
+        reference_cell = _cell(cells, columns, "reference")
+        value_cell = _cell(cells, columns, "value")
+        part_number_cell = _cell(cells, columns, "part_number")
+        description_cell = _cell(cells, columns, "description")
         if item_cell.isdigit():
             if current is not None:
                 items.append(_build_item(current, refdes_parts))
             current = {
                 "item_number": item_cell,
                 "quantity": _parse_quantity(quantity_cell, path, line_no),
-                "value": part_cell or None,
+                "value": value_cell or description_cell or part_number_cell or None,
+                "part_number": part_number_cell or None,
+                "description": description_cell or None,
                 "source_file": path,
                 "source_line": line_no,
             }
@@ -48,8 +56,12 @@ def _parse_cadence_report_bom(path: Path, text: str) -> list[BomItem]:
         if current is not None and not item_cell and not quantity_cell:
             if reference_cell:
                 refdes_parts.append(reference_cell)
-            if part_cell and current.get("value") is None:
-                current["value"] = part_cell
+            if value_cell and current.get("value") is None:
+                current["value"] = value_cell
+            if part_number_cell and current.get("part_number") is None:
+                current["part_number"] = part_number_cell
+            if description_cell and current.get("description") is None:
+                current["description"] = description_cell
 
     if current is not None:
         items.append(_build_item(current, refdes_parts))
@@ -96,11 +108,25 @@ def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]
     return items
 
 
-def _find_cadence_header(lines: list[str]) -> int:
+def _read_bom_text(path: Path) -> str:
+    """Read BOM text while tolerating common Cadence report encodings."""
+    raw = path.read_bytes()
+    candidates = [
+        raw.decode("utf-8-sig", errors="replace"),
+        raw.decode("gb18030", errors="replace"),
+    ]
+    return min(candidates, key=lambda text: text.count("\ufffd"))
+
+
+def _find_cadence_header(lines: list[str]) -> tuple[int, dict[str, int]]:
     for index, line in enumerate(lines):
-        cells = {_normalize_header(cell) for cell in line.split("\t")}
-        if {"item", "quantity", "reference"}.issubset(cells):
-            return index
+        columns: dict[str, int] = {}
+        for column_index, cell in enumerate(line.split("\t")):
+            alias = _header_alias(cell)
+            if alias is not None:
+                columns[alias] = column_index
+        if {"item", "quantity", "reference"}.issubset(columns):
+            return index, columns
     raise BomParseError("missing BOM header row with Item/Quantity/Reference")
 
 
@@ -111,10 +137,19 @@ def _build_item(raw: dict[str, object], refdes_parts: list[str]) -> BomItem:
         quantity=raw.get("quantity"),  # type: ignore[arg-type]
         refdes_list=split_refdes(raw_refdes),
         value=raw.get("value"),  # type: ignore[arg-type]
+        part_number=raw.get("part_number"),  # type: ignore[arg-type]
+        description=raw.get("description"),  # type: ignore[arg-type]
         source_file=raw["source_file"],  # type: ignore[arg-type]
         source_line=raw["source_line"],  # type: ignore[arg-type]
         raw_refdes=raw_refdes,
     )
+
+
+def _cell(cells: list[str], columns: dict[str, int], name: str) -> str:
+    index = columns.get(name)
+    if index is None or index >= len(cells):
+        return ""
+    return cells[index]
 
 
 def _tab_cells(line: str, min_len: int) -> list[str]:
@@ -133,6 +168,39 @@ def _parse_quantity(value: str, path: Path, line_no: int) -> int | None:
 
 def _normalize_header(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
+
+
+def _header_alias(value: str) -> str | None:
+    stripped = value.strip()
+    if stripped in {"序号", "项目", "项次"}:
+        return "item"
+    if stripped in {"数量", "数目"}:
+        return "quantity"
+    if stripped in {"位号", "位号列表", "参考位号"}:
+        return "reference"
+    if stripped in {"物料描述", "描述", "器件描述"}:
+        return "description"
+    if stripped.upper() in {"PN", "P/N"}:
+        return "part_number"
+
+    normalized = _normalize_header(stripped)
+    aliases = {
+        "item": "item",
+        "quantity": "quantity",
+        "qty": "quantity",
+        "reference": "reference",
+        "references": "reference",
+        "refdes": "reference",
+        "designator": "reference",
+        "part": "value",
+        "value": "value",
+        "mpn": "part_number",
+        "part_number": "part_number",
+        "manufacturer_part_number": "part_number",
+        "description": "description",
+        "desc": "description",
+    }
+    return aliases.get(normalized)
 
 
 def _find_field(fields: dict[str, str], aliases: list[str]) -> str | None:

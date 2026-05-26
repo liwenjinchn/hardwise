@@ -1,0 +1,54 @@
+{
+  "part_number": "74LV165",
+  "abs_max": {
+    "vcc": 7.0,
+    "vi": 7.0
+  },
+  "recommended": {
+    "vcc_min": 1.0,
+    "vcc_max": 5.5
+  },
+  "pin_function": {
+    "1": "/PL (parallel load input, active LOW)",
+    "2": "CP (clock input, LOW-to-HIGH edge-triggered)",
+    "3": "D4 (parallel data input)",
+    "4": "D5 (parallel data input)",
+    "5": "D6 (parallel data input)",
+    "6": "D7 (parallel data input)",
+    "7": "/Q7 (complementary serial output from last stage)",
+    "8": "GND (ground, 0 V)",
+    "9": "Q7 (serial output from last stage)",
+    "10": "DS (serial data input)",
+    "11": "D0 (parallel data input)",
+    "12": "D1 (parallel data input)",
+    "13": "D2 (parallel data input)",
+    "14": "D3 (parallel data input)",
+    "15": "/CE (clock enable input, active LOW)",
+    "16": "VCC (positive supply voltage)"
+  },
+  "evidence": {
+    "abs_max.vcc": "datasheet:74lv165.pdf#p6",
+    "abs_max.vi": "datasheet:74lv165.pdf#p6",
+    "recommended.vcc_min": "datasheet:74lv165.pdf#p6",
+    "recommended.vcc_max": "datasheet:74lv165.pdf#p6",
+    "pin_function.1": "datasheet:74lv165.pdf#p3",
+    "pin_function.2": "datasheet:74lv165.pdf#p3",
+    "pin_function.3": "datasheet:74lv165.pdf#p3",
+    "pin_function.4": "datasheet:74lv165.pdf#p3",
+    "pin_function.5": "datasheet:74lv165.pdf#p3",
+    "pin_function.6": "datasheet:74lv165.pdf#p3",
+    "pin_function.7": "datasheet:74lv165.pdf#p3",
+    "pin_function.8": "datasheet:74lv165.pdf#p3",
+    "pin_function.9": "datasheet:74lv165.pdf#p3",
+    "pin_function.10": "datasheet:74lv165.pdf#p3",
+    "pin_function.11": "datasheet:74lv165.pdf#p3",
+    "pin_function.12": "datasheet:74lv165.pdf#p3",
+    "pin_function.13": "datasheet:74lv165.pdf#p3",
+    "pin_function.14": "datasheet:74lv165.pdf#p3",
+    "pin_function.15": "datasheet:74lv165.pdf#p3",
+    "pin_function.16": "datasheet:74lv165.pdf#p3"
+  },
+  "extracted_at": "2026-05-26T00:00:00+00:00",
+  "extracted_model": "deterministic-74lv165-v3.8",
+  "schema_version": "v1"
+}

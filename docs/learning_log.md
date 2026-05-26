@@ -8,6 +8,117 @@
 
 ---
 
+## 2026-05-26 · V3.8 · Shift-register validation must handle active-low pin names literally
+
+**Symptom**
+
+`74LV165PW` profile 和 validator 接入后，focused tests 里 `CONTROL_PINS_PRESENT` 先报 `ERROR`，随后
+`COMPLEMENTARY_OUTPUT_HANDLED` 又报 `manual_needed`。真实原因不是 pin 缺失；profile 里已经有 `/PL`、`/CE`、
+`/Q7`，fixture component 也有对应 pin。
+
+**Root cause**
+
+最初的函数名匹配用了 `^/?PL\b`、`^/?CE\b`、`^/Q7\b`。`` 是 word/non-word 边界；`/` 不是 word
+character，所以把它接在 slash 前缀 pin 名后面会让 active-low 名称匹配不稳定。硬件上这类似把 `/RESET`
+的低有效标记当成装饰符处理，结果 comparator 看到的 pin name 和 datasheet 写法不一致。
+
+**Fix**
+
+把 active-low pin 的 profile-function 匹配改成显式开头 token：`^(?:/PL|PL)(?:\s|\(|$)`、
+`^(?:/CE|CE)(?:\s|\(|$)` 和 `^/Q7(?:\s|\(|$)`。新增 `tests/validation/test_shift_register.py`
+覆盖全 pin PASS、VCC 超推荐范围、VCC net name 无法解析和并行输入 NC。真实 switch-board smoke 使用正确
+CLI `validate-allegro-project` 后，从 69 个 validated 扩到 79 个 validated，`PASS=301`，新增 10 个
+`74LV165PW` 每个 6 PASS / 0 manual_needed。
+
+**Takeaway**
+
+Datasheet pin name 是证据键，不是自然语言。active-low slash、bar、括号这类符号必须按字面处理；否则
+validator 会把真实存在的 pin 当成 profile 缺失，造成假阴性。
+
+## 2026-05-26 · V3.7 · MOSFET voltage checks must stop at net-name evidence
+
+**Symptom**
+
+`LN2312LT1G` 是 switch-board 样本里最大的 active no-profile candidate group，但它的真实连接多为
+`PEX*_CLKREQ*`、`*_LED` 这类信号网。若为了提高 PASS 数量，把这些信号名里的 `LV33` 或其它片段直接当成
+可证明的电压，就会把命名线索误报成电气事实。
+
+**Root cause**
+
+小信号 MOSFET 的 D/S/G 连接是否满足 VDS/VGS 限值，至少需要两端的实际电压域或清晰 rail name。
+Allegro/PST 只给了 pin-net topology；`parse_voltage_hint()` 只承认明确 rail 命名如 `P3V3` / `P1V8`。
+硬件上这类似看到网络名像“低压版本”并不等于已经看到了电源树或波形裕量。
+
+**Fix**
+
+新增 `data/datasheet_profiles/ln2312lt1g.json` 和 `src/hardwise/validation/mosfet.py` 的 `nmos` validator。
+规则只做保守事实：G/S/D pin 存在、三端已接到 parsed nets、gate 已连接；VDS/VGS 只有在两端 net name 都能
+解析出电压且 profile 有对应数值时才 PASS/ERROR。公开资料摘要确认了 `VDS=20V`、`ID=4.9A`、`Pd=750mW`，
+但 VGS 绝对最大值未在可见证据里确认，所以 profile 不写 `abs_max.vgs`，`VGS_WITHIN_ABS_MAX` 返回
+`manual_needed`。
+
+**Takeaway**
+
+Validation 数量扩张不能靠猜。把 `LN2312LT1G` 从 no-profile 推到 deterministic validator 后，真实样本
+smoke 从 13 个 validated 扩到 69 个 validated，但新增的信号网电压裕量保持 `manual_needed`；这是 Hardwise
+可靠性的表现，不是未完成。
+
+---
+
+## 2026-05-26 · V3.1 · Single-component validation starts as pin profile comparison
+
+**Symptom**
+
+V3.0 已经把 PCA9548A 的 pin facts 固化成 datasheet profile。如果 V3.1 一步到位写成“电路正确/错误”，
+就会把缺少电压域、I2C 拓扑意图、地址配置规则等上下文的场景过早判成 PASS/FAIL，破坏可追溯边界。
+
+**Root cause**
+
+单器件验证至少有三层：pin 是否在设计 registry 中存在、pin 是否连接到 net、连接是否符合器件应用意图。
+前两层是 netlist/profile 可以 deterministic 比较的事实；第三层需要额外 rule template 和设计意图。硬件评审上
+这类似先核 symbol pinout 和网络表，再讨论地址脚、复位脚、上拉和通道分配是否合理。
+
+**Fix**
+
+新增 `report-allegro-pin-profile`，输入 Allegro/PST、BOM、registry-verified `--refdes` 和 profile JSON，输出
+单器件 markdown。`src/hardwise/report/pin_validation_markdown.py` 只比较 profile pin 与 parsed design pin：
+设计 pin + net 都存在为 `PASS`，pin 存在但无 net 为 `WARN`，profile pin 缺失为 `ERROR`，设计多出的 pin 为
+`manual_needed`。每行带 `datasheet:*#p<N>` 和 `design:<source>#<refdes>.<pin>` token。
+
+**Takeaway**
+
+V3.1 的最小闭环是“证据齐全的 pin-level comparison report”，不是最终的应用规则验证器。这样后续再加
+I2C switch / regulator / gate-driver 模板时，可以在同一份 pin facts 上增加判断，而不是让模型自由发挥。
+
+---
+
+## 2026-05-26 · V3.0 · Pin profile should freeze pin facts before validation
+
+**Symptom**
+
+公开 Allegro+BOM 样本已经能把 PCA9548APW 这一组器件匹配到 NXP 公开 datasheet，但如果下一步直接输出
+PASS/FAIL，容易把“找到了 datasheet”和“已经验证了电路连接”混在一起。这样会破坏 Hardwise 的核心边界：
+事实层、证据层、规则判断层必须分开。
+
+**Root cause**
+
+PCA9548A 这种 I2C switch 的第一价值不是马上做电源裕量判断，而是 pin map 清晰：A0/A1/A2、RESET、上游
+SCL/SDA、8 组下游 SC/SD 和 VDD/VSS 都可以从 datasheet 固化成 profile。硬件上这像先把 pinout 和器件
+symbol 对齐，再谈连接是否合理；软件上就是先生成 deterministic pin facts，再让后续 rule engine 读取。
+
+**Fix**
+
+新增 `data/datasheet_profiles/pca9548a.json`，记录 PCA9548A 的 24 个 TSSOP24 pin functions、推荐 VDD
+范围和 `datasheet:pca9548a.pdf#p<N>` 证据 token。新增 `extract_pca9548a_profile()`，保持与 L78 profile
+相同的 deterministic extractor 风格，只接受 `pca9548a.pdf` 文件名，避免把其它 PDF 误标成 PCA9548A。
+
+**Takeaway**
+
+V3.0 的正确交付物是“可复现、带证据 token 的 pin profile”，不是“模型看了 datasheet 后自由判断”。先把
+pin facts 冻结成结构化输入，V3.1 的 single-component validation 才能输出可追溯的 PASS/WARN/ERROR。
+
+---
+
 ## 2026-05-26 · V2.9 · Datasheet match should be an indexed evidence state, not a supplier search
 
 **Symptom**
@@ -1072,3 +1183,186 @@ pinned, but it should not become part of the product's lint/test ownership surfa
 **Takeaway:** When the brainstorm uses informal `@dataclass` sketches, the implementation plan should reconcile against the codebase's actual model framework. Carrying the inconsistency forward would force a mid-sub-slice refactor.
 
 **Next:** V2.2 plan (per-component check flip + `Finding.pin_number` extension + R001-R003 outer-loop rewrite). To be drafted in a fresh planning session.
+
+---
+
+## 2026-05-26 — Cadence BOM exports need localized header handling
+
+**Symptom**
+
+The public Cadence/Allegro sample's PST netlist parsed cleanly, but one BOM export failed
+with `BomParseError: missing BOM header row with Item/Quantity/Reference` even though it
+was a valid schematic BOM.
+
+**Root cause**
+
+The parser only recognized English Cadence headers (`Item / Quantity / Reference / Part`).
+The richer export used GB18030 text plus Chinese headers (`序号 / PN / 物料描述 / 数量 / 位号 /
+option`), so the refdes and identity columns were invisible to the existing header mapper.
+
+**Fix**
+
+Added BOM text decoding fallback for GB18030 and mapped localized Cadence columns into the
+existing `BomItem` shape: `位号` -> refdes list, `数量` -> quantity, `PN` -> part number,
+and `物料描述` -> value/description. Also added `report-allegro-bom --component-index-json`
+so the same registry-verified PST+BOM join can feed a future UI component table.
+
+**Takeaway**
+
+Real EDA exports vary by locale and report template. The robust boundary is not "English
+headers only"; it is "map known columns into the same structured BOM model, then keep the
+existing refdes registry join and evidence/source tokens unchanged."
+
+---
+
+## 2026-05-26 — Net-name voltage checks are naming evidence, not rail proof
+
+**Symptom**
+
+The first pin-profile report could show that a PCA9548A VDD pin was connected to a net,
+but it could not answer whether a clearly named rail like `P3V3_STBY` satisfied the
+datasheet's recommended VDD range.
+
+**Root cause**
+
+The report compared datasheet pin names to parsed design pins only. It intentionally did
+not infer electrical intent from arbitrary net names, so VDD connectivity and VDD voltage
+range were separate facts.
+
+**Fix**
+
+Added a small deterministic net-name parser for known rail conventions (`P3V3`, `P1V8`,
+`P12V`, `VCC_3V3`, `VDD_1V8`) and a PCA9548A validation command that compares the parsed
+VDD hint against the profile's recommended `vdd_min/vdd_max`. The report labels this with
+`rule:net_voltage_name#...` evidence so the claim is traceable to a naming rule, not to a
+measured regulator output.
+
+**Takeaway**
+
+Voltage hints are useful for a minimum demo closure, but they are not power-tree proof.
+Future rail provenance must join regulator outputs or explicit constraints before making
+stronger claims than "the net name parses as X volts."
+
+---
+
+## 2026-05-26 — Validation readiness is an index state, not an AI conclusion
+
+**Symptom**
+
+The single-component PCA9548A report proved the deterministic validation path for one
+refdes, but it did not yet answer which other components in the same project were ready
+for the same treatment and which ones still lacked a profile or validator.
+
+**Root cause**
+
+Project-level review needs a readiness index before it needs more agent reasoning. A BOM
+value such as `PCA9548APW` is a concrete packaged part, while the datasheet profile is the
+`PCA9548A` family. Treating that relationship as an LLM guess or a loose string prefix
+would weaken the same evidence boundary that the single-component report established.
+
+**Fix**
+
+Added an explicit profile catalog that maps accepted BOM values to a profile part number
+and validation template. The new project validation index iterates registry-verified
+components, records `validated` / `no_profile` / `unsupported_validator` states, runs the
+supported deterministic validator, and emits markdown plus JSON for the future component
+workspace.
+
+**Takeaway**
+
+The project index should say "this component is ready and validated by template X" or
+"this component has no supported profile yet". It should not imply the whole design has
+been reviewed, and it should never let a model silently bridge BOM identity to datasheet
+facts without an explicit catalog entry.
+
+---
+
+## 2026-05-26 — A second validator template should prove dispatch before real coverage
+
+**Symptom**
+
+After the PCA9548A project index worked, the next obvious step was to add a regulator/LDO
+template. The real public switch-board BOM did not reliably expose an obvious regulator
+candidate through simple `LDO` / `BUCK` / `稳压` keyword matching.
+
+**Root cause**
+
+Forcing a regulator into the real sample by fuzzy BOM text would weaken the explicit
+catalog boundary. The more important V3.4 milestone is proving the project index can run
+more than one deterministic validator template without turning BOM identity matching into
+guesswork.
+
+**Fix**
+
+Reused the existing public L78/L7805 datasheet profile as the second template fixture,
+added nominal VOUT evidence, and implemented a generic regulator validator for VIN range,
+VOUT target, and GND presence. The project index dispatcher now supports both `pca9548a`
+and `regulator`, while the real switch-board smoke remains unchanged until a real regulator
+catalog entry is explicitly added.
+
+**Takeaway**
+
+Multi-template validation should first prove safe dispatch and evidence handling. Real
+project coverage should expand only when the BOM identity, datasheet profile, and validator
+mapping are explicit enough to avoid hidden assumptions.
+
+---
+
+## 2026-05-26 — Project validation indexes should be candidate-first
+
+**Symptom**
+
+The project-level validation index correctly kept every registry-verified component row,
+but the markdown report could become a 4000-row no-profile dump on the public Allegro
+sample. That made the next engineering step harder to see: which missing profiles should
+be added first.
+
+**Root cause**
+
+The full component index is useful machine-readable state, but it is not the right human
+triage view. Reviewer attention should go to reusable active-component gaps before one-off
+passives, while the complete row-level data should remain available for UI and audit.
+
+**Fix**
+
+Grouped no-profile rows by BOM identity, classified candidate groups as active/passive
+using refdes and identity hints, and added markdown limits for manual rows and active
+candidate groups. The JSON sidecar still preserves all rows plus candidate groups for the
+future component workspace.
+
+**Takeaway**
+
+Markdown is the reviewer entry point, not the database. Keep the exhaustive registry state
+in JSON, then render a candidate-first report that points directly to the next explicit
+profile/validator mapping work.
+
+---
+
+## 2026-05-26 — Candidate expansion should promote one explicit real part at a time
+
+**Symptom**
+
+After V3.5 grouped no-profile rows, the next temptation was to add many catalog mappings
+from the active candidate list at once. That would increase the validated count quickly,
+but it could also hide weak datasheet/profile assumptions behind broad string matching.
+
+**Root cause**
+
+The candidate summary is a triage aid, not permission to guess. Each real component family
+still needs an explicit datasheet profile, catalog mapping, and validator template before
+it can move from `no_profile` to `validated`. Otherwise the index would regress from a
+deterministic readiness state into fuzzy BOM inference.
+
+**Fix**
+
+Promoted one high-value real sample candidate, `PCA9617ADP`, into a deterministic
+`PCA9617A` profile and validator. The validator checks VCCA/VCCB named-voltage ranges,
+GND, Port A/B I2C pin presence, and EN connectivity. The project catalog maps
+`PCA9617A/PCA9617ADP` to the new template, increasing the public switch-board smoke from
+5 validated components / 25 PASS checks to 13 validated components / 73 PASS checks.
+
+**Takeaway**
+
+Coverage should grow by explicit, reviewable component-family slices. One well-evidenced
+profile/template that raises real validated coverage is more valuable than many fuzzy BOM
+matches that blur the boundary between evidence and inference.

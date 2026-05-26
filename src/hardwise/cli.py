@@ -253,6 +253,14 @@ def report_allegro_bom(
             "Adds BOM-item document match sections; no live supplier lookup."
         ),
     ),
+    component_index_json: Path | None = typer.Option(
+        None,
+        "--component-index-json",
+        help=(
+            "Optional JSON output for UI/component-index prototypes. "
+            "Contains registry-verified component rows plus BOM/document status."
+        ),
+    ),
 ) -> None:
     """Write a component-centric Allegro netlist + schematic BOM intake report."""
     from datetime import datetime, timezone
@@ -311,12 +319,368 @@ def report_allegro_bom(
         output.parent.mkdir(parents=True, exist_ok=True)
 
     output.write_text(report_text, encoding="utf-8")
+    if component_index_json is not None:
+        _write_component_index_json(
+            component_index_json,
+            design=design,
+            report=report,
+            project_meta=project_meta,
+            document_report=document_report,
+            net_limit=net_limit,
+        )
     mismatch_count = _bom_report_mismatch_count(report)
     typer.echo(
         f"report: {output} "
         f"({len(report.matched_refdes)}/{report.design_refdes_count} matched, "
         f"{mismatch_count} mismatches)"
     )
+    if component_index_json is not None:
+        typer.echo(f"component-index: {component_index_json} ({len(design.components)} rows)")
+
+
+@app.command(name="report-allegro-pin-profile")
+def report_allegro_pin_profile(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help=(
+            "Path to an Allegro/Telesis third-party ASCII netlist, or a "
+            "Capture/Allegro PST directory/file."
+        ),
+    ),
+    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    refdes: str = typer.Option(..., "--refdes", help="Registry-verified component refdes."),
+    profile_path: Path = typer.Option(
+        ...,
+        "--profile",
+        help="DatasheetProfile JSON used for deterministic pin comparison.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output markdown path (default: reports/<netlist>-<refdes>-pin-profile-<YYYYMMDD>.md).",
+    ),
+) -> None:
+    """Write one component's deterministic pin profile comparison report."""
+    from datetime import datetime, timezone
+
+    from hardwise.bom import match_bom_to_design, parse_bom
+    from hardwise.ir.profile import DatasheetProfile
+    from hardwise.report.pin_validation_markdown import compare_component_pins, render
+
+    target_refdes = refdes.strip().upper()
+    try:
+        design, source, input_type, _property_count = _load_allegro_design(netlist_path)
+        bom = parse_bom(bom_path)
+        report = match_bom_to_design(bom, design)
+        profile = DatasheetProfile.load(profile_path)
+    except Exception as e:
+        typer.echo(f"error: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    component = design.components.get(target_refdes)
+    if component is None:
+        typer.echo(f"error: unknown refdes {target_refdes!r} in design registry", err=True)
+        raise typer.Exit(1)
+
+    bom_row = report.rows_by_refdes.get(target_refdes)
+    now = datetime.now(timezone.utc)
+    project_name = _report_source_name(source)
+    comparisons = compare_component_pins(
+        component,
+        profile,
+        design_source_name=design.project_path.name,
+    )
+    project_meta = {
+        "project_name": project_name,
+        "generated_at": now.isoformat(timespec="seconds"),
+        "netlist_source": str(source),
+        "netlist_type": input_type,
+        "profile_source": str(profile_path),
+    }
+    report_text = render(component, profile, comparisons, project_meta, bom_row=bom_row)
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = (
+            reports_dir
+            / f"{project_name}-{target_refdes}-pin-profile-{now.strftime('%Y%m%d')}.md"
+        )
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    output.write_text(report_text, encoding="utf-8")
+    counts = _pin_comparison_counts(comparisons)
+    typer.echo(
+        f"report: {output} ({target_refdes}, PASS={counts['PASS']}, "
+        f"WARN={counts['WARN']}, ERROR={counts['ERROR']}, "
+        f"manual_needed={counts['manual_needed']})"
+    )
+
+
+@app.command(name="validate-allegro-component")
+def validate_allegro_component(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help=(
+            "Path to an Allegro/Telesis third-party ASCII netlist, or a "
+            "Capture/Allegro PST directory/file."
+        ),
+    ),
+    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    refdes: str = typer.Option(..., "--refdes", help="Registry-verified component refdes."),
+    profile_path: Path = typer.Option(
+        ...,
+        "--profile",
+        help="DatasheetProfile JSON used for deterministic component validation.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output markdown path (default: reports/<netlist>-<refdes>-validation-<YYYYMMDD>.md).",
+    ),
+) -> None:
+    """Write one PCA9548A component's deterministic validation report."""
+    from datetime import datetime, timezone
+
+    from hardwise.bom import match_bom_to_design, parse_bom
+    from hardwise.ir.profile import DatasheetProfile
+    from hardwise.report.component_validation_markdown import count_checks, render
+    from hardwise.validation.pca9548a import validate_pca9548a
+
+    target_refdes = refdes.strip().upper()
+    try:
+        design, source, input_type, _property_count = _load_allegro_design(netlist_path)
+        bom = parse_bom(bom_path)
+        report = match_bom_to_design(bom, design)
+        profile = DatasheetProfile.load(profile_path)
+    except Exception as e:
+        typer.echo(f"error: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    component = design.components.get(target_refdes)
+    if component is None:
+        typer.echo(f"error: unknown refdes {target_refdes!r} in design registry", err=True)
+        raise typer.Exit(1)
+    if profile.part_number.upper() != "PCA9548A":
+        typer.echo(
+            f"error: unsupported profile part {profile.part_number!r}; "
+            "this MVP command supports PCA9548A only",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    bom_row = report.rows_by_refdes.get(target_refdes)
+    bom_source_token = _component_index_bom_source(bom_row)
+    now = datetime.now(timezone.utc)
+    project_name = _report_source_name(source)
+    checks = validate_pca9548a(
+        component,
+        profile,
+        design_source_name=design.project_path.name,
+        bom_source_token=bom_source_token,
+    )
+    project_meta = {
+        "project_name": project_name,
+        "generated_at": now.isoformat(timespec="seconds"),
+        "netlist_source": str(source),
+        "netlist_type": input_type,
+        "profile_source": str(profile_path),
+        "design_source_name": design.project_path.name,
+    }
+    report_text = render(component, profile, checks, project_meta, bom_row=bom_row)
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{project_name}-{target_refdes}-validation-{now:%Y%m%d}.md"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    output.write_text(report_text, encoding="utf-8")
+    counts = count_checks(checks)
+    typer.echo(
+        f"report: {output} ({target_refdes}, PASS={counts['PASS']}, "
+        f"WARN={counts['WARN']}, ERROR={counts['ERROR']}, "
+        f"manual_needed={counts['manual_needed']})"
+    )
+
+
+@app.command(name="validate-allegro-project")
+def validate_allegro_project(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help=(
+            "Path to an Allegro/Telesis third-party ASCII netlist, or a "
+            "Capture/Allegro PST directory/file."
+        ),
+    ),
+    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    profile_catalog: Path = typer.Option(
+        Path("data/datasheet_profiles/profile_catalog.json"),
+        "--profile-catalog",
+        help="Explicit profile catalog mapping BOM identities to validators.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output markdown path (default: reports/<netlist>-validation-index-<YYYYMMDD>.md).",
+    ),
+    index_json: Path | None = typer.Option(
+        None,
+        "--index-json",
+        help="Optional JSON sidecar for UI/component workspace prototypes.",
+    ),
+    detail_dir: Path | None = typer.Option(
+        None,
+        "--detail-dir",
+        help="Optional directory for per-component validation detail reports.",
+    ),
+    manual_limit: int = typer.Option(
+        50,
+        "--manual-limit",
+        help="Maximum manual/unsupported rows to show in markdown; JSON keeps all rows.",
+    ),
+    candidate_limit: int = typer.Option(
+        30,
+        "--candidate-limit",
+        help="Maximum active no-profile candidate groups to show in markdown.",
+    ),
+) -> None:
+    """Write a project-level deterministic validation index for supported profiles."""
+    from datetime import datetime, timezone
+
+    from hardwise.bom import match_bom_to_design, parse_bom
+    from hardwise.ir.profile import DatasheetProfile
+    from hardwise.report import component_validation_markdown
+    from hardwise.report.validation_index_markdown import render, write_json
+    from hardwise.validation.project_index import (
+        build_project_validation_index,
+        load_profile_catalog,
+    )
+
+    if manual_limit < 0:
+        typer.echo("error: --manual-limit must be >= 0", err=True)
+        raise typer.Exit(1)
+    if candidate_limit < 0:
+        typer.echo("error: --candidate-limit must be >= 0", err=True)
+        raise typer.Exit(1)
+
+    try:
+        design, source, input_type, _property_count = _load_allegro_design(netlist_path)
+        bom = parse_bom(bom_path)
+        report = match_bom_to_design(bom, design)
+        catalog = load_profile_catalog(profile_catalog)
+    except Exception as e:
+        typer.echo(f"error: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    now = datetime.now(timezone.utc)
+    project_name = _report_source_name(source)
+    index = build_project_validation_index(
+        design=design,
+        report=report,
+        catalog=catalog,
+        profile_catalog_path=profile_catalog,
+        project_name=project_name,
+        generated_at=now.isoformat(timespec="seconds"),
+        netlist_source=str(source),
+        netlist_type=input_type,
+        detail_dir=detail_dir,
+    )
+
+    if detail_dir is not None:
+        detail_dir.mkdir(parents=True, exist_ok=True)
+        detail_meta_base = {
+            "project_name": project_name,
+            "generated_at": now.isoformat(timespec="seconds"),
+            "netlist_source": str(source),
+            "netlist_type": input_type,
+            "design_source_name": design.project_path.name,
+        }
+        for row in index.validated_rows:
+            if row.detail_report is None or row.profile_path is None:
+                continue
+            component = design.components[row.refdes]
+            profile = DatasheetProfile.load(Path(row.profile_path))
+            detail_meta = {**detail_meta_base, "profile_source": row.profile_path}
+            detail_text = component_validation_markdown.render(
+                component,
+                profile,
+                row.checks,
+                detail_meta,
+                bom_row=report.rows_by_refdes.get(row.refdes),
+            )
+            Path(row.detail_report).write_text(detail_text, encoding="utf-8")
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{project_name}-validation-index-{now:%Y%m%d}.md"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    output.write_text(
+        render(index, manual_limit=manual_limit, candidate_limit=candidate_limit),
+        encoding="utf-8",
+    )
+    if index_json is not None:
+        write_json(index, index_json)
+
+    totals = index.totals
+    typer.echo(
+        f"validation-index: {output} "
+        f"({len(index.validated_rows)} validated, "
+        f"PASS={totals['PASS']}, WARN={totals['WARN']}, "
+        f"ERROR={totals['ERROR']}, manual_needed={totals['manual_needed']})"
+    )
+    if index_json is not None:
+        typer.echo(f"validation-index-json: {index_json} ({len(index.rows)} rows)")
+    if detail_dir is not None:
+        typer.echo(f"validation-details: {detail_dir} ({len(index.validated_rows)} reports)")
+
+
+@app.command(name="explain-component")
+def explain_component(
+    index_json: Path = typer.Argument(..., help="Path to a validation-index JSON sidecar."),
+    refdes: str = typer.Argument(..., help="Registry-verified refdes to explain."),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Optional markdown output path. Defaults to stdout.",
+    ),
+) -> None:
+    """Explain stored deterministic validation results for one component."""
+    import json
+
+    from hardwise.report.component_explain_markdown import render
+    from hardwise.validation.project_index import ProjectValidationIndex
+
+    try:
+        payload = json.loads(index_json.read_text(encoding="utf-8"))
+        index = ProjectValidationIndex.model_validate(payload)
+    except Exception as e:
+        typer.echo(f"error: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    rows = {row.refdes: row for row in index.rows}
+    row = rows.get(refdes)
+    if row is None:
+        typer.echo(f"error: unknown refdes {refdes!r} in validation index", err=True)
+        raise typer.Exit(1)
+
+    text = render(index, row)
+    if output is None:
+        typer.echo(text)
+        return
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(text, encoding="utf-8")
+    typer.echo(f"explanation: {output} ({row.refdes}, status={row.status})")
 
 
 @app.command()
@@ -810,6 +1174,113 @@ def _echo_decision_counts(counts: dict[str, int], total: int) -> None:
         typer.echo(f"  {decision}: {count} ({percentage:.1f}%)")
 
 
+def _write_component_index_json(
+    output: Path,
+    *,
+    design,
+    report,
+    project_meta: dict[str, object],
+    document_report,
+    net_limit: int,
+) -> None:
+    """Write registry-verified component rows for UI prototypes."""
+    import json
+
+    from hardwise.bom.types import sort_refdes_key
+
+    rows = []
+    duplicate_refdes = set(report.duplicate_bom_refdes)
+    for component in sorted(design.components.values(), key=lambda c: sort_refdes_key(c.refdes)):
+        bom_row = report.rows_by_refdes.get(component.refdes)
+        document = _component_document_payload(bom_row, document_report)
+        rows.append(
+            {
+                "refdes": component.refdes,
+                "match_status": _component_index_match_status(
+                    component.refdes,
+                    report,
+                    duplicate_refdes,
+                ),
+                "value": (bom_row.value if bom_row and bom_row.value else component.value) or "",
+                "part_number": (
+                    bom_row.part_number
+                    if bom_row and bom_row.part_number
+                    else component.part_number
+                )
+                or "",
+                "manufacturer": (
+                    bom_row.manufacturer
+                    if bom_row and bom_row.manufacturer
+                    else component.manufacturer
+                )
+                or "",
+                "description": (bom_row.description if bom_row else None) or "",
+                "package": component.package or "",
+                "pin_count": len(component.pins),
+                "nets": _component_index_nets(component, limit=net_limit),
+                "bom_source": _component_index_bom_source(bom_row),
+                "design_source": f"design:{design.project_path.name}#{component.refdes}",
+                "document": document,
+            }
+        )
+
+    payload = {
+        "project": project_meta,
+        "scope": "component identity and connectivity facts only",
+        "counts": {
+            "components": len(design.components),
+            "nets": len(design.nets),
+            "matched_refdes": len(report.matched_refdes),
+            "bom_only_refdes": len(report.bom_only_refdes),
+            "design_only_refdes": len(report.design_only_refdes),
+            "duplicate_bom_refdes": len(report.duplicate_bom_refdes),
+            "quantity_mismatches": len(report.quantity_mismatches),
+        },
+        "components": rows,
+    }
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _component_index_match_status(refdes: str, report, duplicate_refdes: set[str]) -> str:
+    if refdes in duplicate_refdes:
+        return "duplicate_bom"
+    if refdes in report.design_only_refdes:
+        return "design_only"
+    if refdes in report.matched_refdes:
+        return "matched"
+    return "unknown"
+
+
+def _component_index_nets(component, *, limit: int) -> list[str]:
+    nets = sorted({pin.net for pin in component.pins if pin.net})
+    return nets[:limit]
+
+
+def _component_index_bom_source(row) -> str | None:
+    if row is None:
+        return None
+    return f"bom:{row.source_file.name}#line{row.source_line}"
+
+
+def _component_document_payload(row, document_report) -> dict[str, object]:
+    if row is None or document_report is None or row.item_number is None:
+        return {"status": "manual_needed", "reason": "No document index match for this row."}
+    match = document_report.matches_by_item_key.get(row.item_number)
+    if match is None:
+        return {"status": "manual_needed", "reason": "No document match row for BOM item."}
+    selected = match.selected
+    return {
+        "status": match.status,
+        "identity": match.identity,
+        "identity_kind": match.identity_kind,
+        "reason": match.reason,
+        "title": selected.title if selected else None,
+        "url": selected.url if selected else None,
+        "source_token": selected.source_token if selected else None,
+    }
+
+
 def _load_allegro_design(netlist_path: Path):
     """Load an Allegro schematic netlist/PST input into Design plus display metadata."""
     from hardwise.adapters.allegro_netlist import parse_allegro_netlist
@@ -845,6 +1316,12 @@ def _bom_report_mismatch_count(report) -> int:
         + len(report.duplicate_bom_refdes)
         + len(report.quantity_mismatches)
     )
+
+
+def _pin_comparison_counts(comparisons) -> dict[str, int]:
+    """Count pin comparison statuses for CLI summary output."""
+    statuses = ("PASS", "WARN", "ERROR", "manual_needed")
+    return {status: sum(row.status == status for row in comparisons) for status in statuses}
 
 
 def _echo_refdes_sample(label: str, refdes_list: list[str], limit: int) -> None:

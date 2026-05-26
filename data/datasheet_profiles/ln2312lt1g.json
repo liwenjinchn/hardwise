@@ -1,0 +1,25 @@
+{
+  "part_number": "LN2312LT1G",
+  "abs_max": {
+    "vds": 20.0,
+    "id": 4.9,
+    "pd": 0.75
+  },
+  "recommended": {},
+  "pin_function": {
+    "1": "G (gate)",
+    "2": "S (source)",
+    "3": "D (drain)"
+  },
+  "evidence": {
+    "abs_max.vds": "datasheet:ln2312lt1g.pdf#p1",
+    "abs_max.id": "datasheet:ln2312lt1g.pdf#p1",
+    "abs_max.pd": "datasheet:ln2312lt1g.pdf#p1",
+    "pin_function.1": "datasheet:ln2312lt1g.pdf#p1",
+    "pin_function.2": "datasheet:ln2312lt1g.pdf#p1",
+    "pin_function.3": "datasheet:ln2312lt1g.pdf#p1"
+  },
+  "extracted_at": "2026-05-26T00:00:00+00:00",
+  "extracted_model": "deterministic-ln2312lt1g-v3.7",
+  "schema_version": "v1"
+}

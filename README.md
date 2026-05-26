@@ -24,6 +24,7 @@ GitHub shows HTML files as source. Use the screenshot above for a quick scan, or
 - **Hardware demo:** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
 - **Technical snapshot:** [`docs/demo.html`](docs/demo.html)
 - **Short read:** [`docs/demo.md`](docs/demo.md)
+- **Switch-board validation demo:** [`docs/demo_switch_board.md`](docs/demo_switch_board.md)
 - **Reproduce locally:** `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html`
 
 ## What the MVP proves

@@ -60,6 +60,37 @@ def test_parse_csv_bom_maps_identity_columns(tmp_path: Path) -> None:
     assert bom.items[0].description == "resistor"
 
 
+def test_parse_chinese_cadence_report_maps_pn_description_and_option_refs(
+    tmp_path: Path,
+) -> None:
+    bom_path = tmp_path / "sample_cn.BOM"
+    bom_path.write_text(
+        "\n".join(
+            [
+                "Bill Of Materials",
+                "",
+                "序号\tPN\t物料描述\t数量\t位号\toption",
+                "______________________________________________",
+                "1\t1327820\t连接器MCIO座 PMC074-7504-002-1H\t3\tCN1,CN2,\tI",
+                "\t\t\t\tCN3",
+                "2\t1301850\t贴片陶瓷电容 0.1uF 25V\t1\tC1\tNI",
+            ]
+        ),
+        encoding="gb18030",
+    )
+
+    bom = parse_bom(bom_path)
+
+    assert len(bom.items) == 2
+    assert bom.items[0].item_number == "1"
+    assert bom.items[0].quantity == 3
+    assert bom.items[0].refdes_list == ["CN1", "CN2", "CN3"]
+    assert bom.items[0].part_number == "1327820"
+    assert bom.items[0].description == "连接器MCIO座 PMC074-7504-002-1H"
+    assert bom.items[0].value == "连接器MCIO座 PMC074-7504-002-1H"
+    assert [row.refdes for row in bom.rows] == ["CN1", "CN2", "CN3", "C1"]
+
+
 def test_parse_bom_rejects_invalid_quantity(tmp_path: Path) -> None:
     bom_path = tmp_path / "bad.BOM"
     bom_path.write_text(
