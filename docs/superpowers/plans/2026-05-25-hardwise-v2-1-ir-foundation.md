@@ -194,7 +194,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from hardwise.checklist.finding import Finding
 
@@ -208,8 +208,6 @@ class Pin(BaseModel):
     V2.4 datasheet-driven checks. ``findings`` accumulates pin-scoped
     review issues — the runner attaches them during V2.2.
     """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     number: str
     name: str
@@ -366,8 +364,6 @@ class Component(BaseModel):
     Optional[object] here lets V2.1 round-trip JSON without depending
     on a type that does not exist yet.
     """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     refdes: str
     value: str = ""
@@ -633,8 +629,6 @@ class Design(BaseModel):
     same semantics as BoardRegistry.refdes_set so the guard does not
     need to learn about Design.
     """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     components: dict[str, Component] = Field(default_factory=dict)
     nets: dict[str, Net] = Field(default_factory=dict)
