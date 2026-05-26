@@ -145,23 +145,8 @@ def inspect_allegro_netlist(
     limit: int = typer.Option(20, "--limit", "-n", help="Number of nets to print."),
 ) -> None:
     """Parse an Allegro schematic netlist and print topology."""
-    from hardwise.adapters.allegro_netlist import parse_allegro_netlist
-    from hardwise.adapters.allegro_pst import is_allegro_pst_input, parse_allegro_pst
-    from hardwise.ir.build import build_design_from_netlist, build_design_from_pst
-
     try:
-        if is_allegro_pst_input(netlist_path):
-            registry = parse_allegro_pst(netlist_path)
-            design = build_design_from_pst(registry)
-            source = registry.source_dir
-            input_type = "Cadence Capture/Allegro PST schematic netlist topology"
-            property_count = sum(len(part.properties) for part in registry.parts)
-        else:
-            registry = parse_allegro_netlist(netlist_path)
-            design = build_design_from_netlist(registry)
-            source = registry.source_file
-            input_type = "Allegro/Telesis schematic netlist topology"
-            property_count = len(registry.properties)
+        design, source, input_type, property_count = _load_allegro_design(netlist_path)
     except Exception as e:
         typer.echo(f"error: {type(e).__name__}: {e}", err=True)
         raise typer.Exit(1) from e
@@ -176,6 +161,57 @@ def inspect_allegro_netlist(
     top = sorted(design.nets.values(), key=lambda n: (-len(n.nodes), n.name))[:limit]
     for net in top:
         typer.echo(f"{net.name:32} {len(net.nodes):4d} members")
+
+
+@app.command(name="inspect-bom-match")
+def inspect_bom_match(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help=(
+            "Path to an Allegro/Telesis third-party ASCII netlist, or a "
+            "Capture/Allegro PST directory/file."
+        ),
+    ),
+    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    limit: int = typer.Option(20, "--limit", "-n", help="Number of mismatches to print."),
+) -> None:
+    """Match a schematic BOM to an Allegro netlist by refdes."""
+    from hardwise.bom import match_bom_to_design, parse_bom
+
+    try:
+        design, source, input_type, _property_count = _load_allegro_design(netlist_path)
+        bom = parse_bom(bom_path)
+        report = match_bom_to_design(bom, design)
+    except Exception as e:
+        typer.echo(f"error: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    typer.echo(f"netlist: {source}")
+    typer.echo(f"netlist type: {input_type}")
+    typer.echo(f"bom: {bom.source_file}")
+    typer.echo("scope: component identity match only; no PLM, lifecycle, pricing, or PCB geometry")
+    typer.echo(f"design refdes: {report.design_refdes_count}")
+    typer.echo(f"bom items: {report.bom_item_count}")
+    typer.echo(f"bom refdes rows: {report.bom_row_count}")
+    typer.echo(f"non-refdes bom items: {report.non_refdes_item_count}")
+    typer.echo(f"matched refdes: {len(report.matched_refdes)}")
+    typer.echo(f"bom-only refdes: {len(report.bom_only_refdes)}")
+    typer.echo(f"design-only refdes: {len(report.design_only_refdes)}")
+    typer.echo(f"duplicate bom refdes: {len(report.duplicate_bom_refdes)}")
+    typer.echo(f"quantity mismatches: {len(report.quantity_mismatches)}")
+    typer.echo(f"status: {'clean refdes match' if report.is_clean else 'mismatch found'}")
+
+    _echo_refdes_sample("bom-only", report.bom_only_refdes, limit)
+    _echo_refdes_sample("design-only", report.design_only_refdes, limit)
+    _echo_refdes_sample("duplicate-bom", report.duplicate_bom_refdes, limit)
+    if report.quantity_mismatches:
+        typer.echo("")
+        typer.echo("quantity-mismatch sample:")
+        for mismatch in report.quantity_mismatches[:limit]:
+            typer.echo(
+                f"  item {mismatch.item_number or '-'} line {mismatch.source_line}: "
+                f"quantity={mismatch.quantity}, refdes={mismatch.refdes_count}"
+            )
 
 
 @app.command()
@@ -667,6 +703,37 @@ def _echo_decision_counts(counts: dict[str, int], total: int) -> None:
         count = int(counts.get(decision, 0))
         percentage = (count / total * 100) if total else 0.0
         typer.echo(f"  {decision}: {count} ({percentage:.1f}%)")
+
+
+def _load_allegro_design(netlist_path: Path):
+    """Load an Allegro schematic netlist/PST input into Design plus display metadata."""
+    from hardwise.adapters.allegro_netlist import parse_allegro_netlist
+    from hardwise.adapters.allegro_pst import is_allegro_pst_input, parse_allegro_pst
+    from hardwise.ir.build import build_design_from_netlist, build_design_from_pst
+
+    if is_allegro_pst_input(netlist_path):
+        registry = parse_allegro_pst(netlist_path)
+        design = build_design_from_pst(registry)
+        source = registry.source_dir
+        input_type = "Cadence Capture/Allegro PST schematic netlist topology"
+        property_count = sum(len(part.properties) for part in registry.parts)
+        return design, source, input_type, property_count
+
+    registry = parse_allegro_netlist(netlist_path)
+    design = build_design_from_netlist(registry)
+    source = registry.source_file
+    input_type = "Allegro/Telesis schematic netlist topology"
+    property_count = len(registry.properties)
+    return design, source, input_type, property_count
+
+
+def _echo_refdes_sample(label: str, refdes_list: list[str], limit: int) -> None:
+    """Print a compact mismatch sample for CLI smoke checks."""
+    if not refdes_list:
+        return
+    sample = ", ".join(refdes_list[:limit])
+    suffix = "" if len(refdes_list) <= limit else f" ... (+{len(refdes_list) - limit} more)"
+    typer.echo(f"{label} sample: {sample}{suffix}")
 
 
 def _review_db_path(project_name: str, db_path: str | None) -> Path | None:

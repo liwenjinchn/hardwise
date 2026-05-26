@@ -8,6 +8,30 @@
 
 ---
 
+## 2026-05-26 · V2.6 · BOM refdes shape must follow the EDA registry
+
+**Symptom**
+
+V2.6 第一版 BOM parser 用了“位号必须包含数字”的正则，解析公开 Cadence `.BOM` 时把末尾的 `VA` 漏掉了。PST registry 里实际存在 `VA` 这个 placed part，导致 BOM 展开为 4009 rows，而 netlist Design 有 4010 components；join 结果出现一个 design-only refdes。
+
+**Root cause**
+
+Refdes Guard 的输出扫描正则适合拦截模型文本里的常见 `U1/R2/C3`，但 BOM parser 不能直接套同一个形状。BOM 的 Reference column 是 EDA 导出的对象列表，合法性应该由 `Design.refdes_set` 兜底，而不是由窄正则提前排除。真实 EDA 里会有 `SOCKET1`、`TH1`，也会有少数无数字但 registry-valid 的 designator。
+
+**Fix**
+
+新增 `src/hardwise/bom/`，拆成 `types.py` / `parser.py` / `matcher.py`：parser 读取 Cadence `.BOM` 和简单 CSV/TSV，展开跨行 Reference；matcher 用 refdes join 到 `Design.components`，报告 matched / BOM-only / design-only / duplicate / quantity mismatch；`apply_bom_to_design()` 只补 value/manufacturer/part_number/properties，不修改 nets/pins。CLI 新增 `inspect-bom-match`，明确输出 scope 是 component identity match only。
+
+**Verification**
+
+`uv run pytest tests/bom tests/test_cli_bom_match.py -q` 覆盖 parser/matcher/CLI。真实公开样例：`uv run hardwise inspect-bom-match "<public sample>/allegro" "<public sample>/SWITCH BOARD 144-VA_20240712 1401.BOM"` 输出 4010 design refdes / 4010 BOM rows / 4010 matched / 0 mismatch。Final gate: `uv run pytest -q` 和 `uv run ruff check .` clean。
+
+**Takeaway**
+
+BOM matcher 是 identity layer，不是 refdes 形状裁判。宽一点提取候选，再让 EDA registry 验证，比在 parser 正则里猜所有公司的命名习惯更稳。
+
+---
+
 ## 2026-05-26 · V2.5 · Allegro netlists give topology, BOM gives identity
 
 **Symptom**

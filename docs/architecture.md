@@ -1,6 +1,6 @@
 # Hardwise Architecture
 
-> v0.7 — V2.5 adds Allegro schematic netlist adapters for Telesis third-party ASCII and Capture/Allegro PST exports. They populate IR topology (`Design.components`, `Design.nets`, connected `Pin.net`) from schematic netlist text only; `.brd`, boardview, placement, routing, and PCB geometry remain out of scope.
+> v0.8 — V2.6 adds a schematic BOM matcher for netlist-only inputs. Allegro netlists provide topology; BOM rows provide component identity by refdes join. `.brd`, boardview, placement, routing, PCB geometry, and PLM-grade BOM governance remain out of scope.
 
 ## Data flow
 
@@ -8,6 +8,7 @@
 KiCad project ─┐
                ├─→ adapters/kicad.py ─→ store/relational.py (SQLite)
 Allegro schematic netlist ─→ adapters/allegro_netlist.py / allegro_pst.py ─→ ir/build.py
+Allegro schematic BOM ─────→ bom/parser.py + bom/matcher.py ───────────┘
                                               │
 Datasheet PDFs ─→ ingest/pdf.py     ─→ store/vector.py (Chroma)
                                               │
@@ -31,6 +32,9 @@ Datasheet PDFs ─→ ingest/pdf.py     ─→ store/vector.py (Chroma)
 ### `adapters/`
 Adapter pattern at the EDA boundary. `base.py` defines the first stable KiCad registry shapes: `ComponentRecord` and `BoardRegistry`. `kicad.py` parses KiCad S-expression files directly, extracts schematic symbol instances plus PCB footprints, and merges them into a refdes registry. V2.5 adds two Allegro schematic-netlist adapters: `allegro_netlist.py` parses Telesis third-party ASCII netlists (`$PACKAGES`, optional `$A_PROPERTIES`, `$NETS`), and `allegro_pst.py` parses Capture/Allegro PST handoff files (`pstxprt.dat`, `pstxnet.dat`, optional `pstchip.dat`). Both feed IR aggregation without parsing PCB data. Borrowed from Wrench Board's "adding a format = one new file" parser pattern, but Hardwise does not copy Wrench Board code.
 
+### `bom/`
+Component identity matching layer for schematic-exported BOMs. `parser.py` reads Cadence-style tabular `.BOM` reports plus simple CSV/TSV exports, expands grouped reference cells (`R1,R2` and multiline continuations) into one `BomRow` per refdes, and preserves value/manufacturer/part-number fields when present. `matcher.py` joins those rows to `Design.components` by refdes and reports matched, BOM-only, design-only, duplicate, and quantity-mismatch cases; `apply_bom_to_design()` can attach identity fields without changing pins, nets, or topology. This is a pre-Layout component-matching aid, not PLM, pricing, lifecycle, supplier-risk, or PCB parsing.
+
 #### Day 2 shipped module I/O
 
 | Module / function | Purpose | Input | Output | Why it exists | Verification |
@@ -47,10 +51,13 @@ Adapter pattern at the EDA boundary. `base.py` defines the first stable KiCad re
 | `parse_allegro_pst(path)` in `adapters/allegro_pst.py` | Read schematic topology from Capture/Allegro PST exports | Directory or member file containing `pstxprt.dat` + `pstxnet.dat`, with optional `pstchip.dat` | `AllegroPstRegistry` with placed parts, nets, pin names, primitive properties, and `refdes_set` | Covers the common OrCAD/Capture-to-Allegro handoff format while staying pre-Layout | 7 adapter tests plus a public smoke parse of 4010 components / 3422 nets |
 | `build_design_from_pst(registry)` in `ir/build.py` | Aggregate PST records into V2 IR | `AllegroPstRegistry` | `Design(source_eda="allegro_netlist")` with components, nets, connected pins, and primitive properties | Reuses the same component-centric IR for both Allegro text formats | 6 IR tests cover property mapping, pin names, nets, and duplicate pin-on-two-nets rejection |
 | `inspect-allegro-netlist` in `cli.py` | Human-visible smoke test for V2.5 adapter | Telesis netlist path, PST directory, or PST member file + optional net print limit | Component/net/property counts plus largest nets | Shows netlist topology without implying `.brd` or boardview support | Synthetic Telesis fixture; synthetic PST fixture; public PST directory smoke |
+| `parse_bom(path)` in `bom/parser.py` | Read schematic-exported BOM identity rows | Cadence `.BOM`, CSV, or TSV with Reference/Quantity/Part fields | `Bom` with grouped `BomItem`s and expanded one-refdes `BomRow`s | Netlist-only inputs need value/MPN identity separate from topology | Parser tests cover multiline Reference cells, digitless refdes like `VA`, CSV identity columns, and invalid quantities |
+| `match_bom_to_design(bom, design)` in `bom/matcher.py` | Join BOM identity to schematic topology | Parsed `Bom` + `Design.components` registry | `BomMatchReport` with matched, BOM-only, design-only, duplicate, quantity-mismatch lists | Keeps BOM matching deterministic and registry-verified before any agent/report use | Matcher tests cover clean match, missing/extra refdes, duplicate BOM refs, quantity mismatch, and non-topology identity attachment |
+| `inspect-bom-match` in `cli.py` | Human-visible smoke test for V2.6 matcher | Allegro netlist/PST input + schematic BOM path | Refdes counts, mismatch counts, and bounded mismatch samples | Answers "does this netlist+BOM pair line up?" without claiming PLM governance | Synthetic PST fixture plus public PST+BOM smoke: 4010 design refdes / 4010 BOM rows / 4010 matched |
 
 **Hardware-engineer explanation:** this module is the project's 位号台账 plus a PCB-side diagnostic net reader. Before AI can review a board, it must know which U/C/R/D/J designators really exist. The parser turns KiCad files into that trusted table. Later, if the model says "U999 has a decoupling issue", Refdes Guard can reject it because `U999` is not in `BoardRegistry`.
 
-**What it does not do yet:** it does not parse BOM rows, DRC/ERC results, datasheet PDFs, Allegro `.brd`, boardview data, placement, routing, or PCB geometry. `pcb_nets` come from `.kicad_pcb` and are post-Layout diagnostics only. The Allegro adapters read schematic-exported topology only; they cannot infer datasheet identity, and a net literally named `NC` is still just a net name unless a future format supplies explicit no-connect semantics. For netlist-only inputs, the next layer is a BOM matcher that joins CSV/XLSX rows to `Design.components` by refdes to improve part/datasheet matching.
+**What it does not do yet:** it does not parse DRC/ERC results, datasheet PDFs beyond the existing profile flow, Allegro `.brd`, boardview data, placement, routing, or PCB geometry. `pcb_nets` come from `.kicad_pcb` and are post-Layout diagnostics only. The Allegro adapters read schematic-exported topology only; the BOM matcher can add schematic BOM identity by refdes, but it does not make PLM-grade lifecycle/cost/supplier decisions. A net literally named `NC` is still just a net name unless a future format supplies explicit no-connect semantics.
 
 **Slice 1 work item (per PLAN DR-008):** `parse_project()` currently merges `.kicad_pcb` footprints into `.kicad_sch` records when the schematic field is empty (see `kicad.py:30-31`). This backfill is correct for Refdes Guard but **breaks R001's "footprint-empty → new-component candidate" judgement** — every PCB-laid-out part stops looking new. Slice 1 must either (a) add `BoardRegistry.schematic_records` / `pcb_records` raw fields and have R001 read `schematic_records`, or (b) have R001 bypass `BoardRegistry` and call `parse_schematic` directly. Pick one in Slice 1, document the choice here.
 
