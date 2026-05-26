@@ -8,6 +8,31 @@
 
 ---
 
+## Final validator roadmap — staged after Allegro+BOM intake
+
+**Trigger**: V2.7 Allegro/PST + schematic BOM intake report shipped.
+
+**Where it lands**: `docs/architecture.md`, `docs/PLAN.md`, and implementation slices as each stage ships. Keep this as the staged roadmap until a slice graduates into code + tests.
+
+**What to build**: Move Hardwise toward the target "design validator" product shape: component list, datasheet match, per-component pin-level validation, PASS/WARN/ERROR summaries, downloadable reports, and schematic linkage. The route must stay inside the pre-Layout schematic-review node and must not become `.brd`, boardview, placement, routing, PCB geometry, PLM, pricing, lifecycle, or supplier-risk tooling.
+
+| Stage | Product shape | Data/logic needed | Ship gate |
+|---|---|---|---|
+| V2.8 | Report index view | Prefix summary, BOM item groups, mismatch-only and summary-only report modes, short source tokens | Public Allegro+BOM sample can be scanned without opening a 4000-row flat table |
+| V2.9 | Datasheet/document match layer | BOM item / MPN to datasheet links with `matched / no_result / ambiguous / manual_needed` states | Report shows which component groups have usable public datasheets |
+| V3.0 | Pin Profile | Structured pin profile per selected part: pin no/name/function/limits/recommended topology | A small public profile set can drive deterministic pin comparison |
+| V3.1 | Single-component validation report | Rule templates for LDO/DCDC, MCU, gate driver, diode/MOS/connectors; evidence-backed pin PASS/WARN/ERROR rows | At least one regulator and one gate-driver component produce pin-level reports with source tokens |
+| V3.2 | Web UI | Component table, verification index, detail pane, report/schematic tabs, download action | Local UI mirrors the validator workflow using public sample data |
+
+**V2.8 acceptance details**:
+
+1. `report-allegro-bom` keeps full mode as the default for reproducibility.
+2. `--summary-only` omits the full component table and shows index sections only.
+3. `--mismatch-only` emits only status + mismatch sections for fast triage.
+4. Source cells use short tokens in large tables, while report header keeps the full netlist/BOM paths.
+
+---
+
 ## Triggered by Slice 5 — KiCad schematic net parser shipping (R005 dangling-nets)
 
 **Where it lands**: `data/checklists/sch_review.yaml` → R005 (dangling / unexpected unconnected schematic nets), R006 (通用 net 命名规则), and R007 (分类 net 命名规则).

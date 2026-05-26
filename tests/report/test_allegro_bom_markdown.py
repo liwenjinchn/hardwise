@@ -78,14 +78,20 @@ def test_allegro_bom_report_is_component_centric_and_factual(tmp_path: Path) -> 
     md = render(design, bom, report, _meta(), net_limit=2)
 
     assert "# Hardwise Allegro BOM Intake - pst" in md
+    assert "## Component Prefix Summary" in md
+    assert "| C | 1 | 1 | 0 | 0 | 0 |" in md
+    assert "| R | 1 | 1 | 0 | 0 | 0 |" in md
+    assert "| U | 1 | 1 | 0 | 0 | 0 |" in md
+    assert "## BOM Item Groups" in md
+    assert "| 1 | 3 | 3 | matched | fixture identity | PN-123 | Acme | C1, R1, U1 |" in md
     assert "## Component Summary" in md
     assert "This report does not perform PLM, lifecycle, pricing, supplier-risk" in md
     assert "layout, boardview, or electrical-rule review" in md
     assert "| C1 | matched | fixture identity | PN-123 | Acme | C0402 | 2 | GND, VCC_3V3 |" in md
     assert "| R1 | matched | fixture identity | PN-123 | Acme | R0402 | 2 | CTRL, VCC_3V3 |" in md
     assert "| U1 | matched | fixture identity | PN-123 | Acme | TSSOP8 | 3 | CTRL, GND, +1 more |" in md
-    assert f"`{bom_path}#line2`" in md
-    assert "`design:tests/fixtures/allegro/pst#U1`" in md
+    assert f"`bom:{bom_path.name}#line2`" in md
+    assert "`design:pst#U1`" in md
     assert "No BOM/design refdes mismatches found." in md
 
 
@@ -121,3 +127,52 @@ def test_allegro_bom_report_lists_registry_mismatches(tmp_path: Path) -> None:
     assert "ASSEMBLY NOTE" in md
     assert "| C1 | duplicate-bom | 0.1uF |" in md
     assert "| R1 | design-only | 10K |" in md
+    assert f"`bom:{bom_path.name}#line2`" in md
+
+
+def test_allegro_bom_report_summary_only_omits_component_table(tmp_path: Path) -> None:
+    bom_path = tmp_path / "summary.csv"
+    bom_path.write_text(
+        "\n".join(
+            [
+                "Reference,Quantity,Value,Manufacturer,MPN",
+                '"C1 R1 U1",3,fixture identity,Acme,PN-123',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    design = _design()
+    bom = parse_bom(bom_path)
+    report = match_bom_to_design(bom, design)
+
+    md = render(design, bom, report, _meta(), summary_only=True)
+
+    assert "## Component Prefix Summary" in md
+    assert "## BOM Item Groups" in md
+    assert "## BOM / Design Registry Mismatches" in md
+    assert "## Component Summary" not in md
+
+
+def test_allegro_bom_report_mismatch_only_omits_indexes(tmp_path: Path) -> None:
+    bom_path = tmp_path / "mismatch-only.csv"
+    bom_path.write_text(
+        "\n".join(
+            [
+                "Reference,Quantity,Value",
+                '"C1 R999",2,0.1uF',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    design = _design()
+    bom = parse_bom(bom_path)
+    report = match_bom_to_design(bom, design)
+
+    md = render(design, bom, report, _meta(), mismatch_only=True)
+
+    assert "## BOM / Design Registry Mismatches" in md
+    assert "### BOM-Only Refdes" in md
+    assert "R999" in md
+    assert "## Component Prefix Summary" not in md
+    assert "## BOM Item Groups" not in md
+    assert "## Component Summary" not in md

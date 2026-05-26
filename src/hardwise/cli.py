@@ -235,6 +235,16 @@ def report_allegro_bom(
         "--net-limit",
         help="Maximum number of connected net names shown per component.",
     ),
+    summary_only: bool = typer.Option(
+        False,
+        "--summary-only",
+        help="Write only intake status, prefix summary, BOM groups, and mismatch sections.",
+    ),
+    mismatch_only: bool = typer.Option(
+        False,
+        "--mismatch-only",
+        help="Write only intake status and BOM/design mismatch sections.",
+    ),
 ) -> None:
     """Write a component-centric Allegro netlist + schematic BOM intake report."""
     from datetime import datetime, timezone
@@ -244,6 +254,9 @@ def report_allegro_bom(
 
     if net_limit < 1:
         typer.echo("error: --net-limit must be >= 1", err=True)
+        raise typer.Exit(1)
+    if summary_only and mismatch_only:
+        typer.echo("error: --summary-only and --mismatch-only cannot be used together", err=True)
         raise typer.Exit(1)
 
     try:
@@ -262,7 +275,15 @@ def report_allegro_bom(
         "netlist_source": str(source),
         "netlist_type": input_type,
     }
-    report_text = render(design, bom, report, project_meta, net_limit=net_limit)
+    report_text = render(
+        design,
+        bom,
+        report,
+        project_meta,
+        net_limit=net_limit,
+        summary_only=summary_only,
+        mismatch_only=mismatch_only,
+    )
 
     if output is None:
         reports_dir = Path("reports")

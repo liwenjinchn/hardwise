@@ -8,6 +8,46 @@
 
 ---
 
+## 2026-05-26 · V2.8 · Allegro+BOM reports need an index before they need a UI
+
+**Symptom**
+
+V2.7 的 Allegro+BOM intake report 在公开样本上已经做到 `4010/4010 matched`，
+但完整报告超过 4000 行。它技术上完整，却不适合 reviewer 先扫一眼：如果每次都从
+flat component table 开始，用户只能滚表找重点，也看不出哪些 prefix、BOM item 或
+mismatch 类型值得优先看。
+
+**Root cause**
+
+商业设计验证器的界面先给 component list、状态摘要和可点击 detail，再展开单器件报告。
+Hardwise 还没有 Web UI，但 markdown 也需要相同的信息架构：先 index，再 detail。
+V2.8 的正确问题不是“马上生成 PASS/FAIL 验证结论”，而是让 netlist+BOM 的事实层能按
+reviewer 的读图路径浏览，给后续 datasheet match、pin profile 和单器件验证报告留出
+稳定入口。
+
+**Fix**
+
+`report-allegro-bom` 默认 full mode 保持可复现的完整 component table，同时新增
+`Component Prefix Summary`、`BOM Item Groups` 和短 source token
+（`bom:<file>#line<N>` / `design:<source>#<refdes>`）。CLI 新增 `--summary-only`
+输出状态、前缀统计、BOM item groups 和 mismatch；新增 `--mismatch-only` 只输出状态与
+BOM/design mismatch 章节。两种模式互斥，避免 ambiguous report shape。
+
+**Verification**
+
+Focused tests: `uv run pytest tests/report/test_allegro_bom_markdown.py tests/test_cli_allegro_bom_report.py -q`
+→ 9 passed；focused ruff clean。公开 Allegro+BOM 样本 smoke 三种输出都为
+`4010/4010 matched, 0 mismatches`：full report 4209 行，summary-only 194 行，
+mismatch-only 27 行。
+
+**Takeaway**
+
+报告可读性不是 UI 才需要解决的问题。先把 markdown 组织成 index-first 形状，后面做
+datasheet/document match、pin-level validation 和 Web UI 时才能复用同一套事实入口，
+而不是让模型绕过 registry/BOM 直接生成看似完整的验证结论。
+
+---
+
 ## 2026-05-26 · V2.7 · Allegro+BOM output must be component-centric intake, not net review
 
 **Symptom**

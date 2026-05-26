@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
-from hardwise.bom.types import Bom, BomMatchReport, BomRow, sort_refdes_key
+from hardwise.bom.types import Bom, BomItem, BomMatchReport, BomRow, sort_refdes_key
 from hardwise.ir.types import Component, Design
 from hardwise.report.markdown import _escape_pipe
 
@@ -16,6 +17,8 @@ def render(
     project_meta: dict[str, Any],
     *,
     net_limit: int = 8,
+    summary_only: bool = False,
+    mismatch_only: bool = False,
 ) -> str:
     """Return a markdown intake report grouped around components."""
 
@@ -55,9 +58,66 @@ def render(
     )
     lines.append("")
 
+    if mismatch_only:
+        lines.extend(_render_mismatches(bom, match_report))
+        return "\n".join(lines)
+
+    lines.extend(_render_prefix_summary(design, match_report))
+    lines.extend(_render_bom_item_groups(bom, match_report))
     lines.extend(_render_mismatches(bom, match_report))
+    if summary_only:
+        return "\n".join(lines)
+
     lines.extend(_render_component_summary(design, match_report, net_limit=net_limit))
     return "\n".join(lines)
+
+
+def _render_prefix_summary(design: Design, report: BomMatchReport) -> list[str]:
+    lines = ["## Component Prefix Summary", ""]
+    lines.append("| Prefix | Design | Matched | Design-only | Duplicate BOM | BOM-only |")
+    lines.append("|---|---:|---:|---:|---:|---:|")
+
+    prefixes = {_refdes_prefix(refdes) for refdes in design.components}
+    prefixes.update(_refdes_prefix(refdes) for refdes in report.bom_only_refdes)
+    matched = set(report.matched_refdes)
+    design_only = set(report.design_only_refdes)
+    duplicate = set(report.duplicate_bom_refdes)
+    bom_only = set(report.bom_only_refdes)
+
+    for prefix in sorted(prefixes):
+        design_refs = [refdes for refdes in design.components if _refdes_prefix(refdes) == prefix]
+        lines.append(
+            f"| {prefix} | {len(design_refs)} | "
+            f"{sum(refdes in matched for refdes in design_refs)} | "
+            f"{sum(refdes in design_only for refdes in design_refs)} | "
+            f"{sum(refdes in duplicate for refdes in design_refs)} | "
+            f"{sum(_refdes_prefix(refdes) == prefix for refdes in bom_only)} |"
+        )
+    lines.append("")
+    return lines
+
+
+def _render_bom_item_groups(bom: Bom, report: BomMatchReport) -> list[str]:
+    lines = ["## BOM Item Groups", ""]
+    lines.append(
+        "| Item | Qty | Refdes count | Status | Value | MPN | Manufacturer | Refdes sample | Source |"
+    )
+    lines.append("|---|---:|---:|---|---|---|---|---|---|")
+
+    quantity_mismatch_lines = {
+        (mismatch.item_number, mismatch.source_line) for mismatch in report.quantity_mismatches
+    }
+    for item in bom.items:
+        status = _bom_item_status(item, report, quantity_mismatch_lines)
+        lines.append(
+            f"| {item.item_number or '-'} | {item.quantity or '-'} | "
+            f"{len(item.refdes_list)} | {status} | {_escape_pipe(item.value or '-')} | "
+            f"{_escape_pipe(item.part_number or '-')} | {_escape_pipe(item.manufacturer or '-')} | "
+            f"{_escape_pipe(_refdes_sample(item.refdes_list, limit=12))} | "
+            f"{_bom_source(item.source_file, item.source_line)} |"
+        )
+    lines.append("")
+    return lines
 
 
 def _render_mismatches(bom: Bom, report: BomMatchReport) -> list[str]:
@@ -95,7 +155,7 @@ def _render_mismatches(bom: Bom, report: BomMatchReport) -> list[str]:
         lines.append("| Item | Declared quantity | Refdes count | Source |")
         lines.append("|---|---:|---:|---|")
         for mismatch in report.quantity_mismatches:
-            source = f"`{mismatch.source_file}#line{mismatch.source_line}`"
+            source = _bom_source(mismatch.source_file, mismatch.source_line)
             lines.append(
                 f"| {mismatch.item_number or '-'} | {mismatch.quantity} | "
                 f"{mismatch.refdes_count} | {source} |"
@@ -108,7 +168,7 @@ def _render_mismatches(bom: Bom, report: BomMatchReport) -> list[str]:
         lines.append("| Item | Quantity | Value | Source |")
         lines.append("|---|---:|---|---|")
         for item in bom.non_refdes_items:
-            source = f"`{item.source_file}#line{item.source_line}`"
+            source = _bom_source(item.source_file, item.source_line)
             lines.append(
                 f"| {item.item_number or '-'} | {item.quantity or '-'} | "
                 f"{_escape_pipe(item.value or '-')} | {source} |"
@@ -140,7 +200,7 @@ def _render_component_summary(
         package = component.package or "-"
         nets = _component_nets(component, limit=net_limit)
         bom_source = _row_source(row)
-        design_source = f"`design:{design.project_path}#{component.refdes}`"
+        design_source = f"`design:{design.project_path.name}#{component.refdes}`"
         lines.append(
             f"| {component.refdes} | {match} | {_escape_pipe(value)} | "
             f"{_escape_pipe(part_number)} | {_escape_pipe(manufacturer)} | "
@@ -174,6 +234,39 @@ def _component_nets(component: Component, *, limit: int) -> str:
     return ", ".join(shown) + suffix
 
 
+def _bom_item_status(
+    item: BomItem,
+    report: BomMatchReport,
+    quantity_mismatch_lines: set[tuple[str | None, int]],
+) -> str:
+    if not item.refdes_list:
+        return "non-refdes"
+    refs = set(item.refdes_list)
+    if (item.item_number, item.source_line) in quantity_mismatch_lines:
+        return "quantity-mismatch"
+    if refs & set(report.duplicate_bom_refdes):
+        return "duplicate-bom"
+    if refs & set(report.bom_only_refdes):
+        return "bom-only"
+    if refs <= set(report.matched_refdes):
+        return "matched"
+    return "partial"
+
+
+def _refdes_prefix(refdes: str) -> str:
+    match = re.match(r"[A-Z_]+", refdes.upper())
+    return match.group(0) if match else refdes.upper()
+
+
+def _refdes_sample(refdes_list: list[str], *, limit: int) -> str:
+    if not refdes_list:
+        return "-"
+    sorted_refdes = sorted(refdes_list, key=sort_refdes_key)
+    shown = sorted_refdes[:limit]
+    suffix = "" if len(sorted_refdes) <= limit else f", +{len(sorted_refdes) - limit} more"
+    return ", ".join(shown) + suffix
+
+
 def _row_value(row: BomRow | None) -> str:
     if row is None:
         return "-"
@@ -183,4 +276,9 @@ def _row_value(row: BomRow | None) -> str:
 def _row_source(row: BomRow | None) -> str:
     if row is None:
         return "-"
-    return f"`{row.source_file}#line{row.source_line}`"
+    return _bom_source(row.source_file, row.source_line)
+
+
+def _bom_source(source_file: Any, source_line: int) -> str:
+    name = getattr(source_file, "name", str(source_file))
+    return f"`bom:{name}#line{source_line}`"
