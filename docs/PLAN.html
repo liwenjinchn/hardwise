@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardwise 路线图阅读版</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #22241f; --muted: #62645b; --line: rgba(71,61,44,.2);
+      --paper: #fcf5e5; --desk: #d1c5b2; --green: #163d34; --red: #a14033;
+      --gold: #a8752d; --blue: #2d4b63; --wash: rgba(255,255,255,.44);
+      --shadow: 0 32px 72px rgba(45,37,24,.22);
+      --serif: "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif;
+      --sans: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --mono: "SFMono-Regular", "Cascadia Code", Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; color: var(--ink); font-family: var(--sans); line-height: 1.68;
+      background:
+        radial-gradient(circle at 17% 8%, rgba(161,64,51,.1), transparent 22rem),
+        repeating-linear-gradient(90deg, rgba(66,53,32,.025) 0 1px, transparent 1px 10px),
+        linear-gradient(135deg, #e8dfce 0%, var(--desk) 55%, #c7b9a4 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    code {
+      padding: .08rem .32rem; border: 1px solid rgba(45,75,99,.16);
+      background: rgba(45,75,99,.08); color: #263e55; font-family: var(--mono); font-size: .92em;
+    }
+    .wrap { display: grid; grid-template-columns: 290px minmax(0,920px); gap: 28px; width: min(1280px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 46px; }
+    aside {
+      position: sticky; top: 24px; align-self: start; padding: 24px 22px; background: #f4ead3;
+      border: 1px solid rgba(80,65,38,.24); box-shadow: 0 22px 42px rgba(58,44,24,.16); transform: rotate(.3deg);
+    }
+    aside::before { content: ""; position: absolute; inset: 9px; border: 1px dashed rgba(80,65,38,.22); pointer-events: none; }
+    .kicker { margin: 0 0 14px; color: var(--red); font: 800 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+    aside h1 { margin: 0 0 10px; font: 33px/1.1 var(--serif); letter-spacing: 0; }
+    aside p { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+    nav { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+    nav a { display: grid; grid-template-columns: 34px 1fr; gap: 9px; min-height: 32px; color: var(--green); font-size: 14px; }
+    nav span:first-child { color: #9b907c; font: 12px var(--mono); }
+    button { width: 100%; min-height: 42px; margin-top: 20px; border: 1px solid rgba(22,61,52,.35); background: var(--green); color: #fff9ed; font: 800 14px var(--sans); cursor: pointer; box-shadow: 0 8px 0 rgba(22,61,52,.14); }
+    .paper {
+      position: relative; overflow: hidden; padding: 58px clamp(28px, 5vw, 76px) 68px;
+      border: 1px solid #eadab9; box-shadow: var(--shadow);
+      background:
+        linear-gradient(90deg, rgba(161,64,51,.16) 0 1px, transparent 1px 100%),
+        repeating-linear-gradient(0deg, transparent 0 31px, rgba(45,75,99,.08) 31px 32px),
+        var(--paper);
+    }
+    .paper::after { content: ""; position: absolute; top: 0; bottom: 0; left: 38px; border-left: 1px solid rgba(161,64,51,.24); }
+    main { position: relative; z-index: 1; }
+    .labels { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+    .label { padding: 5px 10px; background: var(--wash); border: 1px solid var(--line); color: var(--muted); font: 800 12px var(--mono); }
+    .headline { max-width: 780px; margin: 0 0 16px; font: clamp(40px,6vw,78px)/1.02 var(--serif); letter-spacing: 0; }
+    .lede { max-width: 780px; margin: 0 0 28px; font: clamp(20px,2.5vw,27px)/1.6 var(--serif); color: #37362f; }
+    .stamp { display: inline-block; padding: 9px 14px; color: var(--red); border: 3px double rgba(161,64,51,.72); background: rgba(255,255,255,.25); font: 800 17px var(--serif); transform: rotate(-2deg); }
+    section { display: grid; grid-template-columns: 118px 1fr; gap: 24px; padding: 34px 0; border-top: 1px solid rgba(72,60,40,.16); }
+    .num { padding-top: 9px; color: var(--red); font: 900 18px var(--mono); }
+    h2 { margin: 0 0 16px; font: clamp(26px,3vw,38px)/1.16 var(--serif); letter-spacing: 0; }
+    h3 { margin: 0 0 10px; color: var(--green); font: 900 18px var(--sans); }
+    p { margin: 0 0 15px; }
+    blockquote { margin: 18px 0; padding: 18px 20px; background: rgba(224,234,224,.74); border-left: 5px solid var(--green); font: 22px/1.55 var(--serif); color: #1d342d; }
+    pre { overflow-x: auto; margin: 14px 0; padding: 16px; background: #223028; color: #fbf2e4; border: 1px solid rgba(0,0,0,.2); }
+    pre code { background: none; border: 0; color: inherit; padding: 0; }
+    .checks { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin: 18px 0 22px; }
+    .check { min-height: 112px; padding: 14px 12px; background: var(--wash); border: 1px solid var(--line); }
+    .check b { display: block; color: var(--green); font: 900 17px var(--serif); margin-bottom: 6px; }
+    .timeline { display: grid; gap: 10px; }
+    .slice { display: grid; grid-template-columns: 82px 1fr 170px; gap: 12px; padding: 12px; background: var(--wash); border: 1px solid var(--line); }
+    .slice strong { color: var(--red); font-family: var(--mono); }
+    .gate { display: grid; grid-template-columns: 86px 1fr; gap: 12px; padding: 14px; background: rgba(255,255,255,.38); border: 1px solid var(--line); }
+    .gate b { color: var(--green); }
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+    details { background: var(--wash); border: 1px solid var(--line); padding: 14px 16px; }
+    summary { cursor: pointer; color: var(--green); font: 900 17px var(--sans); }
+    details p { margin-top: 12px; }
+    .rule { padding: 18px; background: rgba(161,64,51,.08); border: 1px solid rgba(161,64,51,.2); }
+    .audit { display: grid; gap: 8px; }
+    .audit div { padding: 11px 12px; border-left: 4px solid var(--gold); background: rgba(255,255,255,.35); }
+    ul, ol { margin: 0 0 15px; padding-left: 1.2rem; }
+    li { margin: 7px 0; }
+    .close { padding: 22px; margin-top: 18px; color: #fff7e8; background: var(--green); font: 25px/1.5 var(--serif); }
+    @media (max-width: 940px) {
+      .wrap { grid-template-columns: 1fr; width: min(100% - 20px, 920px); padding-top: 12px; }
+      aside { position: relative; top: auto; transform: none; }
+      nav, .checks, .cards { grid-template-columns: 1fr; }
+      section { grid-template-columns: 1fr; gap: 8px; }
+      .slice { grid-template-columns: 1fr; }
+      .paper { padding: 42px 24px 50px; }
+      .paper::after { left: 26px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .wrap { display: block; width: 100%; padding: 0; }
+      aside, button { display: none; }
+      .paper { box-shadow: none; border: 0; padding: 16mm; }
+      section, details, .slice, .gate { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside>
+      <p class="kicker">Route sheet</p>
+      <h1>PLAN 阅读版</h1>
+      <p>这不是新的计划源文件，只是把 `PLAN.md` 压成投递前可扫读的路线图。</p>
+      <nav>
+        <a href="#boundary"><span>01</span><span>Submission boundary</span></a>
+        <a href="#goal"><span>02</span><span>Sprint goal</span></a>
+        <a href="#slices"><span>03</span><span>Slice route</span></a>
+        <a href="#gates"><span>04</span><span>Application gates</span></a>
+        <a href="#decisions"><span>05</span><span>Decision records</span></a>
+        <a href="#audit"><span>06</span><span>Discharged trail</span></a>
+      </nav>
+      <button type="button" onclick="window.print()">打印 / 保存 PDF</button>
+    </aside>
+    <article class="paper">
+      <main>
+        <div class="labels"><span class="label">LIVING PLAN</span><span class="label">SUBMISSION CLOSEOUT</span><span class="label">POST-MVP LOCKED</span></div>
+        <h1 class="headline">路线图现在服务于收束，而不是扩张</h1>
+        <p class="lede">Hardwise 的计划已经从“继续补功能”切到“守住可投递 MVP”。这份阅读版把边界、证据、历史决策和停工线放在一张活页里。</p>
+        <div class="stamp">R001-R003 是提交范围</div>
+
+        <section id="boundary"><div class="num">01</div><div>
+          <h2>Submission Boundary</h2>
+          <blockquote>A public KiCad schematic can be parsed into a trusted registry; deterministic checks can produce evidence-gated findings; and the agent can answer schematic questions only through structured tools.</blockquote>
+          <div class="checks">
+            <div class="check"><b>Review report</b><span><code>R001,R002,R003</code> 产出 registry-verified refdes 和 evidence tokens。</span></div>
+            <div class="check"><b>Tool-use loop</b><span><code>ask</code> 演示 unknown-refdes，例如 <code>U999 -> not_found</code>。</span></div>
+            <div class="check"><b>Quality gate</b><span><code>pytest</code> 与 <code>ruff</code> 通过。</span></div>
+            <div class="check"><b>Honest materials</b><span>README、面试答案、简历不包装过度能力。</span></div>
+          </div>
+          <div class="rule">R004/R005、schematic-side net parser、GitHub Action、gold-label eval、Cadence/Allegro adapter、PR-comment workflow 全部是 post-MVP。</div>
+        </div></section>
+
+        <section id="goal"><div class="num">02</div><div>
+          <h2>Sprint Goal</h2>
+          <ol>
+            <li>读取公开 KiCad project 和 active schematic-review rules。</li>
+            <li>运行 deterministic checks 和 Anthropic-format tool-use loop，board objects 只来自 structured tools。</li>
+            <li>产出 markdown/HTML review report，每个 refdes registry-verified，每个 finding 有 source token。</li>
+            <li>把 candidate review rules 写入 <code>memory/rules.md</code>，并保留 human gate。</li>
+          </ol>
+        </div></section>
+
+        <section id="slices"><div class="num">03</div><div>
+          <h2>Slice Route</h2>
+          <div class="timeline">
+            <div class="slice"><strong>0</strong><span>Frame + 容器：review node、checklist、JD alignment、规则文档。</span><small>done</small></div>
+            <div class="slice"><strong>1</strong><span>First loop：R001、Finding schema、Refdes Guard、Evidence Ledger。</span><small>done</small></div>
+            <div class="slice"><strong>2</strong><span>R002 + Sleep Consolidator：电容额定耐压字段完整性和 candidate rules。</span><small>done</small></div>
+            <div class="slice"><strong>3</strong><span>R003 + 双库：NC pin、SQLite/Chroma、datasheet ingest、router。</span><small>done</small></div>
+            <div class="slice"><strong>4</strong><span>Agent loop：4 tools、unknown-refdes path、prompt cache read hit。</span><small>done</small></div>
+            <div class="slice"><strong>5</strong><span>Submission closeout：README、demo pages、interview、resume。</span><small>current</small></div>
+            <div class="slice"><strong>Post</strong><span>Schematic net parser + R004/R005，等 `.kicad_sch` topology parser 存在后再做。</span><small>later</small></div>
+          </div>
+        </div></section>
+
+        <section id="gates"><div class="num">04</div><div>
+          <h2>Application Gates</h2>
+          <div class="gate"><b>A</b><span>Runnable proof：Slice 0 + Slice 1，证明一个规则可以端到端运行。</span></div>
+          <div class="gate"><b>B</b><span>Submission MVP：EDA registry、双库、tool-use report、JD alignment、interview answers 都有具体证据。这里就是投递时机。</span></div>
+          <div class="gate"><b>C</b><span>Stronger follow-up：工具 loop、prompt caching、report polish、demo pages，用于等面试期间继续增强。</span></div>
+          <p>重要变化：不要等待 post-MVP net-aware work 才开始申请。R001/R002/R003 + guarded tool-use loop 已经够构成 submission boundary。</p>
+        </div></section>
+
+        <section id="decisions"><div class="num">05</div><div>
+          <h2>Decision Records</h2>
+          <div class="cards">
+            <details open><summary>DR-001 Direct mode</summary><p>用 <code>messages.create</code> + Python tool loop，不上 Managed Agents。MVP review sessions 是 stateless。</p></details>
+            <details><summary>DR-002 KiCad-only adapter</summary><p>Mac 本地无法跑 Cadence，公开样例以 KiCad 为主。Cadence/Allegro 是后续新 adapter。</p></details>
+            <details><summary>DR-003 SQLite + Chroma</summary><p>零运维、本地可复现。SQLite/Chroma 证明关系库 + 向量库的架构模式。</p></details>
+            <details><summary>DR-004 Plan mode workflow</summary><p>多文件或陌生实现先 plan，再执行，避免 scaffold 早期 Typer bug 那类粗心问题。</p></details>
+            <details><summary>DR-005 MiMo via Anthropic format</summary><p>模型槽位来自环境变量，代码不写死具体模型名。</p></details>
+            <details><summary>DR-006 Vertical slice</summary><p>每个 slice 都要有端到端可运行物，避免水平铺底到第 8 天还没东西可演示。</p></details>
+            <details><summary>DR-007 Review node anchor</summary><p>只锚定 pre-layout 原理图评审节点，PCB/仿真/PLM 等跨节点能力延后。</p></details>
+            <details><summary>DR-008 Finding schema</summary><p>Slice 1 就立统一 <code>Finding</code>，R001 必须读 schematic-only raw records。</p></details>
+            <details><summary>DR-009 Evidence chain + decision</summary><p><code>decision</code> 是规则判断，<code>status</code> 是人工流程状态；两者严格分离。</p></details>
+          </div>
+        </div></section>
+
+        <section id="audit"><div class="num">06</div><div>
+          <h2>Discharged Trail</h2>
+          <div class="audit">
+            <div>2026-05-08：Day 1 scaffold + project rules + memory。</div>
+            <div>2026-05-09：KiCad adapter，pic_programmer registry = 121 components。</div>
+            <div>2026-05-10：Slice 1 closed，R001 + guards + markdown report。</div>
+            <div>2026-05-11：Slice 2 closed，R002 + Sleep Consolidator。</div>
+            <div>2026-05-12：Slice 3 closed，R003 + SQLite/Chroma + datasheet ingest + router。</div>
+            <div>2026-05-13：Slice 4 closed，tool-use loop + prompt caching live on MiMo。</div>
+            <div>2026-05-16：Prompt cache cold-start follow-up，MiMo read hit confirmed, creation accounting not exposed。</div>
+          </div>
+          <div class="close">PLAN 的作用已经变了：它现在是守住 submission boundary 的路线图，不是继续扩大项目边界的理由。</div>
+        </div></section>
+      </main>
+    </article>
+  </div>
+</body>
+</html>

@@ -3,6 +3,8 @@
 > Living plan for the 2-week MVP. Updated when scope shifts, not every session.
 > Plans landed in this file are **decision records** — committed to git so the "why we built it this way" survives alongside the code.
 >
+> HTML 阅读版：`docs/PLAN.html`
+>
 > See also:
 > - `CLAUDE.md` — project rules (timeless)
 > - `docs/architecture.md` — module-level design

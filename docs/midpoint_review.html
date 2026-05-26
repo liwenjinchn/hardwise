@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardwise 收束评审</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #24231f; --muted: #666256; --line: rgba(72, 60, 40, .2);
+      --paper: #fbf4e4; --desk: #d6cbb9; --green: #173c33; --red: #9f3f32;
+      --amber: #b8782f; --blue: #2d4964; --wash: rgba(255,255,255,.42);
+      --shadow: 0 32px 72px rgba(45, 37, 24, .22);
+      --serif: "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif;
+      --sans: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --mono: "SFMono-Regular", "Cascadia Code", Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; color: var(--ink); font-family: var(--sans); line-height: 1.7;
+      background:
+        repeating-linear-gradient(90deg, rgba(60,48,29,.028) 0 1px, transparent 1px 10px),
+        linear-gradient(135deg, #e7dfcf 0%, var(--desk) 55%, #c7baa4 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    code {
+      padding: .08rem .32rem; border: 1px solid rgba(45,73,100,.16);
+      background: rgba(45,73,100,.08); color: #263c54; font-family: var(--mono);
+    }
+    .wrap {
+      display: grid; grid-template-columns: 282px minmax(0, 900px); gap: 28px;
+      width: min(1260px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 46px;
+    }
+    aside {
+      position: sticky; top: 24px; align-self: start; padding: 24px 22px;
+      background: #f4ead2; border: 1px solid rgba(80,65,38,.24);
+      box-shadow: 0 22px 42px rgba(58,44,24,.16); transform: rotate(-.35deg);
+    }
+    aside::before { content: ""; position: absolute; inset: 9px; border: 1px dashed rgba(80,65,38,.22); pointer-events: none; }
+    .kicker { margin: 0 0 14px; color: var(--red); font: 800 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+    aside h1 { margin: 0 0 10px; font: 34px/1.1 var(--serif); letter-spacing: 0; }
+    aside p { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+    nav { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+    nav a { display: grid; grid-template-columns: 32px 1fr; gap: 9px; min-height: 32px; color: var(--green); font-size: 14px; }
+    nav span:first-child { color: #9c927e; font: 12px var(--mono); }
+    button {
+      width: 100%; margin-top: 20px; min-height: 42px; border: 1px solid rgba(23,60,51,.35);
+      background: var(--green); color: #fff9ec; font: 800 14px var(--sans); cursor: pointer;
+      box-shadow: 0 8px 0 rgba(23,60,51,.14);
+    }
+    .paper {
+      position: relative; overflow: hidden; padding: 58px clamp(28px, 5vw, 76px) 68px;
+      border: 1px solid #eadab9; box-shadow: var(--shadow);
+      background:
+        linear-gradient(90deg, rgba(159,63,50,.16) 0 1px, transparent 1px 100%),
+        repeating-linear-gradient(0deg, transparent 0 31px, rgba(45,73,100,.08) 31px 32px),
+        var(--paper);
+    }
+    .paper::after { content: ""; position: absolute; top: 0; bottom: 0; left: 38px; border-left: 1px solid rgba(159,63,50,.24); }
+    main { position: relative; z-index: 1; }
+    .labelrow { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+    .label { padding: 5px 10px; background: var(--wash); border: 1px solid var(--line); color: var(--muted); font: 800 12px var(--mono); }
+    .headline { margin: 0 0 16px; max-width: 760px; font: clamp(40px,6vw,76px)/1.02 var(--serif); letter-spacing: 0; }
+    .lede { max-width: 760px; margin: 0 0 26px; font: clamp(20px,2.5vw,27px)/1.6 var(--serif); color: #37362f; }
+    .stamp {
+      display: inline-block; padding: 9px 14px; color: var(--red); border: 3px double rgba(159,63,50,.72);
+      background: rgba(255,255,255,.25); font: 800 17px var(--serif); transform: rotate(-2deg);
+    }
+    section { display: grid; grid-template-columns: 118px 1fr; gap: 24px; padding: 34px 0; border-top: 1px solid rgba(72,60,40,.16); }
+    .num { padding-top: 9px; color: var(--red); font: 900 18px var(--mono); }
+    h2 { margin: 0 0 16px; font: clamp(26px,3vw,38px)/1.16 var(--serif); letter-spacing: 0; }
+    h3 { margin: 20px 0 8px; color: var(--green); font: 900 18px var(--sans); }
+    p { margin: 0 0 15px; }
+    blockquote {
+      margin: 18px 0; padding: 18px 20px; background: rgba(224,234,224,.74);
+      border-left: 5px solid var(--green); font: 22px/1.55 var(--serif); color: #1d342d;
+    }
+    pre { overflow-x: auto; margin: 14px 0; padding: 16px; background: #223028; color: #fbf2e4; border: 1px solid rgba(0,0,0,.2); }
+    pre code { background: none; border: 0; color: inherit; padding: 0; }
+    .facts { display: grid; grid-template-columns: repeat(5, minmax(96px, 1fr)); gap: 10px; margin: 18px 0 22px; }
+    .fact { padding: 14px 12px; min-height: 92px; background: var(--wash); border: 1px solid var(--line); }
+    .fact strong { display: block; color: var(--green); font: 900 27px var(--serif); }
+    .fact span { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+    .card { padding: 18px; background: var(--wash); border: 1px solid var(--line); }
+    .card h3 { margin-top: 0; }
+    .line { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+    .line b { color: var(--red); }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; background: rgba(255,255,255,.35); }
+    th, td { padding: 11px 10px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--green); font-size: 13px; background: rgba(23,60,51,.08); }
+    ul, ol { margin: 0 0 15px; padding-left: 1.2rem; }
+    li { margin: 7px 0; }
+    .warning { border-left: 5px solid var(--red); background: rgba(159,63,50,.08); }
+    .close { padding: 22px; margin-top: 18px; color: #fff7e8; background: var(--green); font: 25px/1.5 var(--serif); }
+    @media (max-width: 940px) {
+      .wrap { grid-template-columns: 1fr; width: min(100% - 20px, 900px); padding-top: 12px; }
+      aside { position: relative; top: auto; transform: none; }
+      nav { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      section { grid-template-columns: 1fr; gap: 8px; }
+      .facts, .grid { grid-template-columns: 1fr; }
+      .paper { padding: 42px 24px 50px; }
+      .paper::after { left: 26px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .wrap { display: block; width: 100%; padding: 0; }
+      aside, button { display: none; }
+      .paper { box-shadow: none; border: 0; padding: 16mm; }
+      section, .card, table { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside>
+      <p class="kicker">Closeout memo</p>
+      <h1>收束评审</h1>
+      <p>把 Hardwise 从功能扩张切回投递型 MVP。读完只回答：证明了什么、该停什么、下一步怎么收。</p>
+      <nav>
+        <a href="#verdict"><span>00</span><span>结论</span></a>
+        <a href="#facts"><span>01</span><span>可复现事实</span></a>
+        <a href="#mainline"><span>02</span><span>主线资产</span></a>
+        <a href="#sidecars"><span>03</span><span>支线资产</span></a>
+        <a href="#boundaries"><span>04</span><span>诚实边界</span></a>
+        <a href="#stop"><span>05</span><span>停工线</span></a>
+        <a href="#next"><span>06</span><span>最小收尾</span></a>
+      </nav>
+      <button type="button" onclick="window.print()">打印 / 保存 PDF</button>
+    </aside>
+    <article class="paper">
+      <main>
+        <div class="labelrow"><span class="label">SUBMISSION CLOSEOUT</span><span class="label">NO NEW RULES</span><span class="label">PAPER REVIEW</span></div>
+        <h1 class="headline">Hardwise 不是没做完，是该收束了</h1>
+        <p class="lede">当前项目已经有可演示闭环，问题不在能力或代码量，而在叙事被支线工程稀释。现在要用边界感、证据链和反幻觉约束证明项目价值。</p>
+        <div class="stamp">主线优先</div>
+
+        <section id="verdict"><div class="num">00</div><div>
+          <h2>结论</h2>
+          <p>Hardwise 当前不是“没做完”，而是已经有可演示闭环，但叙事被支线工程稀释。</p>
+          <blockquote>Hardwise 不是证明“大模型能自动评审硬件”，而是证明“硬件评审 Agent 必须被 EDA registry 和 evidence token 约束；模型只能解释工具查到的对象，不能自由发明工程事实。”</blockquote>
+          <p>接下来不再用功能数量证明项目价值。用边界感、证据链、反幻觉约束证明项目价值。</p>
+        </div></section>
+
+        <section id="facts"><div class="num">01</div><div>
+          <h2>当前可复现事实</h2>
+          <pre><code>uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003</code></pre>
+          <div class="facts"><div class="fact"><strong>28</strong><span>findings</span></div><div class="fact"><strong>121</strong><span>components reviewed</span></div><div class="fact"><strong>77</strong><span>NC pins</span></div><div class="fact"><strong>0</strong><span>unverified refdes</span></div><div class="fact"><strong>0</strong><span>evidence dropped</span></div></div>
+          <h3>质量门</h3>
+          <pre><code>uv run pytest -q    # 163 passed, 7 deselected
+uv run ruff check . # All checks passed!</code></pre>
+          <h3>Public smoke</h3>
+          <p><code>hardwise eval</code> 当前覆盖 5 public repos、16 KiCad project directories、1707 parsed components、437 deterministic findings。它不是准确率，而是 parser / guardrail / finding distribution 的回归证据。</p>
+        </div></section>
+
+        <section id="mainline"><div class="num">02</div><div>
+          <h2>主线资产</h2>
+          <div class="grid">
+            <div class="card"><h3>Refdes Guard</h3><p>工具层让 <code>get_component("U999")</code> 返回 structured miss；输出层把未验证 refdes-shaped token 包成 <code>⟨?U999⟩</code>。</p></div>
+            <div class="card"><h3>Evidence Ledger</h3><p>规则很硬：<strong>No token, no claim.</strong> 没有 <code>sch:&lt;file&gt;#&lt;refdes&gt;</code> 这类证据 token 的 finding 在报告前被丢弃。</p></div>
+            <div class="card"><h3>Tool-use Agent</h3><p>模型不能直接声明工程事实，必须通过 <code>list_components</code>、<code>get_component</code>、<code>get_nc_pins</code>、<code>search_datasheet</code> 查询。</p></div>
+            <div class="card"><h3>3 条 active rules</h3><p>R001/R002/R003 已能展示 EDA 字段检查、硬件字段规范、pin 级结构解析和 reviewer attention allocation。</p></div>
+          </div>
+        </div></section>
+
+        <section id="sidecars"><div class="num">03</div><div>
+          <h2>支线资产怎么讲</h2>
+          <table><thead><tr><th>支线</th><th>应该怎么讲</th><th>不该怎么讲</th></tr></thead><tbody>
+            <tr><td>Eval Pack</td><td>public regression smoke / guardrail regression</td><td>准确率 benchmark</td></tr>
+            <tr><td>Prompt Caching</td><td><code>cache_control</code> 已接入，MiMo 有 read hit</td><td>creation accounting 已完整验证</td></tr>
+            <tr><td>Tiered Routing</td><td>三槽结构已落地，模型名不写死</td><td>已经有真实成本分层收益</td></tr>
+            <tr><td>Sleep Consolidator</td><td>human-gated candidate rule memory</td><td>自动进化系统</td></tr>
+            <tr><td>PostgreSQL / HTML / trace</td><td>工程完整度和可展示性</td><td>核心创新</td></tr>
+          </tbody></table>
+        </div></section>
+
+        <section id="boundaries"><div class="num">04</div><div>
+          <h2>诚实边界</h2>
+          <div class="card warning"><h3>没有专家 gold-label accuracy</h3><p>不能说 “Hardwise 准确率 xx%”。应该说：Hardwise 在 public corpus 上完成 regression smoke，并跟踪 parser failure、unverified refdes、evidence dropped、finding distribution。</p></div>
+          <div class="line"><b>R003</b><span>数据不漂亮但结构正确。没有 datasheet 证据时输出 <code>reviewer_to_confirm</code>，比编一个 <code>likely_ok</code> 更可信。</span></div>
+          <div class="line"><b>R004/R005</b><span>依赖 schematic-side net parser。当前 PCB-side net parser 是 post-Layout diagnostic，不能作为 pre-Layout 证据。</span></div>
+          <div class="line"><b>Cadence</b><span>当前 MVP 只做 KiCad。Cadence 是授权环境里的新 adapter，不是现在的 submission gate。</span></div>
+        </div></section>
+
+        <section id="stop"><div class="num">05</div><div>
+          <h2>停工线</h2>
+          <div class="grid">
+            <div class="card"><h3>停止扩规则数量</h3><p>暂停 R004/R005/R006/R007。规则数量不是短板，主线是 anti-hallucination + evidence discipline。</p></div>
+            <div class="card"><h3>停止扩大 eval</h3><p>没有人工 gold label，再大的 corpus 也只是 smoke，不要包装 accuracy benchmark。</p></div>
+            <div class="card"><h3>停止产品化入口</h3><p>GitHub Action、PR bot、Web UI、WebSocket、boardview canvas 都是产品入口，不是 MVP 证明点。</p></div>
+            <div class="card"><h3>停止跨节点扩张</h3><p>PCB review、仿真、测试回灌、BOM/PLM、FMEA 都会稀释 pre-layout schematic review 锚点。</p></div>
+          </div>
+        </div></section>
+
+        <section id="next"><div class="num">06</div><div>
+          <h2>下一步最小收尾</h2>
+          <ol><li>重写面试叙事：受约束的 schematic-review Agent，而不是“大硬件 AI 平台”。</li><li>清理 README / PLAN 的扩张语气：R001-R003 是 active scope，R004/R005 是 post-MVP。</li><li>准备 demo script：<code>review</code>、<code>ask U999</code>、eval summary 三段即可。</li><li>只做稳定性收尾：文档、报告显示、测试失败、demo artifact、投递材料。</li></ol>
+          <div class="close">硬件 AI Agent 的价值不在模型说得多像专家，而在它什么时候被允许说、说的对象从哪里来、证据能不能追溯。</div>
+        </div></section>
+      </main>
+    </article>
+  </div>
+</body>
+</html>

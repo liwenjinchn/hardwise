@@ -4,6 +4,8 @@
 >
 > 这张表用于自检：JD 每一项要求，Hardwise 是否有具体文件 / 模块 / 文档兑现。
 >
+> HTML 阅读版：`docs/jd_alignment.html`
+>
 > 状态标记：
 > - ✅ 已落地 — 给出文件路径
 > - ⏳ slice N — 已规划，对应 slice 落地
