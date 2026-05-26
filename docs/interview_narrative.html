@@ -213,7 +213,7 @@
           <p>所以我把 MVP 收窄到一个工作流节点：公开 KiCad 工程上的 pre-layout schematic review。我有意不做 PCB review、仿真、PLM、GitHub PR comment，也不使用任何公司内部硬件数据。在这个窄节点里，我实现了一个最小闭环：</p>
           <ol><li>解析 KiCad schematic，生成真实 refdes 和 pin 事实的 registry。</li><li>跑确定性规则，统一输出 <code>Finding</code> schema。</li><li>报告出口经过 Refdes Guard 和 Evidence Ledger。</li><li>Agent 问答只能通过 <code>get_component</code>、<code>get_nc_pins</code>、<code>search_datasheet</code> 这类结构化工具。</li></ol>
           <p>比如模型不能自己判断 <code>U999</code> 是否存在。它必须调用 <code>get_component</code>，工具查 registry 后返回 <code>found=false</code> 和可能的 closest matches。模型可以解释“没找到这个位号”，但不能编一个合法器件记录出来。</p>
-          <div class="callout">Eval Pack 只讲 regression / guardrail：5 个公开仓库、16 个 KiCad project、1707 个 parsed components；不包装成专家准确率 benchmark。</div>
+          <div class="callout">Eval Pack 只讲 regression / guardrail：5 个公开仓库、6 个有 components 的 KiCad project、1707 个 parsed components，另有 10 个空 KiCad directory 被标成 skipped；不包装成专家准确率 benchmark。</div>
         </div></section>
 
         <section id="demo"><div class="num">04</div><div>

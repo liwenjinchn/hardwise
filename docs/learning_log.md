@@ -8,6 +8,78 @@
 
 ---
 
+## 2026-05-26 · V2.4 · Datasheet profile must follow PDF evidence, not old plan text
+
+**Symptom**
+
+V2.4 spec 草稿写着 L78 `abs_max.vin` evidence 指向 `l78.pdf#p2`，但实际用 `pdfplumber` 抽 `data/datasheets/l78.pdf` 时，page 2 是 block diagram，真正的 "Absolute maximum ratings" 表在 PDF 第 4 页。
+
+**Root cause**
+
+计划里的页码是早期草稿，不是可验证 source token。Hardwise 的证据规则要求 finding 指向真实来源；如果为了满足计划文本把 profile 写成 `#p2`，DS001 会看起来“验收通过”，但 provenance 是错的。
+
+**Fix**
+
+`DatasheetProfile` 落成 Pydantic JSON model，`data/datasheet_profiles/l78.json` 使用真实 token：`datasheet:l78.pdf#p4`。`ingest-datasheet --extract-profile` 走 deterministic L78 extractor，不依赖 live LLM；`DS001` 只在请求该 rule 时运行，U3 因缺少 schematic-side Vin net 电压输出 `reviewer_to_confirm`，不猜应用电压。
+
+**Verification**
+
+`uv run pytest -q`：215 passed, 7 deselected。`uv run ruff check .` clean。`hardwise review ... --rules R001,R002,R003` 仍是 28 findings；`--rules R001,R002,R003,DS001 --report-style component` 是 29 findings，其中新增 U3 / DS001 / `datasheet:l78.pdf#p4`。`ingest-datasheet data/datasheets/l78.pdf --extract-profile` 写出 profile JSON。
+
+**Takeaway**
+
+Datasheet-driven checks 的核心不是“把 PDF 摘成 JSON”，而是 JSON 里的每个数字都能回到真实页码。计划文本可以错，source token 不能跟着错。
+
+---
+
+## 2026-05-26 · V2.3 · Component report should expose structure without changing truth
+
+**Symptom**
+
+V2.2 已经把内部调度改成 `Design.components -> CheckSpec`，但 classic report 仍然是 flat finding table。面试演示时看不到“先按元件归拢，再看每个元件的证据和 pin finding”的 V2 价值；如果直接替换默认报告，又会让已有 e2e / demo 文档承担不必要的行为变更。
+
+**Root cause**
+
+报告格式是产品界面，不只是代码输出。classic report 对齐《SCH_review_feedback_list 汇总表》，适合回归和交付；component-centric report 对齐工程师读图习惯，适合审阅和面试展示。两者应该共享同一组 `Finding` 和 evidence token，而不是分裂出两套 truth。
+
+**Fix**
+
+新增 markdown-only `--report-style component` 和 `src/hardwise/report/component_markdown.py`。classic report 保持默认；component report 读取同一个 `Design`，先输出 121 个 component summary，再只展开有 finding 的 component。`CheckSpec` runner 给 `Component.decision` 写 `pass|warn|fail` rollup，报告不重新发明判定。
+
+**Verification**
+
+`uv run pytest -q`：203 passed, 7 deselected。`uv run ruff check .` clean。classic CLI 仍输出 28 findings / 121 components reviewed；component CLI 用独立 db path 复跑，同样输出 28 findings / 121 components reviewed，并在 report 中出现 `Component Summary`、`### U4 - LT1373` 和 U4 pin 3 的 R003 row。
+
+**Takeaway**
+
+一次架构迁移最好先让新视角“可选可见”，再决定是否改默认体验。这样既能展示 component-centric 的产品价值，也不会把格式变更误判成规则行为变更。
+
+---
+
+## 2026-05-26 · V2.2 · Per-component dispatch needs a provenance bridge
+
+**Symptom**
+
+V2.1 的 `Design` 已经把对象图切成 `Component -> Pin`，但 R001/R002/R003 的真实证据 token 仍然依赖 `ComponentRecord.source_file` / `NcPinRecord.source_file`。如果 V2.2 直接让规则只吃 `Component`，报告可以跑，但 `sch:...#refdes` 这类 provenance 会被削弱。
+
+**Root cause**
+
+IR 层先解决“按元件分发”的对象边界，parse-level registry 仍然保存“证据来自哪个文件”的边界。两者不是重复数据：`Design` 是 review 工作台，`BoardRegistry` 是 EDA 台账和 source token 来源。V2.4 之前强行把所有 provenance 塞进 `Pin` / `Component`，会扩大 IR scope。
+
+**Fix**
+
+新增 `CheckContext(registry, collection)` 作为桥：V2.2 runner 访问 `Design.components` 并调用 `CheckSpec(Component, Design, CheckContext)`，规则内部通过 context 回查 raw schematic record / NC pin record 来生成原有 evidence token。`Finding.pin_number` 作为向后兼容可选字段落地，R003 pin-scoped finding 会同时挂到 `Component.findings` 和匹配的 `Pin.findings`。
+
+**Verification**
+
+`uv run pytest -q`：198 passed, 7 deselected。`uv run ruff check .` clean。`uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003` 仍输出 28 findings / 121 components reviewed；V2.2 snapshot test 锁住 R002 六个电容和 R003 相关 refdes surface。
+
+**Takeaway**
+
+架构迁移可以先换“调度方向”，不必同一刀搬完所有数据所有权。对硬件评审来说，component-centric 是工作流视角；source-token registry 是证据视角，两者通过窄 context 连接，比把 provenance 到处复制更稳。
+
+---
+
 ## 2026-05-16 · Submission closeout · 停止用功能数量证明项目价值
 
 **Symptom**
@@ -52,7 +124,7 @@ Synthetic cases 不是为了替代真实 corpus，而是给 harness 加一块可
 
 **Symptom**
 
-Public corpus harness 已经跑出 5 repos / 16 KiCad projects / 1707 components / 437 findings，但总数本身不能回答硬件工程师真正关心的问题：哪些是明确需要修的字段，哪些只是证据不足需要确认，哪些是连接器/模块上通常合理的低优先级提示。
+Public corpus harness 已经跑出 5 repos / 6 个有 components 的 KiCad projects / 1707 components / 437 findings，另有 10 个空 KiCad directory 被标成 skipped；总数本身不能回答硬件工程师真正关心的问题：哪些是明确需要修的字段，哪些只是证据不足需要确认，哪些是连接器/模块上通常合理的低优先级提示。
 
 **Root cause**
 
@@ -731,15 +803,41 @@ offending finding instead of requiring ad hoc reproduction.
 
 **Verification**
 
-Full public-corpus smoke (`eval/manifest.yaml`, 5 repos / 16 discovered KiCad project
-directories) passed structurally: 1707 components parsed, 231 NC pins, 437 findings,
-`unverified_refdes_wrapped=0`, `findings_dropped_no_evidence=0`.
+Full public-corpus smoke (`eval/manifest.yaml`, 5 repos / 6 component-bearing KiCad
+project directories) passed structurally: 1707 components parsed, 231 NC pins, 437
+findings, 10 empty KiCad directories skipped, `unverified_refdes_wrapped=0`,
+`findings_dropped_no_evidence=0`.
 
 **Takeaway**
 
 This is exactly what the eval harness should do: expose a real integration boundary, not
 just print a bigger-looking score. Guardrail metrics need examples attached, otherwise
 they are not actionable for engineering review.
+
+---
+
+### 2026-05-20 — Eval project counts should exclude empty KiCad directories
+
+**Symptom**
+
+`reports/eval/eval-summary.json` reported 16 passed projects, but the hackrf checkout
+included empty hardware subdirectories with `components=0` and `findings=0`.
+
+**Root cause**
+
+The eval harness treated every directory containing a `.kicad_sch` file as a passed
+project, even when parsing produced no component registry. That was structurally valid
+but inflated the headline project count.
+
+**Fix**
+
+Mark zero-component directories as `skipped_empty`, add `projects_skipped_empty`, and
+count `projects_total/projects_passed` only from component-bearing projects.
+
+**Takeaway**
+
+Eval metrics should separate discovery breadth from meaningful coverage. Bigger totals
+are weaker than honest totals when the report is used in an interview.
 
 ---
 
