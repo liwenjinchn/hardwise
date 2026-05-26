@@ -14,14 +14,14 @@ import yaml
 from pydantic import BaseModel, Field
 
 from hardwise.adapters.kicad import parse_project
-from hardwise.checklist.checks.r001_new_component_candidate import check as check_r001
-from hardwise.checklist.checks.r002_cap_voltage_derating import check as check_r002
-from hardwise.checklist.checks.r003_nc_pin_handling import check as check_r003
+from hardwise.checklist.checks import CHECK_SPECS
 from hardwise.checklist.finding import Finding
+from hardwise.checklist.protocols import CheckContext, run_component_checks
 from hardwise.eval_compare import EvalComparison, compare_summaries
 from hardwise.eval_report import render_eval_html
 from hardwise.guards.evidence import strip_unsupported
 from hardwise.guards.refdes import sanitize_finding
+from hardwise.ir.build import build_design
 
 EVAL_SCHEMA_VERSION = 1
 DECISION_BUCKETS = ("likely_issue", "reviewer_to_confirm", "likely_ok", "undecided")
@@ -81,6 +81,7 @@ class EvalRunSummary(BaseModel):
     projects_total: int
     projects_passed: int
     projects_failed: int
+    projects_skipped_empty: int = 0
     components_total: int
     nc_pins_total: int
     findings_total: int
@@ -178,7 +179,11 @@ def run_eval(
             )
             continue
 
-        project_dirs = [repo_dir / p for p in repo.project_dirs] if repo.project_dirs else discover_project_dirs(repo_dir)
+        project_dirs = (
+            [repo_dir / p for p in repo.project_dirs]
+            if repo.project_dirs
+            else discover_project_dirs(repo_dir)
+        )
         for project_dir in project_dirs:
             if limit_projects is not None and len(results) >= limit_projects:
                 break
@@ -231,13 +236,20 @@ def load_summary(path: Path) -> EvalRunSummary:
 def _run_one_project(project_dir: Path, repo_name: str, rules: list[str]) -> EvalProjectResult:
     try:
         registry = parse_project(project_dir)
-        findings: list[Finding] = []
-        if "R001" in rules:
-            findings.extend(check_r001(registry.schematic_records))
-        if "R002" in rules:
-            findings.extend(check_r002(registry.schematic_records))
-        if "R003" in rules:
-            findings.extend(check_r003(registry.nc_pins, registry=registry))
+        if not registry.components:
+            return EvalProjectResult(
+                repo=repo_name,
+                project_dir=str(project_dir),
+                status="skipped_empty",
+            )
+
+        design = build_design(registry)
+        findings, _rules_run = run_component_checks(
+            design=design,
+            specs=CHECK_SPECS,
+            requested_rule_ids=set(rules),
+            context=CheckContext(registry=registry),
+        )
 
         findings, dropped = strip_unsupported(findings)
         wrapped_total = 0
@@ -281,6 +293,8 @@ def _build_summary(
     manifest_path: Path, manifest: EvalManifest, results: list[EvalProjectResult]
 ) -> EvalRunSummary:
     passed = [r for r in results if r.status == "passed"]
+    skipped_empty = [r for r in results if r.status == "skipped_empty"]
+    failed = [r for r in results if r.status not in {"passed", "skipped_empty"}]
     rule_counts: Counter[str] = Counter()
     severity_counts: Counter[str] = Counter()
     decision_counts: Counter[str] = Counter()
@@ -299,9 +313,10 @@ def _build_summary(
         upstream=manifest.upstream,
         rules=manifest.rules,
         repos_total=len(manifest.repos),
-        projects_total=len(results),
+        projects_total=len(passed) + len(failed),
         projects_passed=len(passed),
-        projects_failed=len(results) - len(passed),
+        projects_failed=len(failed),
+        projects_skipped_empty=len(skipped_empty),
         components_total=sum(r.components for r in passed),
         nc_pins_total=sum(r.nc_pins for r in passed),
         findings_total=sum(r.findings_total for r in passed),

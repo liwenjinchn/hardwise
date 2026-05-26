@@ -45,7 +45,8 @@ can legitimately add or remove findings.
 Current public smoke result:
 
 - 5 public repos from `eval/manifest.yaml`
-- 16 discovered KiCad project directories
+- 6 component-bearing KiCad project directories
+- 10 empty KiCad directories skipped
 - 1707 parsed components
 - 437 deterministic findings
 - decision split: 298 likely_issue / 99 reviewer_to_confirm / 40 likely_ok / 0 undecided

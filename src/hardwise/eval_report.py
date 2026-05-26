@@ -44,6 +44,7 @@ def render_eval_html(summary: Any) -> str:
     <section class="grid">
       <div class="metric"><span>Repos</span><strong>{summary.repos_total}</strong></div>
       <div class="metric"><span>Projects Passed</span><strong>{summary.projects_passed}/{summary.projects_total}</strong></div>
+      <div class="metric"><span>Empty Dirs Skipped</span><strong>{getattr(summary, "projects_skipped_empty", 0)}</strong></div>
       <div class="metric"><span>Components</span><strong>{summary.components_total}</strong></div>
       <div class="metric"><span>NC Pins</span><strong>{summary.nc_pins_total}</strong></div>
       <div class="metric"><span>Findings</span><strong>{summary.findings_total}</strong></div>
@@ -66,13 +67,13 @@ def render_eval_html(summary: Any) -> str:
 
 
 def _render_result_row(result: Any) -> str:
-    status_class = "ok" if result.status == "passed" else "bad"
+    status_class = "ok" if result.status in {"passed", "skipped_empty"} else "bad"
     rules = ", ".join(f"{k}:{v}" for k, v in sorted(result.findings_by_rule.items()))
     return (
         "<tr>"
         f"<td><code>{_esc(result.repo)}</code></td>"
         f"<td><code>{_esc(result.project_dir)}</code></td>"
-        f"<td class=\"{status_class}\">{_esc(result.status)}</td>"
+        f'<td class="{status_class}">{_esc(result.status)}</td>'
         f"<td>{result.components}</td>"
         f"<td>{result.nc_pins}</td>"
         f"<td>{result.findings_total}</td>"
@@ -95,13 +96,10 @@ def _render_decision_section(summary: Any) -> str:
     )
     per_rule = getattr(summary, "findings_by_rule_decision", {}) or {}
     per_rule_rows = "\n".join(
-        _render_rule_decision_row(rule, counts)
-        for rule, counts in sorted(per_rule.items())
+        _render_rule_decision_row(rule, counts) for rule, counts in sorted(per_rule.items())
     )
     if not per_rule_rows:
-        per_rule_rows = (
-            '<tr><td colspan="6">No rule decision metrics recorded.</td></tr>'
-        )
+        per_rule_rows = '<tr><td colspan="6">No rule decision metrics recorded.</td></tr>'
     return f"""
     <section>
       <h2>Decision Metrics</h2>

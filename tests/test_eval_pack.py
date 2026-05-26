@@ -26,6 +26,7 @@ def test_run_eval_against_local_project(tmp_path: Path) -> None:
 
     assert outputs.summary.projects_total == 1
     assert outputs.summary.projects_passed == 1
+    assert outputs.summary.projects_skipped_empty == 0
     assert outputs.summary.findings_by_rule["R002"] == 6
     assert "R003" in outputs.summary.findings_by_rule
     assert outputs.summary.findings_by_decision == {
@@ -52,6 +53,47 @@ def test_run_eval_against_local_project(tmp_path: Path) -> None:
     assert outputs.summary.unverified_refdes_samples == []
     assert outputs.summary_path.exists()
     assert outputs.html_path.exists()
+
+
+def test_run_eval_skips_empty_kicad_dirs(tmp_path: Path) -> None:
+    repo = tmp_path / "projects" / "local__empty"
+    empty_project = repo / "empty_board"
+    empty_project.mkdir(parents=True)
+    (empty_project / "empty_board.kicad_sch").write_text(
+        "(kicad_sch (version 20230121) (generator hardwise-test))",
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "manifest.yaml"
+    manifest_path.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "name": "test-empty-eval",
+                "rules": ["R001", "R002", "R003"],
+                "repos": [
+                    {
+                        "name": "local/empty",
+                        "url": "https://example.invalid/local/empty",
+                        "commit": "0" * 40,
+                        "project_dirs": ["empty_board"],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    outputs = run_eval(
+        manifest_path=manifest_path,
+        projects_root=tmp_path / "projects",
+        output_dir=tmp_path / "reports",
+    )
+
+    assert outputs.summary.projects_total == 0
+    assert outputs.summary.projects_passed == 0
+    assert outputs.summary.projects_failed == 0
+    assert outputs.summary.projects_skipped_empty == 1
+    assert outputs.summary.results[0].status == "skipped_empty"
 
 
 def test_run_eval_can_accept_and_compare_baseline(tmp_path: Path) -> None:
@@ -131,10 +173,7 @@ def test_compare_summaries_reports_decision_deltas_as_observations(tmp_path: Pat
 
     assert comparison.status == "passed"
     assert "findings_by_decision.likely_issue changed by +1" in comparison.observations
-    assert (
-        "findings_by_decision.reviewer_to_confirm changed by -1"
-        in comparison.observations
-    )
+    assert "findings_by_decision.reviewer_to_confirm changed by -1" in comparison.observations
 
 
 def test_eval_html_renders_decision_metric_tables(tmp_path: Path) -> None:

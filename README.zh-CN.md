@@ -46,10 +46,11 @@ consolidator: 2 candidate rule(s) appended to memory/rules.md
 公开 eval pack 覆盖更宽的 smoke path：
 
 ```text
-5 个公开 repo / 16 个 KiCad project directory
+5 个公开 repo / 6 个有 components 的 KiCad project directory
 1707 个 parsed component
 437 条 deterministic finding
 0 个 project failure
+10 个空 KiCad directory 被跳过
 0 个 unverified refdes wrapped
 0 条 finding 因缺少 evidence 被丢弃
 ```

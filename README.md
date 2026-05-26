@@ -46,10 +46,11 @@ The current sample report has **28 findings**: 6 R002 capacitor-voltage-field fi
 The public eval pack adds a wider smoke path:
 
 ```text
-5 public repos / 16 KiCad project directories
+5 public repos / 6 component-bearing KiCad project directories
 1707 parsed components
 437 deterministic findings
 0 project failures
+10 empty KiCad directories skipped
 0 unverified refdes wrapped
 0 findings dropped for missing evidence
 ```
