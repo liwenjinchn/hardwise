@@ -219,7 +219,7 @@ def review(
         "--memory-output",
         help="Path to the candidate-rule memory file (default: memory/rules.md).",
     ),
-    db_path: Path | None = typer.Option(
+    db_path: str | None = typer.Option(
         None,
         "--db-path",
         help=(
@@ -408,29 +408,28 @@ def review(
         }
         typer.echo(f"store: {env_url} ({n_comp} components, {n_pin} NC pins)")
     else:
-        if db_path is None:
+        resolved_db_path = _review_db_path(project_dir.name, db_path)
+        if resolved_db_path is not None:
             reports_dir = Path("reports")
             reports_dir.mkdir(exist_ok=True)
-            db_path = reports_dir / f"{project_dir.name}.db"
-        if str(db_path):
+            resolved_db_path.parent.mkdir(parents=True, exist_ok=True)
             from hardwise.store.relational import create_store, populate_from_registry
 
-            db_path.parent.mkdir(parents=True, exist_ok=True)
-            if db_path.exists():
-                db_path.unlink()
-            session = create_store(db_path)
+            if resolved_db_path.exists():
+                resolved_db_path.unlink()
+            session = create_store(resolved_db_path)
             try:
                 n_comp, n_pin = populate_from_registry(session, registry)
             finally:
                 session.close()
             store_trace = {
                 "enabled": True,
-                "target": str(db_path),
+                "target": str(resolved_db_path),
                 "backend": "sqlite",
                 "components": n_comp,
                 "nc_pins": n_pin,
             }
-            typer.echo(f"store: {db_path} ({n_comp} components, {n_pin} NC pins)")
+            typer.echo(f"store: {resolved_db_path} ({n_comp} components, {n_pin} NC pins)")
 
     consolidator_trace: dict[str, object] = {"enabled": False}
     if consolidate_flag:
@@ -668,6 +667,21 @@ def _echo_decision_counts(counts: dict[str, int], total: int) -> None:
         count = int(counts.get(decision, 0))
         percentage = (count / total * 100) if total else 0.0
         typer.echo(f"  {decision}: {count} ({percentage:.1f}%)")
+
+
+def _review_db_path(project_name: str, db_path: str | None) -> Path | None:
+    """Resolve review --db-path.
+
+    ``None`` means use the default reports DB. Empty string means skip the
+    SQLite store; Typer's Path coercion turns ``""`` into ``.`` too early,
+    so keep this option as str and normalize it here.
+    """
+    if db_path is None:
+        return Path("reports") / f"{project_name}.db"
+    value = db_path.strip()
+    if not value:
+        return None
+    return Path(value)
 
 
 @app.command()

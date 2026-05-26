@@ -32,6 +32,30 @@ V2.5 最初只写了 Allegro `$PACKAGES + $NETS` adapter。Grok Search 调研 ED
 
 ---
 
+## 2026-05-26 · CLI · Typer Path turns empty db path into current directory
+
+**Symptom**
+
+V2.5 closeout 验证 KiCad regression 时，我按 CLI help 写法跑 `--db-path ''` 想跳过 SQLite store，结果 Typer 把空字符串解析成 `Path('.')`，review 试图 `unlink('.')`，触发 `PermissionError: Operation not permitted: '.'`。报告本身已经生成了 28 findings，但 auxiliary store 阶段失败。
+
+**Root cause**
+
+`db_path` 参数声明成 `Path | None` 太早做了路径 coercion，空字符串不再是可区分的“用户想跳过”，而变成当前目录。help 文案和实际行为不一致。
+
+**Fix**
+
+把 `review --db-path` 的参数类型改成 `str | None`，新增 `_review_db_path(project_name, db_path)`：`None` -> `reports/<project>.db`，空/空白字符串 -> `None`（跳过 store），其他值 -> `Path(value)`。新增 `tests/test_cli_helpers.py` 锁住三条路径。
+
+**Verification**
+
+`uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --no-consolidate --db-path '' --no-run-trace` 现在只输出 report 行，不再写 store；同一次也验证了 KiCad baseline 仍是 28 findings / 121 components reviewed。
+
+**Takeaway**
+
+CLI 里“空字符串有业务含义”时不要让 Typer 先转成 `Path`。先保留为 `str`，在业务 helper 里归一化，行为会更可测试。
+
+---
+
 ## 2026-05-26 · V2.4 · Datasheet profile must follow PDF evidence, not old plan text
 
 **Symptom**
