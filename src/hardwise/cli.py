@@ -214,6 +214,72 @@ def inspect_bom_match(
             )
 
 
+@app.command(name="report-allegro-bom")
+def report_allegro_bom(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help=(
+            "Path to an Allegro/Telesis third-party ASCII netlist, or a "
+            "Capture/Allegro PST directory/file."
+        ),
+    ),
+    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output markdown path (default: reports/<netlist>-bom-intake-<YYYYMMDD>.md).",
+    ),
+    net_limit: int = typer.Option(
+        8,
+        "--net-limit",
+        help="Maximum number of connected net names shown per component.",
+    ),
+) -> None:
+    """Write a component-centric Allegro netlist + schematic BOM intake report."""
+    from datetime import datetime, timezone
+
+    from hardwise.bom import match_bom_to_design, parse_bom
+    from hardwise.report.allegro_bom_markdown import render
+
+    if net_limit < 1:
+        typer.echo("error: --net-limit must be >= 1", err=True)
+        raise typer.Exit(1)
+
+    try:
+        design, source, input_type, _property_count = _load_allegro_design(netlist_path)
+        bom = parse_bom(bom_path)
+        report = match_bom_to_design(bom, design)
+    except Exception as e:
+        typer.echo(f"error: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    now = datetime.now(timezone.utc)
+    project_name = _report_source_name(source)
+    project_meta = {
+        "project_name": project_name,
+        "generated_at": now.isoformat(timespec="seconds"),
+        "netlist_source": str(source),
+        "netlist_type": input_type,
+    }
+    report_text = render(design, bom, report, project_meta, net_limit=net_limit)
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{project_name}-bom-intake-{now.strftime('%Y%m%d')}.md"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    output.write_text(report_text, encoding="utf-8")
+    mismatch_count = _bom_report_mismatch_count(report)
+    typer.echo(
+        f"report: {output} "
+        f"({len(report.matched_refdes)}/{report.design_refdes_count} matched, "
+        f"{mismatch_count} mismatches)"
+    )
+
+
 @app.command()
 def review(
     project_dir: Path = typer.Argument(..., help="Path to a KiCad project directory."),
@@ -725,6 +791,21 @@ def _load_allegro_design(netlist_path: Path):
     input_type = "Allegro/Telesis schematic netlist topology"
     property_count = len(registry.properties)
     return design, source, input_type, property_count
+
+
+def _report_source_name(source: Path) -> str:
+    """Return a stable report basename for a netlist source path."""
+    return source.name if source.is_dir() else source.stem
+
+
+def _bom_report_mismatch_count(report) -> int:
+    """Count registry mismatch entries shown in the Allegro BOM intake status."""
+    return (
+        len(report.bom_only_refdes)
+        + len(report.design_only_refdes)
+        + len(report.duplicate_bom_refdes)
+        + len(report.quantity_mismatches)
+    )
 
 
 def _echo_refdes_sample(label: str, refdes_list: list[str], limit: int) -> None:

@@ -1,6 +1,6 @@
 # Hardwise Architecture
 
-> v0.8 — V2.6 adds a schematic BOM matcher for netlist-only inputs. Allegro netlists provide topology; BOM rows provide component identity by refdes join. `.brd`, boardview, placement, routing, PCB geometry, and PLM-grade BOM governance remain out of scope.
+> v0.9 — V2.7 adds a component-centric Allegro netlist + schematic BOM intake report. Allegro netlists provide topology; BOM rows provide component identity by refdes join; the report organizes those facts by refdes. `.brd`, boardview, placement, routing, PCB geometry, electrical-rule conclusions, and PLM-grade BOM governance remain out of scope.
 
 ## Data flow
 
@@ -8,7 +8,10 @@
 KiCad project ─┐
                ├─→ adapters/kicad.py ─→ store/relational.py (SQLite)
 Allegro schematic netlist ─→ adapters/allegro_netlist.py / allegro_pst.py ─→ ir/build.py
-Allegro schematic BOM ─────→ bom/parser.py + bom/matcher.py ───────────┘
+Allegro schematic BOM ─────→ bom/parser.py + bom/matcher.py
+                                              │
+                                              ├─→ report/allegro_bom_markdown.py
+                                              │   → reports/*-bom-intake-*.md
                                               │
 Datasheet PDFs ─→ ingest/pdf.py     ─→ store/vector.py (Chroma)
                                               │
@@ -35,6 +38,9 @@ Adapter pattern at the EDA boundary. `base.py` defines the first stable KiCad re
 ### `bom/`
 Component identity matching layer for schematic-exported BOMs. `parser.py` reads Cadence-style tabular `.BOM` reports plus simple CSV/TSV exports, expands grouped reference cells (`R1,R2` and multiline continuations) into one `BomRow` per refdes, and preserves value/manufacturer/part-number fields when present. `matcher.py` joins those rows to `Design.components` by refdes and reports matched, BOM-only, design-only, duplicate, and quantity-mismatch cases; `apply_bom_to_design()` can attach identity fields without changing pins, nets, or topology. This is a pre-Layout component-matching aid, not PLM, pricing, lifecycle, supplier-risk, or PCB parsing.
 
+### `report/`
+Human-readable report renderers. `markdown.py` and `html.py` render checklist findings, while `component_markdown.py` groups KiCad review findings by component. V2.7 adds `allegro_bom_markdown.py`, which renders `Design + BomMatchReport` as a component-centric intake table: refdes, BOM match status, value/MPN/manufacturer/package, connected pin count, bounded net list, BOM source row, and design source token. It is intentionally factual intake for pre-Layout schematic review, not an electrical-rule review report.
+
 #### Day 2 shipped module I/O
 
 | Module / function | Purpose | Input | Output | Why it exists | Verification |
@@ -54,6 +60,7 @@ Component identity matching layer for schematic-exported BOMs. `parser.py` reads
 | `parse_bom(path)` in `bom/parser.py` | Read schematic-exported BOM identity rows | Cadence `.BOM`, CSV, or TSV with Reference/Quantity/Part fields | `Bom` with grouped `BomItem`s and expanded one-refdes `BomRow`s | Netlist-only inputs need value/MPN identity separate from topology | Parser tests cover multiline Reference cells, digitless refdes like `VA`, CSV identity columns, and invalid quantities |
 | `match_bom_to_design(bom, design)` in `bom/matcher.py` | Join BOM identity to schematic topology | Parsed `Bom` + `Design.components` registry | `BomMatchReport` with matched, BOM-only, design-only, duplicate, quantity-mismatch lists | Keeps BOM matching deterministic and registry-verified before any agent/report use | Matcher tests cover clean match, missing/extra refdes, duplicate BOM refs, quantity mismatch, and non-topology identity attachment |
 | `inspect-bom-match` in `cli.py` | Human-visible smoke test for V2.6 matcher | Allegro netlist/PST input + schematic BOM path | Refdes counts, mismatch counts, and bounded mismatch samples | Answers "does this netlist+BOM pair line up?" without claiming PLM governance | Synthetic PST fixture plus public PST+BOM smoke: 4010 design refdes / 4010 BOM rows / 4010 matched |
+| `report-allegro-bom` in `cli.py` | Generate a component-centric intake report for netlist-only Allegro projects | Allegro netlist/PST input + schematic BOM path + optional output path | Markdown report with intake status, mismatch sections, and one row per design component | Turns the V2.6 deterministic join into a review-meeting artifact without adding unsupported electrical/PCB conclusions | Renderer and CLI tests; public PST+BOM smoke writes 4010 matched component rows |
 
 **Hardware-engineer explanation:** this module is the project's 位号台账 plus a PCB-side diagnostic net reader. Before AI can review a board, it must know which U/C/R/D/J designators really exist. The parser turns KiCad files into that trusted table. Later, if the model says "U999 has a decoupling issue", Refdes Guard can reject it because `U999` is not in `BoardRegistry`.
 
@@ -178,6 +185,9 @@ uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
 uv run hardwise ask data/projects/pic_programmer "U3 是什么器件？"
 uv run hardwise ask data/projects/pic_programmer "U4 这颗器件有几个 NC 脚？" --max-iterations 6
 uv run hardwise ask data/projects/pic_programmer "找一下 U3 最大输入电压" --vector
+uv run hardwise inspect-allegro-netlist tests/fixtures/allegro/pst
+uv run hardwise inspect-bom-match tests/fixtures/allegro/pst /tmp/pst.csv
+uv run hardwise report-allegro-bom tests/fixtures/allegro/pst /tmp/pst.csv --output reports/pst-bom-intake.md
 ```
 
 `inspect-kicad` is the first EDA adapter demo: it prints the registry count and the first N sorted components. On `pic_programmer`, it extracts 121 registry items.
@@ -189,6 +199,8 @@ uv run hardwise ask data/projects/pic_programmer "找一下 U3 最大输入电�
 `verify-api --tier {fast,normal,deep}` exercises the `ModelRouter` against the upstream API and prints the resolved model id + token counts.
 
 `ask <project_dir> "<question>"` is the Slice 4 entry point to the agent loop: parses the KiCad project, builds an in-memory SQLite session + registry, optionally opens a Chroma collection (`--vector`), constructs a `Runner`, runs `messages.create(tools=TOOL_DEFINITIONS, ...)` in a finite tool-use loop, and prints the answer + one line per tool call + a token line (including `cache_create/read` when nonzero). Three live runs on pic_programmer with `mimo-v2.5` exercise (1) known-refdes `get_component`, (2) unknown-refdes `get_component → ComponentNotFound` (model honors anti-fabrication), and (3) `get_nc_pins --refdes_filter U4` returning 2 NC pins — all three runs report nonzero `cache_read_input_tokens`.
+
+`report-allegro-bom <netlist_or_pst> <bom>` writes the V2.7 Allegro intake report. It loads schematic topology from Telesis or PST netlists, joins a schematic BOM by refdes, then writes a markdown component table with BOM identity fields, connected pins/nets, and source tokens. The command deliberately says "intake" rather than "review" because it does not run electrical checklist rules, parse `.brd`, inspect boardview/PCB geometry, or make PLM-grade BOM judgments.
 
 ## Module explanation template
 

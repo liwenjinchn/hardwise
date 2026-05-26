@@ -8,6 +8,49 @@
 
 ---
 
+## 2026-05-26 · V2.7 · Allegro+BOM output must be component-centric intake, not net review
+
+**Symptom**
+
+V2.5/V2.6 已经能解析 Allegro/PST topology 并把 BOM refdes 全量 match 到
+`Design.components`，但只打印 counts 还不能回答“现在能不能生成报告”。如果沿用早期
+KiCad 的 net/规则视角，很容易把 Allegro netlist+BOM 输出做成 net-centric summary，
+偏离用户要的器件角度。
+
+**Root cause**
+
+Allegro netlist-only 场景的第一份可交付物不是 electrical review finding，而是
+component intake：先证明每个 refdes 在设计 registry 中存在、BOM identity 对得上、
+每个器件有哪些 pins/nets，以及这些事实来自哪一行 BOM / 哪个 netlist source。只有
+这一层可信了，后续 datasheet/profile/checklist 才有可靠 join key。把它叫 review 会
+暗示已经做了电气规则判断；实际没有。
+
+**Fix**
+
+新增 `src/hardwise/report/allegro_bom_markdown.py` 和 CLI
+`hardwise report-allegro-bom <netlist-or-pst> <bom>`。报告头记录 netlist/BOM/counts，
+mismatch 章节列 BOM-only / design-only / duplicate / quantity mismatch，主体表按
+design component 一行一个 refdes，包含 match status、value、MPN、manufacturer、
+package、pin count、bounded nets、BOM source line 和 design source token。报告正文
+明确不做 PLM、lifecycle、pricing、supplier-risk、layout、boardview 或 electrical-rule
+review。
+
+**Verification**
+
+Focused tests cover renderer clean/mismatch paths and CLI report writing:
+`uv run pytest tests/report/test_allegro_bom_markdown.py tests/test_cli_allegro_bom_report.py -q`.
+公开 PST+BOM 样例 smoke：
+`uv run hardwise report-allegro-bom "<public sample>/allegro" "<public sample>/SWITCH BOARD 144-VA_20240712 1401.BOM" --output reports/public-allegro-bom-intake.md`
+输出 `4010/4010 matched, 0 mismatches`，生成 4042 行 component-centric intake report。
+
+**Takeaway**
+
+“能生成报告”不等于“能做完整评审”。V2.7 的正确交付物是可追溯的器件事实清单，
+把 netlist topology 和 BOM identity 组织成 reviewer 能扫读的入口，同时守住
+pre-Layout schematic-review scope。
+
+---
+
 ## 2026-05-26 · V2.6 · BOM refdes shape must follow the EDA registry
 
 **Symptom**
