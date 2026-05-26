@@ -8,6 +8,44 @@
 
 ---
 
+## 2026-05-26 · V2.9 · Datasheet match should be an indexed evidence state, not a supplier search
+
+**Symptom**
+
+目标产品形态里有器件列表、datasheet 链接和单器件验证报告。如果 V2.9 直接做“自动找 datasheet”，
+很容易滑到 live supplier search、PLM、生命周期/价格/库存，或者把“找到了文档”误写成“电路设计正确”。
+这会偏离 Hardwise 的 pre-Layout schematic-review node，也会让公开样本 demo 变得不可复现。
+
+**Root cause**
+
+成熟验证器常常要求 netlist + BOM + datasheet/document source，但这三者不是同一层：
+netlist 是 topology，BOM 是 component identity，datasheet/document link 是 evidence index。
+V2.9 需要回答的是“这组 BOM item 有没有可用公开文档证据入口”，不是“供应链上哪家有货”或
+“这个 pin 连接是否 PASS”。
+
+**Fix**
+
+新增 `src/hardwise/documents/`：`parse_document_index()` 读取本地 CSV/TSV document index，
+支持 MPN/manufacturer/value/title/URL/path 等列别名；`match_documents_to_bom()` 按 BOM item
+的 MPN 优先匹配，缺 MPN 时只接受 part-like value，passive 值如 `10K` / `100nF` 进入人工状态。
+输出四种显式状态：`matched`、`no_result`、`ambiguous`、`manual_needed`，并用
+`doc:<file>#line<N>` 记录来源。`report-allegro-bom --document-index` 渲染 summary 和 per-item
+document rows；`--mismatch-only` 明确拒绝 `--document-index`，因为 mismatch triage 不渲染索引层。
+
+**Verification**
+
+Focused tests: `uv run pytest tests/documents tests/report/test_allegro_bom_markdown.py tests/test_cli_allegro_bom_report.py -q`
+→ 16 passed；focused ruff clean。固定 synthetic fixture smoke:
+`uv run hardwise report-allegro-bom tests/fixtures/allegro/pst tests/fixtures/allegro/document_match/bom.csv --summary-only --document-index tests/fixtures/allegro/document_match/docs.csv --output /tmp/hardwise-v2.9-document-smoke.md`
+生成包含 `Datasheet / Document Match Summary`、`PN-123 datasheet` 和 `doc:docs.csv#line2` 的报告。
+
+**Takeaway**
+
+Document match 是证据索引层，不是 AI 判断层。先把“哪个 BOM item 对应哪份公开文档、证据状态是否唯一”
+做成 deterministic artifact，后续 pin profile / single-component validation 才能在 source token 上继续推进。
+
+---
+
 ## 2026-05-26 · V2.8 · Allegro+BOM reports need an index before they need a UI
 
 **Symptom**

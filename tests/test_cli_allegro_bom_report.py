@@ -86,6 +86,56 @@ def test_report_allegro_bom_summary_only_omits_component_table(tmp_path: Path) -
     assert "## Component Summary" not in md
 
 
+def test_report_allegro_bom_accepts_document_index(tmp_path: Path) -> None:
+    output_path = tmp_path / "pst-docs.md"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-allegro-bom",
+            "tests/fixtures/allegro/pst",
+            "tests/fixtures/allegro/document_match/bom.csv",
+            "--output",
+            str(output_path),
+            "--summary-only",
+            "--document-index",
+            "tests/fixtures/allegro/document_match/docs.csv",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    md = output_path.read_text(encoding="utf-8")
+    assert "## Datasheet / Document Match Summary" in md
+    assert "| 1 | 0 | 0 | 0 |" in md
+    assert "[PN-123 datasheet](https://example.test/pn-123.pdf)" in md
+    assert "`doc:docs.csv#line2`" in md
+    assert "live supplier data" in md
+
+
+def test_report_allegro_bom_rejects_document_index_in_mismatch_only_mode(
+    tmp_path: Path,
+) -> None:
+    output_path = tmp_path / "pst-mismatch.md"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-allegro-bom",
+            "tests/fixtures/allegro/pst",
+            "tests/fixtures/allegro/document_match/bom.csv",
+            "--output",
+            str(output_path),
+            "--mismatch-only",
+            "--document-index",
+            "tests/fixtures/allegro/document_match/docs.csv",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "error: --document-index cannot be used with --mismatch-only" in result.output
+    assert not output_path.exists()
+
+
 def test_report_allegro_bom_mismatch_only_omits_indexes_and_component_table(
     tmp_path: Path,
 ) -> None:

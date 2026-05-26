@@ -31,6 +31,15 @@
 3. `--mismatch-only` emits only status + mismatch sections for fast triage.
 4. Source cells use short tokens in large tables, while report header keeps the full netlist/BOM paths.
 
+**V2.9 acceptance details**:
+
+1. `report-allegro-bom --document-index <csv-or-tsv>` adds local datasheet/document match sections to summary/full reports.
+2. Matching is BOM-item identity indexing: MPN first, part-like value only as fallback, optional manufacturer narrowing.
+3. Output status is one of `matched`, `no_result`, `ambiguous`, or `manual_needed`; it is not electrical PASS/FAIL.
+4. Each rendered document row carries a `doc:<file>#line<N>` source token.
+5. The command performs no live supplier lookup and no PLM, lifecycle, price, availability, supplier-risk, `.brd`, boardview, placement, routing, or PCB geometry work.
+6. `--document-index` is rejected with `--mismatch-only`, because mismatch triage intentionally omits index sections.
+
 ---
 
 ## Triggered by Slice 5 — KiCad schematic net parser shipping (R005 dangling-nets)
@@ -165,3 +174,4 @@ Each anti-rule must reference a real moment when reality tried to violate it. An
   - Test lock: parser stores `pcb_nets == 111` + 34 signal partition; SQLite round-trip 111 with GND member count = 40; CLI default vs `--all-nets` E2E asserts both source label and listing membership. `pytest -q` 144 passed; `ruff check .` clean.
   - Follow-up: add a synthetic `.kicad_pcb` unit test that explicitly lights both net syntaxes handled by `_pad_net_name()`; `pic_programmer` only gives implicit coverage for whichever KiCad version generated the fixture.
   - R005/R006/R007 remain queued above because they need a real schematic net parser: wire + local/global label + power symbol + hierarchical label + symbol pin endpoint resolution from `.kicad_sch`.
+- 2026-05-26 — V2.9 stage details landed in code/docs: local document-index parsing + BOM item document matching + report sections + synthetic fixture smoke. The roadmap keeps V3.0+ queued for pin profiles and component validation, but V2.9 is no longer just a planned item.

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from hardwise.bom import match_bom_to_design, parse_bom
+from hardwise.documents import match_documents_to_bom, parse_document_index
 from hardwise.ir.types import Component, Design, Net, Pin
 from hardwise.report.allegro_bom_markdown import render
 
@@ -150,6 +151,43 @@ def test_allegro_bom_report_summary_only_omits_component_table(tmp_path: Path) -
     assert "## Component Prefix Summary" in md
     assert "## BOM Item Groups" in md
     assert "## BOM / Design Registry Mismatches" in md
+    assert "## Component Summary" not in md
+
+
+def test_allegro_bom_report_includes_document_match_sections(tmp_path: Path) -> None:
+    bom_path = tmp_path / "summary.csv"
+    bom_path.write_text(
+        "\n".join(
+            [
+                "Reference,Quantity,Value,Manufacturer,MPN",
+                '"C1 R1 U1",3,fixture identity,Acme,PN-123',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    index_path = tmp_path / "docs.csv"
+    index_path.write_text(
+        "\n".join(
+            [
+                "MPN,Manufacturer,Title,URL",
+                "PN-123,Acme,PN-123 datasheet,https://example.test/pn-123.pdf",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    design = _design()
+    bom = parse_bom(bom_path)
+    report = match_bom_to_design(bom, design)
+    document_report = match_documents_to_bom(bom, parse_document_index(index_path))
+
+    md = render(design, bom, report, _meta(), summary_only=True, document_report=document_report)
+
+    assert "## Datasheet / Document Match Summary" in md
+    assert "| 1 | 0 | 0 | 0 |" in md
+    assert "## Datasheet / Document Matches" in md
+    assert "| 1 | matched | PN-123 (mpn) |" in md
+    assert "[PN-123 datasheet](https://example.test/pn-123.pdf)" in md
+    assert "`doc:docs.csv#line2`" in md
     assert "## Component Summary" not in md
 
 

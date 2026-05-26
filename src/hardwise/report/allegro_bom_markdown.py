@@ -6,7 +6,9 @@ import re
 from typing import Any
 
 from hardwise.bom.types import Bom, BomItem, BomMatchReport, BomRow, sort_refdes_key
+from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.types import Component, Design
+from hardwise.report.allegro_document_markdown import render_document_sections
 from hardwise.report.markdown import _escape_pipe
 
 
@@ -19,6 +21,7 @@ def render(
     net_limit: int = 8,
     summary_only: bool = False,
     mismatch_only: bool = False,
+    document_report: DocumentMatchReport | None = None,
 ) -> str:
     """Return a markdown intake report grouped around components."""
 
@@ -64,6 +67,8 @@ def render(
 
     lines.extend(_render_prefix_summary(design, match_report))
     lines.extend(_render_bom_item_groups(bom, match_report))
+    if document_report is not None:
+        lines.extend(render_document_sections(bom, document_report))
     lines.extend(_render_mismatches(bom, match_report))
     if summary_only:
         return "\n".join(lines)

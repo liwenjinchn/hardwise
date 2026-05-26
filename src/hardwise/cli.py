@@ -245,11 +245,20 @@ def report_allegro_bom(
         "--mismatch-only",
         help="Write only intake status and BOM/design mismatch sections.",
     ),
+    document_index: Path | None = typer.Option(
+        None,
+        "--document-index",
+        help=(
+            "Optional CSV/TSV index of public datasheet/document links. "
+            "Adds BOM-item document match sections; no live supplier lookup."
+        ),
+    ),
 ) -> None:
     """Write a component-centric Allegro netlist + schematic BOM intake report."""
     from datetime import datetime, timezone
 
     from hardwise.bom import match_bom_to_design, parse_bom
+    from hardwise.documents import match_documents_to_bom, parse_document_index
     from hardwise.report.allegro_bom_markdown import render
 
     if net_limit < 1:
@@ -258,11 +267,19 @@ def report_allegro_bom(
     if summary_only and mismatch_only:
         typer.echo("error: --summary-only and --mismatch-only cannot be used together", err=True)
         raise typer.Exit(1)
+    if mismatch_only and document_index is not None:
+        typer.echo("error: --document-index cannot be used with --mismatch-only", err=True)
+        raise typer.Exit(1)
 
     try:
         design, source, input_type, _property_count = _load_allegro_design(netlist_path)
         bom = parse_bom(bom_path)
         report = match_bom_to_design(bom, design)
+        document_report = (
+            match_documents_to_bom(bom, parse_document_index(document_index))
+            if document_index is not None
+            else None
+        )
     except Exception as e:
         typer.echo(f"error: {type(e).__name__}: {e}", err=True)
         raise typer.Exit(1) from e
@@ -283,6 +300,7 @@ def report_allegro_bom(
         net_limit=net_limit,
         summary_only=summary_only,
         mismatch_only=mismatch_only,
+        document_report=document_report,
     )
 
     if output is None:
