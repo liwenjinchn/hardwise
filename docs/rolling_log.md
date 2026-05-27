@@ -40,6 +40,14 @@
 5. The command performs no live supplier lookup and no PLM, lifecycle, price, availability, supplier-risk, `.brd`, boardview, placement, routing, or PCB geometry work.
 6. `--document-index` is rejected with `--mismatch-only`, because mismatch triage intentionally omits index sections.
 
+**V3.0 acceptance details**:
+
+1. `DatasheetProfile` remains backward-compatible with v1 JSON and adds `pins[]` for structured pin facts.
+2. Each `PinProfile` row carries pin number, name, category, function, optional limits, recommended topology, and evidence tokens.
+3. `data/datasheet_profiles/l78.json` is a public schema-v2 fixture with VI/GND/VO rows.
+4. `report-pin-profile <profile.json>` renders pin summary/detail sections for manual inspection.
+5. The command does not perform schematic validation, PASS/FAIL judgement, live supplier lookup, PLM, lifecycle, price, availability, supplier-risk, `.brd`, boardview, placement, routing, or PCB geometry work.
+
 ---
 
 ## Triggered by Slice 5 — KiCad schematic net parser shipping (R005 dangling-nets)
@@ -175,3 +183,4 @@ Each anti-rule must reference a real moment when reality tried to violate it. An
   - Follow-up: add a synthetic `.kicad_pcb` unit test that explicitly lights both net syntaxes handled by `_pad_net_name()`; `pic_programmer` only gives implicit coverage for whichever KiCad version generated the fixture.
   - R005/R006/R007 remain queued above because they need a real schematic net parser: wire + local/global label + power symbol + hierarchical label + symbol pin endpoint resolution from `.kicad_sch`.
 - 2026-05-26 — V2.9 stage details landed in code/docs: local document-index parsing + BOM item document matching + report sections + synthetic fixture smoke. The roadmap keeps V3.0+ queued for pin profiles and component validation, but V2.9 is no longer just a planned item.
+- 2026-05-27 — V3.0 stage details landed in code/docs: schema-v2 `DatasheetProfile.pins`, L78 public pin-profile fixture, `report-pin-profile`, renderer and focused tests. V3.1 remains queued for single-component validation reports.

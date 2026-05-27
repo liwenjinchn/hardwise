@@ -720,6 +720,38 @@ def query_datasheet(
         )
 
 
+@app.command(name="report-pin-profile")
+def report_pin_profile(
+    profile_path: Path = typer.Argument(..., help="Path to a DatasheetProfile JSON file."),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output markdown path (default: reports/<profile>-pin-profile.md).",
+    ),
+) -> None:
+    """Write a structured datasheet pin-profile report."""
+    from hardwise.ir.profile import DatasheetProfile
+    from hardwise.report.pin_profile_markdown import render
+
+    try:
+        profile = DatasheetProfile.load(profile_path)
+    except Exception as e:
+        typer.echo(f"error: profile load failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{profile_path.stem}-pin-profile.md"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    report_text = render(profile, source_path=profile_path)
+    output.write_text(report_text, encoding="utf-8")
+    typer.echo(f"pin-profile: {output} ({len(profile.pins)} pins, part={profile.part_number})")
+
+
 @app.command(name="eval")
 def eval_pack(
     manifest: Path = typer.Option(

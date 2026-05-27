@@ -12,6 +12,18 @@ from pydantic import BaseModel, Field
 ProfileValue = Union[float, str]
 
 
+class PinProfile(BaseModel):
+    """Structured datasheet facts for one package pin."""
+
+    number: str
+    name: str
+    category: str
+    function: str
+    limits: dict[str, ProfileValue] = Field(default_factory=dict)
+    recommended_topology: list[str] = Field(default_factory=list)
+    evidence: list[str] = Field(default_factory=list)
+
+
 class DatasheetProfile(BaseModel):
     """Structured electrical limits extracted from one datasheet."""
 
@@ -19,6 +31,7 @@ class DatasheetProfile(BaseModel):
     abs_max: dict[str, ProfileValue] = Field(default_factory=dict)
     recommended: dict[str, ProfileValue] = Field(default_factory=dict)
     pin_function: dict[str, str] = Field(default_factory=dict)
+    pins: list[PinProfile] = Field(default_factory=list)
     evidence: dict[str, str] = Field(default_factory=dict)
     extracted_at: str
     extracted_model: str
@@ -38,6 +51,11 @@ class DatasheetProfile(BaseModel):
             json.dumps(self.model_dump(mode="json"), ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
+
+    def pin_by_number(self, number: str) -> PinProfile | None:
+        """Return structured pin facts for a pin number, if present."""
+
+        return next((pin for pin in self.pins if pin.number == number), None)
 
 
 def extract_l78_profile(pdf_path: Path) -> DatasheetProfile:
@@ -71,6 +89,54 @@ def extract_l78_profile(pdf_path: Path) -> DatasheetProfile:
             "2": "GND (ground)",
             "3": "VO (5 V output)",
         },
+        pins=[
+            PinProfile(
+                number="1",
+                name="VI",
+                category="power_input",
+                function="Voltage input for the linear regulator.",
+                limits={
+                    "abs_max_voltage": 35.0,
+                    "recommended_voltage_min": 7.5,
+                    "recommended_voltage_max": 25.0,
+                },
+                recommended_topology=[
+                    "Connect to the unregulated input rail.",
+                    "Place the input bypass capacitor close to VI and GND.",
+                ],
+                evidence=[
+                    "datasheet:l78.pdf#p3",
+                    "datasheet:l78.pdf#p4",
+                    "datasheet:l78.pdf#p6",
+                ],
+            ),
+            PinProfile(
+                number="2",
+                name="GND",
+                category="ground",
+                function="Ground reference for input and output regulation.",
+                recommended_topology=[
+                    "Connect directly to the system ground return.",
+                    "Share the local return path with input and output bypass capacitors.",
+                ],
+                evidence=["datasheet:l78.pdf#p3"],
+            ),
+            PinProfile(
+                number="3",
+                name="VO",
+                category="power_output",
+                function="Regulated 5 V output.",
+                limits={"nominal_voltage": 5.0, "recommended_current_max": 1.5},
+                recommended_topology=[
+                    "Connect to the regulated 5 V rail.",
+                    "Place the output bypass capacitor close to VO and GND.",
+                ],
+                evidence=[
+                    "datasheet:l78.pdf#p3",
+                    "datasheet:l78.pdf#p6",
+                ],
+            ),
+        ],
         evidence={
             "abs_max.vin": "datasheet:l78.pdf#p4",
             "abs_max.iout": "datasheet:l78.pdf#p4",
@@ -82,7 +148,11 @@ def extract_l78_profile(pdf_path: Path) -> DatasheetProfile:
             "pin_function.1": "datasheet:l78.pdf#p3",
             "pin_function.2": "datasheet:l78.pdf#p3",
             "pin_function.3": "datasheet:l78.pdf#p3",
+            "pins.1": "datasheet:l78.pdf#p3",
+            "pins.2": "datasheet:l78.pdf#p3",
+            "pins.3": "datasheet:l78.pdf#p3",
         },
         extracted_at=now,
-        extracted_model="deterministic-l78-v2.4",
+        extracted_model="deterministic-l78-v3.0",
+        schema_version="v2",
     )

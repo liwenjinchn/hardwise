@@ -16,6 +16,60 @@
     "2": "GND (ground)",
     "3": "VO (5 V output)"
   },
+  "pins": [
+    {
+      "number": "1",
+      "name": "VI",
+      "category": "power_input",
+      "function": "Voltage input for the linear regulator.",
+      "limits": {
+        "abs_max_voltage": 35.0,
+        "recommended_voltage_min": 7.5,
+        "recommended_voltage_max": 25.0
+      },
+      "recommended_topology": [
+        "Connect to the unregulated input rail.",
+        "Place the input bypass capacitor close to VI and GND."
+      ],
+      "evidence": [
+        "datasheet:l78.pdf#p3",
+        "datasheet:l78.pdf#p4",
+        "datasheet:l78.pdf#p6"
+      ]
+    },
+    {
+      "number": "2",
+      "name": "GND",
+      "category": "ground",
+      "function": "Ground reference for input and output regulation.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect directly to the system ground return.",
+        "Share the local return path with input and output bypass capacitors."
+      ],
+      "evidence": [
+        "datasheet:l78.pdf#p3"
+      ]
+    },
+    {
+      "number": "3",
+      "name": "VO",
+      "category": "power_output",
+      "function": "Regulated 5 V output.",
+      "limits": {
+        "nominal_voltage": 5.0,
+        "recommended_current_max": 1.5
+      },
+      "recommended_topology": [
+        "Connect to the regulated 5 V rail.",
+        "Place the output bypass capacitor close to VO and GND."
+      ],
+      "evidence": [
+        "datasheet:l78.pdf#p3",
+        "datasheet:l78.pdf#p6"
+      ]
+    }
+  ],
   "evidence": {
     "abs_max.vin": "datasheet:l78.pdf#p4",
     "abs_max.iout": "datasheet:l78.pdf#p4",
@@ -26,9 +80,12 @@
     "recommended.iout_max": "datasheet:l78.pdf#p6",
     "pin_function.1": "datasheet:l78.pdf#p3",
     "pin_function.2": "datasheet:l78.pdf#p3",
-    "pin_function.3": "datasheet:l78.pdf#p3"
+    "pin_function.3": "datasheet:l78.pdf#p3",
+    "pins.1": "datasheet:l78.pdf#p3",
+    "pins.2": "datasheet:l78.pdf#p3",
+    "pins.3": "datasheet:l78.pdf#p3"
   },
   "extracted_at": "2026-05-26T00:00:00+00:00",
-  "extracted_model": "deterministic-l78-v2.4",
-  "schema_version": "v1"
+  "extracted_model": "deterministic-l78-v3.0",
+  "schema_version": "v2"
 }

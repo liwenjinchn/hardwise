@@ -8,6 +8,44 @@
 
 ---
 
+## 2026-05-27 · V3.0 · Pin profiles are facts, not validation verdicts
+
+**Symptom**
+
+V2.9 之后路线图写着 V3.0 Pin Profile、V3.1 单器件验证报告。目标界面里已经有
+PASS/WARN/ERROR，但如果 V3.0 直接输出 pin-level PASS/FAIL，就会跳过一个更基础的问题：
+每个 pin 的名称、功能、限制和推荐拓扑是否已经被结构化、带来源地记录下来。
+
+**Root cause**
+
+Datasheet 证据有两种形态：长文本适合向量检索，结构化 pin facts 适合 deterministic comparison。
+早期 `DatasheetProfile` 已经有 `abs_max/recommended/pin_function`，足够跑 DS001，但不够驱动
+单器件 pin-level report。V3.0 需要先把 datasheet pin 表变成 schema，而不是让后续规则从 PDF
+或自然语言里重新猜 pin function。
+
+**Fix**
+
+`DatasheetProfile` 保持 v1 JSON 兼容，新增 `PinProfile` 和 `pins[]`：每行包含
+pin number/name/category/function/limits/recommended_topology/evidence。公开 `l78.json`
+升级到 schema v2，包含 VI/GND/VO 三个 pin rows。新增 `report-pin-profile` 和
+`report/pin_profile_markdown.py`，可以把 profile 渲染成 markdown pin summary/detail，
+并在报告里明确不做 schematic validation、电气 PASS/FAIL、供应链/PLM 或 PCB 工作。
+
+**Verification**
+
+Focused tests: `uv run pytest tests/ir/test_profile.py tests/report/test_pin_profile_markdown.py tests/test_cli_pin_profile_report.py tests/ir/test_types.py tests/checklist/test_ds001.py -q`
+→ 32 passed；focused ruff clean。Smoke:
+`uv run hardwise report-pin-profile data/datasheet_profiles/l78.json --output /tmp/hardwise-v3.0-l78-pin-profile.md`
+生成 3-pin profile report，包含 VI/GND/VO、`datasheet:l78.pdf#p3/#p4/#p6` source tokens 和
+scope boundary text。
+
+**Takeaway**
+
+Pin validation 要建立在 pin facts 之上。V3.0 的价值是把 datasheet pin 表变成可审计输入；
+V3.1 才应该把这些 facts 与 schematic netlist/BOM identity 结合，生成 PASS/WARN/ERROR。
+
+---
+
 ## 2026-05-26 · V2.9 · Datasheet match should be an indexed evidence state, not a supplier search
 
 **Symptom**
