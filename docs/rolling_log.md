@@ -77,6 +77,15 @@
 6. Markdown and UI reports reuse `ValidationReport.component_checks` and remain single-selected-component artifacts.
 7. The command performs no live supplier lookup and no PLM, lifecycle, price, availability, supplier-risk, `.brd`, boardview, placement, routing, thermal layout, or PCB geometry work.
 
+**V3.4 acceptance details**:
+
+1. `report-validator-ui-batch <netlist_or_pst> <bom> REFDES=profile.json [...]` writes one self-contained HTML file.
+2. Each target is explicit; V3.4 does not auto-match profiles to every component.
+3. The command runs `validate_component_against_profile()` once per target and reuses the same `ValidationReport` shape.
+4. The UI shows component index rows plus multiple validated component detail panes, status chips, schematic-net panes, scope panes, and per-component markdown downloads.
+5. The smoke fixture contains one L78 PASS result and one XL1509 ERROR result in the same schematic artifact.
+6. It requires no web server, npm build, WebSocket, backend session state, `.brd`, boardview canvas, placement, routing, or PCB geometry.
+
 ---
 
 ## Triggered by Slice 5 — KiCad schematic net parser shipping (R005 dangling-nets)

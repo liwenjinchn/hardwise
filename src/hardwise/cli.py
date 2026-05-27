@@ -880,6 +880,85 @@ def report_validator_ui(
     )
 
 
+@app.command(name="report-validator-ui-batch")
+def report_validator_ui_batch(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
+    ),
+    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    targets: list[str] = typer.Argument(
+        ...,
+        help="Validation targets as REFDES=profile.json. Example: U1=data/datasheet_profiles/l78.json",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output HTML path (default: reports/<source>-validator-ui-batch.html).",
+    ),
+) -> None:
+    """Write a local static validator UI over multiple component validation runs."""
+    from datetime import datetime, timezone
+
+    from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
+    from hardwise.ir.profile import DatasheetProfile
+    from hardwise.report.validator_multi_ui import ValidatorUiResult, render
+    from hardwise.validation import validate_component_against_profile
+
+    try:
+        design, source, _input_type, _property_count = _load_allegro_design(netlist_path)
+        bom = parse_bom(bom_path)
+        bom_report = match_bom_to_design(bom, design)
+        design = apply_bom_to_design(design, bom_report)
+        validation_results = []
+        for refdes, profile_path in _parse_validator_targets(targets):
+            component = design.components.get(refdes)
+            if component is None:
+                typer.echo(f"error: refdes not found in design: {refdes}", err=True)
+                raise typer.Exit(1)
+            profile = DatasheetProfile.load(profile_path)
+            validation = validate_component_against_profile(component, profile, design)
+            validation_results.append(
+                ValidatorUiResult(validation=validation, profile_path=profile_path)
+            )
+    except typer.Exit:
+        raise
+    except Exception as e:
+        typer.echo(f"error: batch validator UI failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    now = datetime.now(timezone.utc)
+    project_name = _report_source_name(source)
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{project_name}-validator-ui-batch.html"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    html = render(
+        design,
+        validation_results,
+        project_name=project_name,
+        netlist_source=source,
+        bom_report=bom_report,
+        generated_at=now.isoformat(timespec="seconds"),
+    )
+    output.write_text(html, encoding="utf-8")
+    status_counts = {
+        "PASS": sum(item.validation.status == "PASS" for item in validation_results),
+        "WARN": sum(item.validation.status == "WARN" for item in validation_results),
+        "ERROR": sum(item.validation.status == "ERROR" for item in validation_results),
+    }
+    target_names = ",".join(item.validation.refdes for item in validation_results)
+    typer.echo(
+        f"validator-ui-batch: {output} "
+        f"({len(design.components)} components, validated={target_names}, "
+        f"PASS/WARN/ERROR={status_counts['PASS']}/{status_counts['WARN']}/{status_counts['ERROR']})"
+    )
+
+
 @app.command(name="eval")
 def eval_pack(
     manifest: Path = typer.Option(
@@ -995,6 +1074,29 @@ def _load_allegro_design(netlist_path: Path):
 def _report_source_name(source: Path) -> str:
     """Return a stable report basename for a netlist source path."""
     return source.name if source.is_dir() else source.stem
+
+
+def _parse_validator_targets(targets: list[str]) -> list[tuple[str, Path]]:
+    """Parse ``REFDES=profile.json`` validator targets."""
+
+    parsed: list[tuple[str, Path]] = []
+    seen: set[str] = set()
+    for target in targets:
+        refdes, separator, profile = target.partition("=")
+        refdes = refdes.strip().upper()
+        profile = profile.strip()
+        if not separator or not refdes or not profile:
+            typer.echo(
+                f"error: invalid target {target!r}; expected REFDES=profile.json",
+                err=True,
+            )
+            raise typer.Exit(1)
+        if refdes in seen:
+            typer.echo(f"error: duplicate validation target: {refdes}", err=True)
+            raise typer.Exit(1)
+        seen.add(refdes)
+        parsed.append((refdes, Path(profile)))
+    return parsed
 
 
 def _bom_report_mismatch_count(report) -> int:

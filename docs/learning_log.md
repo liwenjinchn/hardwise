@@ -8,6 +8,41 @@
 
 ---
 
+## 2026-05-27 · V3.4 · Multi-device UI still needs explicit profile assignment
+
+**Symptom**
+
+目标产品截图里左侧有很多器件、右侧有验证详情，很容易把 V3.4 做成“自动给全 BOM 找 profile
+并全部验证”。但 Hardwise 当前只有 L78 和 XL1509 两个明确 family template；如果自动套 profile，
+会把 datasheet matching、profile selection 和 validation 三个问题混在一起。
+
+**Root cause**
+
+多器件 UI 的关键不是自动判断所有器件，而是证明同一份 schematic/BOM artifact 可以承载多个
+确定性 validation result。Profile assignment 本身是另一层问题：它需要 datasheet/document
+match、MPN normalization、package disambiguation 和人工确认。V3.4 如果把这些提前合并，会破坏
+V3.1-V3.3 已经建立的“一个 refdes + 一个 structured profile = 一个可审计判断”契约。
+
+**Fix**
+
+新增 `report-validator-ui-batch <netlist_or_pst> <bom> REFDES=profile.json [...]`，要求调用方显式
+给出每个 refdes 的 profile。CLI 对每个 target 复用 `validate_component_against_profile()`，
+再把多个 `ValidationReport` 交给 `report/validator_multi_ui.py` 渲染到同一个静态 HTML。mixed
+fixture 同时包含 `U1=L7805` 和 `U12=XL1509-12E1`：U1 PASS，U12 ERROR。
+
+**Verification**
+
+Focused tests cover renderer and CLI batch output. Smoke:
+`uv run hardwise report-validator-ui-batch tests/fixtures/allegro/mixed_regulators.net tests/fixtures/allegro/mixed_regulators_bom.csv U1=data/datasheet_profiles/l78.json U12=data/datasheet_profiles/xl1509.json --output /tmp/hardwise-v3.4-mixed-ui.html`
+outputs `PASS/WARN/ERROR=1/0/1` and HTML contains `U1 PASS`, `U12 ERROR`, `1N4007W`, and `6.8 uH`.
+
+**Takeaway**
+
+显式 profile assignment 是这个阶段的保险丝。它让 UI 先变成多器件 review artifact，同时不假装
+Hardwise 已经解决了全 BOM profile 自动匹配。
+
+---
+
 ## 2026-05-27 · V3.3 · Buck validation needs component-level checks, not overloaded pin rows
 
 **Symptom**
