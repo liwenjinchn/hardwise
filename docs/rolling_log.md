@@ -28,6 +28,7 @@
 | V3.5 | Validation targets manifest | Store explicit refdes-to-profile assignments in YAML | Batch UI can be rerun from a committed manifest without auto profile matching |
 | V3.6 | Profile candidate manifest | Suggest explicit refdes-to-profile candidates from BOM identity and local profile library | Reviewer gets matched/unmatched profile coverage without automatic validation |
 | V3.7 | Product-like validator UI polish | Rework batch UI into a three-column workbench with Chinese report sections and issue-first detail | Static artifact looks closer to the target screenshot while preserving the same validation truth |
+| V3.8 | EG2132 gate-driver template | Add deterministic half-bridge driver checks for VCC, logic inputs, gate loads, switch node, and bootstrap path | U3-style driver fixture catches low-voltage bootstrap diode without layout/timing scope creep |
 
 **V2.8 acceptance details**:
 
@@ -116,6 +117,15 @@
 4. Detail panels use Chinese product labels and report sections: `器件`, `验证`, `验证报告`, `引脚检查汇总`, `器件基本信息`, `型号核对`, `引脚功能与连接关系`, `综合合规性检查`, and `综合总结`.
 5. `component_checks` render as a separate `外围/拓扑检查` area so XL1509 peripheral errors such as `D5=1N4007W` and `L1=6.8 uH` are not buried in pin rows.
 6. It does not add new validation families, automatic validation, hosted app behavior, supplier/PLM state, `.brd`, boardview, placement, routing, or PCB geometry.
+
+**V3.8 acceptance details**:
+
+1. `data/datasheet_profiles/eg2132.json` adds a public structured EG2132 profile with `VCC/HIN/LIN/GND/LO/VS/HO/VB` pin rows and half-bridge gate-driver recommendations.
+2. `validation/gate_driver.py` is enabled only for EG2132 or profiles declaring `recommended.topology_family: half_bridge_gate_driver`.
+3. Component-level checks cover VCC range, HIN/LIN connectivity, HO/LO gate-load reachability, VS switch-node reachability, and VB/VS bootstrap diode/capacitor topology.
+4. The synthetic fixture reports overall `ERROR` because `D1=MBRA210LT3G` has only a low reverse-voltage hint for a 24 V-class bootstrap path.
+5. Nominal bootstrap diode/load tests return no component ERROR; missing bootstrap capacitor, missing gate load, bad VCC, and missing logic input return ERROR; unknown bootstrap diode rating returns WARN.
+6. V3.8 does not add MCU, LED, transistor, timing/deadtime, MOSFET loss, simulation, layout/current-loop, supplier/PLM, `.brd`, boardview, placement, routing, or PCB geometry scope.
 
 ---
 

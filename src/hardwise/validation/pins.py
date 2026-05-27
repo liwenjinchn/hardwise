@@ -54,6 +54,21 @@ def validate_pin(
             summary="Switch output pin is connected; peripheral topology checks run at component level.",
             evidence=evidence,
         )
+    if pin_profile.category in {
+        "logic_input",
+        "gate_output",
+        "switch_node",
+        "bootstrap_supply",
+    }:
+        return PinValidation(
+            pin_number=pin_profile.number,
+            pin_name=pin_profile.name,
+            category=pin_profile.category,
+            status="PASS",
+            net=pin.net,
+            summary="Pin is connected; family-specific topology checks run at component level.",
+            evidence=evidence,
+        )
     if pin_profile.category == "feedback":
         return _validate_feedback_pin(pin.net, pin_profile, design, evidence)
     if pin_profile.category == "enable":
@@ -284,6 +299,12 @@ def _float_limit(pin_profile: PinProfile, key: str) -> float | None:
     if isinstance(value, (int, float)):
         return float(value)
     return None
+
+
+def voltage_for_net(net_name: str, design: Design) -> float | None:
+    """Return an inferred voltage for a net using the shared pin-rule heuristic."""
+
+    return _voltage_for_net(net_name, design)
 
 
 def _voltage_for_net(net_name: str, design: Design) -> float | None:

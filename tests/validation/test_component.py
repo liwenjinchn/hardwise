@@ -59,6 +59,18 @@ def _xl1509_design() -> Design:
     return apply_bom_to_design(design, match_bom_to_design(bom, design))
 
 
+def _eg2132_profile() -> DatasheetProfile:
+    return DatasheetProfile.load(Path("data/datasheet_profiles/eg2132.json"))
+
+
+def _eg2132_design() -> Design:
+    design = build_design_from_netlist(
+        parse_allegro_netlist(Path("tests/fixtures/allegro/eg2132_gate_driver.net"))
+    )
+    bom = parse_bom(Path("tests/fixtures/allegro/eg2132_gate_driver_bom.csv"))
+    return apply_bom_to_design(design, match_bom_to_design(bom, design))
+
+
 def _with_component(design: Design, component: Component) -> Design:
     components = dict(design.components)
     components[component.refdes] = component
@@ -203,3 +215,127 @@ def test_validate_xl1509_feedback_wrong_voltage_errors() -> None:
     assert report.status == "ERROR"
     assert feedback.status == "ERROR"
     assert "differs from fixed output 12 V" in feedback.summary
+
+
+def test_validate_eg2132_fixture_reports_bootstrap_diode_error() -> None:
+    design = _eg2132_design()
+
+    report = validate_component_against_profile(
+        design.components["U3"], _eg2132_profile(), design
+    )
+
+    bootstrap = next(
+        check for check in report.component_checks if check.check == "gate_driver_bootstrap"
+    )
+    assert report.status == "ERROR"
+    assert bootstrap.status == "ERROR"
+    assert bootstrap.refdes == "D1"
+    assert "MBRA210LT3G" in bootstrap.summary
+    assert "below required 24 V" in bootstrap.summary
+
+
+def test_validate_eg2132_nominal_topology_has_no_component_error() -> None:
+    design = _eg2132_design()
+    d1 = design.components["D1"].model_copy(update={"value": "SS34", "part_number": "SS34"})
+    design = _with_component(design, d1)
+
+    report = validate_component_against_profile(
+        design.components["U3"], _eg2132_profile(), design
+    )
+
+    assert report.component_counts_by_status == {"PASS": 7, "WARN": 0, "ERROR": 0}
+    assert all(check.status != "ERROR" for check in report.component_checks)
+
+
+def test_validate_eg2132_missing_bootstrap_capacitor_errors() -> None:
+    design = _eg2132_design()
+    cboot = design.components["CBOOT"].model_copy(
+        update={
+            "pins": [
+                pin.model_copy(update={"net": "GND"}) if pin.number == "2" else pin
+                for pin in design.components["CBOOT"].pins
+            ]
+        }
+    )
+    design = _with_component(design, cboot)
+
+    report = validate_component_against_profile(
+        design.components["U3"], _eg2132_profile(), design
+    )
+
+    bootstrap = next(
+        check for check in report.component_checks if check.check == "gate_driver_bootstrap"
+    )
+    assert bootstrap.status == "ERROR"
+    assert "lacks a capacitor" in bootstrap.summary
+
+
+def test_validate_eg2132_missing_gate_load_errors() -> None:
+    design = _eg2132_design()
+    ho_gate_q = design.nets["HO_GATE_Q"].model_copy(update={"nodes": [("R1", "2")]})
+    design = design.model_copy(update={"nets": {**design.nets, "HO_GATE_Q": ho_gate_q}})
+
+    report = validate_component_against_profile(
+        design.components["U3"], _eg2132_profile(), design
+    )
+
+    ho = next(
+        check for check in report.component_checks if check.check == "gate_driver_ho_gate_load"
+    )
+    assert ho.status == "ERROR"
+    assert "does not reach a Q-prefixed gate load" in ho.summary
+
+
+def test_validate_eg2132_unknown_bootstrap_diode_warns_without_fabricating() -> None:
+    design = _eg2132_design()
+    d1 = design.components["D1"].model_copy(
+        update={"value": "DIODE-FAST", "part_number": "DIODE-FAST"}
+    )
+    design = _with_component(design, d1)
+
+    report = validate_component_against_profile(
+        design.components["U3"], _eg2132_profile(), design
+    )
+
+    bootstrap = next(
+        check for check in report.component_checks if check.check == "gate_driver_bootstrap"
+    )
+    assert bootstrap.status == "WARN"
+    assert "cannot be classified deterministically" in bootstrap.summary
+
+
+def test_validate_eg2132_vcc_outside_profile_range_errors() -> None:
+    design = _eg2132_design()
+    u3 = design.components["U3"]
+    pins = [
+        pin.model_copy(update={"net": "+24V"}) if pin.number == "1" else pin
+        for pin in u3.pins
+    ]
+    u3 = u3.model_copy(update={"pins": pins})
+    design = _with_component(design, u3)
+    design = design.model_copy(
+        update={"nets": {**design.nets, "+24V": Net(name="+24V", nodes=[("U3", "1")])}}
+    )
+
+    report = validate_component_against_profile(u3, _eg2132_profile(), design)
+
+    vcc = next(check for check in report.component_checks if check.check == "gate_driver_vcc")
+    assert vcc.status == "ERROR"
+    assert "above profile maximum 20 V" in vcc.summary
+
+
+def test_validate_eg2132_missing_logic_input_errors() -> None:
+    design = _eg2132_design()
+    u3 = design.components["U3"]
+    pins = [
+        pin.model_copy(update={"net": None}) if pin.number == "2" else pin
+        for pin in u3.pins
+    ]
+    u3 = u3.model_copy(update={"pins": pins})
+    design = _with_component(design, u3)
+
+    report = validate_component_against_profile(u3, _eg2132_profile(), design)
+
+    hin = next(check for check in report.component_checks if check.check == "gate_driver_hin")
+    assert hin.status == "ERROR"
+    assert "has no connected net" in hin.summary

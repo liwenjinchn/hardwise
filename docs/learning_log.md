@@ -8,6 +8,40 @@
 
 ---
 
+## 2026-05-27 · V3.8 · Bootstrap checks are topology checks, not timing checks
+
+**Symptom**
+
+目标截图里 gate driver 相关问题很诱人：自举二极管、半桥节点、HO/LO 输出、输入 PWM、
+甚至死区时间和 MOSFET 损耗都能讲。但 V3.8 如果一次性做完这些，会把 schematic topology、
+timing simulation、layout current loop 和器件热损耗混在一起。
+
+**Root cause**
+
+EG2132 这类 half-bridge driver 有一部分事实能从 schematic netlist + BOM + structured profile
+稳定判断：VCC rail、HIN/LIN 是否连接、HO/LO 是否到 Q gate path、VS 是否在半桥开关节点、
+VB/VS 是否有 bootstrap capacitor、bootstrap diode 是否明显低耐压。死区、栅极波形、开关损耗和
+bootstrap 回路布局则需要时序、负载、MOSFET 参数或 PCB 几何，不属于当前输入。
+
+**Fix**
+
+新增 `validation/gate_driver.py`，只输出 `component_checks`。规则对确定事实给 PASS/ERROR：
+`MBRA210LT3G` 在 24 V-class bootstrap path 中按低耐压 ERROR；缺电容、缺 gate load、VCC 超范围、
+逻辑输入缺连接也 ERROR。对未知 diode rating 返回 WARN，不伪造确定结论。
+
+**Verification**
+
+Unit tests cover bad bootstrap diode, nominal bootstrap path, missing bootstrap capacitor, missing gate load,
+unknown diode rating, VCC over-range, and missing HIN. CLI/UI tests verify `report-component-validation`,
+`report-validator-ui-batch`, and `suggest-validation-targets` all surface EG2132.
+
+**Takeaway**
+
+新增 family template 时，先问“这个结论靠当前输入能不能稳定证明”。能证明的放进 deterministic
+component checks；需要波形、布局或供应链的数据，宁可留在未来 scope，也不要靠报告文案补出来。
+
+---
+
 ## 2026-05-27 · V3.7 · UI polish should not create a second validation truth
 
 **Symptom**

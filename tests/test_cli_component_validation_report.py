@@ -73,6 +73,40 @@ def test_report_component_validation_writes_xl1509_dcdc_errors(tmp_path: Path) -
     assert "below the profile minimum 68 uH" in md
 
 
+def test_report_component_validation_writes_eg2132_gate_driver_errors(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "u3-validation.md"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-component-validation",
+            "tests/fixtures/allegro/eg2132_gate_driver.net",
+            "U3",
+            "data/datasheet_profiles/eg2132.json",
+            "--bom",
+            "tests/fixtures/allegro/eg2132_gate_driver_bom.csv",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "component-validation:" in result.output
+    assert "(ERROR, PASS/WARN/ERROR=8/0/0)" in result.output
+
+    md = output.read_text(encoding="utf-8")
+    assert "# Hardwise Component Validation - U3" in md
+    assert "| Profile part | EG2132 |" in md
+    assert "| Overall status | ERROR |" in md
+    assert "| Component check PASS/WARN/ERROR | 6 / 0 / 1 |" in md
+    assert "gate_driver_bootstrap" in md
+    assert "MBRA210LT3G" in md
+    assert "below required 24 V" in md
+    assert "datasheet:eg2132.pdf#p6" in md
+
+
 def test_report_component_validation_rejects_unknown_refdes() -> None:
     result = CliRunner().invoke(
         app,

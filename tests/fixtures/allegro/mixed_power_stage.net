@@ -1,0 +1,29 @@
+$PACKAGES
+  ! 'TO220' ! L7805 ; U1
+  ! 'SOP8' ! XL1509-12E1 ; U12
+  ! 'SOP8' ! EG2132 ; U3
+  ! 'C0805' ! 100nF ; C1, C2, C10, C11, CBOOT, CVCC
+  ! 'DO214' ! 1N4007W ; D5
+  ! 'IND' ! 6.8uH ; L1
+  ! 'TO92' ! SS8050 ; Q12
+  ! 'R0805' ! 20K ; R76
+  ! 'TO252' ! JMTK3005A ; Q1, Q2
+  ! 'R0805' ! 200 ; R1, R2
+  ! 'DO214' ! MBRA210LT3G ; D1
+$NETS
+  '+12V_L78_IN' ; U1.1, C1.1
+  'GND' ; U1.2, C1.2, C2.2, U12.5, U12.6, U12.7, U12.8, D5.2, C10.2, C11.2, Q12.3, U3.4, CVCC.2, Q2.3
+  '+5V' ; U1.3, C2.1
+  '+24V' ; U12.1, C10.1, R76.1
+  'SW' ; U12.2, D5.1, L1.1
+  '+12V' ; U12.3, L1.2, C11.1, U3.1, CVCC.1, D1.1
+  '+24V_EN' ; U12.4, Q12.2, R76.2
+  'PWM1H' ; U3.2
+  'PWM1L' ; U3.3
+  'LO_GATE' ; U3.5, R2.1
+  'LO_GATE_Q' ; R2.2, Q2.1
+  'PHASE_U' ; U3.6, Q1.3, Q2.2, CBOOT.2
+  'HO_GATE' ; U3.7, R1.1
+  'HO_GATE_Q' ; R1.2, Q1.1
+  'VB_U' ; U3.8, D1.2, CBOOT.1
+$END

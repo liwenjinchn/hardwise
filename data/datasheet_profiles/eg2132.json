@@ -1,0 +1,161 @@
+{
+  "part_number": "EG2132",
+  "abs_max": {
+    "vcc": 20.0,
+    "vb_vs": 20.0,
+    "logic_input": 6.0
+  },
+  "recommended": {
+    "topology_family": "half_bridge_gate_driver",
+    "vcc_min": 8.0,
+    "vcc_max": 20.0,
+    "logic_high_min": 2.5,
+    "bootstrap_required": true,
+    "bootstrap_diode_min_reverse_voltage": 24.0,
+    "outputs_require_gate_load": true
+  },
+  "pin_function": {
+    "1": "VCC (gate-drive supply)",
+    "2": "HIN (high-side logic input)",
+    "3": "LIN (low-side logic input)",
+    "4": "GND",
+    "5": "LO (low-side gate output)",
+    "6": "VS (high-side floating return / switch node)",
+    "7": "HO (high-side gate output)",
+    "8": "VB (high-side floating bootstrap supply)"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "VCC",
+      "category": "power_input",
+      "function": "Low-side and logic supply for the half-bridge gate driver.",
+      "limits": {
+        "abs_max_voltage": 20.0,
+        "recommended_voltage_min": 8.0,
+        "recommended_voltage_max": 20.0
+      },
+      "recommended_topology": [
+        "Connect to a local gate-drive supply rail.",
+        "Decouple VCC to GND close to the driver."
+      ],
+      "evidence": [
+        "datasheet:eg2132.pdf#p2",
+        "datasheet:eg2132.pdf#p4"
+      ]
+    },
+    {
+      "number": "2",
+      "name": "HIN",
+      "category": "logic_input",
+      "function": "High-side logic input.",
+      "limits": {
+        "logic_high_min": 2.5
+      },
+      "recommended_topology": [
+        "Drive from a controller PWM or logic output."
+      ],
+      "evidence": [
+        "datasheet:eg2132.pdf#p2",
+        "datasheet:eg2132.pdf#p5"
+      ]
+    },
+    {
+      "number": "3",
+      "name": "LIN",
+      "category": "logic_input",
+      "function": "Low-side logic input.",
+      "limits": {
+        "logic_high_min": 2.5
+      },
+      "recommended_topology": [
+        "Drive from a controller PWM or logic output."
+      ],
+      "evidence": [
+        "datasheet:eg2132.pdf#p2",
+        "datasheet:eg2132.pdf#p5"
+      ]
+    },
+    {
+      "number": "4",
+      "name": "GND",
+      "category": "ground",
+      "function": "Logic and low-side ground reference.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect directly to the system ground return."
+      ],
+      "evidence": [
+        "datasheet:eg2132.pdf#p2"
+      ]
+    },
+    {
+      "number": "5",
+      "name": "LO",
+      "category": "gate_output",
+      "function": "Low-side gate-drive output.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the low-side MOSFET gate path."
+      ],
+      "evidence": [
+        "datasheet:eg2132.pdf#p2",
+        "datasheet:eg2132.pdf#p6"
+      ]
+    },
+    {
+      "number": "6",
+      "name": "VS",
+      "category": "switch_node",
+      "function": "High-side floating return, normally tied to the bridge switch node.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the bridge switch node and bootstrap capacitor return."
+      ],
+      "evidence": [
+        "datasheet:eg2132.pdf#p2",
+        "datasheet:eg2132.pdf#p6"
+      ]
+    },
+    {
+      "number": "7",
+      "name": "HO",
+      "category": "gate_output",
+      "function": "High-side gate-drive output.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the high-side MOSFET gate path."
+      ],
+      "evidence": [
+        "datasheet:eg2132.pdf#p2",
+        "datasheet:eg2132.pdf#p6"
+      ]
+    },
+    {
+      "number": "8",
+      "name": "VB",
+      "category": "bootstrap_supply",
+      "function": "High-side floating bootstrap supply.",
+      "limits": {
+        "vb_vs_abs_max": 20.0
+      },
+      "recommended_topology": [
+        "Connect to bootstrap diode supply path and bootstrap capacitor to VS."
+      ],
+      "evidence": [
+        "datasheet:eg2132.pdf#p2",
+        "datasheet:eg2132.pdf#p6"
+      ]
+    }
+  ],
+  "evidence": {
+    "recommended.vcc": "datasheet:eg2132.pdf#p4",
+    "recommended.logic_inputs": "datasheet:eg2132.pdf#p5",
+    "recommended.outputs": "datasheet:eg2132.pdf#p6",
+    "recommended.bootstrap": "datasheet:eg2132.pdf#p6",
+    "recommended.bootstrap_diode": "datasheet:eg2132.pdf#p6"
+  },
+  "extracted_at": "2026-05-27T00:00:00+00:00",
+  "extracted_model": "deterministic-eg2132-v3.8",
+  "schema_version": "v2"
+}

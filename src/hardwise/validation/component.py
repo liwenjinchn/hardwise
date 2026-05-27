@@ -33,8 +33,12 @@ def _validate_component_topology(
     design: Design,
 ) -> list[ComponentValidation]:
     family = str(profile.recommended.get("topology_family", "")).lower()
-    if profile.part_number.upper() != "XL1509-12E1" and family != "buck":
-        return []
-    from hardwise.validation.dcdc import validate_buck_topology
+    if profile.part_number.upper() == "XL1509-12E1" or family == "buck":
+        from hardwise.validation.dcdc import validate_buck_topology
 
-    return validate_buck_topology(component, profile, design)
+        return validate_buck_topology(component, profile, design)
+    if profile.part_number.upper() == "EG2132" or family == "half_bridge_gate_driver":
+        from hardwise.validation.gate_driver import validate_half_bridge_gate_driver
+
+        return validate_half_bridge_gate_driver(component, profile, design)
+    return []

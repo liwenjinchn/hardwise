@@ -138,6 +138,74 @@ def test_report_validator_ui_batch_accepts_targets_manifest(tmp_path: Path) -> N
     assert ".brd, boardview, placement, routing, PCB geometry" in html
 
 
+def test_report_validator_ui_batch_writes_eg2132_gate_driver_checks(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "eg2132-validator-ui.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-validator-ui-batch",
+            "tests/fixtures/allegro/eg2132_gate_driver.net",
+            "tests/fixtures/allegro/eg2132_gate_driver_bom.csv",
+            "U3=data/datasheet_profiles/eg2132.json",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "validator-ui-batch:" in result.output
+    assert "validated=U3" in result.output
+    assert "PASS/WARN/ERROR=0/0/1" in result.output
+
+    html = output.read_text(encoding="utf-8")
+    assert "Hardwise / 设计验证器" in html
+    assert 'data-select-ref="U3"' in html
+    assert '<article class="panel active" data-panel="U3">' in html
+    assert "外围/拓扑检查" in html
+    assert "gate_driver_bootstrap" in html
+    assert "MBRA210LT3G" in html
+    assert "below required 24 V" in html
+    assert ".brd, boardview, placement, routing, PCB geometry" in html
+
+
+def test_report_validator_ui_batch_writes_mixed_power_stage_manifest(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "mixed-power-stage-ui.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-validator-ui-batch",
+            "tests/fixtures/allegro/mixed_power_stage.net",
+            "tests/fixtures/allegro/mixed_power_stage_bom.csv",
+            "--targets-manifest",
+            "tests/fixtures/allegro/mixed_power_stage_targets.yaml",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "validator-ui-batch:" in result.output
+    assert "validated=U1,U12,U3" in result.output
+    assert "PASS/WARN/ERROR=1/0/2" in result.output
+
+    html = output.read_text(encoding="utf-8")
+    assert 'data-select-ref="U1"' in html
+    assert 'data-select-ref="U12"' in html
+    assert 'data-select-ref="U3"' in html
+    assert '<article class="panel active" data-panel="U12">' in html
+    assert '<article class="panel" data-panel="U3">' in html
+    assert "1N4007W" in html
+    assert "6.8 uH" in html
+    assert "MBRA210LT3G" in html
+    assert "gate_driver_bootstrap" in html
+
+
 def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) -> None:
     output = tmp_path / "target-candidates.yaml"
 
@@ -166,6 +234,30 @@ def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) ->
     assert "profile: data/datasheet_profiles/xl1509.json" in text
     assert "refdes: D5" in text
     assert "match_status: no_result" in text
+
+
+def test_suggest_validation_targets_matches_eg2132_profile(tmp_path: Path) -> None:
+    output = tmp_path / "eg2132-targets.yaml"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "suggest-validation-targets",
+            "tests/fixtures/allegro/eg2132_gate_driver_bom.csv",
+            "--profiles",
+            "data/datasheet_profiles",
+            "--matched-only",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "matched=1" in result.output
+
+    text = output.read_text(encoding="utf-8")
+    assert "refdes: U3" in text
+    assert "profile: data/datasheet_profiles/eg2132.json" in text
 
 
 def test_suggest_validation_targets_matched_only_writes_v35_manifest(tmp_path: Path) -> None:

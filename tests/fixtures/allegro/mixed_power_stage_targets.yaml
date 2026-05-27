@@ -1,0 +1,8 @@
+project: mixed_power_stage
+targets:
+  - refdes: U1
+    profile: data/datasheet_profiles/l78.json
+  - refdes: U12
+    profile: data/datasheet_profiles/xl1509.json
+  - refdes: U3
+    profile: data/datasheet_profiles/eg2132.json
