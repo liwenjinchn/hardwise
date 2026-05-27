@@ -8,6 +8,42 @@
 
 ---
 
+## 2026-05-27 · V3.5 · Explicit manifest before automatic profile matching
+
+**Symptom**
+
+V3.4 的 batch UI 已经能同时展示 U1 PASS 和 U12 ERROR，但命令行需要手写
+`U1=data/datasheet_profiles/l78.json U12=data/datasheet_profiles/xl1509.json`。这对一次 smoke
+足够，对跨电脑继续开发或让别人复现实验就太脆弱：target assignment 藏在 shell history 里。
+
+**Root cause**
+
+“哪些 refdes 应该用哪些 profile”是一个独立决策层。自动 profile matching 需要 BOM MPN
+normalization、manufacturer/package disambiguation、document-index confidence 和人工确认策略。
+如果 V3.5 直接自动猜，就会把 profile selection 的不确定性混进 deterministic validation，
+让 U12 这种明确错误的证据链变得不干净。
+
+**Fix**
+
+新增 `validation/targets.py`，把 target parsing 收敛成一处：positional `REFDES=profile.json`
+和 YAML manifest 都产出同一个 `ValidationTarget(refdes, profile_path)`。`report-validator-ui-batch`
+新增 `--targets-manifest`，并拒绝 manifest 与 positional targets 混用。manifest profile path 仍按
+当前工作目录解析，保持和旧 CLI 一致。
+
+**Verification**
+
+Focused tests cover parser errors, duplicate refdes, manifest CLI smoke, positional compatibility,
+and mixed input rejection. Smoke:
+`uv run hardwise report-validator-ui-batch tests/fixtures/allegro/mixed_regulators.net tests/fixtures/allegro/mixed_regulators_bom.csv --targets-manifest tests/fixtures/allegro/mixed_regulators_targets.yaml --output /tmp/hardwise-v3.5-mixed-ui.html`
+outputs `PASS/WARN/ERROR=1/0/1` and HTML contains `U1 PASS`, `U12 ERROR`, `1N4007W`, and `6.8 uH`.
+
+**Takeaway**
+
+Manifest 是“显式人工选择”的可复现载体，不是 profile 自动匹配。先把选择记录下来，后续再让
+matching layer 逐步给出候选和置信度，系统边界会清楚很多。
+
+---
+
 ## 2026-05-27 · V3.4 · Multi-device UI still needs explicit profile assignment
 
 **Symptom**

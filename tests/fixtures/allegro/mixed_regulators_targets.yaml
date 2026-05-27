@@ -1,0 +1,6 @@
+project: mixed_regulators
+targets:
+  - refdes: U1
+    profile: data/datasheet_profiles/l78.json
+  - refdes: U12
+    profile: data/datasheet_profiles/xl1509.json

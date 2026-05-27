@@ -25,6 +25,7 @@
 | V3.2 | Local static validator UI | Component table, selected validation detail, schematic-net pane, scope pane, download action | Local HTML mirrors the validator workflow using public sample data |
 | V3.3 | XL1509 buck-converter template | Public XL1509 profile + synthetic Allegro/BOM fixture, with deterministic output-net inductor/freewheel-diode rules | DCDC fixture catches `1N4007W` freewheel diode and `6.8uH` inductor while preserving the UI contract |
 | V3.4 | Multi-validation UI/index | Run and render more than one selected component profile in one artifact | UI can show multiple validated devices and switch detail panes without duplicating validation logic |
+| V3.5 | Validation targets manifest | Store explicit refdes-to-profile assignments in YAML | Batch UI can be rerun from a committed manifest without auto profile matching |
 
 **V2.8 acceptance details**:
 
@@ -85,6 +86,16 @@
 4. The UI shows component index rows plus multiple validated component detail panes, status chips, schematic-net panes, scope panes, and per-component markdown downloads.
 5. The smoke fixture contains one L78 PASS result and one XL1509 ERROR result in the same schematic artifact.
 6. It requires no web server, npm build, WebSocket, backend session state, `.brd`, boardview canvas, placement, routing, or PCB geometry.
+
+**V3.5 acceptance details**:
+
+1. `report-validator-ui-batch` accepts either positional `REFDES=profile.json` targets or `--targets-manifest <yaml>`.
+2. The manifest shape is `project` plus a non-empty `targets` list containing `refdes` and `profile`.
+3. Refdes values are uppercased and duplicates are rejected before validation runs.
+4. Manifest profile paths remain current-working-directory relative, matching the positional target behavior.
+5. Positional targets and `--targets-manifest` are mutually exclusive to avoid hidden override order.
+6. The mixed fixture manifest validates the same U1 PASS and U12 ERROR results as the positional CLI path.
+7. It does not auto-match profiles, infer profiles from BOM MPNs, add supplier/PLM state, parse `.brd`, inspect boardview, or use PCB geometry.
 
 ---
 

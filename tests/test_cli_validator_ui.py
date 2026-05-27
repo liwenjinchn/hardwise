@@ -99,6 +99,35 @@ def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: 
     assert ".brd, boardview, placement, routing, PCB geometry" in html
 
 
+def test_report_validator_ui_batch_accepts_targets_manifest(tmp_path: Path) -> None:
+    output = tmp_path / "mixed-validator-ui.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-validator-ui-batch",
+            "tests/fixtures/allegro/mixed_regulators.net",
+            "tests/fixtures/allegro/mixed_regulators_bom.csv",
+            "--targets-manifest",
+            "tests/fixtures/allegro/mixed_regulators_targets.yaml",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "validator-ui-batch:" in result.output
+    assert "validated=U1,U12" in result.output
+    assert "PASS/WARN/ERROR=1/0/1" in result.output
+
+    html = output.read_text(encoding="utf-8")
+    assert "U1 PASS" in html
+    assert "U12 ERROR" in html
+    assert "1N4007W" in html
+    assert "6.8 uH" in html
+    assert ".brd, boardview, placement, routing, PCB geometry" in html
+
+
 def test_report_validator_ui_batch_rejects_bad_target(tmp_path: Path) -> None:
     result = CliRunner().invoke(
         app,
@@ -114,6 +143,54 @@ def test_report_validator_ui_batch_rejects_bad_target(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "expected REFDES=profile.json" in result.output
+
+
+def test_report_validator_ui_batch_rejects_targets_plus_manifest(tmp_path: Path) -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-validator-ui-batch",
+            "tests/fixtures/allegro/mixed_regulators.net",
+            "tests/fixtures/allegro/mixed_regulators_bom.csv",
+            "U1=data/datasheet_profiles/l78.json",
+            "--targets-manifest",
+            "tests/fixtures/allegro/mixed_regulators_targets.yaml",
+            "--output",
+            str(tmp_path / "mixed-validator-ui.html"),
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "not both" in result.output
+
+
+def test_report_validator_ui_batch_rejects_malformed_manifest(tmp_path: Path) -> None:
+    manifest = tmp_path / "bad-targets.yaml"
+    manifest.write_text(
+        """
+project: bad
+targets:
+  - refdes: U1
+""".strip(),
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-validator-ui-batch",
+            "tests/fixtures/allegro/mixed_regulators.net",
+            "tests/fixtures/allegro/mixed_regulators_bom.csv",
+            "--targets-manifest",
+            str(manifest),
+            "--output",
+            str(tmp_path / "mixed-validator-ui.html"),
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "invalid validation targets" in result.output
+    assert "targets[1].profile" in result.output
 
 
 def test_report_validator_ui_rejects_unknown_refdes(tmp_path: Path) -> None:
