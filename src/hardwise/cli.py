@@ -752,6 +752,65 @@ def report_pin_profile(
     typer.echo(f"pin-profile: {output} ({len(profile.pins)} pins, part={profile.part_number})")
 
 
+@app.command(name="report-component-validation")
+def report_component_validation(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
+    ),
+    refdes: str = typer.Argument(..., help="Component refdes to validate."),
+    profile_path: Path = typer.Argument(..., help="Path to a structured DatasheetProfile JSON."),
+    bom_path: Path | None = typer.Option(
+        None,
+        "--bom",
+        help="Optional schematic BOM used to attach component identity before validation.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output markdown path (default: reports/<refdes>-component-validation.md).",
+    ),
+) -> None:
+    """Write a deterministic single-component pin validation report."""
+    from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
+    from hardwise.ir.profile import DatasheetProfile
+    from hardwise.report.component_validation_markdown import render
+    from hardwise.validation import validate_component_against_profile
+
+    try:
+        design, _source, _input_type, _property_count = _load_allegro_design(netlist_path)
+        if bom_path is not None:
+            bom = parse_bom(bom_path)
+            design = apply_bom_to_design(design, match_bom_to_design(bom, design))
+        component = design.components.get(refdes.upper())
+        if component is None:
+            typer.echo(f"error: refdes not found in design: {refdes}", err=True)
+            raise typer.Exit(1)
+        profile = DatasheetProfile.load(profile_path)
+        validation_report = validate_component_against_profile(component, profile, design)
+    except typer.Exit:
+        raise
+    except Exception as e:
+        typer.echo(f"error: validation failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{component.refdes}-component-validation.md"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    output.write_text(render(validation_report, profile_path=profile_path), encoding="utf-8")
+    counts = validation_report.counts_by_status
+    typer.echo(
+        f"component-validation: {output} "
+        f"({validation_report.status}, "
+        f"PASS/WARN/ERROR={counts['PASS']}/{counts['WARN']}/{counts['ERROR']})"
+    )
+
+
 @app.command(name="eval")
 def eval_pack(
     manifest: Path = typer.Option(

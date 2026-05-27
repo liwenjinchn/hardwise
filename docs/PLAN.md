@@ -164,13 +164,13 @@ After Gate B, pull the useful parts of closeout forward: README, GitHub, resume,
 
 ### DR-010 — Final validator path stays component-index first
 **Date**: 2026-05-26
-**Decision**: The path toward the target design-validator experience is staged through component-index artifacts before AI validation output. V2.8 adds report index/readability (`Component Prefix Summary`, `BOM Item Groups`, `--summary-only`, `--mismatch-only`, short source tokens). V2.9 adds local datasheet/document matching by BOM item identity or MPN, with explicit evidence states instead of live supplier lookup. V3.0 adds structured pin profiles. V3.1 may add single-component pin-level PASS/WARN/ERROR reports. V3.2 may add a Web UI that mirrors the component list + detail workflow.
+**Decision**: The path toward the target design-validator experience is staged through component-index artifacts before AI validation output. V2.8 adds report index/readability (`Component Prefix Summary`, `BOM Item Groups`, `--summary-only`, `--mismatch-only`, short source tokens). V2.9 adds local datasheet/document matching by BOM item identity or MPN, with explicit evidence states instead of live supplier lookup. V3.0 adds structured pin profiles. V3.1 adds deterministic single-component pin-level PASS/WARN/ERROR reports for one selected refdes plus one structured profile. V3.2 may add a Web UI that mirrors the component list + detail workflow.
 
 **Why**: The desired product shape includes component list, datasheet links, per-component validation, status counts, and detail reports. Jumping straight from Allegro+BOM intake to model-written validation would bypass the registry/BOM facts that make Hardwise trustworthy. Component-index-first keeps every later claim anchored to parsed refdes, BOM rows, source tokens, and eventually datasheet profile tokens.
 
 **Scope boundary**: These stages remain inside the pre-Layout schematic-review node. They may use schematic netlists, schematic-exported BOMs, public datasheets, structured pin profiles, and deterministic rule templates. They must not parse `.brd`, boardview, placement, routing, PCB geometry, PLM lifecycle, pricing, supplier-risk, simulation, or test-result feedback.
 
-**When to revisit**: After V3.1 has at least one regulator and one gate-driver single-component validation report where every pin-level PASS/WARN/ERROR row carries registry-verified refdes/pin evidence and datasheet/profile source tokens. If that evidence coverage is not achievable, keep the product at intake/index + manual review instead of widening scope.
+**When to revisit**: After the first deterministic regulator report has been exercised on public inputs, expand only by adding one component-family template at a time, such as gate driver, MCU, diode/MOSFET, or connector. If registry-verified refdes/pin evidence and datasheet/profile source tokens are not achievable for a family, keep that family at intake/index + manual review instead of widening scope.
 
 ---
 

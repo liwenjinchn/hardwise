@@ -8,6 +8,44 @@
 
 ---
 
+## 2026-05-27 · V3.1 · Single-component validation needs a narrow deterministic join
+
+**Symptom**
+
+V3.0 已经能把 L78 datasheet pin facts 输出成 profile report，但它还不能回答“U1 这颗器件在
+当前 schematic netlist 里接得对不对”。如果直接让模型根据 netlist、BOM 和 datasheet 文本写判断，
+又会回到自由生成报告：位号、pin、net 和证据边界都不够可审计。
+
+**Root cause**
+
+单器件验证不是新的 parser，也不是新的 report renderer；它是一个 join：schematic topology 提供
+refdes/pin/net，BOM 提供 MPN/value/manufacturer identity，structured profile 提供 pin function
+和 voltage limits。只有这三层先 deterministic 对齐，PASS/WARN/ERROR 才能稳定复现。
+
+**Fix**
+
+新增 `src/hardwise/validation/component.py`，定义 `PinValidation` 和 `ValidationReport`，并实现
+`validate_component_against_profile()`。V3.1 只支持窄规则：profile pin 是否存在、是否连接 net、
+ground 是否接到已识别地网、power input 是否在结构化电压限制内、fixed power output 是否匹配
+nominal voltage。CLI 新增 `report-component-validation`，先加载 Allegro schematic topology，
+可选应用 schematic BOM identity，再对单个 refdes 渲染 markdown 报告。
+
+**Verification**
+
+Focused tests:
+`uv run pytest tests/validation tests/report/test_component_validation_markdown.py tests/test_cli_component_validation_report.py -q`
+→ 7 passed。Smoke:
+`uv run hardwise report-component-validation tests/fixtures/allegro/l78_regulator.net U1 data/datasheet_profiles/l78.json --bom tests/fixtures/allegro/l78_regulator_bom.csv --output /tmp/hardwise-v3.1-u1-validation.md`
+输出 `PASS/WARN/ERROR=3/0/0`，报告包含 VI/GND/VO、`datasheet:l78.pdf#p3/#p4/#p6`
+和 scope boundary text。
+
+**Takeaway**
+
+先让一个器件家族的 deterministic report 站住，再扩展 MCU、gate driver、DCDC、MOSFET 或 connector。
+Unsupported category 应该 WARN 给人工复核，而不是硬凑一个看似完整的 verdict。
+
+---
+
 ## 2026-05-27 · V3.0 · Pin profiles are facts, not validation verdicts
 
 **Symptom**

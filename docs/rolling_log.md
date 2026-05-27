@@ -21,7 +21,7 @@
 | V2.8 | Report index view | Prefix summary, BOM item groups, mismatch-only and summary-only report modes, short source tokens | Public Allegro+BOM sample can be scanned without opening a 4000-row flat table |
 | V2.9 | Datasheet/document match layer | BOM item / MPN to datasheet links with `matched / no_result / ambiguous / manual_needed` states | Report shows which component groups have usable public datasheets |
 | V3.0 | Pin Profile | Structured pin profile per selected part: pin no/name/function/limits/recommended topology | A small public profile set can drive deterministic pin comparison |
-| V3.1 | Single-component validation report | Rule templates for LDO/DCDC, MCU, gate driver, diode/MOS/connectors; evidence-backed pin PASS/WARN/ERROR rows | At least one regulator and one gate-driver component produce pin-level reports with source tokens |
+| V3.1 | Single-component validation report | Deterministic validator for one selected refdes using schematic topology, optional BOM identity, and structured pin profile limits | At least one regulator component produces pin-level PASS/WARN/ERROR rows with source tokens |
 | V3.2 | Web UI | Component table, verification index, detail pane, report/schematic tabs, download action | Local UI mirrors the validator workflow using public sample data |
 
 **V2.8 acceptance details**:
@@ -47,6 +47,15 @@
 3. `data/datasheet_profiles/l78.json` is a public schema-v2 fixture with VI/GND/VO rows.
 4. `report-pin-profile <profile.json>` renders pin summary/detail sections for manual inspection.
 5. The command does not perform schematic validation, PASS/FAIL judgement, live supplier lookup, PLM, lifecycle, price, availability, supplier-risk, `.brd`, boardview, placement, routing, or PCB geometry work.
+
+**V3.1 acceptance details**:
+
+1. `validate_component_against_profile()` returns a `ValidationReport` for one component and one structured profile.
+2. V3.1 rule coverage is intentionally narrow: profiled pin exists, pin has a net, ground pins connect to recognized ground nets, power-input nets compare against structured voltage limits, and fixed power-output nets compare against nominal voltage.
+3. `report-component-validation <netlist_or_pst> <refdes> <profile.json> --bom <bom>` renders overall status plus pin-level PASS/WARN/ERROR rows.
+4. The first shipped smoke path uses the public/synthetic L78 regulator fixture and reports VI/GND/VO as `PASS/WARN/ERROR=3/0/0`.
+5. Unknown component families and unsupported pin categories remain WARN/manual-review territory until a family-specific deterministic template is added.
+6. The command performs no live supplier lookup and no PLM, lifecycle, price, availability, supplier-risk, `.brd`, boardview, placement, routing, or PCB geometry work.
 
 ---
 
@@ -183,4 +192,5 @@ Each anti-rule must reference a real moment when reality tried to violate it. An
   - Follow-up: add a synthetic `.kicad_pcb` unit test that explicitly lights both net syntaxes handled by `_pad_net_name()`; `pic_programmer` only gives implicit coverage for whichever KiCad version generated the fixture.
   - R005/R006/R007 remain queued above because they need a real schematic net parser: wire + local/global label + power symbol + hierarchical label + symbol pin endpoint resolution from `.kicad_sch`.
 - 2026-05-26 — V2.9 stage details landed in code/docs: local document-index parsing + BOM item document matching + report sections + synthetic fixture smoke. The roadmap keeps V3.0+ queued for pin profiles and component validation, but V2.9 is no longer just a planned item.
-- 2026-05-27 — V3.0 stage details landed in code/docs: schema-v2 `DatasheetProfile.pins`, L78 public pin-profile fixture, `report-pin-profile`, renderer and focused tests. V3.1 remains queued for single-component validation reports.
+- 2026-05-27 — V3.0 stage details landed in code/docs: schema-v2 `DatasheetProfile.pins`, L78 public pin-profile fixture, `report-pin-profile`, renderer and focused tests.
+- 2026-05-27 — V3.1 stage details landed in code/docs: deterministic `validation/component.py`, `report-component-validation`, L78 regulator netlist+BOM fixtures, renderer and focused tests. Next component-family templates remain queued behind explicit public profiles and fixtures.
