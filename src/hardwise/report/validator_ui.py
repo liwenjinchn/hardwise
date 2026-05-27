@@ -10,7 +10,7 @@ from urllib.parse import quote
 from hardwise.bom.types import BomMatchReport, sort_refdes_key
 from hardwise.ir.types import Component, Design
 from hardwise.report.component_validation_markdown import render as render_validation_markdown
-from hardwise.validation.component import ValidationReport
+from hardwise.validation.types import ValidationReport
 
 _STYLE = """
 :root{color-scheme:light;--ink:#17211d;--muted:#66736d;--line:#d8ddd6;--paper:#f3f0e7;--panel:#fffdf8;--rail:#22372f;--pass:#315f45;--warn:#a96523;--error:#ba3e2e;--blue:#2d667a;--soft:#f8f5ed;--mono:"SFMono-Regular","Cascadia Code","Liberation Mono",monospace;--sans:"Avenir Next","Segoe UI","Helvetica Neue",sans-serif;--serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;--shadow:0 22px 60px rgba(29,42,36,.12)}
@@ -89,6 +89,7 @@ def render(
     components = sorted(design.components.values(), key=lambda c: sort_refdes_key(c.refdes))
     selected = design.components[validation.refdes]
     status_counts = validation.counts_by_status
+    component_counts = validation.component_counts_by_status
     markdown = render_validation_markdown(validation, profile_path=profile_path)
     download_href = "data:text/markdown;charset=utf-8," + quote(markdown)
 
@@ -139,6 +140,9 @@ def render(
             <div class="card"><span>PASS pins</span><strong>{status_counts["PASS"]}</strong></div>
             <div class="card"><span>WARN pins</span><strong>{status_counts["WARN"]}</strong></div>
             <div class="card"><span>ERROR pins</span><strong>{status_counts["ERROR"]}</strong></div>
+            <div class="card"><span>PASS checks</span><strong>{component_counts["PASS"]}</strong></div>
+            <div class="card"><span>WARN checks</span><strong>{component_counts["WARN"]}</strong></div>
+            <div class="card"><span>ERROR checks</span><strong>{component_counts["ERROR"]}</strong></div>
           </div>
           <div class="tabs">
             <input checked class="tab-input" id="tab-report" name="tab" type="radio">
@@ -211,6 +215,24 @@ def _pin_table(validation: ValidationReport) -> str:
             "</tr>"
         )
     rows.append("</tbody></table>")
+    if validation.component_checks:
+        rows.append(
+            '<p class="scope">Component checks cover deterministic schematic-side peripheral/topology facts for this selected part only.</p>'
+        )
+        rows.append(
+            '<table class="pin-table"><thead><tr><th>Check</th><th>Refdes</th><th>Status</th><th>Summary</th><th>Evidence</th></tr></thead><tbody>'
+        )
+        for check in validation.component_checks:
+            rows.append(
+                "<tr>"
+                f"<td>{escape(check.check)}</td>"
+                f'<td class="ref">{escape(check.refdes or "-")}</td>'
+                f'<td><span class="status {_status_class(check.status)}">{escape(check.status)}</span></td>'
+                f"<td>{escape(check.summary)}</td>"
+                f'<td class="evidence">{_evidence(check.evidence)}</td>'
+                "</tr>"
+            )
+        rows.append("</tbody></table>")
     return "".join(rows)
 
 
@@ -234,7 +256,7 @@ def _topology_panel(component: Component, design: Design) -> str:
 
 def _scope_panel(generated_at: str, profile_path: Path) -> str:
     return (
-        '<p class="scope">V3.2 is a local static UI over existing deterministic artifacts. It is not a hosted product surface and not a PCB parser.</p>'
+        '<p class="scope">V3.3 is a local static UI over existing deterministic artifacts. It is not a hosted product surface and not a PCB parser.</p>'
         '<ul class="boundary-list">'
         f"<li>Generated at: {escape(generated_at or '-')}</li>"
         f"<li>Profile source: <code>{escape(str(profile_path))}</code></li>"

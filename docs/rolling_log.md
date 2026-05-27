@@ -23,7 +23,8 @@
 | V3.0 | Pin Profile | Structured pin profile per selected part: pin no/name/function/limits/recommended topology | A small public profile set can drive deterministic pin comparison |
 | V3.1 | Single-component validation report | Deterministic validator for one selected refdes using schematic topology, optional BOM identity, and structured pin profile limits | At least one regulator component produces pin-level PASS/WARN/ERROR rows with source tokens |
 | V3.2 | Local static validator UI | Component table, selected validation detail, schematic-net pane, scope pane, download action | Local HTML mirrors the validator workflow using public sample data |
-| V3.3 | Next component-family template | One new public profile + fixture, likely gate driver or MCU, with deterministic validation rules | Second family validates without changing the UI contract |
+| V3.3 | XL1509 buck-converter template | Public XL1509 profile + synthetic Allegro/BOM fixture, with deterministic output-net inductor/freewheel-diode rules | DCDC fixture catches `1N4007W` freewheel diode and `6.8uH` inductor while preserving the UI contract |
+| V3.4 | Multi-validation UI/index | Run and render more than one selected component profile in one artifact | UI can show multiple validated devices and switch detail panes without duplicating validation logic |
 
 **V2.8 acceptance details**:
 
@@ -65,6 +66,16 @@
 3. It reuses `validate_component_against_profile()` and does not introduce a separate validation truth.
 4. It requires no web server, npm build, WebSocket, backend session state, `.brd`, boardview canvas, placement, routing, or PCB geometry.
 5. The first smoke path uses the public/synthetic L78 regulator fixture and opens directly from disk.
+
+**V3.3 acceptance details**:
+
+1. `data/datasheet_profiles/xl1509.json` adds a public structured XL1509-12E1 profile with VIN/OUTPUT/FEEDBACK/ON/OFF/GND pin rows and DCDC recommended limits.
+2. `validate_component_against_profile()` remains the single entry point; XL1509-specific checks live behind a profile-dispatched buck topology path.
+3. Component-level checks record peripheral/topology facts separately from pin rows: OUTPUT net inductor presence/value and freewheel diode family.
+4. The public synthetic fixture `xl1509_buck.net` + `xl1509_buck_bom.csv` reports overall `ERROR` because `D5=1N4007W` is not a Schottky-style freewheel diode and `L1=6.8uH` is below the profile minimum.
+5. Nominal Schottky + inductor-range tests return no ERROR; missing inductor returns ERROR; unknown diode family returns WARN; wrong FB rail returns ERROR.
+6. Markdown and UI reports reuse `ValidationReport.component_checks` and remain single-selected-component artifacts.
+7. The command performs no live supplier lookup and no PLM, lifecycle, price, availability, supplier-risk, `.brd`, boardview, placement, routing, thermal layout, or PCB geometry work.
 
 ---
 

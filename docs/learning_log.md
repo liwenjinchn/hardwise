@@ -8,6 +8,43 @@
 
 ---
 
+## 2026-05-27 · V3.3 · Buck validation needs component-level checks, not overloaded pin rows
+
+**Symptom**
+
+目标截图里的 U12 问题不是单纯“某个 pin 接错”：OUTPUT pin 的风险来自外围拓扑组合，
+包括 switch node 上是否有电感、续流二极管是否为合适类型、以及电感值是否落在 datasheet
+推荐范围。如果把 D5 和 L1 的结论硬塞进 Pin 2 的 summary，报告能看起来像目标截图，但数据
+结构会把 pin fact 和 peripheral fact 混在一起。
+
+**Root cause**
+
+L78 的 V3.1 规则是 pin-local：VI/GND/VO 各自可以由 net name 和 profile limits 判定。Buck
+converter 不一样：OUTPUT pin 是一个 topology anchor，真正要看的对象是同一 net 上的邻接器件。
+这类结论需要和 pin rows 并列，而不是伪装成 pin-level verdict。
+
+**Fix**
+
+把 validation 拆成三层：`validation/pins.py` 保留 generic pin rules；`validation/dcdc.py`
+只在 profile 明确为 XL1509/buck 时运行；`validation/types.py` 给 `ValidationReport` 增加
+`component_checks`。XL1509 fixture 中，8 个 pin rows 仍然全部 PASS；overall status 由两个
+component checks 拉成 ERROR：`D5=1N4007W` 非 Schottky-style diode，`L1=6.8uH` 低于 68uH
+profile minimum。Markdown 和 static UI 都渲染 component checks，但不改变 L78 的 pin count 行为。
+
+**Verification**
+
+Focused tests cover bad fixture, nominal Schottky + 100uH, missing inductor, unknown diode WARN,
+and wrong FB rail ERROR. CLI smoke:
+`uv run hardwise report-component-validation tests/fixtures/allegro/xl1509_buck.net U12 data/datasheet_profiles/xl1509.json --bom tests/fixtures/allegro/xl1509_buck_bom.csv --output /tmp/hardwise-v3.3-u12-validation.md`
+outputs overall `ERROR` with pin counts `8/0/0` and component check counts `0/0/2`.
+
+**Takeaway**
+
+用“pin-local checks + component-level topology checks”分层后，报告能接近产品目标截图，同时数据
+结构仍然诚实：pin 没错就别把它标错，外围拓扑有问题就作为外围检查独立呈现。
+
+---
+
 ## 2026-05-27 · V3.2 · A UI can be an artifact before it is a product surface
 
 **Symptom**

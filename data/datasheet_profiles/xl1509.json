@@ -1,0 +1,155 @@
+{
+  "part_number": "XL1509-12E1",
+  "abs_max": {
+    "vin": 45.0,
+    "on_off": 45.0
+  },
+  "recommended": {
+    "topology_family": "buck",
+    "vin_min": 4.5,
+    "vin_max": 40.0,
+    "fixed_output_voltage": 12.0,
+    "inductor_min_uh": 68.0,
+    "inductor_max_uh": 150.0,
+    "freewheel_diode_type": "schottky"
+  },
+  "pin_function": {
+    "1": "VIN (supply input)",
+    "2": "OUTPUT (switch node)",
+    "3": "FEEDBACK (fixed 12 V feedback)",
+    "4": "ON/OFF (enable control)",
+    "5": "GND",
+    "6": "GND",
+    "7": "GND",
+    "8": "GND"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "VIN",
+      "category": "power_input",
+      "function": "Supply voltage input pin.",
+      "limits": {
+        "abs_max_voltage": 45.0,
+        "recommended_voltage_min": 4.5,
+        "recommended_voltage_max": 40.0
+      },
+      "recommended_topology": [
+        "Connect to the unregulated input rail.",
+        "Place input bypass capacitors close to VIN and GND."
+      ],
+      "evidence": [
+        "datasheet:xl1509.pdf#p2",
+        "datasheet:xl1509.pdf#p5"
+      ]
+    },
+    {
+      "number": "2",
+      "name": "OUTPUT",
+      "category": "switch_output",
+      "function": "Internal power switch output node.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the inductor and freewheel Schottky diode.",
+        "Use an inductor in the profile recommended range."
+      ],
+      "evidence": [
+        "datasheet:xl1509.pdf#p2",
+        "datasheet:xl1509.pdf#p9"
+      ]
+    },
+    {
+      "number": "3",
+      "name": "FEEDBACK",
+      "category": "feedback",
+      "function": "Feedback pin for the fixed 12 V output version.",
+      "limits": {
+        "nominal_voltage": 12.0
+      },
+      "recommended_topology": [
+        "For the fixed 12 V version, connect feedback to the +12 V output rail."
+      ],
+      "evidence": [
+        "datasheet:xl1509.pdf#p2",
+        "datasheet:xl1509.pdf#p8"
+      ]
+    },
+    {
+      "number": "4",
+      "name": "ON/OFF",
+      "category": "enable",
+      "function": "Enable control pin.",
+      "limits": {
+        "abs_max_voltage": 45.0
+      },
+      "recommended_topology": [
+        "Drive low to enable; keep the control voltage within VIN limits."
+      ],
+      "evidence": [
+        "datasheet:xl1509.pdf#p2",
+        "datasheet:xl1509.pdf#p5"
+      ]
+    },
+    {
+      "number": "5",
+      "name": "GND",
+      "category": "ground",
+      "function": "Ground pin.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect directly to system ground."
+      ],
+      "evidence": [
+        "datasheet:xl1509.pdf#p2"
+      ]
+    },
+    {
+      "number": "6",
+      "name": "GND",
+      "category": "ground",
+      "function": "Ground pin.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect directly to system ground."
+      ],
+      "evidence": [
+        "datasheet:xl1509.pdf#p2"
+      ]
+    },
+    {
+      "number": "7",
+      "name": "GND",
+      "category": "ground",
+      "function": "Ground pin.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect directly to system ground."
+      ],
+      "evidence": [
+        "datasheet:xl1509.pdf#p2"
+      ]
+    },
+    {
+      "number": "8",
+      "name": "GND",
+      "category": "ground",
+      "function": "Ground pin.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect directly to system ground."
+      ],
+      "evidence": [
+        "datasheet:xl1509.pdf#p2"
+      ]
+    }
+  ],
+  "evidence": {
+    "recommended.output_topology": "datasheet:xl1509.pdf#p8",
+    "recommended.inductor": "datasheet:xl1509.pdf#p9",
+    "recommended.freewheel_diode": "datasheet:xl1509.pdf#p8",
+    "recommended.fixed_output_voltage": "datasheet:xl1509.pdf#p8"
+  },
+  "extracted_at": "2026-05-27T00:00:00+00:00",
+  "extracted_model": "deterministic-xl1509-v3.3",
+  "schema_version": "v2"
+}

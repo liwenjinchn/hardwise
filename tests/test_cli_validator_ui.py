@@ -37,6 +37,37 @@ def test_report_validator_ui_writes_html(tmp_path: Path) -> None:
     assert "boardview" in html
 
 
+def test_report_validator_ui_writes_xl1509_dcdc_checks(tmp_path: Path) -> None:
+    output = tmp_path / "xl1509-validator-ui.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-validator-ui",
+            "tests/fixtures/allegro/xl1509_buck.net",
+            "tests/fixtures/allegro/xl1509_buck_bom.csv",
+            "U12",
+            "data/datasheet_profiles/xl1509.json",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "validator-ui:" in result.output
+    assert "selected=U12, ERROR" in result.output
+
+    html = output.read_text(encoding="utf-8")
+    assert "Hardwise Validator UI - xl1509_buck" in html
+    assert "U12" in html
+    assert "ERROR" in html
+    assert "1N4007W" in html
+    assert "6.8 uH" in html
+    assert "buck_freewheel_diode" in html
+    assert "buck_inductor" in html
+    assert ".brd, boardview, placement, routing, PCB geometry" in html
+
+
 def test_report_validator_ui_rejects_unknown_refdes(tmp_path: Path) -> None:
     result = CliRunner().invoke(
         app,

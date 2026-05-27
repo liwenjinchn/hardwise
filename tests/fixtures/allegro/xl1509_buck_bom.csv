@@ -1,0 +1,7 @@
+Reference,Quantity,Value,Manufacturer,MPN
+U12,1,XL1509-12E1,XLSEMI,XL1509-12E1
+D5,1,1N4007W,Fixture,1N4007W
+L1,1,6.8uH,Fixture,IND-6R8
+"C1 C2",2,100nF,Fixture,CAP-100N
+Q12,1,SS8050,Fixture,SS8050
+R76,1,20K,Fixture,RES-20K
