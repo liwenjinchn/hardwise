@@ -8,6 +8,38 @@
 
 ---
 
+## 2026-05-27 · V3.7 · UI polish should not create a second validation truth
+
+**Symptom**
+
+V3.4/V3.6 的 batch HTML 已经能展示 `U1 PASS` 和 `U12 ERROR`，但观感仍像工程导出的
+HTML artifact。要向目标截图靠近，很容易顺手在 UI 层重新组织甚至重新判断错误摘要。
+
+**Root cause**
+
+产品界面需要更好的信息层级，不需要新的判断层。Hardwise 的可信边界来自
+`ValidationReport`：pin rows 和 `component_checks` 已经是 deterministic validation 的输出。
+如果 UI 为了“看起来像报告”重新推理 D5/L1，截图会更像，但证据链会变脏。
+
+**Fix**
+
+把 `report/validator_multi_ui.py` 拆成 layout、assets、section helpers，UI 只读取既有
+`ValidationReport`。V3.7 新增三栏工作台、issue-first 默认详情、中文章节、pin summary cards、
+以及 `外围/拓扑检查` cards，但不改 `validate_component_against_profile()` 或 schema。
+
+**Verification**
+
+Focused UI/CLI tests assert the mixed fixture opens on `U12 ERROR`, includes product labels,
+`1N4007W`, `6.8 uH`, and the scope boundary. Full suite, ruff, diff check, CLI smoke, and browser
+visual check are part of the V3.7 closeout.
+
+**Takeaway**
+
+UI 可以重排证据，但不能发明证据。越接近产品形态，越要守住“报告只是同一个 truth object 的投影”
+这个边界。
+
+---
+
 ## 2026-05-27 · V3.6 · Candidate generation should show misses, not hide them
 
 **Symptom**

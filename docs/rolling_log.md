@@ -27,6 +27,7 @@
 | V3.4 | Multi-validation UI/index | Run and render more than one selected component profile in one artifact | UI can show multiple validated devices and switch detail panes without duplicating validation logic |
 | V3.5 | Validation targets manifest | Store explicit refdes-to-profile assignments in YAML | Batch UI can be rerun from a committed manifest without auto profile matching |
 | V3.6 | Profile candidate manifest | Suggest explicit refdes-to-profile candidates from BOM identity and local profile library | Reviewer gets matched/unmatched profile coverage without automatic validation |
+| V3.7 | Product-like validator UI polish | Rework batch UI into a three-column workbench with Chinese report sections and issue-first detail | Static artifact looks closer to the target screenshot while preserving the same validation truth |
 
 **V2.8 acceptance details**:
 
@@ -106,6 +107,15 @@
 4. `--matched-only` writes the minimal V3.5 `project + targets[]` manifest shape for matched rows only.
 5. The mixed fixture reports U1 and U12 as matched, with passive/peripheral rows as no-result.
 6. It does not run validation, auto-accept targets, fetch datasheets, infer missing profiles, add supplier/PLM state, parse `.brd`, inspect boardview, or use PCB geometry.
+
+**V3.7 acceptance details**:
+
+1. `report-validator-ui-batch` still writes one self-contained static HTML file with no npm build, server, WebSocket, or backend state.
+2. The batch renderer now uses a workbench layout: top project/status summary, left component index/filter, middle validation cards, and right report detail.
+3. The default active detail is issue-first: ERROR before WARN before PASS, so the mixed fixture opens on `U12 ERROR`.
+4. Detail panels use Chinese product labels and report sections: `器件`, `验证`, `验证报告`, `引脚检查汇总`, `器件基本信息`, `型号核对`, `引脚功能与连接关系`, `综合合规性检查`, and `综合总结`.
+5. `component_checks` render as a separate `外围/拓扑检查` area so XL1509 peripheral errors such as `D5=1N4007W` and `L1=6.8 uH` are not buried in pin rows.
+6. It does not add new validation families, automatic validation, hosted app behavior, supplier/PLM state, `.brd`, boardview, placement, routing, or PCB geometry.
 
 ---
 

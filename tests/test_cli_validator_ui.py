@@ -90,12 +90,18 @@ def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: 
     assert "PASS/WARN/ERROR=1/0/1" in result.output
 
     html = output.read_text(encoding="utf-8")
-    assert "Hardwise multi-validation UI" in html
-    assert "U1 PASS" in html
-    assert "U12 ERROR" in html
+    assert "Hardwise / 设计验证器" in html
+    assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
+    assert 'data-select-ref="U1"' in html
+    assert 'data-select-ref="U12"' in html
+    assert '<article class="panel active" data-panel="U12">' in html
+    assert 'status pass">PASS' in html
+    assert 'status error">ERROR' in html
+    assert "下载报告" in html
+    assert "外围/拓扑检查" in html or "综合合规性检查" in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
-    assert "V3.4 is a local static multi-validation UI" in html
+    assert "V3.7 is a local static multi-validation UI" in html
     assert ".brd, boardview, placement, routing, PCB geometry" in html
 
 
@@ -121,8 +127,12 @@ def test_report_validator_ui_batch_accepts_targets_manifest(tmp_path: Path) -> N
     assert "PASS/WARN/ERROR=1/0/1" in result.output
 
     html = output.read_text(encoding="utf-8")
-    assert "U1 PASS" in html
-    assert "U12 ERROR" in html
+    assert "Hardwise / 设计验证器" in html
+    assert 'data-select-ref="U1"' in html
+    assert 'data-select-ref="U12"' in html
+    assert '<article class="panel active" data-panel="U12">' in html
+    assert 'status pass">PASS' in html
+    assert 'status error">ERROR' in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
     assert ".brd, boardview, placement, routing, PCB geometry" in html

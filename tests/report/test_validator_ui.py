@@ -82,11 +82,21 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
         generated_at="2026-05-27T00:00:00+00:00",
     )
 
-    assert "Hardwise multi-validation UI" in html
-    assert "U1 PASS" in html
-    assert "U12 ERROR" in html
-    assert "Download report" in html
+    assert "Hardwise / 设计验证器" in html
+    assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
+    assert 'data-select-ref="U1"' in html
+    assert 'data-select-ref="U12"' in html
+    assert '<article class="panel active" data-panel="U12">' in html
+    assert 'status pass">PASS' in html
+    assert 'status error">ERROR' in html
+    assert "下载报告" in html
+    assert "引脚检查汇总" in html
+    assert "器件基本信息" in html
+    assert "型号核对" in html
+    assert "引脚功能与连接关系" in html
+    assert "综合合规性检查" in html
+    assert "综合总结" in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
-    assert "V3.4 is a local static multi-validation UI" in html
+    assert "V3.7 is a local static multi-validation UI" in html
     assert ".brd, boardview, placement, routing, PCB geometry" in html
