@@ -319,6 +319,63 @@ def report_allegro_bom(
     )
 
 
+@app.command(name="suggest-validation-targets")
+def suggest_validation_targets(
+    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    profiles: Path = typer.Option(
+        Path("data/datasheet_profiles"),
+        "--profiles",
+        help="Directory containing structured DatasheetProfile JSON files.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output YAML path (default: reports/<bom-stem>-target-candidates.yaml).",
+    ),
+    matched_only: bool = typer.Option(
+        False,
+        "--matched-only",
+        help="Write only matched targets in the V3.5 manifest shape.",
+    ),
+) -> None:
+    """Suggest explicit refdes-to-profile validation targets from a schematic BOM."""
+    from hardwise.bom import parse_bom
+    from hardwise.validation import (
+        ProfileCandidateError,
+        render_profile_candidate_manifest,
+        suggest_profile_candidates,
+    )
+
+    try:
+        bom = parse_bom(bom_path)
+        report = suggest_profile_candidates(bom, profiles, project=bom_path.stem)
+    except ProfileCandidateError as e:
+        typer.echo(f"error: profile candidate generation failed: {e}", err=True)
+        raise typer.Exit(1) from e
+    except Exception as e:
+        typer.echo(f"error: suggest validation targets failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{bom_path.stem}-target-candidates.yaml"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    output.write_text(
+        render_profile_candidate_manifest(report, matched_only=matched_only),
+        encoding="utf-8",
+    )
+    counts = report.counts_by_status
+    typer.echo(
+        f"target-candidates: {output} "
+        f"(matched={counts['matched']}, no_result={counts['no_result']}, "
+        f"ambiguous={counts['ambiguous']}, manual_needed={counts['manual_needed']})"
+    )
+
+
 @app.command()
 def review(
     project_dir: Path = typer.Argument(..., help="Path to a KiCad project directory."),

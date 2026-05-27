@@ -128,6 +128,80 @@ def test_report_validator_ui_batch_accepts_targets_manifest(tmp_path: Path) -> N
     assert ".brd, boardview, placement, routing, PCB geometry" in html
 
 
+def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) -> None:
+    output = tmp_path / "target-candidates.yaml"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "suggest-validation-targets",
+            "tests/fixtures/allegro/mixed_regulators_bom.csv",
+            "--profiles",
+            "data/datasheet_profiles",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "target-candidates:" in result.output
+    assert "matched=2" in result.output
+    assert "no_result=8" in result.output
+
+    text = output.read_text(encoding="utf-8")
+    assert "status: candidate" in text
+    assert "refdes: U1" in text
+    assert "profile: data/datasheet_profiles/l78.json" in text
+    assert "refdes: U12" in text
+    assert "profile: data/datasheet_profiles/xl1509.json" in text
+    assert "refdes: D5" in text
+    assert "match_status: no_result" in text
+
+
+def test_suggest_validation_targets_matched_only_writes_v35_manifest(tmp_path: Path) -> None:
+    output = tmp_path / "targets.yaml"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "suggest-validation-targets",
+            "tests/fixtures/allegro/mixed_regulators_bom.csv",
+            "--profiles",
+            "data/datasheet_profiles",
+            "--matched-only",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    text = output.read_text(encoding="utf-8")
+    assert "project: mixed_regulators_bom" in text
+    assert "targets:" in text
+    assert "status:" not in text
+    assert "unmatched:" not in text
+    assert "refdes: U1" in text
+    assert "refdes: U12" in text
+
+
+def test_suggest_validation_targets_rejects_missing_profile_dir(tmp_path: Path) -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "suggest-validation-targets",
+            "tests/fixtures/allegro/mixed_regulators_bom.csv",
+            "--profiles",
+            str(tmp_path / "missing"),
+            "--output",
+            str(tmp_path / "target-candidates.yaml"),
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "profile candidate generation failed" in result.output
+    assert "profile directory not found" in result.output
+
+
 def test_report_validator_ui_batch_rejects_bad_target(tmp_path: Path) -> None:
     result = CliRunner().invoke(
         app,

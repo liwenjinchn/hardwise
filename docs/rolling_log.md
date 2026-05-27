@@ -26,6 +26,7 @@
 | V3.3 | XL1509 buck-converter template | Public XL1509 profile + synthetic Allegro/BOM fixture, with deterministic output-net inductor/freewheel-diode rules | DCDC fixture catches `1N4007W` freewheel diode and `6.8uH` inductor while preserving the UI contract |
 | V3.4 | Multi-validation UI/index | Run and render more than one selected component profile in one artifact | UI can show multiple validated devices and switch detail panes without duplicating validation logic |
 | V3.5 | Validation targets manifest | Store explicit refdes-to-profile assignments in YAML | Batch UI can be rerun from a committed manifest without auto profile matching |
+| V3.6 | Profile candidate manifest | Suggest explicit refdes-to-profile candidates from BOM identity and local profile library | Reviewer gets matched/unmatched profile coverage without automatic validation |
 
 **V2.8 acceptance details**:
 
@@ -96,6 +97,15 @@
 5. Positional targets and `--targets-manifest` are mutually exclusive to avoid hidden override order.
 6. The mixed fixture manifest validates the same U1 PASS and U12 ERROR results as the positional CLI path.
 7. It does not auto-match profiles, infer profiles from BOM MPNs, add supplier/PLM state, parse `.brd`, inspect boardview, or use PCB geometry.
+
+**V3.6 acceptance details**:
+
+1. `suggest-validation-targets <bom> --profiles data/datasheet_profiles` writes a YAML candidate manifest.
+2. Candidate matching uses normalized exact match from BOM MPN first, then part-like value, to local profile `part_number`.
+3. Each candidate records `matched`, `no_result`, `ambiguous`, or `manual_needed`; unmatched rows remain visible in the default output.
+4. `--matched-only` writes the minimal V3.5 `project + targets[]` manifest shape for matched rows only.
+5. The mixed fixture reports U1 and U12 as matched, with passive/peripheral rows as no-result.
+6. It does not run validation, auto-accept targets, fetch datasheets, infer missing profiles, add supplier/PLM state, parse `.brd`, inspect boardview, or use PCB geometry.
 
 ---
 

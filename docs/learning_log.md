@@ -8,6 +8,40 @@
 
 ---
 
+## 2026-05-27 · V3.6 · Candidate generation should show misses, not hide them
+
+**Symptom**
+
+V3.5 已经能从 YAML manifest 复现 U1/U12 的 batch validation，但下一步如果只输出
+matched targets，很容易让人误以为 Hardwise 已经覆盖了整份 BOM。mixed fixture 里 D5、L1、
+Q12、R76 和电容都没有 profile；这些“没覆盖”的事实本身也需要暴露出来。
+
+**Root cause**
+
+Profile candidate generation 是 evidence-indexing 问题，不是 validation 问题。它可以确定
+“BOM identity 是否能和本地 profile part_number exact match”，但不能因此推断这个器件已经被审查。
+如果隐藏 no-result/manual/ambiguous 行，reviewer 会失去 profile coverage 的边界感。
+
+**Fix**
+
+新增 `validation/profile_candidates.py` 和 `suggest-validation-targets`。默认 YAML 输出包含
+`matched / no_result / ambiguous / manual_needed`，让候选和缺口一起出现；只有显式传
+`--matched-only` 时，才输出 V3.5 可直接消费的最小 `project + targets[]` manifest。
+
+**Verification**
+
+Focused tests cover U1/U12 matched, peripheral no-result, passive manual-needed, duplicate-profile
+ambiguous, missing profile directory, and CLI output. Smoke:
+`uv run hardwise suggest-validation-targets tests/fixtures/allegro/mixed_regulators_bom.csv --profiles data/datasheet_profiles --output /tmp/hardwise-v3.6-target-candidates.yaml`
+outputs `matched=2, no_result=8, ambiguous=0, manual_needed=0`.
+
+**Takeaway**
+
+自动化 profile assignment 的第一步不是“自动全过”，而是把能确定匹配的目标和无法匹配的缺口
+放在同一张表里。这样后续 reviewer 或模型代理才知道自己站在哪块地上。
+
+---
+
 ## 2026-05-27 · V3.5 · Explicit manifest before automatic profile matching
 
 **Symptom**
