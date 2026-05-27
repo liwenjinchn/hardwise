@@ -811,6 +811,75 @@ def report_component_validation(
     )
 
 
+@app.command(name="report-validator-ui")
+def report_validator_ui(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
+    ),
+    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    refdes: str = typer.Argument(..., help="Component refdes to validate in the UI detail pane."),
+    profile_path: Path = typer.Argument(..., help="Path to a structured DatasheetProfile JSON."),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output HTML path (default: reports/<source>-validator-ui.html).",
+    ),
+) -> None:
+    """Write a local static validator UI over one Allegro+BOM validation run."""
+    from datetime import datetime, timezone
+
+    from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
+    from hardwise.ir.profile import DatasheetProfile
+    from hardwise.report.validator_ui import render
+    from hardwise.validation import validate_component_against_profile
+
+    try:
+        design, source, _input_type, _property_count = _load_allegro_design(netlist_path)
+        bom = parse_bom(bom_path)
+        bom_report = match_bom_to_design(bom, design)
+        design = apply_bom_to_design(design, bom_report)
+        component = design.components.get(refdes.upper())
+        if component is None:
+            typer.echo(f"error: refdes not found in design: {refdes}", err=True)
+            raise typer.Exit(1)
+        profile = DatasheetProfile.load(profile_path)
+        validation_report = validate_component_against_profile(component, profile, design)
+    except typer.Exit:
+        raise
+    except Exception as e:
+        typer.echo(f"error: validator UI failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    now = datetime.now(timezone.utc)
+    project_name = _report_source_name(source)
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{project_name}-validator-ui.html"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    html = render(
+        design,
+        validation_report,
+        project_name=project_name,
+        netlist_source=source,
+        profile_path=profile_path,
+        bom_report=bom_report,
+        generated_at=now.isoformat(timespec="seconds"),
+    )
+    output.write_text(html, encoding="utf-8")
+    counts = validation_report.counts_by_status
+    typer.echo(
+        f"validator-ui: {output} "
+        f"({len(design.components)} components, selected={validation_report.refdes}, "
+        f"{validation_report.status}, "
+        f"PASS/WARN/ERROR={counts['PASS']}/{counts['WARN']}/{counts['ERROR']})"
+    )
+
+
 @app.command(name="eval")
 def eval_pack(
     manifest: Path = typer.Option(

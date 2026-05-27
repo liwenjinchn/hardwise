@@ -22,7 +22,8 @@
 | V2.9 | Datasheet/document match layer | BOM item / MPN to datasheet links with `matched / no_result / ambiguous / manual_needed` states | Report shows which component groups have usable public datasheets |
 | V3.0 | Pin Profile | Structured pin profile per selected part: pin no/name/function/limits/recommended topology | A small public profile set can drive deterministic pin comparison |
 | V3.1 | Single-component validation report | Deterministic validator for one selected refdes using schematic topology, optional BOM identity, and structured pin profile limits | At least one regulator component produces pin-level PASS/WARN/ERROR rows with source tokens |
-| V3.2 | Web UI | Component table, verification index, detail pane, report/schematic tabs, download action | Local UI mirrors the validator workflow using public sample data |
+| V3.2 | Local static validator UI | Component table, selected validation detail, schematic-net pane, scope pane, download action | Local HTML mirrors the validator workflow using public sample data |
+| V3.3 | Next component-family template | One new public profile + fixture, likely gate driver or MCU, with deterministic validation rules | Second family validates without changing the UI contract |
 
 **V2.8 acceptance details**:
 
@@ -56,6 +57,14 @@
 4. The first shipped smoke path uses the public/synthetic L78 regulator fixture and reports VI/GND/VO as `PASS/WARN/ERROR=3/0/0`.
 5. Unknown component families and unsupported pin categories remain WARN/manual-review territory until a family-specific deterministic template is added.
 6. The command performs no live supplier lookup and no PLM, lifecycle, price, availability, supplier-risk, `.brd`, boardview, placement, routing, or PCB geometry work.
+
+**V3.2 acceptance details**:
+
+1. `report-validator-ui <netlist_or_pst> <bom> <refdes> <profile.json>` writes one self-contained HTML file.
+2. The UI shows component index, selected component identity, PASS/WARN/ERROR counts, pin validation table, schematic-net members, scope boundary, and a markdown download link.
+3. It reuses `validate_component_against_profile()` and does not introduce a separate validation truth.
+4. It requires no web server, npm build, WebSocket, backend session state, `.brd`, boardview canvas, placement, routing, or PCB geometry.
+5. The first smoke path uses the public/synthetic L78 regulator fixture and opens directly from disk.
 
 ---
 
@@ -194,3 +203,4 @@ Each anti-rule must reference a real moment when reality tried to violate it. An
 - 2026-05-26 — V2.9 stage details landed in code/docs: local document-index parsing + BOM item document matching + report sections + synthetic fixture smoke. The roadmap keeps V3.0+ queued for pin profiles and component validation, but V2.9 is no longer just a planned item.
 - 2026-05-27 — V3.0 stage details landed in code/docs: schema-v2 `DatasheetProfile.pins`, L78 public pin-profile fixture, `report-pin-profile`, renderer and focused tests.
 - 2026-05-27 — V3.1 stage details landed in code/docs: deterministic `validation/component.py`, `report-component-validation`, L78 regulator netlist+BOM fixtures, renderer and focused tests. Next component-family templates remain queued behind explicit public profiles and fixtures.
+- 2026-05-27 — V3.2 stage details landed in code/docs: `report-validator-ui` creates a single-file local HTML UI with component index, selected validation detail, schematic-net pane, scope pane, and report download. V3.3 is queued for the next component-family template rather than more UI surface.

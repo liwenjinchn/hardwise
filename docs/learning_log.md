@@ -8,6 +8,45 @@
 
 ---
 
+## 2026-05-27 · V3.2 · A UI can be an artifact before it is a product surface
+
+**Symptom**
+
+目标界面里有 component list、验证摘要、单器件 detail 和报告下载。V3.1 已经能生成单器件
+markdown，但工程师还不能像产品界面那样先扫器件列表、再点进一个器件看 pin validation 和
+schematic nets。如果直接上完整 Web app，又会把 MVP 拉进 hosted state、WebSocket、canvas
+和前端构建栈，偏离 pre-Layout schematic-review proof。
+
+**Root cause**
+
+V3.2 需要证明的是信息架构，而不是证明 Hardwise 已经是 SaaS。现有 repo 已有静态 HTML
+报告模式，V3.1 也已经有 deterministic `ValidationReport`。最小正确路径是把同一组事实渲染成
+单文件 HTML artifact：component index + selected detail + topology pane + scope boundary +
+download link，而不是引入第二套 validation truth 或 PCB viewer。
+
+**Fix**
+
+新增 `src/hardwise/report/validator_ui.py`，渲染本地静态 validator UI。CLI 新增
+`report-validator-ui <netlist_or_pst> <bom> <refdes> <profile.json>`：加载 Allegro schematic
+topology，join schematic BOM identity，复用 `validate_component_against_profile()`，输出一个可直接
+从磁盘打开的 HTML。UI 明确显示 scope：不解析 `.brd`、boardview、placement、routing、PCB geometry，
+也不做 live supplier / PLM / lifecycle / pricing / availability。
+
+**Verification**
+
+Focused tests:
+`uv run pytest tests/report/test_validator_ui.py tests/test_cli_validator_ui.py -q`
+→ 3 passed；focused ruff clean。Smoke:
+`uv run hardwise report-validator-ui tests/fixtures/allegro/l78_regulator.net tests/fixtures/allegro/l78_regulator_bom.csv U1 data/datasheet_profiles/l78.json --output reports/l78-validator-ui.html`
+生成 component index + U1 detail 的 HTML，选中器件仍是 `PASS/WARN/ERROR=3/0/0`。
+
+**Takeaway**
+
+先把用户工作流压成 artifact，再决定是否需要真正的 app。对 Hardwise 这种评审节点工具来说，
+静态 UI 已经能验证“工程师怎么扫读结果”，同时不会把边界滑到 boardview 或供应链产品。
+
+---
+
 ## 2026-05-27 · V3.1 · Single-component validation needs a narrow deterministic join
 
 **Symptom**
