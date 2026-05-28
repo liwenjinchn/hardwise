@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Defines where CLI, BOM, report, validation, and datasheet/profile modules belong."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Family-level import and document resolution must keep expected misses structured and reserve hard failures for true parse/runtime errors."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Validation cannot fabricate MPNs, datasheets, refdes, or PASS/WARN/ERROR without trusted evidence."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "The feature spans BOM parsing, document resolution, extraction, validation, and HTML/Markdown/JSON artifacts."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Family validators should reuse existing project index, profile, and report patterns instead of duplicating validation truth."}
