@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend CLI/reporting conventions for V1.1 verification."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"Check malformed JSON and missing component_groups error behavior."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Test/lint and no fabricated data review checklist."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Verify JSON-to-CSV-to-design-validator data contract remains coherent."}

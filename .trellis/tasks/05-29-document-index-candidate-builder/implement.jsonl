@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/index.md","reason":"Backend CLI/reporting conventions for V1.1 document-index candidate builder."}
+{"file":".trellis/spec/backend/error-handling.md","reason":"CLI error handling and malformed input behavior."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Testing, no fabricated data, and quality gate expectations."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Feature consumes JSON sidecar and emits CSV for another CLI path."}
