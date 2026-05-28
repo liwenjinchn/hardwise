@@ -21,7 +21,7 @@ from hardwise.report.validator_multi_ui_sections import (
     summary,
     topology_panel,
 )
-from hardwise.report.validator_ui import _match_summary, _status_class
+from hardwise.report.validator_ui import _status_class
 from hardwise.validation.types import ComponentValidation, ValidationReport
 
 
@@ -85,7 +85,7 @@ def render(
               <h2>器件</h2>
               <span class="count">{len(components)}</span>
             </div>
-            <input class="filter" data-filter placeholder="按位号、描述、MPN 过滤..." type="search">
+            <input class="filter" data-filter placeholder="按位号过滤..." type="search">
           </div>
           <div class="table-wrap">{_component_table(components, validated, active_refdes, bom_report)}</div>
         </aside>
@@ -93,7 +93,7 @@ def render(
           <div class="verify-head">
             <div class="section-title">
               <h2>验证</h2>
-              <span class="pill">{_match_summary(bom_report)}</span>
+              <span class="pill">验证完成</span>
             </div>
             <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
           </div>
@@ -132,20 +132,21 @@ def _component_table(
 ) -> str:
     rows = [
         '<table id="component-index">',
-        "<thead><tr><th>位号</th><th>描述 / MPN</th><th>引脚</th><th>状态</th></tr></thead><tbody>",
+        "<thead><tr><th>位号</th><th>描述</th><th>器件</th><th>文档</th></tr></thead><tbody>",
     ]
     matched = set(bom_report.matched_refdes) if bom_report else set()
     for component in components:
         item = validated.get(component.refdes)
-        status = item.validation.status if item else ("Matched" if component.refdes in matched else "Profile needed")
+        status = item.validation.status if item else ("Matched" if component.refdes in matched else "No Result")
         status_class = _status_class(status) if item else "pending"
         active = " active" if component.refdes == active_refdes else ""
+        document = "已匹配" if item else "待完善"
         rows.append(
             f'<tr class="component-row{active}" data-row-ref="{escape(component.refdes)}">'
             f'<td class="ref">{escape(component.refdes)}</td>'
-            f"<td>{escape(component.value or '-')}<span class=\"sub\">{escape(component.part_number or '-')}</span></td>"
-            f"<td>{len(component.pins)}</td>"
-            f'<td><span class="status {status_class}">{escape(status)}</span></td>'
+            f"<td>{escape(component.value or '-')}</td>"
+            f"<td>{escape(component.part_number or component.value or '-')}<span class=\"sub\">{len(component.pins)} pins · {escape(status)}</span></td>"
+            f"<td><span class=\"status {status_class}\">{escape(document)}</span></td>"
             "</tr>"
         )
     rows.append("</tbody></table>")

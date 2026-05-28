@@ -1,11 +1,12 @@
 # Hardwise Demo — 90 秒阅读版
 
-Hardwise 是一个面向硬件研发“原理图检视”节点的 AI Agent。这个 demo 用公开 KiCad 工程 `pic_programmer` 跑完整链路：解析原理图、生成检视意见、校验位号、写入证据 token、输出报告和结构化库。
+Hardwise 是一个面向硬件研发“设计验证”节点的 AI 工作台。这个 demo 先用公开 KiCad 工程 `pic_programmer` 跑原理图检视闭环，再用公开 Allegro/BOM 样例跑项目级验证索引和静态验证器界面：解析设计、生成验证意见、校验位号、写入证据 token、输出报告和结构化库。
 
 ## 直接看效果
 
 - 产品介绍首页：[`product-intro.html`](product-intro.html)
 - 面向硬件评审的中文展示页：[`hardware-demo.html`](hardware-demo.html)
+- 设计验证器工作台示例：`uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_power_stage.net tests/fixtures/allegro/mixed_power_stage_bom.csv --output reports/design-validator.html`
 - 技术机制快照：[`demo.html`](demo.html)
 - 样例报告命令：
 
@@ -23,18 +24,18 @@ consolidator: 2 candidate rule(s) appended to memory/rules.md
 
 ## 看简历的人应该记住什么
 
-1. **不是聊天机器人套壳**：模型不能自由编位号，所有 `U1/C3/J1` 这类 refdes 都要命中 KiCad 解析出的 EDA registry。
+1. **不是聊天机器人套壳**：模型不能自由编位号，所有 `U1/C3/J1` 这类 refdes 都要命中 EDA registry。
 2. **报告可追溯**：每条 finding 都带 `sch:<file>#<refdes>` 证据 token；没有证据的 finding 会被丢弃。
-3. **能跑真实工程输入**：demo 解析公开 KiCad 项目，扫描 121 个 component，识别 77 个 NC pin。
-4. **Agent 工程机制完整**：tool-use loop、Pydantic 工具 schema、tiered model routing、prompt caching、Sleep Consolidator 都已落地。
-5. **边界清楚**：只做 pre-Layout schematic review，不碰 PCB review、PLM、FMEA 或公司内部硬件数据。
+3. **能跑真实工程输入**：demo 既能解析公开 KiCad 项目，也能对公开 Allegro/BOM 样例生成项目级验证索引。
+4. **Agent 工程机制完整**：tool-use loop、Pydantic 工具 schema、tiered model routing、prompt caching、Sleep Consolidator、项目级验证索引都已落地。
+5. **边界清楚**：只做 pre-Layout 设计验证，不碰 PCB review、PLM、FMEA 或公司内部硬件数据。
 
 ## 一眼看懂的结果
 
 | 指标 | demo 结果 | 意义 |
 |---|---:|---|
-| Components reviewed | 121 | 从 KiCad 工程真实解析，不是手填样例 |
-| Findings | 28 | 6 条电容耐压字段检查 + 22 条 NC pin 复核；连接器/插座类批量 NC 已聚合降噪 |
+| Components reviewed | 121 / 18 | 从 KiCad 与 Allegro/BOM 样例真实解析，不是手填样例 |
+| Findings | 28 / 3 validated + 15 manual | KiCad 侧是 6 条电容耐压字段检查 + 22 条 NC pin 复核；验证器侧是 3 个自动匹配器件 |
 | NC pins | 77 | 用 no-connect 坐标反查到具体 refdes/pin |
 | Evidence tokens | 每条 finding 至少 1 个 | 支撑“无证据不输出” |
 | Sanitizer | 未验证位号会包成 `⟨?U999⟩` | 防止模型幻觉流到报告 |

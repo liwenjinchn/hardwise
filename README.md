@@ -2,9 +2,9 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-> A guardrailed schematic-review pipeline for public KiCad projects: registry-verified refdes, evidence-gated findings, and a tool-use agent query path.
+> A guardrailed design-validator workbench for public hardware projects: registry-verified refdes, evidence-gated findings, and a static project index / report workflow.
 
-Hardwise is a two-week portfolio MVP for the **pre-layout schematic review** node in hardware R&D. It does not claim that an LLM can independently judge a complete hardware design. It proves a narrower and more important engineering loop: parse a public EDA project, run review rules, force every surfaced refdes through the parsed registry, attach evidence tokens to every finding, and let the agent answer schematic questions only through structured tools.
+Hardwise is a two-week portfolio MVP for the **pre-layout design-validation** node in hardware R&D. It does not claim that an LLM can independently judge a complete hardware design. It proves a narrower and more important engineering loop: parse a public EDA project, build a component index, run deterministic validation rules, force every surfaced refdes through the parsed registry, attach evidence tokens to every finding, and let the agent answer schematic questions only through structured tools.
 
 Architecture is inspired by [Wrench Board](https://github.com/Junkz3/wrench-board) (Anthropic *Build with Opus 4.7* hackathon, 2nd place, April 2026). Design ideas only, no code copied.
 
@@ -43,6 +43,14 @@ On the public KiCad demo project `pic_programmer`, Hardwise runs three determini
 
 The current sample report has **28 findings**: 6 R002 capacitor-voltage-field findings and 22 R003 NC-pin findings after noise reduction. Each finding carries a `sch:<file>#<refdes>` evidence token; NC pins are coordinate-matched from KiCad `no_connect` markers rather than model-generated. The run also writes a relational store, a trace ledger, and human-gated candidate rules for future review.
 
+For the screenshot-style design-validator flow, the CLI also supports project-level validation index output plus a static multi-component workbench:
+
+```bash
+uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_power_stage.net tests/fixtures/allegro/mixed_power_stage_bom.csv --output reports/design-validator.html
+```
+
+That path auto-matches public datasheet profiles by BOM identity, renders a left-side component index, shows validated cards in issue-first order, and emits optional markdown / JSON index sidecars for explanation.
+
 The public eval pack adds a wider smoke path:
 
 ```text
@@ -59,7 +67,7 @@ These are regression and reproducibility metrics, not expert gold-label accuracy
 
 ## What it is
 
-Hardwise is a schematic-review assistant for the early hardware R&D node before PCB layout. It turns public KiCad projects and public datasheets into review artifacts with two hard constraints:
+Hardwise is a design-validation assistant for the early hardware R&D node before PCB layout. It turns public EDA projects and public datasheets into review artifacts with two hard constraints:
 
 1. Every reference designator shown to the user must come from the parsed EDA registry.
 2. Every report finding must carry a source token such as `sch:<file>#<refdes>`, `datasheet:<pdf>#p<N>`, or `rule:<id>`.
@@ -192,7 +200,7 @@ Current MVP status:
 | 4 — Agent Loop + Prompt Caching | Done | `hardwise ask`, four tools, live prompt-cache read hit |
 | 5 — Submission Closeout | Current focus | README/GitHub hygiene, final interview answers, resume materials |
 
-The MVP intentionally stops here. R004/R005-style net-aware checks, a schematic-side net parser, a human-labeled calibration set, GitHub Action packaging, and Cadence/Allegro adapters are explicitly post-MVP. The current submission story is not "more rules"; it is a constrained hardware-review agent loop with registry-verified objects and evidence-gated findings.
+The MVP intentionally stops here. R004/R005-style net-aware checks, a schematic-side net parser, a human-labeled calibration set, GitHub Action packaging, and Cadence/Allegro adapters are explicitly post-MVP. The current submission story is not "more rules"; it is a constrained design-validation workbench with registry-verified objects and evidence-gated findings.
 
 ## Interview Q&A
 

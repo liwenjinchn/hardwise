@@ -206,6 +206,56 @@ def test_report_validator_ui_batch_writes_mixed_power_stage_manifest(
     assert "gate_driver_bootstrap" in html
 
 
+def test_design_validator_ui_auto_matches_profiles_and_writes_index(
+    tmp_path: Path,
+) -> None:
+    html_output = tmp_path / "design-validator.html"
+    index_output = tmp_path / "validation-index.md"
+    index_json = tmp_path / "validation-index.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mixed_power_stage.net",
+            "tests/fixtures/allegro/mixed_power_stage_bom.csv",
+            "--output",
+            str(html_output),
+            "--index-output",
+            str(index_output),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "design-validator-ui:" in result.output
+    assert "validated=3" in result.output
+    assert "PASS/WARN/ERROR=1/0/2" in result.output
+    assert "manual=15" in result.output
+
+    html = html_output.read_text(encoding="utf-8")
+    assert "Hardwise / 设计验证器" in html
+    assert "mixed_power_stage" in html
+    assert 'data-select-ref="U1"' in html
+    assert 'data-select-ref="U12"' in html
+    assert 'data-select-ref="U3"' in html
+    assert '<article class="panel active" data-panel="U12">' in html
+    assert "1N4007W" in html
+    assert "MBRA210LT3G" in html
+
+    index_text = index_output.read_text(encoding="utf-8")
+    assert "# Hardwise Design Validator - mixed_power_stage" in index_text
+    assert "| Validated components | 3 |" in index_text
+    assert "| PASS / WARN / ERROR | 1 / 0 / 2 |" in index_text
+    assert "Static schematic-side design validator" in index_text
+
+    index_payload = index_json.read_text(encoding="utf-8")
+    assert '"components_in_design": 18' in index_payload
+    assert '"refdes": "U12"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/xl1509.json"' in index_payload
+
+
 def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) -> None:
     output = tmp_path / "target-candidates.yaml"
 

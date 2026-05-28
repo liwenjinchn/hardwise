@@ -8,6 +8,40 @@
 
 ---
 
+## 2026-05-28 · V3.9 · Product-shaped entry should reuse the same validation truth
+
+**Symptom**
+
+目标截图是一个“设计验证器”工作台：打开项目后直接看到器件列表、验证摘要、问题卡片和报告详情。
+而现有 `report-validator-ui-batch` 还要求手写 `REFDES=profile.json` 或 manifest，不像产品入口。
+
+**Root cause**
+
+Hardwise 已有两块能力但没有接成一条入口：`suggest_profile_candidates()` 能从 BOM identity
+匹配本地 profile，`validator_multi_ui` 能渲染多器件工作台。缺的是项目级薄层，把 matched
+profile 跑同一个 `validate_component_against_profile()`，同时把 no-profile/manual 行保留下来。
+
+**Fix**
+
+新增 `validation/project_index.py` 和 `report/project_validation_markdown.py`，再加 CLI
+`design-validator-ui <netlist_or_pst> <bom>`。它自动匹配本地 profile、渲染深色静态工作台，
+并可选输出 markdown/JSON project index。未匹配器件不会被隐藏或伪验证，而是进入 manual/no-profile
+行。
+
+**Verification**
+
+`uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_power_stage.net tests/fixtures/allegro/mixed_power_stage_bom.csv --output reports/design-validator.html --index-output reports/design-validator-index.md --index-json reports/design-validator-index.json`
+输出 18 components / 3 validated / PASS-WARN-ERROR 1-0-2 / 15 manual。Browser snapshot confirms
+the workbench has component index, validation cards, and U12 ERROR default detail. Full suite:
+328 passed, 7 deselected; ruff clean.
+
+**Takeaway**
+
+截图级产品感不需要第二套判断逻辑。正确做法是把已有 deterministic truth object 接到更顺手的入口，
+并把未覆盖范围显式暴露给 reviewer。
+
+---
+
 ## 2026-05-27 · V3.8 · Bootstrap checks are topology checks, not timing checks
 
 **Symptom**

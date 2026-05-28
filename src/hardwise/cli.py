@@ -1041,6 +1041,132 @@ def report_validator_ui_batch(
     )
 
 
+@app.command(name="design-validator-ui")
+def design_validator_ui(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
+    ),
+    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    profiles: Path = typer.Option(
+        Path("data/datasheet_profiles"),
+        "--profiles",
+        help="Directory containing structured DatasheetProfile JSON files.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output HTML path (default: reports/<source>-design-validator.html).",
+    ),
+    index_output: Path | None = typer.Option(
+        None,
+        "--index-output",
+        help="Optional markdown project validation index path.",
+    ),
+    index_json: Path | None = typer.Option(
+        None,
+        "--index-json",
+        help="Optional JSON sidecar path for the project validation index.",
+    ),
+    manual_limit: int = typer.Option(
+        50,
+        "--manual-limit",
+        help="Maximum no-profile/manual rows shown in the optional markdown index.",
+    ),
+) -> None:
+    """Write a screenshot-like static design-validator workbench for matched profiles."""
+    from datetime import datetime, timezone
+
+    from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
+    from hardwise.report.project_validation_markdown import (
+        render as render_project_index,
+        write_json,
+    )
+    from hardwise.report.validator_multi_ui import ValidatorUiResult, render
+    from hardwise.validation import ProfileCandidateError, suggest_profile_candidates
+    from hardwise.validation.project_index import build_project_validation_index
+
+    if manual_limit < 0:
+        typer.echo("error: --manual-limit must be >= 0", err=True)
+        raise typer.Exit(1)
+
+    try:
+        design, source, input_type, _property_count = _load_allegro_design(netlist_path)
+        bom = parse_bom(bom_path)
+        bom_report = match_bom_to_design(bom, design)
+        design = apply_bom_to_design(design, bom_report)
+        candidate_report = suggest_profile_candidates(bom, profiles, project=bom_path.stem)
+        now = datetime.now(timezone.utc)
+        project_name = _report_source_name(source)
+        index = build_project_validation_index(
+            design=design,
+            bom_report=bom_report,
+            candidate_report=candidate_report,
+            project_name=project_name,
+            generated_at=now.isoformat(timespec="seconds"),
+            netlist_source=str(source),
+            netlist_type=input_type,
+        )
+    except ProfileCandidateError as e:
+        typer.echo(f"error: profile candidate generation failed: {e}", err=True)
+        raise typer.Exit(1) from e
+    except Exception as e:
+        typer.echo(f"error: design validator UI failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    validation_results = [
+        ValidatorUiResult(validation=row.validation, profile_path=Path(row.profile_path))
+        for row in index.validated_rows
+        if row.validation is not None and row.profile_path is not None
+    ]
+    if not validation_results:
+        typer.echo(
+            "error: no matched profiles produced validation results; "
+            "run suggest-validation-targets to inspect profile coverage",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{project_name}-design-validator.html"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    html = render(
+        design,
+        validation_results,
+        project_name=project_name,
+        netlist_source=source,
+        bom_report=bom_report,
+        generated_at=index.generated_at,
+    )
+    output.write_text(html, encoding="utf-8")
+
+    if index_output is not None:
+        index_output.parent.mkdir(parents=True, exist_ok=True)
+        index_output.write_text(
+            render_project_index(index, manual_limit=manual_limit),
+            encoding="utf-8",
+        )
+    if index_json is not None:
+        write_json(index, index_json)
+
+    totals = index.totals
+    typer.echo(
+        f"design-validator-ui: {output} "
+        f"({index.components_in_design} components, validated={len(index.validated_rows)}, "
+        f"PASS/WARN/ERROR={totals['PASS']}/{totals['WARN']}/{totals['ERROR']}, "
+        f"manual={len(index.manual_rows)})"
+    )
+    if index_output is not None:
+        typer.echo(f"validation-index: {index_output}")
+    if index_json is not None:
+        typer.echo(f"validation-index-json: {index_json} ({len(index.rows)} rows)")
+
+
 @app.command(name="eval")
 def eval_pack(
     manifest: Path = typer.Option(
