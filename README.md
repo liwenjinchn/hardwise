@@ -54,7 +54,7 @@ uv run hardwise design-validator-ui \
   --index-json reports/controller-design-validator-index.json
 ```
 
-That path auto-matches public datasheet profiles by BOM identity and writes a single static HTML workbench with a top summary, component list, validation section, and report detail. The current controller fixture reports **25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, and 21 manual/no-profile rows**. It also emits optional markdown / JSON index sidecars for explanation.
+That path auto-matches public datasheet profiles by BOM identity and writes a single static HTML workbench with a top summary, component list, validation section, and report detail. The current controller fixture reports **25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, and 21 manual/no-profile rows**. If a real project has zero local profile matches, the same command still emits a coverage/gap workbench plus optional markdown / JSON index sidecars instead of inventing validation results.
 
 The public eval pack adds a wider smoke path:
 

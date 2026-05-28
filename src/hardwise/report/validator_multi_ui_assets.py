@@ -12,7 +12,7 @@ main{width:min(1520px,calc(100% - 16px));margin:0 auto;padding:8px 0 18px}
 .eyebrow{margin:0 0 8px;color:var(--muted);font-family:var(--mono);font-size:12px;text-transform:uppercase}
 h1{margin:0;font-family:var(--serif);font-size:34px;line-height:1;letter-spacing:0;font-weight:800}
 .source{margin:11px 0 0;color:var(--muted);font-family:var(--mono);font-size:12px;overflow-wrap:anywhere}
-.summary{display:grid;grid-template-columns:repeat(5,110px);border-left:1px solid var(--line);background:var(--soft)}
+.summary{display:grid;grid-template-columns:repeat(7,110px);border-left:1px solid var(--line);background:var(--soft)}
 .metric{padding:17px 14px;border-right:1px solid var(--line)}
 .metric:last-child{border-right:0}
 .metric span{display:block;color:var(--muted);font-family:var(--mono);font-size:11px;text-transform:uppercase}
@@ -45,6 +45,11 @@ th{position:sticky;top:0;z-index:1;background:#121716;color:var(--muted);font-fa
 .issue-list{display:grid;gap:8px;margin-top:12px}
 .issue{border:1px solid rgba(255,85,74,.35);background:#1a1110;padding:10px}
 .issue strong{display:block;font-family:var(--mono);margin-bottom:4px}
+.gap-list{display:grid;gap:9px;margin-top:12px}
+.gap-card{border:1px solid var(--line);background:#101413;padding:10px 12px}
+.gap-card strong{display:block;font-family:var(--mono);margin-bottom:5px}
+.gap-card p{margin:0;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.coverage-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .detail{min-width:0;background:var(--panel)}
 .panel{display:none}
 .panel.active{display:block}
@@ -77,7 +82,7 @@ th{position:sticky;top:0;z-index:1;background:#121716;color:var(--muted);font-fa
 ul.boundary-list{margin:0;padding-left:20px}
 ul.boundary-list li{margin:8px 0}
 .hidden{display:none!important}
-@media(max-width:1180px){.topbar,.workspace,.detail-head,.kpis,.check-grid,.net-grid{grid-template-columns:1fr}.summary{grid-template-columns:repeat(5,1fr);border-left:0}.rail,.verify{border-right:0;border-bottom:1px solid var(--line)}.actions{justify-content:flex-start}.kpi{border-right:0;border-bottom:1px solid var(--line)}}
+@media(max-width:1180px){.topbar,.workspace,.detail-head,.kpis,.check-grid,.net-grid,.coverage-grid{grid-template-columns:1fr}.summary{grid-template-columns:repeat(3,1fr);border-left:0}.rail,.verify{border-right:0;border-bottom:1px solid var(--line)}.actions{justify-content:flex-start}.kpi{border-right:0;border-bottom:1px solid var(--line)}}
 @media(max-width:680px){main{width:min(100% - 14px,1480px);padding:10px 0 22px}.summary{grid-template-columns:repeat(2,1fr)}.pin-note{grid-template-columns:1fr}.detail-title h2{font-size:30px}}
 @media print{body{background:#fff}body:before{display:none}main{width:100%;padding:0}.app{box-shadow:none}.table-wrap{max-height:none}.button,.filter{display:none}}
 """
@@ -88,8 +93,11 @@ MULTI_UI_SCRIPT = """
   const cards = Array.from(document.querySelectorAll('[data-select-ref]'));
   const rows = Array.from(document.querySelectorAll('[data-row-ref]'));
   const activate = (ref) => {
-    panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === ref));
-    cards.forEach((card) => card.classList.toggle('active', card.dataset.selectRef === ref));
+    const hasPanel = panels.some((panel) => panel.dataset.panel === ref);
+    if (hasPanel) {
+      panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === ref));
+      cards.forEach((card) => card.classList.toggle('active', card.dataset.selectRef === ref));
+    }
     rows.forEach((row) => row.classList.toggle('active', row.dataset.rowRef === ref));
   };
   [...cards, ...rows].forEach((node) => {

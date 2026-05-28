@@ -8,6 +8,62 @@
 
 ---
 
+## 2026-05-28 · Trellis workspace files must stay outside Hardwise lint/test scope
+
+**Symptom**
+
+After Trellis was initialized in the repo, `uv run ruff check .` started reporting style errors under
+`.trellis/scripts/`, even though those files are generated workflow tooling rather than Hardwise source.
+
+**Root cause**
+
+Ruff scans the repository tree unless configured otherwise. The project already had the same boundary for public eval
+checkouts, but Trellis added another generated/tooling tree with Python files.
+
+**Fix**
+
+Added `.trellis` to Ruff's `exclude` list and pytest's `norecursedirs` so repo quality gates cover Hardwise-owned code,
+tests, and docs instead of generated workflow tooling.
+
+**Takeaway**
+
+Local workflow/runtime folders need an explicit lint/test boundary as soon as they enter the repo tree.
+
+---
+
+## 2026-05-28 · V3.11 · Zero-profile real projects still need a workbench
+
+**Symptom**
+
+真实 Allegro/PST 项目可以成功解析 topology，BOM 也能 100% join，但本地 profile library 对它可能
+`matched=0`。旧的 `design-validator-ui` 会在这种情况下退出失败，让 reviewer 看不到已经可信的
+intake facts 和 profile coverage 缺口。
+
+**Root cause**
+
+CLI 把“没有 deterministic validation result”误当成“不能生成 artifact”。这混淆了两层事实：
+EDA/BOM intake 已经可信，电气 PASS/WARN/ERROR 只是 profile 覆盖后的下一层。没有 profile 时应该
+展示 coverage boundary，而不是失败或假装验证。
+
+**Fix**
+
+新增项目级 workbench renderer。`design-validator-ui` 现在把 `ProjectValidationIndex` 交给 renderer：
+有 validated rows 时继续展示现有多器件 validation detail；没有 validated rows 时展示
+Profile coverage gap、profile status counts、前 50 条 no-profile/manual rows、scope boundary，并继续写
+markdown/JSON sidecars。
+
+**Verification**
+
+Focused tests cover zero-profile CLI output and renderer HTML. Smoke path with a temporary profile directory containing
+only `l78.json` over `stm32g030_mcu` produces 7 components / 0 validated / PASS-WARN-ERROR 0-0-0 / 7 manual.
+
+**Takeaway**
+
+Coverage is a valid review artifact. Hardwise should fail only when evidence cannot be parsed or indexed, not when the
+honest result is “we can import this project, but profile coverage is not there yet.”
+
+---
+
 ## 2026-05-28 · V3.10 · MCU checks need a startup/debug slice, not a fake full MCU validator
 
 **Symptom**

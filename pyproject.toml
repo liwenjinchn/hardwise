@@ -44,6 +44,7 @@ packages = ["src/hardwise"]
 line-length = 100
 target-version = "py311"
 exclude = [
+    ".trellis",
     "eval/projects",
     "reports/eval",
 ]
@@ -53,4 +54,4 @@ markers = [
     "slow: tests that take >1s or pull heavyweight deps (e.g. chromadb embedder)",
 ]
 addopts = "-m 'not slow'"
-norecursedirs = [".claude", "eval/projects"]
+norecursedirs = [".claude", ".trellis", "eval/projects"]

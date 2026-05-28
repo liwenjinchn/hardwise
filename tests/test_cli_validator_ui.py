@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -365,6 +366,58 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert '"components_in_design": 25' in index_payload
     assert '"refdes": "U8"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/stm32g030c8t6.json"' in index_payload
+
+
+def test_design_validator_ui_writes_gap_workbench_when_no_profiles_match(
+    tmp_path: Path,
+) -> None:
+    profiles = tmp_path / "profiles"
+    profiles.mkdir()
+    shutil.copyfile(Path("data/datasheet_profiles/l78.json"), profiles / "l78.json")
+    html_output = tmp_path / "no-profile-design-validator.html"
+    index_output = tmp_path / "no-profile-index.md"
+    index_json = tmp_path / "no-profile-index.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/stm32g030_mcu.net",
+            "tests/fixtures/allegro/stm32g030_mcu_bom.csv",
+            "--profiles",
+            str(profiles),
+            "--output",
+            str(html_output),
+            "--index-output",
+            str(index_output),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "design-validator-ui:" in result.output
+    assert "validated=0" in result.output
+    assert "PASS/WARN/ERROR=0/0/0" in result.output
+    assert "manual=7" in result.output
+
+    html = html_output.read_text(encoding="utf-8")
+    assert "Profile coverage gap" in html
+    assert "validated 0" in html
+    assert "no_result" in html
+    assert "待 profile" in html
+    assert '<td class="ref">U8</td>' in html
+    assert "does not convert no-profile rows into electrical judgements" in html
+
+    index_text = index_output.read_text(encoding="utf-8")
+    assert "| Validated components | 0 |" in index_text
+    assert "| PASS / WARN / ERROR | 0 / 0 / 0 |" in index_text
+    assert "| U8 | no_result |" in index_text
+
+    index_payload = index_json.read_text(encoding="utf-8")
+    assert '"components_in_design": 7' in index_payload
+    assert '"validation": null' in index_payload
+    assert '"match_status": "no_result"' in index_payload
 
 
 def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) -> None:

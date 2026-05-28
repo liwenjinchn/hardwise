@@ -1083,7 +1083,7 @@ def design_validator_ui(
         render as render_project_index,
         write_json,
     )
-    from hardwise.report.validator_multi_ui import ValidatorUiResult, render
+    from hardwise.report.validator_project_ui import render_project_workbench
     from hardwise.validation import ProfileCandidateError, suggest_profile_candidates
     from hardwise.validation.project_index import build_project_validation_index
 
@@ -1115,19 +1115,6 @@ def design_validator_ui(
         typer.echo(f"error: design validator UI failed: {type(e).__name__}: {e}", err=True)
         raise typer.Exit(1) from e
 
-    validation_results = [
-        ValidatorUiResult(validation=row.validation, profile_path=Path(row.profile_path))
-        for row in index.validated_rows
-        if row.validation is not None and row.profile_path is not None
-    ]
-    if not validation_results:
-        typer.echo(
-            "error: no matched profiles produced validation results; "
-            "run suggest-validation-targets to inspect profile coverage",
-            err=True,
-        )
-        raise typer.Exit(1)
-
     if output is None:
         reports_dir = Path("reports")
         reports_dir.mkdir(exist_ok=True)
@@ -1135,9 +1122,9 @@ def design_validator_ui(
     else:
         output.parent.mkdir(parents=True, exist_ok=True)
 
-    html = render(
+    html = render_project_workbench(
         design,
-        validation_results,
+        index,
         project_name=project_name,
         netlist_source=source,
         bom_report=bom_report,
