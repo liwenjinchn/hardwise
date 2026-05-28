@@ -1,16 +1,24 @@
-# V1.1 Document Index Candidate Builder
+# V1.1-V1.3 Document Coverage and Second Family Validator
 
 ## Summary
 
-V1 proved the project-level loop: real Allegro/PST import, 132 component groups, local public document matching, and one MPQ8626 power-family validation path. V1.1 should make the next scaling step narrower and repeatable: generate a reviewable `document-index` draft from grouped coverage data so new public projects can quickly move from `no_result` to human-reviewed datasheet/document coverage.
+V1 proved the project-level loop: real Allegro/PST import, 132 component groups, local public document matching, and one MPQ8626 power-family validation path. The next sequence should stay narrow but continue to V1.3:
 
-The feature should help the user build a local/public datasheet index. It must not validate more devices, auto-download PDFs, or extract structured profiles yet.
+- V1.1: generate a reviewable `document-index` draft from grouped coverage data;
+- V1.2: generate a `needs_review` structured profile draft scaffold from a reviewed document/index row;
+- V1.3: add one second real family validator for a high-signal non-power family.
+
+The sequence should help the user scale from “groups visible” to “docs indexed” to “reviewed profile can feed a second family validator”. It must still avoid automatic datasheet download, broad LLM extraction, and validating every device.
 
 ## Goal
 
-Given a `design-validator-ui` JSON sidecar with `component_groups`, produce a candidate document index draft for groups that are likely to need datasheets. The output should be easy for a human to review, edit, and then feed back into `design-validator-ui --document-index`.
+Deliver V1.1 through V1.3 on the same branch:
 
-## Product Shape
+1. V1.1: Given a `design-validator-ui` JSON sidecar with `component_groups`, produce a candidate document index draft for groups that are likely to need datasheets.
+2. V1.2: Given one group/document identity, generate a structured profile draft JSON with `review_status=needs_review` that cannot accidentally become a validation profile.
+3. V1.3: Add a reviewed PCA9548A/I2C mux family profile + validator and prove it on the real project.
+
+## V1.1 Product Shape
 
 - Main entry remains `hardwise` CLI.
 - Add a narrow command such as `build-document-index-candidates <validation-index.json>`.
@@ -85,4 +93,27 @@ No network calls in this slice.
 
 - A project index JSON with 132 groups can produce a concise candidate CSV for the next document-index review pass.
 - The output can be edited into the existing `document-index` format and used with `design-validator-ui --document-index`.
+- A profile draft command can create `needs_review` JSON from a reviewed group/document row, and such drafts are ignored by automatic profile matching until reviewed/promoted.
+- PCA9548A/PCA9548APW groups in the real project can be matched to a reviewed profile and validated by an I2C mux family validator.
+- The real project smoke still imports 4010 components and 132 groups, with MPQ8626 still passing and PCA9548A adding a second family path.
 - `uv run pytest -q` and `uv run ruff check .` pass.
+
+## V1.2 Profile Draft Scope
+
+- Add a narrow command such as `draft-datasheet-profile <validation-index.json> --identity <group-identity> --document-index <docs.csv> --output <draft.json>`.
+- The draft uses the existing `DatasheetProfile` shape but adds `review_status=needs_review`.
+- The draft may include part number, aliases, source document URL/title, suggested family, generated timestamp, and empty/placeholder facts.
+- The draft must not be treated as ready for `suggest_profile_candidates()` unless a later human promotion changes `review_status` to `ready`.
+- No PDF text extraction, live network search, or LLM fact extraction in this slice.
+
+## V1.3 Second Family Validator Scope
+
+- Add a reviewed PCA9548A profile for the PCA9548A/PCA9548APW I2C mux family.
+- Add deterministic I2C mux checks:
+  - VDD within recommended range when net voltage is inferable;
+  - upstream SDA/SCL connected;
+  - reset and address pins connected;
+  - downstream channel SCn/SDn pairs are either both connected or both unused/NC;
+  - no PASS/WARN/ERROR without structured profile evidence.
+- Add a public local document-index row for PCA9548A/PCA9548APW in the V1.3 smoke index.
+- Prove the real project validates the five PCA9548APW components in addition to the four MPQ8626 components.

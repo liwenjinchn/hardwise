@@ -1590,3 +1590,52 @@ pinned, but it should not become part of the product's lint/test ownership surfa
 **Takeaway:** When the brainstorm uses informal `@dataclass` sketches, the implementation plan should reconcile against the codebase's actual model framework. Carrying the inconsistency forward would force a mid-sub-slice refactor.
 
 **Next:** V2.2 plan (per-component check flip + `Finding.pin_number` extension + R001-R003 outer-loop rewrite). To be drafted in a fresh planning session.
+
+---
+
+## 2026-05-29 — V1.1-V1.3 coverage loop should advance by reviewable groups
+
+**Symptom**
+
+After V1, the real Allegro project could be imported and grouped, but the next useful
+step was still too manual: no concise document-index draft, no safe profile-draft
+lifecycle state, and only one validated family path. A candidate CSV also risked
+including passive-looking values such as `470uF 2.5V 20%` when the grouped family fell
+back to `unknown`.
+
+**Root cause**
+
+Grouped coverage was readable in HTML/Markdown/JSON, but it did not yet create a
+review artifact that a human could fill into `document-index` rows. Draft profiles had
+the same file shape as reviewed profiles, so they needed an explicit lifecycle field to
+avoid accidental validation. Candidate filtering also trusted `suggested_family` too
+much and needed a second passive-value guard on the identity itself.
+
+**Fix**
+
+Added the V1.1-V1.3 loop:
+
+- `build-document-index-candidates <validation-index.json>` writes a stable CSV of
+  non-passive, non-mechanical, unmatched groups for document review.
+- `draft-datasheet-profile ... --identity ...` writes `review_status=needs_review`
+  profile scaffolds, and profile matching skips anything not marked `ready`.
+- `pca9548a.json` plus an `i2c_mux` validator add a second real family path beyond the
+  MPQ8626 buck validator.
+- Candidate generation now filters passive-looking identities even when family
+  inference says `unknown`.
+
+**Verification**
+
+- `uv run pytest -q` → 358 passed, 7 deselected.
+- `uv run ruff check .` → all checks passed.
+- Real public Allegro smoke with `data/document_indexes/family_v1_3_docs.csv` selected
+  `SWITCH BOARD 144-VA_20240712 1401(1).BOM`, matched BOM `4010/4010`, produced 132
+  groups, and validated 9 components: U13/U20/U23/U26 via MPQ8626 plus
+  U8/U9/U10/U11/U130 via PCA9548A. Rollup was PASS/WARN/ERROR = 9/0/0, manual = 4001.
+
+**Takeaway**
+
+The scalable unit is not “one-off device JSON forever”; it is group coverage → document
+index row → needs-review profile draft → reviewed profile/family validator. Each stage
+has an explicit human gate, so new projects can expose gaps without pretending to verify
+parts Hardwise does not yet understand.

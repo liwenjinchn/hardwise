@@ -211,7 +211,9 @@ def _load_profiles(profiles_dir: Path) -> list[tuple[Path, DatasheetProfile]]:
     profiles: list[tuple[Path, DatasheetProfile]] = []
     for path in paths:
         try:
-            profiles.append((path, DatasheetProfile.load(path)))
+            profile = DatasheetProfile.load(path)
+            if profile.review_status == "ready":
+                profiles.append((path, profile))
         except Exception as exc:
             raise ProfileCandidateError(
                 f"failed to load profile {path}: {type(exc).__name__}: {exc}"

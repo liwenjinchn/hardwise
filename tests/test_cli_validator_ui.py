@@ -414,6 +414,124 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
     assert '"profile_path": "data/datasheet_profiles/mpq8626.json"' in index_payload
 
 
+def test_design_validator_ui_matches_pca9548a_i2c_mux_family_with_public_docs(
+    tmp_path: Path,
+) -> None:
+    html_output = tmp_path / "pca9548a-design-validator.html"
+    index_json = tmp_path / "pca9548a-index.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/pca9548a_i2c_mux.net",
+            "tests/fixtures/allegro/pca9548a_i2c_mux_bom.csv",
+            "--document-index",
+            "data/document_indexes/family_v1_3_docs.csv",
+            "--output",
+            str(html_output),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "validated=1" in result.output
+    assert "PASS/WARN/ERROR=1/0/0" in result.output
+
+    html = html_output.read_text(encoding="utf-8")
+    assert "PCA9548A public NXP product page and datasheet" in html
+    assert "i2c_mux_channel_pairs" in html
+    assert "upstream SCL/SDA are connected" in html
+
+    index_payload = index_json.read_text(encoding="utf-8")
+    assert '"identity": "PCA9548APW"' in index_payload
+    assert '"document_status": "matched"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/pca9548a.json"' in index_payload
+
+
+def test_build_document_index_candidates_writes_review_csv(tmp_path: Path) -> None:
+    index_json = tmp_path / "project-index.json"
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--document-index",
+            "data/document_indexes/family_v1_3_docs.csv",
+            "--output",
+            str(tmp_path / "workbench.html"),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    candidates = tmp_path / "document-candidates.csv"
+
+    result = CliRunner().invoke(
+        app,
+        ["build-document-index-candidates", str(index_json), "--output", str(candidates)],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "document-index-candidates:" in result.output
+    text = candidates.read_text(encoding="utf-8")
+    assert text.startswith("MPN,Manufacturer,Title,URL,Path,Description")
+    assert "STM32G030C8T6" in text
+    assert "EG2132" in text
+    assert "PCA9548APW" not in text
+    assert "MPQ8626GD" not in text
+    assert "100R" not in text
+
+
+def test_draft_datasheet_profile_writes_needs_review_json(tmp_path: Path) -> None:
+    index_json = tmp_path / "project-index.json"
+    docs = tmp_path / "docs.csv"
+    docs.write_text(
+        "MPN,Manufacturer,Title,URL\n"
+        "STM32G030C8T6,ST,STM32G030 public datasheet,https://example.test/stm32.pdf\n",
+        encoding="utf-8",
+    )
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/stm32g030_mcu.net",
+            "tests/fixtures/allegro/stm32g030_mcu_bom.csv",
+            "--document-index",
+            str(docs),
+            "--output",
+            str(tmp_path / "workbench.html"),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    draft = tmp_path / "stm32-draft.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "draft-datasheet-profile",
+            str(index_json),
+            "--identity",
+            "STM32G030C8T6",
+            "--document-index",
+            str(docs),
+            "--output",
+            str(draft),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "review_status=needs_review" in result.output
+    text = draft.read_text(encoding="utf-8")
+    assert '"part_number": "STM32G030C8T6"' in text
+    assert '"review_status": "needs_review"' in text
+    assert "STM32G030 public datasheet" in text
+
+
 def test_design_validator_ui_writes_gap_workbench_when_no_profiles_match(
     tmp_path: Path,
 ) -> None:

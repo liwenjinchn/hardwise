@@ -45,4 +45,8 @@ def _validate_component_topology(
         from hardwise.validation.mcu import validate_mcu_basic
 
         return validate_mcu_basic(component, profile, design)
+    if family == "i2c_mux":
+        from hardwise.validation.i2c_mux import validate_i2c_mux
+
+        return validate_i2c_mux(component, profile, design)
     return []

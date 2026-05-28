@@ -29,6 +29,7 @@ class DatasheetProfile(BaseModel):
 
     part_number: str
     part_number_aliases: list[str] = Field(default_factory=list)
+    review_status: str = "ready"
     abs_max: dict[str, ProfileValue] = Field(default_factory=dict)
     recommended: dict[str, ProfileValue] = Field(default_factory=dict)
     pin_function: dict[str, str] = Field(default_factory=dict)

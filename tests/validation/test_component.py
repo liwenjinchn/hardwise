@@ -71,6 +71,18 @@ def _mpq8626_design() -> Design:
     return apply_bom_to_design(design, match_bom_to_design(bom, design))
 
 
+def _pca9548a_profile() -> DatasheetProfile:
+    return DatasheetProfile.load(Path("data/datasheet_profiles/pca9548a.json"))
+
+
+def _pca9548a_design() -> Design:
+    design = build_design_from_netlist(
+        parse_allegro_netlist(Path("tests/fixtures/allegro/pca9548a_i2c_mux.net"))
+    )
+    bom = parse_bom(Path("tests/fixtures/allegro/pca9548a_i2c_mux_bom.csv"))
+    return apply_bom_to_design(design, match_bom_to_design(bom, design))
+
+
 def _eg2132_profile() -> DatasheetProfile:
     return DatasheetProfile.load(Path("data/datasheet_profiles/eg2132.json"))
 
@@ -253,6 +265,35 @@ def test_validate_mpq8626_sync_buck_topology_passes() -> None:
     summaries = "\n".join(check.summary for check in report.component_checks)
     assert "Inductor PL1 value 1.5 uH is present" in summaries
     assert "no external freewheel diode is required" in summaries
+
+
+def test_validate_pca9548a_i2c_mux_topology_passes() -> None:
+    design = _pca9548a_design()
+    report = validate_component_against_profile(
+        design.components["U8"], _pca9548a_profile(), design
+    )
+
+    assert report.status == "PASS"
+    assert report.counts_by_status == {"PASS": 24, "WARN": 0, "ERROR": 0}
+    assert report.component_counts_by_status == {"PASS": 4, "WARN": 0, "ERROR": 0}
+    summaries = "\n".join(check.summary for check in report.component_checks)
+    assert "upstream SCL/SDA are connected" in summaries
+    assert "2 connected, 6 unused/NC" in summaries
+
+
+def test_validate_pca9548a_mismatched_channel_pair_errors() -> None:
+    design = _pca9548a_design()
+    u8 = design.components["U8"]
+    pins = [pin.model_copy(update={"net": "NC"}) if pin.number == "7" else pin for pin in u8.pins]
+    u8 = u8.model_copy(update={"pins": pins})
+    design = _with_component(design, u8)
+
+    report = validate_component_against_profile(u8, _pca9548a_profile(), design)
+
+    channels = next(check for check in report.component_checks if check.check == "i2c_mux_channel_pairs")
+    assert report.status == "ERROR"
+    assert channels.status == "ERROR"
+    assert "channel(s): 1" in channels.summary
 
 
 def test_validate_eg2132_fixture_reports_bootstrap_diode_error() -> None:

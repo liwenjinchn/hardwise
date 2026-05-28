@@ -1,9 +1,9 @@
 {
   "id": "document-index-candidate-builder",
   "name": "document-index-candidate-builder",
-  "title": "V1.1 document index candidate builder",
+  "title": "V1.1-V1.3 grouped coverage loop",
   "description": "",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": "backend",
   "package": null,
