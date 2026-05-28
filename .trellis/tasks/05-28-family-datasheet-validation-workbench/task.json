@@ -3,7 +3,7 @@
   "name": "family-datasheet-validation-workbench",
   "title": "Family-level datasheet validation workbench",
   "description": "Build a scalable device-family validation pipeline: normalize BOM identities, resolve public datasheets, extract type-specific profile facts, classify device families, and run family-level schematic validation without hand-authoring one profile per MPN.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
