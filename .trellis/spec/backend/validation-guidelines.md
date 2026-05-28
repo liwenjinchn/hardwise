@@ -1,0 +1,168 @@
+# Validation Module Guidelines
+
+> How to implement deterministic component validators safely.
+
+---
+
+## 1. Scope / Trigger
+
+Applies to every validator under `src/hardwise/validation/` (e.g. `op_amp.py`, `timer.py`, `current_sense.py`, `optocoupler.py`, `gate_driver.py`, `dcdc.py`, `mcu.py`).
+
+Trigger: adding or modifying a component-family validator, editing a datasheet profile JSON, or changing `component.py` dispatch.
+
+---
+
+## 2. Signatures
+
+### Validator entry point (dispatched from `component.py`)
+
+```python
+def validate_xxx(
+    component: Component,
+    profile: DatasheetProfile,
+    design: Design,
+) -> list[ComponentValidation]:
+    ...
+```
+
+### Pin lookup
+
+```python
+# ALWAYS use pin number (from profile JSON)
+pin = component.pin_by_number("8")   # ✅ correct
+pin = component.pin_by_name("VCC")   # ❌ WRONG for non-NC pins
+```
+
+### Net voltage inference
+
+```python
+from hardwise.validation.pins import voltage_for_net
+
+voltage = voltage_for_net(pin.net, self.design)   # ✅ needs design arg
+voltage = voltage_from_net_name(pin.net)           # ❌ doesn't exist
+```
+
+### Net connectivity (feedback / shared components)
+
+```python
+# Net.nodes is list[tuple[str, str]] — (refdes, pin_number)
+out_components = {node[0] for node in out_net.nodes}   # ✅
+out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .pins
+```
+
+---
+
+## 3. Contracts
+
+### Datasheet profile (schema v2)
+
+- Every pin MUST have: `name`, `number`, `category`, `function`, `evidence`
+- VCC/supply pins MUST use `category: "power_input"` (not `power_supply`) — `pins.py` only handles `power_input` for voltage validation
+- Voltage limits go in a flat `limits` dict with keys: `abs_max_voltage`, `recommended_voltage_min`, `recommended_voltage_max`
+
+### ComponentValidation output
+
+- Each check returns exactly one `ComponentValidation` with `check`, `status`, `summary`, optional `evidence`
+- Check names must match test expectations (e.g. `op_amp_vcc_range`, `op_amp_in_a_plus_connectivity`)
+- `ValidationReport.summary` property returns component-check counts by status (PASS/WARN/ERROR)
+
+---
+
+## 4. Validation & Error Matrix
+
+| Condition | Status | Summary pattern |
+|-----------|--------|-----------------|
+| Pin not found in component | ERROR | "pin not connected" |
+| Pin found but no net | ERROR | "pin not connected" |
+| Voltage cannot be inferred | WARN | "cannot infer voltage" |
+| Voltage out of abs_max | ERROR | "exceeds maximum" / "below minimum" |
+| Voltage out of recommended | WARN | "below recommended" / "above recommended" |
+| Feedback path found via shared component | PASS | "feedback through R1_FB" |
+| No feedback path | ERROR | "no feedback path" |
+
+---
+
+## 5. Good / Base / Bad Cases
+
+**Good** (nominal LM358, VCC=12V, both channels with feedback resistors): 10 PASS, 0 WARN, 0 ERROR.
+
+**Base** (one channel unused, inputs tied to output as voltage follower): connectivity PASS, feedback PASS.
+
+**Bad** (VCC=2V): VCC range check → ERROR "below minimum".
+
+---
+
+## 6. Tests Required
+
+- Nominal fixture: assert `results.status == "PASS"`, `results.summary["PASS"] == N` (N = total check count)
+- VCC out-of-range low: assert specific check returns ERROR with "below minimum"
+- VCC out-of-range high: assert specific check returns ERROR with "exceeds maximum"
+- Floating pins: assert connectivity checks return ERROR
+- Disconnected output: assert output connectivity returns ERROR
+- All tests must build design from inline netlist + BOM via `parse_allegro_netlist` → `build_design_from_netlist` → `apply_bom_to_design`
+
+---
+
+## 7. Wrong vs Correct
+
+### Wrong
+
+```python
+# Using pin_by_name for non-NC pins — always returns None
+vcc_pin = component.pin_by_name("VCC")
+
+# Accessing Net.pins — attribute doesn't exist
+for p in net.pins: ...
+
+# Using power_supply category for VCC
+{"category": "power_supply", "abs_max": {"voltage": 36.0}}
+
+# Pin on two different nets in one test fixture
+'FB_B' ; U31.6, U31.7
+'OUTPUT_B' ; U31.7
+```
+
+### Correct
+
+```python
+# Use pin_by_number with the number from the profile
+vcc_pin = component.pin_by_number("8")
+
+# Use Net.nodes (list of (refdes, pin_number) tuples)
+for node in net.nodes:
+    refdes, pin_num = node
+
+# Use power_input category with flat limits dict
+{"category": "power_input", "limits": {"abs_max_voltage": 36.0, "recommended_voltage_min": 3.0, "recommended_voltage_max": 32.0}}
+
+# One pin per net — merge into single net for voltage follower
+'OUTPUT_B' ; U31.7, U31.6
+```
+
+---
+
+## Common Mistakes
+
+### Mistake: `pin_by_name()` returns None for schematic pins
+
+**Symptom**: All connectivity checks ERROR even though pins are connected in the netlist.
+
+**Cause**: `Component.pin_by_name()` only populates NC pin names in V2.1. Schematic pin names are empty strings.
+
+**Fix**: Always use `pin_by_number()` with the number from the profile JSON.
+
+### Mistake: `Net.pins` AttributeError
+
+**Symptom**: `AttributeError: 'Net' object has no attribute 'pins'`
+
+**Cause**: `Net` model has `nodes: list[tuple[str, str]]`, not `pins`.
+
+**Fix**: Use `{node[0] for node in net.nodes}` to get component refdes set.
+
+### Mistake: VCC pin WARN instead of PASS
+
+**Symptom**: VCC pin returns "Pin category has no deterministic V3.3 validation rule yet."
+
+**Cause**: Category `power_supply` is not handled by `pins.py`.
+
+**Fix**: Use `category: "power_input"` with `limits` dict containing `abs_max_voltage`, `recommended_voltage_min`, `recommended_voltage_max`.
