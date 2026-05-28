@@ -68,6 +68,36 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
 - VCC/supply pins MUST use `category: "power_input"` (not `power_supply`) — `pins.py` only handles `power_input` for voltage validation
 - Voltage limits go in a flat `limits` dict with keys: `abs_max_voltage`, `recommended_voltage_min`, `recommended_voltage_max`
 
+### Pin category conventions by component type
+
+**Two-terminal passive devices** (diodes, resistors, capacitors):
+- Use `switch_node` for both pins (cathode/anode, terminal1/terminal2)
+- Validator logic determines polarity based on voltage differential
+```json
+{"name": "Cathode", "number": "1", "category": "switch_node"},
+{"name": "Anode", "number": "2", "category": "switch_node"}
+```
+
+**Three-terminal control devices** (MOSFET, BJT):
+- Gate/Base: `analog_input` (analog control) or `logic_input` (digital control)
+- Drain/Collector: `switch_output` (switched high-side)
+- Source/Emitter: `ground` or `switch_node` (depends on circuit topology)
+```json
+{"name": "Gate", "number": "1", "category": "analog_input"},
+{"name": "Drain", "number": "2", "category": "switch_output"},
+{"name": "Source", "number": "3", "category": "ground"}
+```
+
+**Multi-pin connectors**:
+- VCC pins: `power_input` with `limits` dict
+- GND pins: `ground`
+- Signal pins: `gpio` (general purpose I/O)
+```json
+{"name": "VCC", "number": "1", "category": "power_input", "limits": {"abs_max_voltage": 5.0}},
+{"name": "GND", "number": "5", "category": "ground"},
+{"name": "DATA", "number": "2", "category": "gpio"}
+```
+
 ### ComponentValidation output
 
 - Each check returns exactly one `ComponentValidation` with `check`, `status`, `summary`, optional `evidence`
@@ -190,3 +220,25 @@ for node in net.nodes:
 **Cause**: `voltage_for_net` only recognizes direct voltage sources (nets named `+12V`, `GND`, etc.), not voltage drops across components.
 
 **Fix**: In test fixtures, connect voltage source directly to the pin being measured. For real circuits, add `voltage_hint` to the Net object or use `design.nets[net_name].voltage_hint`.
+
+### Mistake: Two-terminal device uses power_input/output categories
+
+**Symptom**: Diode validation fails or produces incorrect results.
+
+**Cause**: Diodes (and other two-terminal passive devices) should use `switch_node` for both pins, not `power_input` or `power_output`.
+
+**Fix**: Use `category: "switch_node"` for both cathode and anode pins. Let the validator logic determine polarity based on voltage differential.
+
+**Example**:
+```json
+{
+  "name": "Cathode",
+  "number": "1",
+  "category": "switch_node"
+},
+{
+  "name": "Anode",
+  "number": "2",
+  "category": "switch_node"
+}
+```
