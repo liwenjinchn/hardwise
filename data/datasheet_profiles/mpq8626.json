@@ -1,0 +1,231 @@
+{
+  "part_number": "MPQ8626",
+  "part_number_aliases": [
+    "MPQ8626GD",
+    "MPQ8626GD-Z"
+  ],
+  "abs_max": {},
+  "recommended": {
+    "topology_family": "buck",
+    "buck_topology": "synchronous",
+    "external_freewheel_diode_required": false,
+    "vin_min": 2.85,
+    "vin_max": 16.0,
+    "output_current_max_a": 6.0
+  },
+  "pin_function": {
+    "1": "PGND1 (power ground)",
+    "2": "SW1 (switch node)",
+    "3": "VIN (supply input)",
+    "4": "CS (current sense / current-limit setting)",
+    "5": "EN (enable)",
+    "6": "FB (feedback)",
+    "7": "AGND (analog ground)",
+    "8": "TRK/REF (tracking/reference)",
+    "9": "PGOOD (power-good output)",
+    "10": "BST (bootstrap supply)",
+    "11": "SW2 (switch node)",
+    "12": "MODE (operation mode select)",
+    "13": "VCC (bias supply)",
+    "14": "PGND2 (power ground)"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "PGND1",
+      "category": "ground",
+      "function": "Power ground return.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the power ground return."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3"
+      ]
+    },
+    {
+      "number": "2",
+      "name": "SW1",
+      "category": "switch_output",
+      "function": "Switch node output for the integrated synchronous buck power stage.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect the switch node to the output inductor and bootstrap capacitor network."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3",
+        "datasheet:mpq8626.pdf#p17"
+      ]
+    },
+    {
+      "number": "3",
+      "name": "VIN",
+      "category": "power_input",
+      "function": "Supply input for the buck converter.",
+      "limits": {
+        "recommended_voltage_min": 2.85,
+        "recommended_voltage_max": 16.0
+      },
+      "recommended_topology": [
+        "Connect to the upstream input rail and local input bypass network."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p1",
+        "datasheet:mpq8626.pdf#p5"
+      ]
+    },
+    {
+      "number": "4",
+      "name": "CS",
+      "category": "analog_input",
+      "function": "Current-sense / current-limit setting pin.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect according to the selected current-limit configuration."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3"
+      ]
+    },
+    {
+      "number": "5",
+      "name": "EN",
+      "category": "logic_input",
+      "function": "Enable control input.",
+      "limits": {},
+      "recommended_topology": [
+        "Drive from a valid enable control or pull network."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3"
+      ]
+    },
+    {
+      "number": "6",
+      "name": "FB",
+      "category": "analog_input",
+      "function": "Feedback input.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the output feedback network."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3"
+      ]
+    },
+    {
+      "number": "7",
+      "name": "AGND",
+      "category": "ground",
+      "function": "Analog ground reference.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the analog ground return."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3"
+      ]
+    },
+    {
+      "number": "8",
+      "name": "TRK/REF",
+      "category": "analog_input",
+      "function": "Tracking/reference pin.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect according to the desired reference/tracking behavior."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3"
+      ]
+    },
+    {
+      "number": "9",
+      "name": "PGOOD",
+      "category": "power_good",
+      "function": "Power-good status output.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the downstream power-good monitor or pull-up network."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3"
+      ]
+    },
+    {
+      "number": "10",
+      "name": "BST",
+      "category": "bootstrap_supply",
+      "function": "Bootstrap supply for the high-side switch driver.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the bootstrap capacitor network referenced to SW."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3",
+        "datasheet:mpq8626.pdf#p17"
+      ]
+    },
+    {
+      "number": "11",
+      "name": "SW2",
+      "category": "switch_output",
+      "function": "Switch node output for the integrated synchronous buck power stage.",
+      "limits": {},
+      "recommended_topology": [
+        "Tie to the same switch-node network used by SW1."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3",
+        "datasheet:mpq8626.pdf#p17"
+      ]
+    },
+    {
+      "number": "12",
+      "name": "MODE",
+      "category": "logic_input",
+      "function": "Operation mode select.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect according to the selected operation mode."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3"
+      ]
+    },
+    {
+      "number": "13",
+      "name": "VCC",
+      "category": "bias_supply",
+      "function": "Bias supply.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the bias supply network."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3"
+      ]
+    },
+    {
+      "number": "14",
+      "name": "PGND2",
+      "category": "ground",
+      "function": "Power ground return.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the power ground return."
+      ],
+      "evidence": [
+        "datasheet:mpq8626.pdf#p3"
+      ]
+    }
+  ],
+  "evidence": {
+    "recommended.output_topology": "datasheet:mpq8626.pdf#p17",
+    "recommended.inductor": "datasheet:mpq8626.pdf#p17",
+    "recommended.synchronous_rectification": "datasheet:mpq8626.pdf#p1"
+  },
+  "extracted_at": "2026-05-29T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-mpq8626",
+  "schema_version": "v2"
+}

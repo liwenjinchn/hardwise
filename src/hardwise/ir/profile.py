@@ -9,7 +9,7 @@ from typing import Union
 
 from pydantic import BaseModel, Field
 
-ProfileValue = Union[float, str]
+ProfileValue = Union[bool, float, str]
 
 
 class PinProfile(BaseModel):
@@ -28,6 +28,7 @@ class DatasheetProfile(BaseModel):
     """Structured electrical limits extracted from one datasheet."""
 
     part_number: str
+    part_number_aliases: list[str] = Field(default_factory=list)
     abs_max: dict[str, ProfileValue] = Field(default_factory=dict)
     recommended: dict[str, ProfileValue] = Field(default_factory=dict)
     pin_function: dict[str, str] = Field(default_factory=dict)

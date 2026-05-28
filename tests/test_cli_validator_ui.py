@@ -368,6 +368,52 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert '"profile_path": "data/datasheet_profiles/stm32g030c8t6.json"' in index_payload
 
 
+def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
+    tmp_path: Path,
+) -> None:
+    html_output = tmp_path / "mpq8626-design-validator.html"
+    index_output = tmp_path / "mpq8626-index.md"
+    index_json = tmp_path / "mpq8626-index.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mpq8626_sync_buck.net",
+            "tests/fixtures/allegro/mpq8626_sync_buck_bom.csv",
+            "--document-index",
+            "data/document_indexes/power_v1_docs.csv",
+            "--output",
+            str(html_output),
+            "--index-output",
+            str(index_output),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "document-index: data/document_indexes/power_v1_docs.csv" in result.output
+    assert "validated=1" in result.output
+    assert "PASS/WARN/ERROR=1/0/0" in result.output
+
+    html = html_output.read_text(encoding="utf-8")
+    assert "MPQ8626 public MPS product page and datasheet" in html
+    assert "buck_inductor" in html
+    assert "no external freewheel diode is required" in html
+
+    index_text = index_output.read_text(encoding="utf-8")
+    assert "## Component Group Coverage" in index_text
+    assert "MPQ8626 public MPS product page and datasheet" in index_text
+    assert "| Validated components | 1 |" in index_text
+
+    index_payload = index_json.read_text(encoding="utf-8")
+    assert '"component_groups"' in index_payload
+    assert '"identity": "MPQ8626GD"' in index_payload
+    assert '"document_status": "matched"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/mpq8626.json"' in index_payload
+
+
 def test_design_validator_ui_writes_gap_workbench_when_no_profiles_match(
     tmp_path: Path,
 ) -> None:

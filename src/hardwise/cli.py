@@ -1172,6 +1172,13 @@ def design_validator_ui(
     totals = index.totals
     typer.echo(f"selected-netlist: {source}")
     typer.echo(f"selected-bom: {bom.source_file}")
+    if document_report is not None:
+        doc_counts = document_report.counts_by_status
+        typer.echo(
+            f"document-index: {document_report.document_index_file} "
+            f"(matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
+            f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']})"
+        )
     if resolved_bom.auto_selected:
         parseable_count = sum(item.status != "parse_error" for item in resolved_bom.candidates)
         typer.echo(

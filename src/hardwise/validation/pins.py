@@ -55,10 +55,12 @@ def validate_pin(
             evidence=evidence,
         )
     if pin_profile.category in {
+        "bias_supply",
         "logic_input",
         "gate_output",
         "switch_node",
         "bootstrap_supply",
+        "power_good",
         "reset",
         "boot_mode",
         "debug",
@@ -95,7 +97,7 @@ def _validate_ground_pin(
     pin_profile: PinProfile,
     evidence: list[str],
 ) -> PinValidation:
-    is_ground = net_name.upper() in {"GND", "AGND", "DGND", "PGND"}
+    is_ground = _is_ground_net(net_name)
     return PinValidation(
         pin_number=pin_profile.number,
         pin_name=pin_profile.name,
@@ -109,6 +111,13 @@ def _validate_ground_pin(
         ),
         evidence=evidence,
     )
+
+
+def _is_ground_net(net_name: str) -> bool:
+    tokens = {token for token in re.split(r"[^A-Z0-9]+", net_name.upper()) if token}
+    if tokens & {"GND", "AGND", "DGND", "PGND"}:
+        return True
+    return net_name.upper().startswith(("AGND", "DGND", "PGND"))
 
 
 def _validate_power_input_pin(

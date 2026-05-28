@@ -52,7 +52,7 @@ def render_project_workbench(
     validated = {item.validation.refdes: item for item in ordered}
     counts = _status_counts(ordered)
     active_refdes = ordered[0].validation.refdes if ordered else ""
-    rail_count = len(components) if ordered else len(index.component_groups)
+    rail_count = len(index.component_groups) if index.component_groups else len(components)
 
     return f"""<!doctype html>
 <html lang="zh-CN">
@@ -121,7 +121,7 @@ def _rail_table(
     index: ProjectValidationIndex,
     bom_report: BomMatchReport | None,
 ) -> str:
-    if not validated and index.component_groups:
+    if index.component_groups:
         return component_group_table(index.component_groups)
     return _component_table(components, validated, active_refdes, index, bom_report)
 

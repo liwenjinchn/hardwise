@@ -8,6 +8,41 @@
 
 ---
 
+## 2026-05-29 · V3.13 · V1 should validate one real power family, not all devices
+
+**Symptom**
+
+Grouped coverage made真实项目可读了，但如果下一步继续“按器件一个个补 profile”，项目又会发散成一个无限
+器件库维护任务。真实 Allegro 项目里有 132 个 BOM/device groups，其中电源相关 IC 很适合作为第一条
+深验证链路，但不能承诺全 BOM 自动验证。
+
+**Root cause**
+
+V1 的闭环单位应该是“全项目 coverage + 少数高价值 family validation”。全项目层负责暴露 132 个 groups、
+document/profile 状态和缺口；验证层只在 structured profile + family validator 都可信时输出
+PASS/WARN/ERROR。否则就会把 coverage、datasheet resolution、fact extraction 和 electrical judgement
+混成一个看似自动、实际不可审计的大功能。
+
+**Fix**
+
+选 `MPQ8626` 同步 buck 作为 V1 power family target。新增 `mpq8626.json` structured profile，使用
+`part_number_aliases` 匹配 `MPQ8626GD` / `MPQ8626GD-Z`；新增 `power_v1_docs.csv` 本地公开文档索引，
+链接到 MPS 公开产品/资料页；扩展 buck validator 支持 `SW1/SW2`、`PL` 前缀电感和同步 buck
+“不需要外部续流二极管”的规则。真实项目中 `U13/U20/U23/U26` 自动进入验证。
+
+**Verification**
+
+真实公开 Allegro 文件夹 smoke 加 `--document-index data/document_indexes/power_v1_docs.csv` 后输出：
+4010 components / 132 groups / document matched=2 BOM groups / validated=4 /
+PASS-WARN-ERROR=4-0-0 / manual=4006。JSON 中 `MPQ8626GD` 和 `MPQ8626GD-Z` 两个 groups 都是
+`profile_status=matched`、`document_status=matched`、`validation_status=PASS`。浏览器 smoke 确认
+HTML 显示 132 groups、4 个 validated devices、MPQ8626 docs、`buck_inductor` 和同步 buck 结论。
+
+**Takeaway**
+
+V1 的收束语句是：全项目 coverage 可见，power family 深验证。不要把“新器件很多”当成要无限补
+MPN profiles；先让 document/profile/family 三层状态可审计，再按 family 扩。
+
 ## 2026-05-28 · V3.12 · Real-project coverage needs BOM groups, not raw refdes rows
 
 **Symptom**

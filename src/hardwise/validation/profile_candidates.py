@@ -67,9 +67,7 @@ def suggest_profile_candidates(
     profiles = _load_profiles(profiles_dir)
     by_part = _profiles_by_part_number(profiles)
     candidates = [
-        candidate
-        for item in bom.items
-        for candidate in _candidate_for_item(item, by_part)
+        candidate for item in bom.items for candidate in _candidate_for_item(item, by_part)
     ]
     return ProfileCandidateReport(
         project=project or bom.source_file.stem,
@@ -226,9 +224,10 @@ def _profiles_by_part_number(
 ) -> dict[str, list[Path]]:
     by_part: dict[str, list[Path]] = {}
     for path, profile in profiles:
-        key = _normalize_identity(profile.part_number)
-        if key:
-            by_part.setdefault(key, []).append(path)
+        for part_number in [profile.part_number, *profile.part_number_aliases]:
+            key = _normalize_identity(part_number)
+            if key:
+                by_part.setdefault(key, []).append(path)
     return by_part
 
 

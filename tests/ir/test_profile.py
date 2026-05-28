@@ -36,6 +36,12 @@ def test_datasheet_profile_json_round_trip(tmp_path: Path) -> None:
     assert restored.pin_by_number("99") is None
 
 
+def test_datasheet_profile_preserves_boolean_recommended_values() -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/mpq8626.json"))
+
+    assert profile.recommended["external_freewheel_diode_required"] is False
+
+
 def test_datasheet_profile_loads_v1_without_pin_profiles(tmp_path: Path) -> None:
     path = tmp_path / "legacy.json"
     path.write_text(
