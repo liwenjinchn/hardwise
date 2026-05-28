@@ -42,6 +42,14 @@ voltage = voltage_for_net(pin.net, self.design)   # ✅ needs design arg
 voltage = voltage_from_net_name(pin.net)           # ❌ doesn't exist
 ```
 
+**Recognized patterns** (returns float or None):
+- `"+12V"` → `12.0`
+- `"-5V"` → `-5.0`
+- `"3V3"` → `3.3`
+- `"VBUS"` → `5.0`
+- `"GND"`, `"AGND"`, `"DGND"` → `0.0` (ground nets)
+- `"SIGNAL_NET"` → `None` (cannot infer)
+
 ### Net connectivity (feedback / shared components)
 
 ```python
@@ -166,3 +174,19 @@ for node in net.nodes:
 **Cause**: Category `power_supply` is not handled by `pins.py`.
 
 **Fix**: Use `category: "power_input"` with `limits` dict containing `abs_max_voltage`, `recommended_voltage_min`, `recommended_voltage_max`.
+
+### Mistake: Control pin (gate/base) uses power_input category
+
+**Symptom**: Gate pin validation WARNs even though voltage is within range.
+
+**Cause**: `power_input` category expects supply pins, not control signals. Control pins need different validation logic.
+
+**Fix**: Use `category: "analog_input"` for analog control signals (MOSFET gate, op-amp inputs) or `category: "logic_input"` for digital control signals (enable pins, reset pins).
+
+### Mistake: Voltage measurement path includes resistors
+
+**Symptom**: `voltage_for_net` returns `None` for nets with voltage dividers or series resistors.
+
+**Cause**: `voltage_for_net` only recognizes direct voltage sources (nets named `+12V`, `GND`, etc.), not voltage drops across components.
+
+**Fix**: In test fixtures, connect voltage source directly to the pin being measured. For real circuits, add `voltage_hint` to the Net object or use `design.nets[net_name].voltage_hint`.
