@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from hardwise.report.markdown import _escape_pipe
-from hardwise.validation.project_index import ProjectValidationIndex
+from hardwise.validation.project_index import ProjectValidationIndex, profile_gap_groups
 
 SCOPE = (
     "Static schematic-side design validator; no PCB layout, boardview, PLM, "
@@ -30,7 +30,9 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
     lines.append(f"| BOM matched | {index.bom_matched} |")
     lines.append(f"| Validated components | {len(index.validated_rows)} |")
     lines.append(f"| Manual / no-profile components | {len(index.manual_rows)} |")
-    lines.append(f"| PASS / WARN / ERROR | {totals['PASS']} / {totals['WARN']} / {totals['ERROR']} |")
+    lines.append(
+        f"| PASS / WARN / ERROR | {totals['PASS']} / {totals['WARN']} / {totals['ERROR']} |"
+    )
     lines.append(f"| Scope | {SCOPE} |")
     lines.append(f"| Generated at | {index.generated_at} |")
     lines.append("")
@@ -51,9 +53,26 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
         lines.append("| - | - | - | - | - | 0 / 0 / 0 |")
     lines.append("")
 
+    lines.append("## Profile Gap Summary")
+    lines.append("")
+    lines.append("| Count | Status | Identity | Kind | Refdes sample | Reason |")
+    lines.append("|---:|---|---|---|---|---|")
+    groups = profile_gap_groups(index)
+    for group in groups:
+        lines.append(
+            f"| {group.refdes_count} | {group.match_status} | "
+            f"{_escape_pipe(group.identity)} | {group.identity_kind} | "
+            f"{', '.join(group.refdes_sample)} | {_escape_pipe(group.reason)} |"
+        )
+    if not groups:
+        lines.append("| 0 | - | - | - | - | - |")
+    lines.append("")
+
     lines.append("## Manual / No-profile Components")
     lines.append("")
-    lines.append(f"Showing first {min(manual_limit, len(index.manual_rows))} of {len(index.manual_rows)} rows.")
+    lines.append(
+        f"Showing first {min(manual_limit, len(index.manual_rows))} of {len(index.manual_rows)} rows."
+    )
     lines.append("")
     lines.append("| Refdes | Status | Reason | BOM value | MPN |")
     lines.append("|---|---|---|---|---|")
@@ -74,5 +93,8 @@ def write_json(index: ProjectValidationIndex, output: Path) -> None:
     payload = index.model_dump(mode="json")
     payload["scope"] = SCOPE
     payload["totals"] = index.totals
+    payload["profile_gap_groups"] = [
+        group.model_dump(mode="json") for group in profile_gap_groups(index, limit=100)
+    ]
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

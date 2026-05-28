@@ -412,12 +412,72 @@ def test_design_validator_ui_writes_gap_workbench_when_no_profiles_match(
     index_text = index_output.read_text(encoding="utf-8")
     assert "| Validated components | 0 |" in index_text
     assert "| PASS / WARN / ERROR | 0 / 0 / 0 |" in index_text
+    assert "## Profile Gap Summary" in index_text
     assert "| U8 | no_result |" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"components_in_design": 7' in index_payload
     assert '"validation": null' in index_payload
     assert '"match_status": "no_result"' in index_payload
+    assert '"profile_gap_groups"' in index_payload
+
+
+def test_design_validator_ui_auto_selects_bom_from_pst_project_dir(
+    tmp_path: Path,
+) -> None:
+    project = tmp_path / "allegro"
+    shutil.copytree(Path("tests/fixtures/allegro/pst"), project)
+    (project / "bad.BOM").write_text("not\ta\tcadence\tbom\n", encoding="utf-8")
+    (project / "mismatch.csv").write_text(
+        "Reference,Quantity,Value,Manufacturer,MPN\nU999,1,BOGUS,Fixture,BOGUS\n",
+        encoding="utf-8",
+    )
+    (project / "switch_clean.csv").write_text(
+        "Reference,Quantity,Value,Manufacturer,MPN\n"
+        "U1,1,FOO-IC,Fixture,FOO-IC\n"
+        "C1,1,100nF,Fixture,CAP-100N\n"
+        "R1,1,10K,Fixture,RES-10K\n",
+        encoding="utf-8",
+    )
+    html_output = tmp_path / "project-design-validator.html"
+    index_output = tmp_path / "project-index.md"
+    index_json = tmp_path / "project-index.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            str(project),
+            "--output",
+            str(html_output),
+            "--index-output",
+            str(index_output),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "selected-bom:" in result.output
+    assert "switch_clean.csv" in result.output
+    assert "bom-candidates: 3" in result.output
+    assert "design-validator-ui:" in result.output
+    assert "BOM matched=3" in result.output
+    assert "validated=0" in result.output
+
+    html = html_output.read_text(encoding="utf-8")
+    assert "Hardwise Validator UI - switch_clean" in html
+    assert "Profile Gap Groups" in html
+    assert "FOO-IC" in html
+
+    index_text = index_output.read_text(encoding="utf-8")
+    assert "| Netlist source |" in index_text
+    assert "switch_clean.csv" in index_text
+    assert "## Profile Gap Summary" in index_text
+
+    index_payload = index_json.read_text(encoding="utf-8")
+    assert '"profile_gap_groups"' in index_payload
+    assert '"identity": "FOO-IC"' in index_payload
 
 
 def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) -> None:

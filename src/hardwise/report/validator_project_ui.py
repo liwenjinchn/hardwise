@@ -17,7 +17,12 @@ from hardwise.report.validator_multi_ui import (
 )
 from hardwise.report.validator_multi_ui_assets import MULTI_UI_SCRIPT, MULTI_UI_STYLE
 from hardwise.report.validator_ui import _status_class
-from hardwise.validation.project_index import ProjectValidationIndex, ProjectValidationRow
+from hardwise.validation.project_index import (
+    ProjectValidationGapGroup,
+    ProjectValidationIndex,
+    ProjectValidationRow,
+    profile_gap_groups,
+)
 
 GAP_ROW_LIMIT = 50
 
@@ -186,7 +191,7 @@ def _verify_list(
     if results:
         cards.append(_validated_cards(results, active_refdes))
     else:
-        cards.append(_gap_cards(index.manual_rows))
+        cards.append(_gap_group_cards(profile_gap_groups(index)))
     return "".join(cards)
 
 
@@ -208,21 +213,22 @@ def _coverage_card(label: str, count: int) -> str:
     )
 
 
-def _gap_cards(rows: list[ProjectValidationRow]) -> str:
+def _gap_group_cards(groups: list[ProjectValidationGapGroup]) -> str:
     rendered = ['<div class="gap-list">']
-    for row in rows[:GAP_ROW_LIMIT]:
+    for group in groups[:GAP_ROW_LIMIT]:
         rendered.append(
             '<div class="gap-card">'
-            f"<strong>{escape(row.refdes)} · {escape(row.match_status)}</strong>"
-            f"<p>{escape(row.part_number or row.bom_value or '-')}</p>"
-            f"<p>{escape(row.reason)}</p>"
+            f"<strong>{group.refdes_count} · {escape(group.identity)}</strong>"
+            f"<p>{escape(group.match_status)} / {escape(group.identity_kind)}</p>"
+            f"<p>{escape(', '.join(group.refdes_sample))}</p>"
+            f"<p>{escape(group.reason)}</p>"
             "</div>"
         )
-    if len(rows) > GAP_ROW_LIMIT:
+    if len(groups) > GAP_ROW_LIMIT:
         rendered.append(
             '<div class="gap-card">'
-            f"<strong>+{len(rows) - GAP_ROW_LIMIT} more</strong>"
-            "<p>Full coverage rows are available in the markdown/JSON index.</p>"
+            f"<strong>+{len(groups) - GAP_ROW_LIMIT} more groups</strong>"
+            "<p>Full coverage groups are available in the markdown/JSON index.</p>"
             "</div>"
         )
     rendered.append("</div>")
@@ -257,9 +263,9 @@ def _coverage_detail(index: ProjectValidationIndex, generated_at: str) -> str:
         '<div class="kpi"><span>WARN</span><strong>0</strong></div>'
         '<div class="kpi"><span>ERROR</span><strong>0</strong></div>'
         "</div>"
-        '<section class="section table-section"><div class="section-head"><h3>Profile Gap Rows</h3></div>'
-        "<table><thead><tr><th>Refdes</th><th>Status</th><th>BOM value</th><th>MPN</th><th>Reason</th></tr></thead><tbody>"
-        f"{_gap_table_rows(index.manual_rows)}"
+        '<section class="section table-section"><div class="section-head"><h3>Profile Gap Groups</h3></div>'
+        "<table><thead><tr><th>Count</th><th>Status</th><th>Identity</th><th>Kind</th><th>Refdes sample</th><th>Reason</th></tr></thead><tbody>"
+        f"{_gap_group_table_rows(profile_gap_groups(index))}"
         "</tbody></table></section>"
         '<section class="section"><div class="section-head"><h3>Scope Boundary</h3></div>'
         '<p class="scope">This workbench is a schematic-side coverage artifact. It does not convert no-profile rows into electrical judgements.</p>'
@@ -273,18 +279,19 @@ def _coverage_detail(index: ProjectValidationIndex, generated_at: str) -> str:
     )
 
 
-def _gap_table_rows(rows: list[ProjectValidationRow]) -> str:
+def _gap_group_table_rows(groups: list[ProjectValidationGapGroup]) -> str:
     rendered = []
-    for row in rows[:GAP_ROW_LIMIT]:
+    for group in groups[:GAP_ROW_LIMIT]:
         rendered.append(
             "<tr>"
-            f'<td class="ref">{escape(row.refdes)}</td>'
-            f"<td>{escape(row.match_status)}</td>"
-            f"<td>{escape(row.bom_value or '-')}</td>"
-            f"<td>{escape(row.part_number or '-')}</td>"
-            f"<td>{escape(row.reason)}</td>"
+            f"<td>{group.refdes_count}</td>"
+            f"<td>{escape(group.match_status)}</td>"
+            f"<td>{escape(group.identity)}</td>"
+            f"<td>{escape(group.identity_kind)}</td>"
+            f"<td>{escape(', '.join(group.refdes_sample))}</td>"
+            f"<td>{escape(group.reason)}</td>"
             "</tr>"
         )
     if not rendered:
-        rendered.append("<tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>")
+        rendered.append("<tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>")
     return "".join(rendered)

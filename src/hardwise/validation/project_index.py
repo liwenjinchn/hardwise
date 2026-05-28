@@ -39,6 +39,17 @@ class ProjectValidationRow(BaseModel):
         return self.validation.status
 
 
+class ProjectValidationGapGroup(BaseModel):
+    """Grouped no-profile/manual rows for coverage triage."""
+
+    match_status: str
+    identity: str
+    identity_kind: str
+    reason: str
+    refdes_count: int
+    refdes_sample: list[str] = Field(default_factory=list)
+
+
 class ProjectValidationIndex(BaseModel):
     """Project-level summary and validation rows."""
 
@@ -138,3 +149,42 @@ def build_project_validation_index(
         bom_matched=len(bom_report.matched_refdes),
         rows=rows,
     )
+
+
+def profile_gap_groups(
+    index: ProjectValidationIndex,
+    *,
+    limit: int = 30,
+    sample_limit: int = 8,
+) -> list[ProjectValidationGapGroup]:
+    """Group manual/no-profile rows by identity so large projects are scannable."""
+
+    grouped: dict[tuple[str, str, str, str], list[str]] = {}
+    for row in index.manual_rows:
+        identity, identity_kind = _gap_identity(row)
+        key = (row.match_status, identity, identity_kind, row.reason)
+        grouped.setdefault(key, []).append(row.refdes)
+
+    groups = [
+        ProjectValidationGapGroup(
+            match_status=match_status,
+            identity=identity,
+            identity_kind=identity_kind,
+            reason=reason,
+            refdes_count=len(refdes),
+            refdes_sample=refdes[:sample_limit],
+        )
+        for (match_status, identity, identity_kind, reason), refdes in grouped.items()
+    ]
+    return sorted(
+        groups,
+        key=lambda group: (-group.refdes_count, group.match_status, group.identity),
+    )[:limit]
+
+
+def _gap_identity(row: ProjectValidationRow) -> tuple[str, str]:
+    if row.part_number:
+        return row.part_number, "part_number"
+    if row.bom_value:
+        return row.bom_value, "bom_value"
+    return "-", "missing"

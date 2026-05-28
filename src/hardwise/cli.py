@@ -1047,7 +1047,13 @@ def design_validator_ui(
         ...,
         help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
     ),
-    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    bom_path: Path | None = typer.Argument(
+        None,
+        help=(
+            "Path to a schematic-exported BOM file. If omitted, "
+            "BOM candidates are auto-selected from an Allegro/PST project directory."
+        ),
+    ),
     profiles: Path = typer.Option(
         Path("data/datasheet_profiles"),
         "--profiles",
@@ -1078,12 +1084,13 @@ def design_validator_ui(
     """Write a screenshot-like static design-validator workbench for matched profiles."""
     from datetime import datetime, timezone
 
-    from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
+    from hardwise.bom import apply_bom_to_design
     from hardwise.report.project_validation_markdown import (
         render as render_project_index,
         write_json,
     )
     from hardwise.report.validator_project_ui import render_project_workbench
+    from hardwise.project_inputs import project_name_for_inputs, resolve_bom_input
     from hardwise.validation import ProfileCandidateError, suggest_profile_candidates
     from hardwise.validation.project_index import build_project_validation_index
 
@@ -1093,12 +1100,17 @@ def design_validator_ui(
 
     try:
         design, source, input_type, _property_count = _load_allegro_design(netlist_path)
-        bom = parse_bom(bom_path)
-        bom_report = match_bom_to_design(bom, design)
+        resolved_bom = resolve_bom_input(
+            netlist_path=netlist_path,
+            bom_path=bom_path,
+            design=design,
+        )
+        bom = resolved_bom.bom
+        bom_report = resolved_bom.bom_report
         design = apply_bom_to_design(design, bom_report)
-        candidate_report = suggest_profile_candidates(bom, profiles, project=bom_path.stem)
+        candidate_report = suggest_profile_candidates(bom, profiles, project=bom.source_file.stem)
         now = datetime.now(timezone.utc)
-        project_name = _report_source_name(source)
+        project_name = project_name_for_inputs(source, bom)
         index = build_project_validation_index(
             design=design,
             bom_report=bom_report,
@@ -1142,9 +1154,18 @@ def design_validator_ui(
         write_json(index, index_json)
 
     totals = index.totals
+    typer.echo(f"selected-netlist: {source}")
+    typer.echo(f"selected-bom: {bom.source_file}")
+    if resolved_bom.auto_selected:
+        parseable_count = sum(item.status != "parse_error" for item in resolved_bom.candidates)
+        typer.echo(
+            f"bom-candidates: {len(resolved_bom.candidates)} "
+            f"(parseable={parseable_count}, selected={bom.source_file.name})"
+        )
     typer.echo(
         f"design-validator-ui: {output} "
         f"({index.components_in_design} components, validated={len(index.validated_rows)}, "
+        f"BOM matched={index.bom_matched}, "
         f"PASS/WARN/ERROR={totals['PASS']}/{totals['WARN']}/{totals['ERROR']}, "
         f"manual={len(index.manual_rows)})"
     )

@@ -142,4 +142,5 @@ def test_render_project_workbench_includes_zero_profile_gap(tmp_path: Path) -> N
     assert "待 profile" in html
     assert '<td class="ref">U8</td>' in html
     assert "Scope Boundary" in html
+    assert "Profile Gap Groups" in html
     assert "does not convert no-profile rows into electrical judgements" in html
