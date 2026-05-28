@@ -1,45 +1,50 @@
 # Hardwise Demo — 90 秒阅读版
 
-Hardwise 是一个面向硬件研发“设计验证”节点的 AI 工作台。这个 demo 先用公开 KiCad 工程 `pic_programmer` 跑原理图检视闭环，再用公开 Allegro/BOM 样例跑项目级验证索引和静态验证器界面：解析设计、生成验证意见、校验位号、写入证据 token、输出报告和结构化库。
+Hardwise 是一个面向硬件研发“设计验证”节点的本地静态工作台。现在的 demo 先用公开 KiCad 工程展示原理图检视闭环，再用公开 Allegro/BOM 样例展示项目级验证器：解析 design facts、自动匹配本地 structured profiles、生成验证意见、保留 manual/no-profile 行、输出报告和结构化索引。
 
 ## 直接看效果
 
 - 产品介绍首页：[`product-intro.html`](product-intro.html)
 - 面向硬件评审的中文展示页：[`hardware-demo.html`](hardware-demo.html)
-- 设计验证器工作台示例：`uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_power_stage.net tests/fixtures/allegro/mixed_power_stage_bom.csv --output reports/design-validator.html`
+- 设计验证器工作台示例：`uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --output reports/controller-design-validator.html --index-output reports/controller-design-validator-index.md --index-json reports/controller-design-validator-index.json`
 - 技术机制快照：[`demo.html`](demo.html)
 - 样例报告命令：
 
 ```bash
-uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html
+uv run hardwise design-validator-ui \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --output reports/controller-design-validator.html \
+  --index-output reports/controller-design-validator-index.md \
+  --index-json reports/controller-design-validator-index.json
 ```
 
 样例输出摘要：
 
 ```text
-report: reports/pic_programmer-YYYYMMDD.html (28 findings, 121 components reviewed)
-store:  reports/pic_programmer.db (121 components, 77 NC pins)
-consolidator: 2 candidate rule(s) appended to memory/rules.md
+report: reports/controller-design-validator.html (4 validated targets, 21 manual/no-profile)
+index:  reports/controller-design-validator-index.md / .json
+rollup: 25 components, PASS/WARN/ERROR=1/0/3
 ```
 
 ## 看简历的人应该记住什么
 
 1. **不是聊天机器人套壳**：模型不能自由编位号，所有 `U1/C3/J1` 这类 refdes 都要命中 EDA registry。
-2. **报告可追溯**：每条 finding 都带 `sch:<file>#<refdes>` 证据 token；没有证据的 finding 会被丢弃。
-3. **能跑真实工程输入**：demo 既能解析公开 KiCad 项目，也能对公开 Allegro/BOM 样例生成项目级验证索引。
-4. **Agent 工程机制完整**：tool-use loop、Pydantic 工具 schema、tiered model routing、prompt caching、Sleep Consolidator、项目级验证索引都已落地。
-5. **边界清楚**：只做 pre-Layout 设计验证，不碰 PCB review、PLM、FMEA 或公司内部硬件数据。
+2. **报告可追溯**：每条 finding 都带 `sch:` / `datasheet:` / `bom:` 这类证据 token；没有证据的 finding 不进报告。
+3. **能跑真实工程输入**：demo 既能解析公开 KiCad 项目，也能对公开 Allegro/BOM 样例生成项目级验证索引和静态工作台。
+4. **验证逻辑是 deterministic 的**：当前公开 profile 覆盖 L78、XL1509、EG2132、STM32G030 basic，未覆盖器件以 manual/no-profile 透明显示。
+5. **边界清楚**：只做 pre-Layout schematic-side validation，不碰 PCB review、PLM、FMEA、账号次数或公司内部硬件数据。
 
 ## 一眼看懂的结果
 
 | 指标 | demo 结果 | 意义 |
 |---|---:|---|
-| Components reviewed | 121 / 18 | 从 KiCad 与 Allegro/BOM 样例真实解析，不是手填样例 |
-| Findings | 28 / 3 validated + 15 manual | KiCad 侧是 6 条电容耐压字段检查 + 22 条 NC pin 复核；验证器侧是 3 个自动匹配器件 |
-| NC pins | 77 | 用 no-connect 坐标反查到具体 refdes/pin |
+| Components reviewed | 121 / 25 | KiCad 旧 demo + Allegro design-validator workbench 都是真实解析，不是手填样例 |
+| Findings | 28 / 4 validated + 21 manual | KiCad 侧是 6 条电容耐压字段检查 + 22 条 NC pin 复核；验证器侧是 4 个自动匹配器件 |
+| Validation rollup | 1 PASS / 0 WARN / 3 ERROR | U1 PASS，U12/U3/U8 进入明确错误态 |
 | Evidence tokens | 每条 finding 至少 1 个 | 支撑“无证据不输出” |
 | Sanitizer | 未验证位号会包成 `⟨?U999⟩` | 防止模型幻觉流到报告 |
 
 ## 面试时可以这样讲
 
-> 我做的是硬件研发里“原理图检视”这个窄节点，不是泛泛的硬件 AI。Hardwise 把 KiCad 工程解析成可验证 registry，让 Agent 只能通过工具查询元件和 NC pin，再把每条检视意见写成带证据 token 的报告。重点不是模型有多会说，而是系统结构上不给它编位号、编证据的机会。
+> 我做的是硬件研发里“设计验证”这个窄节点，不是泛泛的硬件 AI。Hardwise 把 schematic netlist、BOM identity 和 structured datasheet profile 接成可审计的 deterministic validation workbench；模型只能在 registry guard 和 evidence guard 的边界内解释结果。重点不是模型有多会说，而是系统结构上不给它编位号、编证据的机会。

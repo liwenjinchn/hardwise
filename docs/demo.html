@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hardwise Resume Demo</title>
+  <title>Hardwise Design Validator Demo</title>
   <style>
     :root {
       --ink: #171b19; --muted: #5f6a66; --line: #d6d8d0; --paper: #f3f0e7;
@@ -76,18 +76,18 @@
 </head>
 <body>
   <main>
-    <section class="sheet" aria-label="Hardwise resume demo">
+    <section class="sheet" aria-label="Hardwise design validator demo">
       <header class="hero">
         <div class="title">
-          <p class="eyebrow">Hardwise / Resume demo</p>
-          <h1>Hardware schematic review agent</h1>
-          <p class="lede">把公开 KiCad 原理图解析成可验证 registry，让 Agent 通过工具生成带证据的检视报告；重点是防位号幻觉、证据链和可复现 demo。</p>
+          <p class="eyebrow">Hardwise / Mechanism snapshot</p>
+          <h1>Design validation workbench</h1>
+          <p class="lede">把 schematic netlist、BOM identity 和 structured datasheet profiles 接成可审计的本地静态设计验证器。LLM 不自由评审硬件，只在 registry guard 与 evidence guard 的边界内解释确定性检查结果。</p>
         </div>
         <div class="metrics" aria-label="demo metrics">
-          <div class="metric"><span>Findings</span><strong>28</strong><code>R002 + R003</code></div>
-          <div class="metric"><span>Components</span><strong>121</strong><code>KiCad parsed</code></div>
-          <div class="metric"><span>NC pins</span><strong>77</strong><code>coordinate matched</code></div>
-          <div class="metric"><span>Evidence</span><strong>100%</strong><code>token-gated output</code></div>
+          <div class="metric"><span>Project components</span><strong>25</strong><code>Allegro netlist + BOM</code></div>
+          <div class="metric"><span>Validated targets</span><strong>4</strong><code>L78 / XL1509 / EG2132 / STM32</code></div>
+          <div class="metric"><span>Status rollup</span><strong>1/0/3</strong><code>PASS / WARN / ERROR</code></div>
+          <div class="metric"><span>Manual rows</span><strong>21</strong><code>visible no-profile scope</code></div>
         </div>
       </header>
 
@@ -95,16 +95,16 @@
         <div class="panel">
           <h2>What this proves</h2>
           <div class="chips">
-            <span class="chip blue">Tool-use loop <b>live</b></span>
+            <span class="chip blue">Static workbench <b>live</b></span>
             <span class="chip green">Refdes Guard <b>live</b></span>
             <span class="chip copper">Evidence Ledger <b>live</b></span>
-            <span class="chip blue">Prompt caching <b>measured</b></span>
+            <span class="chip blue">Profile matching <b>local</b></span>
             <span class="chip green">Public data only <b>yes</b></span>
           </div>
         </div>
         <div class="panel">
           <h2>One-sentence pitch</h2>
-          <p class="note">Hardwise does not ask a model to “look smart”; it constrains the model with KiCad-derived tools, then publishes every claim with a source token so hardware reviewers can audit the output quickly.</p>
+          <p class="note">Hardwise does not ask a model to freely review hardware; it turns schematic netlist, BOM identity, and structured datasheet profiles into an auditable deterministic validation workbench, while the LLM stays behind registry/evidence guards.</p>
         </div>
       </section>
 
@@ -113,36 +113,39 @@
           <div class="side"><span class="idx">#001</span><span class="severity">需确认</span></div>
           <div class="finding-main">
             <div class="targets">
-              <span class="target">规则：R002</span><span class="target">位号：C2</span><span class="target">网络：-</span>
+              <span class="target">器件：U12</span><span class="target">profile：XL1509</span><span class="target">状态：ERROR</span>
             </div>
-            <p class="message">C2 value field '220uF' does not declare rated voltage. The 80% derating rule cannot be evaluated without it.</p>
-            <p class="action">建议补充耐压后缀，例如 `100uF/25V`，再由评审人核对实际工作电压。</p>
+            <p class="message">OUTPUT topology contains D5=1N4007W and L1=6.8uH. The XL1509 profile requires a Schottky-style freewheel diode and a larger inductor range for the 24V-to-12V fixture.</p>
+            <p class="action">建议替换续流二极管并按 profile 重新选择电感；同一工作台还会显示 U3 bootstrap diode 和 U8 SWDIO/SWCLK 互换错误。</p>
           </div>
           <aside class="evidence">
             <h3>Evidence token</h3>
-            <code class="token">sch:pic_programmer.kicad_sch#C2</code>
+            <code class="token">datasheet:xl1509.pdf#p9 · bom:mixed_controller_power_stage#D5/L1</code>
           </aside>
         </div>
       </section>
 
       <section class="flow" aria-label="mechanisms">
-        <div class="step"><span>01</span><b>Parse KiCad</b><p>从公开工程构建 component / pin / NC registry。</p></div>
-        <div class="step"><span>02</span><b>Run checks</b><p>R001/R002/R003 输出结构化 Finding，而不是自由文本。</p></div>
-        <div class="step"><span>03</span><b>Guard refdes</b><p>未命中 registry 的位号会被包成 `⟨?U999⟩`。</p></div>
-        <div class="step"><span>04</span><b>Gate evidence</b><p>没有 `sch:` / `datasheet:` / `rule:` token 的结论不进报告。</p></div>
-        <div class="step"><span>05</span><b>Write report</b><p>生成 markdown / HTML 报告和 SQLite 结构化库。</p></div>
+        <div class="step"><span>01</span><b>Parse design</b><p>从公开 netlist + BOM 构建 component、net、BOM registry。</p></div>
+        <div class="step"><span>02</span><b>Match profiles</b><p>本地 catalog 匹配 L78、XL1509、EG2132、STM32G030。</p></div>
+        <div class="step"><span>03</span><b>Run checks</b><p>电源、DCDC、gate driver、MCU basic 规则输出结构化 validation。</p></div>
+        <div class="step"><span>04</span><b>Guard output</b><p>未命中 registry 的位号会被包成 `⟨?U999⟩`，结论带 evidence/scope。</p></div>
+        <div class="step"><span>05</span><b>Write workbench</b><p>生成单文件 HTML、markdown index 和 JSON sidecar。</p></div>
       </section>
 
       <section class="commands">
         <pre><code>uv sync
-uv run hardwise review data/projects/pic_programmer \
-  --rules R001,R002,R003 \
-  --format html
+uv run hardwise design-validator-ui \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --output reports/controller-design-validator.html \
+  --index-output reports/controller-design-validator-index.md \
+  --index-json reports/controller-design-validator-index.json
 
 # output
-report: reports/pic_programmer-YYYYMMDD.html
-store:  reports/pic_programmer.db</code></pre>
-        <p class="note">Demo 输入只使用公开 KiCad 样例和公开 datasheet。项目边界锁定在 pre-Layout schematic review；PCB review、PLM、FMEA 和公司内部硬件数据都不进入这个 MVP。</p>
+25 components, validated=4
+PASS/WARN/ERROR=1/0/3, manual=21</code></pre>
+        <p class="note">Demo 输入只使用公开 synthetic fixture 和公开风格 structured profiles。项目边界锁定在 pre-Layout schematic-side validation；上传后端、账号次数、PCB/boardview、placement/routing、PLM、supplier 和公司内部硬件数据都不进入这个版本。</p>
       </section>
     </section>
   </main>

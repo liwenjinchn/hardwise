@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hardwise 原理图检视 Demo</title>
+  <title>Hardwise 设计验证器 Demo</title>
   <style>
     :root {
       --ink: #1b201d; --muted: #677069; --line: #d9d7cb; --paper: #f3f0e6;
@@ -78,18 +78,18 @@
 <body>
   <main>
     <a class="top-link" href="./product-intro.html">← 返回产品介绍首页</a>
-    <section class="sheet" aria-label="Hardwise 原理图检视展示页">
+    <section class="sheet" aria-label="Hardwise 设计验证器展示页">
       <header class="hero">
         <div class="title">
-          <p class="eyebrow">Hardwise 原理图检视 Demo</p>
-          <h1>把原理图评审里的查证工作先整理好</h1>
-          <p class="lead">输入一个公开 KiCad 工程，可以生成带证据的检视清单，也可以直接用自然语言追问原理图细节。硬件工程师不用先读代码，就能看到哪些器件、哪些脚位、哪些证据需要重点确认。</p>
+          <p class="eyebrow">Hardwise 设计验证器 Demo</p>
+          <h1>把项目里的可验证问题先摊开</h1>
+          <p class="lead">输入公开 Allegro schematic netlist 和 schematic BOM，Hardwise 自动匹配本地 structured profile，生成项目级器件索引、验证摘要和器件级报告。未匹配 profile 的器件会显式留在 manual/no-profile 列表里，不伪装成已经验证。</p>
         </div>
         <div class="summary" aria-label="样例结果">
-          <div class="metric"><span>扫描器件</span><strong>121</strong><small>来自原理图工程</small></div>
-          <div class="metric"><span>检视意见</span><strong>28</strong><small>聚合降噪后输出</small></div>
-          <div class="metric"><span>NC 脚位</span><strong>77</strong><small>定位到具体位号和管脚</small></div>
-          <div class="metric"><span>原理图问答</span><strong>可问</strong><small>按位号 / 脚位追问</small></div>
+          <div class="metric"><span>项目器件</span><strong>25</strong><small>来自 netlist + BOM</small></div>
+          <div class="metric"><span>自动验证</span><strong>4</strong><small>L78 / XL1509 / EG2132 / STM32</small></div>
+          <div class="metric"><span>验证状态</span><strong>1/0/3</strong><small>PASS / WARN / ERROR</small></div>
+          <div class="metric"><span>待完善</span><strong>21</strong><small>manual / no-profile 可见</small></div>
         </div>
       </header>
 
@@ -97,77 +97,76 @@
         <div class="block">
           <h2>它解决什么</h2>
           <ul>
-            <li>原理图评审前，要反复对位号、脚位、数据手册和检查表。</li>
-            <li>很多时间花在搬运和整理，不是判断设计本身。</li>
-            <li>Hardwise 先把可疑点、来源和可追问对象整理出来。</li>
+            <li>评审前先知道：哪些器件已验证，哪些器件还缺 profile。</li>
+            <li>把 DCDC、gate driver、MCU debug/startup 这类 schematic-side 问题变成确定性检查。</li>
+            <li>让工程师先看问题器件，而不是在整张 BOM 里翻找。</li>
           </ul>
         </div>
         <div class="block">
           <h2>输出长什么样</h2>
           <ul>
-            <li>一份中文网页 / 文本检视报告。</li>
-            <li>一个可对话的原理图查询入口。</li>
-            <li>每条意见包含：对象、问题、建议动作、证据位置。</li>
+            <li>一个本地静态 HTML 工作台：左侧器件索引，中间摘要，右侧详情。</li>
+            <li>一个项目级 markdown / JSON index，记录 validated、manual、no-profile。</li>
+            <li>每个已验证器件都有 pin summary、外围/拓扑检查和可下载报告。</li>
           </ul>
         </div>
         <div class="block">
           <h2>为什么可信</h2>
           <ul>
-            <li>位号来自原理图解析，不让模型自由编。</li>
-            <li>回答会先查工具结果，再组织成人能读懂的话。</li>
-            <li>没有证据来源的结论不会进入报告。</li>
+            <li>结论来自 netlist + BOM identity + structured profile，不让模型自由判硬件。</li>
+            <li>位号仍经过 registry guard，证据和 scope boundary 会随报告输出。</li>
+            <li>未知二极管、电压、拓扑不会被硬判为 PASS；会落到 WARN 或 manual。</li>
           </ul>
         </div>
       </section>
 
       <section class="qa">
         <aside class="review-side">
-          <h2>也可以直接问原理图</h2>
-          <p>工程师不一定只想看整份报告，也会临时追问：某颗器件是什么、某个脚是否悬空、某个不存在的位号是不是写错了。Hardwise 会先查原理图解析结果，再回答。</p>
+          <h2>截图级核心工作流</h2>
+          <p>这版没有做上传账号和次数体系，先把本地项目打开后的核心体验收紧：器件列表、文档/profile 状态、验证摘要、问题详情、报告下载和范围声明。</p>
         </aside>
         <div class="chat" aria-label="原理图问答示例">
-          <div class="bubble q"><b>工程师问</b><p>U4 这颗器件有几个 NC 脚？</p></div>
-          <div class="bubble a"><b>Hardwise 答</b><p>U4 有 2 个 NC 脚：3 脚 FB-、4 脚 S/S。建议结合数据手册确认这些脚应悬空、接地还是接电源。</p></div>
-          <div class="bubble q"><b>工程师问</b><p>U3 是什么器件？它有哪些已解析属性？</p></div>
-          <div class="bubble a"><b>Hardwise 答</b><p>U3 是 7805 稳压器。当前可查到位号、器件值、封装、原理图来源文件等结构化属性；若已导入数据手册，还可以继续查参数页。</p></div>
-          <div class="bubble q"><b>工程师问</b><p>U999 是什么器件？</p></div>
-          <div class="bubble a"><b>Hardwise 答</b><p>原理图注册表里没有 U999。系统不会编造器件，会提示确认位号或从相近结果里选择。</p></div>
+          <div class="bubble q"><b>U12 / XL1509</b><p>OUTPUT 接到 D5 和 L1，但 D5 是 1N4007W 普通整流二极管，L1 是 6.8uH，低于 profile 推荐范围。</p></div>
+          <div class="bubble a"><b>结论</b><p>U12 ERROR：续流二极管和电感选择都会进入外围/拓扑检查，而不是塞进某个 pin 的自由文本里。</p></div>
+          <div class="bubble q"><b>U3 / EG2132</b><p>VB/VS bootstrap 路径存在，但 D1=MBRA210LT3G 属于低耐压线索，在 24V bus fixture 中判为风险。</p></div>
+          <div class="bubble a"><b>结论</b><p>U3 ERROR：半桥 gate driver 的自举二极管、电容、HO/LO gate load 都按 deterministic topology rule 检查。</p></div>
+          <div class="bubble q"><b>U8 / STM32G030</b><p>PA13/SWDIO 被接到 SWCLK，PA14/SWCLK 被接到 SWDIO。</p></div>
+          <div class="bubble a"><b>结论</b><p>U8 ERROR：本轮只做 MCU basic 的 power、reset、BOOT0、SWD 检查，不做固件、clock tree 或完整 AF matrix。</p></div>
         </div>
       </section>
 
       <section class="review">
         <aside class="review-side">
-          <h2>报告里的单条意见示例</h2>
-          <p>硬件工程师看到的是评审语言：哪个位号、哪里不完整、下一步确认什么。</p>
+          <h2>工作台里的问题卡片示例</h2>
+          <p>硬件工程师看到的是验证语言：哪个器件、哪个外围或脚位、为什么失败、下一步该替换或确认什么。</p>
         </aside>
         <article class="finding">
           <div class="row">
-            <span class="tag warn">需确认</span>
-            <span class="tag">电容耐压标注</span>
-            <span class="tag">位号 C2</span>
+            <span class="tag warn">ERROR</span>
+            <span class="tag">U12 / XL1509-12E1</span>
+            <span class="tag">D5 + L1</span>
           </div>
-          <p class="message">C2 的 value 写的是 220uF，但没有标出额定耐压，因此暂时无法判断是否满足 80% 降额要求。</p>
-          <p class="action">建议补充耐压值，例如 220uF/25V；评审人再结合该网络实际工作电压确认是否合规。</p>
-          <div class="proof">证据位置：sch:pic_programmer.kicad_sch#C2</div>
+          <p class="message">D5=1N4007W 不符合 XL1509 buck 续流二极管的 Schottky-style 要求；L1=6.8uH 低于 profile 推荐最小电感量。</p>
+          <p class="action">建议替换为符合电压/电流裕量的肖特基二极管，并按 24V 输入、12V 输出重新选择电感范围。</p>
+          <div class="proof">证据位置：datasheet:xl1509.pdf#p9 · bom:mixed_controller_power_stage#D5/L1</div>
         </article>
       </section>
 
       <section class="flow" aria-label="工作流">
-        <div class="step"><b>1. 接入 EDA 数据</b><p>解析公开 KiCad 工程，拿到真实器件和脚位清单。</p></div>
-        <div class="step"><b>2. 支持对话查询</b><p>按位号、器件属性、NC 脚位追问原理图细节。</p></div>
-        <div class="step"><b>3. 生成检视清单</b><p>覆盖新器件、电容耐压、NC 脚位这类高频检查。</p></div>
-        <div class="step"><b>4. 留下可追溯结果</b><p>输出报告、结构化库和可继续沉淀的候选规则。</p></div>
+        <div class="step"><b>1. 接入 EDA 数据</b><p>解析公开 Allegro netlist 和 schematic BOM，建立项目器件索引。</p></div>
+        <div class="step"><b>2. 匹配本地 profile</b><p>按 BOM identity 匹配 L78、XL1509、EG2132、STM32G030。</p></div>
+        <div class="step"><b>3. 运行确定性检查</b><p>把 DCDC、gate driver、MCU SWD/BOOT/RESET 检查输出成结构化结果。</p></div>
+        <div class="step"><b>4. 留下可追溯结果</b><p>输出静态 HTML、markdown index、JSON sidecar 和 scope boundary。</p></div>
       </section>
 
       <section class="bottom">
         <div>
           <h2>一句话亮点</h2>
-          <p class="note">这个 demo 展示的不是“让 AI 写一段话”，而是把硬件评审流程拆成可查证的步骤：原理图里有什么、工程师问了什么、报告写了什么、每条结论从哪里来，都能追回去。</p>
+          <p class="note">这个 demo 展示的不是“让 AI 自由评审硬件”，而是把 schematic netlist、BOM identity、structured datasheet profile 接成可审计的 deterministic validation workbench；LLM 只在 registry/evidence guard 的边界内解释。</p>
         </div>
         <div>
           <h2>可复现命令</h2>
-          <code class="cmd">uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html</code>
-          <code class="cmd">uv run hardwise ask data/projects/pic_programmer "U4 这颗器件有几个 NC 脚？"</code>
+          <code class="cmd">uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --output reports/controller-design-validator.html --index-output reports/controller-design-validator-index.md --index-json reports/controller-design-validator-index.json</code>
         </div>
       </section>
     </section>

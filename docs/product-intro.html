@@ -267,92 +267,92 @@
 
       <div class="hero-inner">
         <div class="copy">
-          <span class="eyebrow">原理图检视 AI Agent</span>
-          <h1>让原理图评审先清晰起来</h1>
-          <p class="lead">读取公开 KiCad 工程，整理可追溯检视清单，也能直接追问器件、脚位和证据。给硬件工程师一个更快进入判断的入口。</p>
+          <span class="eyebrow">本地静态设计验证器</span>
+          <h1>打开项目，先看到可验证的问题。</h1>
+          <p class="lead">读取公开 EDA netlist 和 schematic BOM，自动匹配本地 structured profiles，生成器件索引、验证摘要和可下载报告。LLM 只负责解释，判断来自可审计的 deterministic checks。</p>
           <div class="actions">
-            <a class="button primary" href="./hardware-demo.html">查看完整展示</a>
-            <a class="button" href="#demo">看问答效果</a>
+            <a class="button primary" href="./hardware-demo.html">查看验证器展示</a>
+            <a class="button" href="#demo">看可信机制</a>
           </div>
         </div>
 
         <div class="poster" aria-label="Hardwise 产品海报">
-          <div class="mock-card" aria-label="Hardwise 原理图检视 AI Agent 产品介绍卡片">
+          <div class="mock-card" aria-label="Hardwise 设计验证器产品介绍卡片">
             <div class="mock-top">
               <div class="mock-brand"><span class="mark">⌁</span><span>Hardwise</span></div>
-              <span class="mock-pill">公开 KiCad demo</span>
+              <span class="mock-pill">Allegro/BOM demo</span>
             </div>
             <div class="mock-body">
               <div class="mock-rail">
-                <span>工程概览</span>
-                <span>器件检视</span>
-                <span>NC 脚位</span>
-                <span>证据定位</span>
+                <span>器件索引</span>
+                <span>验证摘要</span>
+                <span>问题详情</span>
+                <span>报告下载</span>
               </div>
               <div class="mock-schematic" aria-hidden="true">
                 <span class="wire w1"></span>
                 <span class="wire w2"></span>
                 <span class="wire w3"></span>
-                <span class="chip">U4</span>
-                <span class="part c2">C2 220uF</span>
-                <span class="part u4">FB- / S/S</span>
-                <span class="part r11">R11 10k</span>
+                <span class="chip">U12</span>
+                <span class="part c2">D5 1N4007W</span>
+                <span class="part u4">L1 6.8uH</span>
+                <span class="part r11">U8 SWD</span>
               </div>
               <div class="mock-review">
-                <h3>检视清单</h3>
-                <div class="finding-row"><b>U4 NC 脚</b><em>需确认</em></div>
-                <div class="finding-row"><b>C2 耐压字段</b><em>需补充</em></div>
-                <div class="finding-row"><b>连接器 NC</b><em>已聚合</em></div>
+                <h3>验证报告</h3>
+                <div class="finding-row"><b>U12 DCDC</b><em>ERROR</em></div>
+                <div class="finding-row"><b>U3 Gate driver</b><em>ERROR</em></div>
+                <div class="finding-row"><b>U8 MCU/SWD</b><em>ERROR</em></div>
               </div>
             </div>
           </div>
           <div class="metrics" aria-label="样例工程结果">
-            <div class="metric"><strong>121</strong><span>个器件</span></div>
-            <div class="metric"><strong>28</strong><span>条检视意见</span></div>
-            <div class="metric"><strong>77</strong><span>个 NC 脚位</span></div>
-            <div class="metric"><strong>逐条</strong><span>证据定位</span></div>
+            <div class="metric"><strong>25</strong><span>个器件</span></div>
+            <div class="metric"><strong>4</strong><span>个自动验证</span></div>
+            <div class="metric"><strong>1/0/3</strong><span>PASS/WARN/ERROR</span></div>
+            <div class="metric"><strong>21</strong><span>个待 profile</span></div>
           </div>
         </div>
       </div>
     </section>
 
     <section id="value" class="section" aria-label="核心能力">
-      <h2 class="section-title">不是泛泛聊天，而是围绕原理图做查证。</h2>
+      <h2 class="section-title">不是泛泛聊天，而是把设计事实接成可审计验证。</h2>
       <div class="cards">
         <article class="card">
           <div class="icon">01</div>
-          <h2>先读懂工程</h2>
-          <p>从 KiCad 工程里拿到真实位号、器件值、封装和脚位信息，回答前先查表。</p>
+          <h2>先建项目索引</h2>
+          <p>从 schematic netlist 和 BOM 里拿到真实位号、器件值、MPN 和连接关系，未匹配 profile 的器件不会被隐藏。</p>
         </article>
         <article class="card">
           <div class="icon">02</div>
-          <h2>生成检视清单</h2>
-          <p>把电容耐压、NC 脚位、新器件确认这类高频问题整理成短报告。</p>
+          <h2>跑确定性验证</h2>
+          <p>当前覆盖 L78、XL1509、EG2132、STM32G030 basic；问题来自 profile + topology，不是模型自由发挥。</p>
         </article>
         <article class="card">
           <div class="icon">03</div>
-          <h2>保留证据位置</h2>
-          <p>每条意见都尽量带回原理图对象，方便工程师继续判断，而不是只看结论。</p>
+          <h2>保留边界和证据</h2>
+          <p>报告保留 datasheet/profile token 和 scope boundary，明确不做 PCB、PLM、供应链或固件判断。</p>
         </article>
       </div>
     </section>
 
     <section id="demo" class="section demo" aria-label="问答示例">
       <aside class="panel">
-        <h2>工程师可以这样问</h2>
-        <p>直接展示输入、输出和边界：能回答什么，遇到不存在的位号时如何处理。</p>
+        <h2>面试时可以这样讲</h2>
+        <p>直接展示输入、输出和边界：哪些判断已经 deterministic，哪些器件仍然是 manual/no-profile。</p>
       </aside>
       <div class="panel chat">
-        <div class="bubble"><b>工程师</b>U4 这颗器件有几个 NC 脚？</div>
-        <div class="bubble answer"><b>Hardwise</b>U4 有 2 个 NC 脚：3 脚 FB-、4 脚 S/S。建议结合数据手册确认这些脚应悬空、接地还是接电源。</div>
-        <div class="bubble"><b>工程师</b>U999 是什么器件？</div>
-        <div class="bubble answer"><b>Hardwise</b>原理图注册表里没有 U999。系统不会编造器件，会提示确认位号或从相近结果里选择。</div>
+        <div class="bubble"><b>面试官</b>它怎么发现 U12 的问题？</div>
+        <div class="bubble answer"><b>Hardwise</b>先匹配 XL1509 profile，再从 netlist 看到 OUTPUT 接 D5 和 L1，确定 D5=1N4007W 不是 Schottky-style，L1=6.8uH 低于推荐范围。</div>
+        <div class="bubble"><b>面试官</b>它是不是自动评审全 BOM？</div>
+        <div class="bubble answer"><b>Hardwise</b>不是。当前只验证有本地 profile 的 4 个器件；其余 21 个在 project index 中显式显示为 no_profile/manual。</div>
       </div>
     </section>
 
     <div class="footer-note">
-      <strong>从原理图到可追溯检视结果</strong>
-      <span>完整展示页继续展示报告样例、工作流和可复现命令。</span>
+      <strong>从项目索引到可追溯验证报告</strong>
+      <span>完整展示页继续展示 U1/U12/U3/U8 的工作台、问题详情和可复现命令。</span>
     </div>
   </main>
 </body>
