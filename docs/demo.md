@@ -1,12 +1,12 @@
 # Hardwise Demo — 90 秒阅读版
 
-Hardwise 是一个面向硬件研发“设计验证”节点的本地静态工作台。现在的 demo 先用公开 KiCad 工程展示原理图检视闭环，再用公开 Allegro/BOM 样例展示项目级验证器：解析 design facts、自动匹配本地 structured profiles、生成验证意见、保留 manual/no-profile 行、输出报告和结构化索引。
+Hardwise 是一个面向硬件研发“设计验证”节点的本地静态工作台。现在的 demo 先用公开 KiCad 工程展示原理图检视闭环，再用公开 Allegro/BOM 样例展示项目级验证器：解析 design facts、自动匹配本地 structured profiles，生成“顶部摘要 + 器件列表 + 验证区 + 报告详情”的静态网页，同时保留 manual/no-profile 行和结构化索引。
 
 ## 直接看效果
 
 - 产品介绍首页：[`product-intro.html`](product-intro.html)
 - 面向硬件评审的中文展示页：[`hardware-demo.html`](hardware-demo.html)
-- 设计验证器工作台示例：`uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --output reports/controller-design-validator.html --index-output reports/controller-design-validator-index.md --index-json reports/controller-design-validator-index.json`
+- 设计验证器工作台示例：[`hardware-demo.html`](hardware-demo.html)，由 `design-validator-ui` 直接生成
 - 技术机制快照：[`demo.html`](demo.html)
 - 样例报告命令：
 
@@ -31,7 +31,7 @@ rollup: 25 components, PASS/WARN/ERROR=1/0/3
 
 1. **不是聊天机器人套壳**：模型不能自由编位号，所有 `U1/C3/J1` 这类 refdes 都要命中 EDA registry。
 2. **报告可追溯**：每条 finding 都带 `sch:` / `datasheet:` / `bom:` 这类证据 token；没有证据的 finding 不进报告。
-3. **能跑真实工程输入**：demo 既能解析公开 KiCad 项目，也能对公开 Allegro/BOM 样例生成项目级验证索引和静态工作台。
+3. **能跑真实工程输入**：demo 既能解析公开 KiCad 项目，也能对公开 Allegro/BOM 样例生成项目级验证索引和三段式静态工作台。
 4. **验证逻辑是 deterministic 的**：当前公开 profile 覆盖 L78、XL1509、EG2132、STM32G030 basic，未覆盖器件以 manual/no-profile 透明显示。
 5. **边界清楚**：只做 pre-Layout schematic-side validation，不碰 PCB review、PLM、FMEA、账号次数或公司内部硬件数据。
 

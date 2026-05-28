@@ -269,9 +269,9 @@
         <div class="copy">
           <span class="eyebrow">本地静态设计验证器</span>
           <h1>打开项目，先看到可验证的问题。</h1>
-          <p class="lead">读取公开 EDA netlist 和 schematic BOM，自动匹配本地 structured profiles，生成器件索引、验证摘要和可下载报告。LLM 只负责解释，判断来自可审计的 deterministic checks。</p>
+          <p class="lead">读取公开 EDA netlist 和 schematic BOM，自动匹配本地 structured profiles，生成顶部摘要和三段式工作区：器件列表、验证区、报告详情。LLM 只负责解释，判断来自可审计的 deterministic checks。</p>
           <div class="actions">
-            <a class="button primary" href="./hardware-demo.html">查看验证器展示</a>
+            <a class="button primary" href="./hardware-demo.html">打开真实工作台</a>
             <a class="button" href="#demo">看可信机制</a>
           </div>
         </div>
@@ -284,10 +284,10 @@
             </div>
             <div class="mock-body">
               <div class="mock-rail">
-                <span>器件索引</span>
-                <span>验证摘要</span>
-                <span>问题详情</span>
-                <span>报告下载</span>
+                <span>顶部摘要</span>
+                <span>器件列表</span>
+                <span>验证区</span>
+                <span>报告详情</span>
               </div>
               <div class="mock-schematic" aria-hidden="true">
                 <span class="wire w1"></span>
@@ -299,10 +299,10 @@
                 <span class="part r11">U8 SWD</span>
               </div>
               <div class="mock-review">
-                <h3>验证报告</h3>
-                <div class="finding-row"><b>U12 DCDC</b><em>ERROR</em></div>
-                <div class="finding-row"><b>U3 Gate driver</b><em>ERROR</em></div>
-                <div class="finding-row"><b>U8 MCU/SWD</b><em>ERROR</em></div>
+                <h3>工作区</h3>
+                <div class="finding-row"><b>器件列表</b><em>25 rows</em></div>
+                <div class="finding-row"><b>验证区</b><em>4 validated</em></div>
+                <div class="finding-row"><b>报告详情</b><em>issue-first</em></div>
               </div>
             </div>
           </div>
@@ -352,7 +352,7 @@
 
     <div class="footer-note">
       <strong>从项目索引到可追溯验证报告</strong>
-      <span>完整展示页继续展示 U1/U12/U3/U8 的工作台、问题详情和可复现命令。</span>
+      <span>硬件展示页直接打开当前生成的静态工作台，默认展示 U12/U3/U8 等问题器件。</span>
     </div>
   </main>
 </body>
