@@ -45,4 +45,21 @@ def _validate_component_topology(
         from hardwise.validation.mcu import validate_mcu_basic
 
         return validate_mcu_basic(component, profile, design)
+    if profile.part_number.upper() == "INA180" or family == "current_sense_amp":
+        from hardwise.validation.current_sense import validate_current_sense_amp
+
+        return validate_current_sense_amp(component, profile, design)
+    if profile.part_number.upper() == "TLP250" or family == "optocoupler_driver":
+        from hardwise.validation.optocoupler import validate_optocoupler_driver
+
+        return validate_optocoupler_driver(component, profile, design)
+    if profile.part_number.upper() == "NE555" or family == "oscillator_timer":
+        from hardwise.validation.timer import validate_oscillator_timer
+
+        return validate_oscillator_timer(component, profile, design)
+    if profile.part_number.upper() == "LM358" or family == "op_amp":
+        from hardwise.validation.op_amp import OpAmpValidator
+
+        validator = OpAmpValidator(component, design)
+        return validator.validate()
     return []

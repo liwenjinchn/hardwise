@@ -74,3 +74,9 @@ class ValidationReport(BaseModel):
             "WARN": sum(check.status == "WARN" for check in self.component_checks),
             "ERROR": sum(check.status == "ERROR" for check in self.component_checks),
         }
+
+    @property
+    def summary(self) -> dict[PinValidationStatus, int]:
+        """Return component-check counts (alias for component_counts_by_status)."""
+
+        return self.component_counts_by_status

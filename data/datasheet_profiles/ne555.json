@@ -1,0 +1,120 @@
+{
+  "schema_version": "v2",
+  "part_number": "NE555",
+  "description": "General-purpose precision timer IC (NE555/SE555/LM555)",
+  "abs_max": {
+    "vcc": 18.0,
+    "output_current_ma": 200.0
+  },
+  "recommended": {
+    "topology_family": "oscillator_timer",
+    "vcc_min": 4.5,
+    "vcc_max": 16.0,
+    "timing_resistor_min_ohm": 1000.0,
+    "timing_capacitor_min_pf": 100.0
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "GND",
+      "category": "ground",
+      "function": "Ground reference",
+      "abs_max": {
+        "voltage": 0.0
+      },
+      "recommended": {
+        "voltage": 0.0
+      }
+    },
+    {
+      "number": "2",
+      "name": "TRIG",
+      "category": "analog_input",
+      "function": "Trigger input - starts timing cycle when voltage falls below 1/3 VCC",
+      "abs_max": {
+        "voltage": 18.0
+      },
+      "recommended": {
+        "voltage": 4.5
+      }
+    },
+    {
+      "number": "3",
+      "name": "OUT",
+      "category": "analog_output",
+      "function": "Output - sources or sinks up to 200mA",
+      "abs_max": {
+        "current_ma": 200.0
+      },
+      "recommended": {
+        "current_ma": 100.0
+      }
+    },
+    {
+      "number": "4",
+      "name": "RESET",
+      "category": "reset",
+      "function": "Reset input - forces output low when pulled below 0.7V",
+      "abs_max": {
+        "voltage": 18.0
+      },
+      "recommended": {
+        "voltage": 4.5
+      }
+    },
+    {
+      "number": "5",
+      "name": "CTRL",
+      "category": "analog_input",
+      "function": "Control voltage - modulates threshold/trigger levels (bypass with capacitor)",
+      "abs_max": {
+        "voltage": 18.0
+      },
+      "recommended": {
+        "voltage": 2.0,
+        "bypass_capacitor": "100nF"
+      }
+    },
+    {
+      "number": "6",
+      "name": "THRESH",
+      "category": "analog_input",
+      "function": "Threshold input - ends timing cycle when voltage rises above 2/3 VCC",
+      "abs_max": {
+        "voltage": 18.0
+      },
+      "recommended": {
+        "voltage": 4.5
+      }
+    },
+    {
+      "number": "7",
+      "name": "DISCH",
+      "category": "analog_output",
+      "function": "Discharge - open collector output for timing capacitor discharge",
+      "abs_max": {
+        "current_ma": 200.0
+      },
+      "recommended": {
+        "current_ma": 100.0
+      }
+    },
+    {
+      "number": "8",
+      "name": "VCC",
+      "category": "power_input",
+      "function": "Positive supply voltage",
+      "abs_max": {
+        "voltage": 18.0
+      },
+      "recommended": {
+        "voltage_min": 4.5,
+        "voltage_max": 16.0
+      }
+    }
+  ],
+  "extracted_at": "2026-05-28T00:00:00+00:00",
+  "extracted_model": "manual",
+  "extracted_from": "Texas Instruments NE555 datasheet (public)",
+  "extractor": "manual"
+}

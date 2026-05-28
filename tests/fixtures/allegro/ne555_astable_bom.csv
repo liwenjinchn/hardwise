@@ -1,0 +1,7 @@
+Reference,Value,Footprint,Description
+U30,NE555,DIP8,555 timer IC
+R_TIMING1,10K,0805,Timing resistor 1
+R_TIMING2,47K,0805,Timing resistor 2
+C_CTRL,100nF,0805,Control voltage bypass capacitor
+C_TIMING,10nF,0805,Timing capacitor
+R_LOAD,1K,0805,Output load resistor

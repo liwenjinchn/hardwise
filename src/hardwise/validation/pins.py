@@ -64,6 +64,7 @@ def validate_pin(
         "debug",
         "gpio",
         "analog_input",
+        "analog_output",
     }:
         return PinValidation(
             pin_number=pin_profile.number,
@@ -95,7 +96,7 @@ def _validate_ground_pin(
     pin_profile: PinProfile,
     evidence: list[str],
 ) -> PinValidation:
-    is_ground = net_name.upper() in {"GND", "AGND", "DGND", "PGND"}
+    is_ground = net_name.upper() in {"GND", "AGND", "DGND", "PGND", "HV_GND", "SGND"}
     return PinValidation(
         pin_number=pin_profile.number,
         pin_name=pin_profile.name,

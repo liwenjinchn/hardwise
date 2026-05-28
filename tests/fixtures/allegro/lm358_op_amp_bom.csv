@@ -1,0 +1,7 @@
+Reference,Value,Footprint,Description
+U31,LM358,DIP8,Dual operational amplifier
+R1_FB,10K,0805,Channel A feedback resistor
+R1_IN,10K,0805,Channel A input resistor
+R2_FB,10K,0805,Channel B feedback resistor
+R2_IN,10K,0805,Channel B input resistor
+C_BYPASS,100nF,0805,VCC bypass capacitor

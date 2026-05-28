@@ -1,0 +1,146 @@
+{
+  "part_number": "INA180",
+  "abs_max": {
+    "vcc": 28.0,
+    "common_mode": 26.0
+  },
+  "recommended": {
+    "topology_family": "current_sense_amp",
+    "vcc_min": 2.7,
+    "vcc_max": 26.0,
+    "common_mode_min": -0.2,
+    "common_mode_max": 26.0,
+    "gain_options": "A1/A2/A3/A4"
+  },
+  "pin_function": {
+    "1": "OUT (analog output)",
+    "2": "GND (ground)",
+    "3": "VCC (supply input)",
+    "4": "REF (reference voltage input)",
+    "5": "IN- (inverting input)",
+    "6": "IN+ (non-inverting input)"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "OUT",
+      "category": "analog_output",
+      "function": "Analog output proportional to sensed current.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to ADC input or downstream analog load.",
+        "Output voltage = (V_IN+ - V_IN-) * Gain + V_REF."
+      ],
+      "evidence": [
+        "datasheet:ina180.pdf#p1",
+        "datasheet:ina180.pdf#p18"
+      ]
+    },
+    {
+      "number": "2",
+      "name": "GND",
+      "category": "ground",
+      "function": "Ground reference pin.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect directly to system ground.",
+        "Place bypass capacitor close to VCC and GND pins."
+      ],
+      "evidence": [
+        "datasheet:ina180.pdf#p1"
+      ]
+    },
+    {
+      "number": "3",
+      "name": "VCC",
+      "category": "power_input",
+      "function": "Supply voltage input pin.",
+      "limits": {
+        "abs_max_voltage": 28.0,
+        "recommended_voltage_min": 2.7,
+        "recommended_voltage_max": 26.0
+      },
+      "recommended_topology": [
+        "Connect to 2.7V to 26V supply rail.",
+        "Place 100nF bypass capacitor close to VCC and GND."
+      ],
+      "evidence": [
+        "datasheet:ina180.pdf#p1",
+        "datasheet:ina180.pdf#p5"
+      ]
+    },
+    {
+      "number": "4",
+      "name": "REF",
+      "category": "analog_input",
+      "function": "Reference voltage input for output offset adjustment.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to ground for unipolar sensing, or to a reference voltage for bidirectional sensing.",
+        "REF voltage adds to output: V_OUT = (V_IN+ - V_IN-) * Gain + V_REF."
+      ],
+      "evidence": [
+        "datasheet:ina180.pdf#p1",
+        "datasheet:ina180.pdf#p18"
+      ]
+    },
+    {
+      "number": "5",
+      "name": "IN-",
+      "category": "analog_input",
+      "function": "Inverting input connected to low side of sense resistor.",
+      "limits": {
+        "abs_max_voltage": 26.0
+      },
+      "recommended_topology": [
+        "Connect to low side of shunt resistor.",
+        "Common-mode voltage must be within -0.2V to 26V."
+      ],
+      "evidence": [
+        "datasheet:ina180.pdf#p1",
+        "datasheet:ina180.pdf#p5"
+      ]
+    },
+    {
+      "number": "6",
+      "name": "IN+",
+      "category": "analog_input",
+      "function": "Non-inverting input connected to high side of sense resistor.",
+      "limits": {
+        "abs_max_voltage": 26.0
+      },
+      "recommended_topology": [
+        "Connect to high side of shunt resistor.",
+        "Common-mode voltage must be within -0.2V to 26V."
+      ],
+      "evidence": [
+        "datasheet:ina180.pdf#p1",
+        "datasheet:ina180.pdf#p5"
+      ]
+    }
+  ],
+  "evidence": {
+    "abs_max.vcc": "datasheet:ina180.pdf#p5",
+    "abs_max.common_mode": "datasheet:ina180.pdf#p5",
+    "recommended.vcc_min": "datasheet:ina180.pdf#p5",
+    "recommended.vcc_max": "datasheet:ina180.pdf#p5",
+    "recommended.common_mode_min": "datasheet:ina180.pdf#p5",
+    "recommended.common_mode_max": "datasheet:ina180.pdf#p5",
+    "recommended.gain_options": "datasheet:ina180.pdf#p1",
+    "pin_function.1": "datasheet:ina180.pdf#p1",
+    "pin_function.2": "datasheet:ina180.pdf#p1",
+    "pin_function.3": "datasheet:ina180.pdf#p1",
+    "pin_function.4": "datasheet:ina180.pdf#p1",
+    "pin_function.5": "datasheet:ina180.pdf#p1",
+    "pin_function.6": "datasheet:ina180.pdf#p1",
+    "pins.1": "datasheet:ina180.pdf#p18",
+    "pins.2": "datasheet:ina180.pdf#p1",
+    "pins.3": "datasheet:ina180.pdf#p5",
+    "pins.4": "datasheet:ina180.pdf#p18",
+    "pins.5": "datasheet:ina180.pdf#p5",
+    "pins.6": "datasheet:ina180.pdf#p5"
+  },
+  "extracted_at": "2026-05-28T00:00:00+00:00",
+  "extracted_model": "deterministic-ina180-v1.0",
+  "schema_version": "v2"
+}

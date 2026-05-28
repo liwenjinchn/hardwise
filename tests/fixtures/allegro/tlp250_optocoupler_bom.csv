@@ -1,0 +1,6 @@
+Reference,Value,Footprint,Description
+U21,TLP250,DIP8,Optocoupler gate driver
+R_LED,330R,0805,LED current limiting resistor
+R_GATE,10R,0805,Gate drive resistor
+C_OPTO,100nF,0805,VCC bypass capacitor
+Q3,JMTK3005A,TO252,MOSFET driven by optocoupler

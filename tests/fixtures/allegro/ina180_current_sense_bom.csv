@@ -1,0 +1,5 @@
+Reference,Quantity,Value,Manufacturer,MPN
+U20,1,INA180,TI,INA180A1IDBVR
+R1,1,10mR,Fixture,RES-10M
+C10,1,100nF,Fixture,CAP-100N
+R2,1,10K,Fixture,RES-10K

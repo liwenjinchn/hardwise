@@ -1,0 +1,108 @@
+{
+  "part_number": "TLP250",
+  "abs_max": {
+    "vcc": 35.0,
+    "led_forward_current_ma": 25.0,
+    "led_reverse_voltage": 5.0
+  },
+  "recommended": {
+    "topology_family": "optocoupler_driver",
+    "vcc_min": 10.0,
+    "vcc_max": 30.0,
+    "led_forward_current_typical_ma": 10.0,
+    "led_forward_voltage_typical": 1.6
+  },
+  "pin_function": {
+    "1": "NC (no connection)",
+    "2": "LED anode (input side)",
+    "3": "LED cathode (input side)",
+    "4": "NC (no connection)",
+    "5": "GND_out (output side ground)",
+    "6": "VO (gate drive output)",
+    "7": "VO (gate drive output)",
+    "8": "VCC (output side supply)"
+  },
+  "pins": [
+    {
+      "number": "2",
+      "name": "LED_ANODE",
+      "category": "analog_input",
+      "function": "LED anode on the input side. Requires a series current-limiting resistor.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect through a series resistor to the drive signal source.",
+        "Resistor value sets LED forward current (typical 10 mA).",
+        "Do not connect LED directly to a voltage source."
+      ],
+      "evidence": ["datasheet:tlp250.pdf#p3"]
+    },
+    {
+      "number": "3",
+      "name": "LED_CATHODE",
+      "category": "analog_input",
+      "function": "LED cathode on the input side.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the input-side ground or drive signal return."
+      ],
+      "evidence": ["datasheet:tlp250.pdf#p3"]
+    },
+    {
+      "number": "5",
+      "name": "GND_OUT",
+      "category": "ground",
+      "function": "Output-side ground reference. Must be isolated from the input-side ground.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect to the output-side ground return only.",
+        "Must NOT be tied to the input-side LED ground — this is the isolation boundary."
+      ],
+      "evidence": ["datasheet:tlp250.pdf#p3"]
+    },
+    {
+      "number": "6",
+      "name": "VO",
+      "category": "gate_output",
+      "function": "Gate drive output. Drives the gate of a MOSFET or IGBT.",
+      "limits": {},
+      "recommended_topology": [
+        "Connect directly to the gate of the driven switch (optionally through a small gate resistor).",
+        "Output current capability: +0.5 A / -0.5 A peak."
+      ],
+      "evidence": ["datasheet:tlp250.pdf#p3"]
+    },
+    {
+      "number": "8",
+      "name": "VCC",
+      "category": "power_input",
+      "function": "Output-side supply voltage.",
+      "limits": {
+        "abs_max_voltage": 35.0,
+        "recommended_voltage_min": 10.0,
+        "recommended_voltage_max": 30.0
+      },
+      "recommended_topology": [
+        "Connect to a 10 V to 30 V supply.",
+        "Place a bypass capacitor close to VCC and GND_out pins."
+      ],
+      "evidence": ["datasheet:tlp250.pdf#p3"]
+    }
+  ],
+  "evidence": {
+    "abs_max.vcc": "datasheet:tlp250.pdf#p2",
+    "abs_max.led_forward_current_ma": "datasheet:tlp250.pdf#p2",
+    "abs_max.led_reverse_voltage": "datasheet:tlp250.pdf#p2",
+    "recommended.vcc_min": "datasheet:tlp250.pdf#p3",
+    "recommended.vcc_max": "datasheet:tlp250.pdf#p3",
+    "recommended.led_forward_current_typical_ma": "datasheet:tlp250.pdf#p3",
+    "recommended.led_forward_voltage_typical": "datasheet:tlp250.pdf#p3",
+    "pin_function.2": "datasheet:tlp250.pdf#p1",
+    "pin_function.3": "datasheet:tlp250.pdf#p1",
+    "pin_function.5": "datasheet:tlp250.pdf#p1",
+    "pin_function.6": "datasheet:tlp250.pdf#p1",
+    "pin_function.8": "datasheet:tlp250.pdf#p1"
+  },
+  "extracted_at": "2026-05-28T00:00:00+00:00",
+  "extracted_model": "deterministic-tlp250-v1.0",
+  "schema_version": "v2"
+}

@@ -1,0 +1,14 @@
+$PACKAGES
+  ! 'DIP8' ! TLP250 ; U21
+  ! 'R0805' ! 330R ; R_LED
+  ! 'R0805' ! 10R ; R_GATE
+  ! 'C0805' ! 100nF ; C_OPTO
+  ! 'TO252' ! JMTK3005A ; Q3
+$NETS
+  'PWM_INPUT' ; U21.2, R_LED.2
+  'GND' ; U21.3, R_LED.1
+  'HV_15V' ; U21.8, C_OPTO.1
+  'HV_GND' ; U21.5, C_OPTO.2
+  'GATE_DRIVE' ; U21.6, R_GATE.1
+  'GATE_Q' ; R_GATE.2, Q3.1
+$END

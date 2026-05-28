@@ -46,6 +46,7 @@ target-version = "py311"
 exclude = [
     "eval/projects",
     "reports/eval",
+    ".trellis",
 ]
 
 [tool.pytest.ini_options]

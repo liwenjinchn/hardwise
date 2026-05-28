@@ -1,0 +1,12 @@
+$PACKAGES
+  ! 'SOT23-6' ! INA180 ; U20
+  ! 'R0805' ! 10mR ; R1
+  ! 'C0805' ! 100nF ; C10
+  ! 'R0805' ! 10K ; R2
+$NETS
+  '+5V' ; U20.3, C10.1
+  'GND' ; U20.2, U20.4, C10.2, R2.2
+  'ISENSE_HI' ; U20.6, R1.1
+  'ISENSE_LO' ; U20.5, R1.2
+  'ADC_IN' ; U20.1, R2.1
+$END

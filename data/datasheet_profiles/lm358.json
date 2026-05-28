@@ -1,0 +1,141 @@
+{
+  "part_number": "LM358",
+  "description": "Low Power Dual Operational Amplifier",
+  "abs_max": {
+    "vcc_vee_diff": 36.0,
+    "input_voltage_range": "-0.3 to 36.0",
+    "output_short_circuit_duration": "indefinite"
+  },
+  "recommended": {
+    "topology_family": "op_amp",
+    "vcc_single_min": 3.0,
+    "vcc_single_max": 32.0,
+    "vcc_dual_min": 1.5,
+    "vcc_dual_max": 16.0,
+    "input_common_mode_range": "0 to VCC-1.5"
+  },
+  "pin_function": {
+    "1": "OUT_A",
+    "2": "IN_A-",
+    "3": "IN_A+",
+    "4": "VEE/GND",
+    "5": "IN_B+",
+    "6": "IN_B-",
+    "7": "OUT_B",
+    "8": "VCC"
+  },
+  "pins": [
+    {
+      "name": "OUT_A",
+      "number": "1",
+      "category": "switch_output",
+      "function": "Channel A amplifier output; sources/sinks up to 40mA",
+      "abs_max": {
+        "output_current_ma": 40.0
+      },
+      "recommended": {
+        "typical_load": "10k to infinity"
+      },
+      "evidence": ["datasheet:lm358.pdf#p2"]
+    },
+    {
+      "name": "IN_A-",
+      "number": "2",
+      "category": "analog_input",
+      "function": "Channel A inverting input; feedback path typically connects here",
+      "abs_max": {
+        "voltage_min": -0.3,
+        "voltage_max": 36.0
+      },
+      "recommended": {
+        "common_mode_range": "0 to VCC-1.5"
+      },
+      "evidence": ["datasheet:lm358.pdf#p2"]
+    },
+    {
+      "name": "IN_A+",
+      "number": "3",
+      "category": "analog_input",
+      "function": "Channel A non-inverting input; signal input or reference",
+      "abs_max": {
+        "voltage_min": -0.3,
+        "voltage_max": 36.0
+      },
+      "recommended": {
+        "common_mode_range": "0 to VCC-1.5"
+      },
+      "evidence": ["datasheet:lm358.pdf#p2"]
+    },
+    {
+      "name": "VEE/GND",
+      "number": "4",
+      "category": "ground",
+      "function": "Negative supply rail (dual) or ground (single supply)",
+      "abs_max": {
+        "voltage_min": -36.0,
+        "voltage_max": 0.0
+      },
+      "recommended": {
+        "single_supply": "GND (0V)",
+        "dual_supply": "-VCC"
+      },
+      "evidence": ["datasheet:lm358.pdf#p2"]
+    },
+    {
+      "name": "IN_B+",
+      "number": "5",
+      "category": "analog_input",
+      "function": "Channel B non-inverting input; signal input or reference",
+      "abs_max": {
+        "voltage_min": -0.3,
+        "voltage_max": 36.0
+      },
+      "recommended": {
+        "common_mode_range": "0 to VCC-1.5"
+      },
+      "evidence": ["datasheet:lm358.pdf#p2"]
+    },
+    {
+      "name": "IN_B-",
+      "number": "6",
+      "category": "analog_input",
+      "function": "Channel B inverting input; feedback path typically connects here",
+      "abs_max": {
+        "voltage_min": -0.3,
+        "voltage_max": 36.0
+      },
+      "recommended": {
+        "common_mode_range": "0 to VCC-1.5"
+      },
+      "evidence": ["datasheet:lm358.pdf#p2"]
+    },
+    {
+      "name": "OUT_B",
+      "number": "7",
+      "category": "switch_output",
+      "function": "Channel B amplifier output; sources/sinks up to 40mA",
+      "abs_max": {
+        "output_current_ma": 40.0
+      },
+      "recommended": {
+        "typical_load": "10k to infinity"
+      },
+      "evidence": ["datasheet:lm358.pdf#p2"]
+    },
+    {
+      "name": "VCC",
+      "number": "8",
+      "category": "power_input",
+      "function": "Positive supply voltage; single 3-32V or dual ±1.5-±16V",
+      "limits": {
+        "abs_max_voltage": 36.0,
+        "recommended_voltage_min": 3.0,
+        "recommended_voltage_max": 32.0
+      },
+      "evidence": ["datasheet:lm358.pdf#p2"]
+    }
+  ],
+  "extracted_at": "2026-05-28",
+  "extracted_model": "claude-opus-4.6",
+  "schema_version": "v2"
+}

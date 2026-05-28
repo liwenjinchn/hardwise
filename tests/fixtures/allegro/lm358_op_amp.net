@@ -1,0 +1,17 @@
+$PACKAGES
+  ! 'DIP8' ! LM358 ; U31
+  ! 'R0805' ! 10K ; R1_FB
+  ! 'R0805' ! 10K ; R1_IN
+  ! 'R0805' ! 10K ; R2_FB
+  ! 'R0805' ! 10K ; R2_IN
+  ! 'C0805' ! 100nF ; C_BYPASS
+$NETS
+  '+12V' ; U31.8, C_BYPASS.1
+  'GND' ; U31.4, C_BYPASS.2
+  'INPUT_A' ; U31.3, R1_IN.1
+  'FB_A' ; U31.2, R1_FB.1, R1_IN.2
+  'OUTPUT_A' ; U31.1, R1_FB.2
+  'INPUT_B' ; U31.5, R2_IN.1
+  'FB_B' ; U31.6, R2_FB.1, R2_IN.2
+  'OUTPUT_B' ; U31.7, R2_FB.2
+$END

@@ -345,9 +345,9 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
 
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
-    assert "validated=4" in result.output
-    assert "PASS/WARN/ERROR=1/0/3" in result.output
-    assert "manual=21" in result.output
+    assert "validated=6" in result.output
+    assert "PASS/WARN/ERROR=3/0/3" in result.output
+    assert "manual=28" in result.output
 
     html = html_output.read_text(encoding="utf-8")
     assert "Hardwise / 设计验证器" in html
@@ -357,12 +357,12 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert "外围/拓扑检查" in html
 
     index_text = index_output.read_text(encoding="utf-8")
-    assert "| Validated components | 4 |" in index_text
-    assert "| PASS / WARN / ERROR | 1 / 0 / 3 |" in index_text
+    assert "| Validated components | 6 |" in index_text
+    assert "| PASS / WARN / ERROR | 3 / 0 / 3 |" in index_text
     assert "STM32G030C8T6" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
-    assert '"components_in_design": 25' in index_payload
+    assert '"components_in_design": 34' in index_payload
     assert '"refdes": "U8"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/stm32g030c8t6.json"' in index_payload
 
