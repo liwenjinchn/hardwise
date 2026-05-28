@@ -8,6 +8,42 @@
 
 ---
 
+## 2026-05-28 · V3.10 · MCU checks need a startup/debug slice, not a fake full MCU validator
+
+**Symptom**
+
+截图里的 `U8` 问题很像一个完整 MCU review：SWD、BOOT、NRST、电源、ADC、PWM、甚至外设复用和
+固件配置都能展开。直接叫“MCU 验证”容易让人以为 Hardwise 已经能读懂完整 alternate-function
+matrix 或 firmware。
+
+**Root cause**
+
+当前输入只有 schematic netlist + BOM identity + structured profile。它能稳定判断的是连接事实：
+电源脚是否在 3.3 V rail、NRST/BOOT0 是否有默认态、SWDIO/SWCLK 是否接到期望 debug net、
+少量 GPIO 是否有命名连接。它不能稳定判断固件里是否启用了某个 alternate function、时钟树是否正确、
+启动模式是否符合量产流程，或 PCB 上 SWD 走线质量。
+
+**Fix**
+
+新增 `validation/mcu.py`，并把 family 明确命名为 `mcu_basic`。规则只输出 component-level checks：
+`mcu_vdd_vdda_rail`、`mcu_vbat_rail`、`mcu_nrst`、`mcu_boot0`、`mcu_swdio`、`mcu_swclk`
+和两个 fixture GPIO 连接检查。坏 fixture 只复现 SWDIO/SWCLK swap；nominal fixture 要求无
+component ERROR；未知电压或 reset topology 只 WARN。
+
+**Verification**
+
+Focused tests cover SWDIO/SWCLK swap, nominal topology, wrong VDD, floating NRST, floating BOOT0,
+unknown voltage/reset WARN, single-component CLI, batch UI, design-validator UI, and profile candidate matching.
+Smoke path:
+`uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --output /tmp/hardwise-v3.10-controller-workbench.html --index-output /tmp/hardwise-v3.10-controller-index.md --index-json /tmp/hardwise-v3.10-controller-index.json`.
+
+**Takeaway**
+
+MCU validation should grow by stable review slices. SWD/BOOT/RESET/POWER is a deterministic schematic slice;
+firmware and full AF-matrix review are different input contracts and should wait for their own evidence layer.
+
+---
+
 ## 2026-05-28 · V3.9 · Product-shaped entry should reuse the same validation truth
 
 **Symptom**

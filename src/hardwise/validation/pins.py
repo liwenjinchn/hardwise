@@ -59,6 +59,11 @@ def validate_pin(
         "gate_output",
         "switch_node",
         "bootstrap_supply",
+        "reset",
+        "boot_mode",
+        "debug",
+        "gpio",
+        "analog_input",
     }:
         return PinValidation(
             pin_number=pin_profile.number,

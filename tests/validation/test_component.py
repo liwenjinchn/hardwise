@@ -71,6 +71,18 @@ def _eg2132_design() -> Design:
     return apply_bom_to_design(design, match_bom_to_design(bom, design))
 
 
+def _stm32_profile() -> DatasheetProfile:
+    return DatasheetProfile.load(Path("data/datasheet_profiles/stm32g030c8t6.json"))
+
+
+def _stm32_design() -> Design:
+    design = build_design_from_netlist(
+        parse_allegro_netlist(Path("tests/fixtures/allegro/stm32g030_mcu.net"))
+    )
+    bom = parse_bom(Path("tests/fixtures/allegro/stm32g030_mcu_bom.csv"))
+    return apply_bom_to_design(design, match_bom_to_design(bom, design))
+
+
 def _with_component(design: Design, component: Component) -> Design:
     components = dict(design.components)
     components[component.refdes] = component
@@ -339,3 +351,123 @@ def test_validate_eg2132_missing_logic_input_errors() -> None:
     hin = next(check for check in report.component_checks if check.check == "gate_driver_hin")
     assert hin.status == "ERROR"
     assert "has no connected net" in hin.summary
+
+
+def test_validate_stm32_fixture_reports_swd_swap_error() -> None:
+    design = _stm32_design()
+
+    report = validate_component_against_profile(
+        design.components["U8"], _stm32_profile(), design
+    )
+
+    swdio = next(check for check in report.component_checks if check.check == "mcu_swdio")
+    swclk = next(check for check in report.component_checks if check.check == "mcu_swclk")
+    assert report.status == "ERROR"
+    assert swdio.status == "ERROR"
+    assert swclk.status == "ERROR"
+    assert "SWDIO is connected to SWCLK" in swdio.summary
+    assert "SWCLK is connected to SWDIO" in swclk.summary
+
+
+def test_validate_stm32_nominal_debug_topology_has_no_component_error() -> None:
+    design = _stm32_design()
+    u8 = design.components["U8"]
+    pins = [
+        pin.model_copy(update={"net": "SWDIO"}) if pin.number == "35" else pin
+        for pin in u8.pins
+    ]
+    pins = [
+        pin.model_copy(update={"net": "SWCLK"}) if pin.number == "36" else pin
+        for pin in pins
+    ]
+    u8 = u8.model_copy(update={"pins": pins})
+    nets = {
+        **design.nets,
+        "SWDIO": design.nets["SWDIO"].model_copy(update={"nodes": [("U8", "35"), ("J2", "5")]}),
+        "SWCLK": design.nets["SWCLK"].model_copy(update={"nodes": [("U8", "36"), ("J2", "2")]}),
+    }
+    design = _with_component(design.model_copy(update={"nets": nets}), u8)
+
+    report = validate_component_against_profile(
+        design.components["U8"], _stm32_profile(), design
+    )
+
+    assert report.component_counts_by_status == {"PASS": 8, "WARN": 0, "ERROR": 0}
+    assert report.status == "PASS"
+
+
+def test_validate_stm32_wrong_vdd_voltage_errors() -> None:
+    design = _stm32_design()
+    u8 = design.components["U8"]
+    pins = [
+        pin.model_copy(update={"net": "+5V"}) if pin.number == "6" else pin
+        for pin in u8.pins
+    ]
+    u8 = u8.model_copy(update={"pins": pins})
+    design = _with_component(design, u8)
+    design = design.model_copy(
+        update={"nets": {**design.nets, "+5V": Net(name="+5V", nodes=[("U8", "6")])}}
+    )
+
+    report = validate_component_against_profile(u8, _stm32_profile(), design)
+
+    vdd = next(check for check in report.component_checks if check.check == "mcu_vdd_vdda_rail")
+    assert vdd.status == "ERROR"
+    assert "expected 3.3 V" in vdd.summary
+
+
+def test_validate_stm32_floating_nrst_errors() -> None:
+    design = _stm32_design()
+    u8 = design.components["U8"]
+    pins = [
+        pin.model_copy(update={"net": None}) if pin.number == "10" else pin
+        for pin in u8.pins
+    ]
+    u8 = u8.model_copy(update={"pins": pins})
+    design = _with_component(design, u8)
+
+    report = validate_component_against_profile(u8, _stm32_profile(), design)
+
+    nrst = next(check for check in report.component_checks if check.check == "mcu_nrst")
+    assert nrst.status == "ERROR"
+    assert "has no connected net" in nrst.summary
+
+
+def test_validate_stm32_floating_boot0_errors() -> None:
+    design = _stm32_design()
+    u8 = design.components["U8"]
+    pins = [
+        pin.model_copy(update={"net": None}) if pin.number == "44" else pin
+        for pin in u8.pins
+    ]
+    u8 = u8.model_copy(update={"pins": pins})
+    design = _with_component(design, u8)
+
+    report = validate_component_against_profile(u8, _stm32_profile(), design)
+
+    boot0 = next(check for check in report.component_checks if check.check == "mcu_boot0")
+    assert boot0.status == "ERROR"
+    assert "has no connected net" in boot0.summary
+
+
+def test_validate_stm32_unknown_voltage_and_reset_topology_warn() -> None:
+    design = _stm32_design()
+    u8 = design.components["U8"]
+    pins = [
+        pin.model_copy(update={"net": "VDD_MCU"}) if pin.number in {"4", "6"} else pin
+        for pin in u8.pins
+    ]
+    u8 = u8.model_copy(update={"pins": pins})
+    nets = {
+        **design.nets,
+        "VDD_MCU": Net(name="VDD_MCU", nodes=[("U8", "4"), ("U8", "6")]),
+        "NRST": design.nets["NRST"].model_copy(update={"nodes": [("U8", "10"), ("J2", "4")]}),
+    }
+    design = _with_component(design.model_copy(update={"nets": nets}), u8)
+
+    report = validate_component_against_profile(u8, _stm32_profile(), design)
+
+    vdd = next(check for check in report.component_checks if check.check == "mcu_vdd_vdda_rail")
+    nrst = next(check for check in report.component_checks if check.check == "mcu_nrst")
+    assert vdd.status == "WARN"
+    assert nrst.status == "WARN"

@@ -41,4 +41,8 @@ def _validate_component_topology(
         from hardwise.validation.gate_driver import validate_half_bridge_gate_driver
 
         return validate_half_bridge_gate_driver(component, profile, design)
+    if profile.part_number.upper() == "STM32G030C8T6" or family == "mcu_basic":
+        from hardwise.validation.mcu import validate_mcu_basic
+
+        return validate_mcu_basic(component, profile, design)
     return []

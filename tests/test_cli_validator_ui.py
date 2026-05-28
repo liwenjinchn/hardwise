@@ -171,6 +171,40 @@ def test_report_validator_ui_batch_writes_eg2132_gate_driver_checks(
     assert ".brd, boardview, placement, routing, PCB geometry" in html
 
 
+def test_report_validator_ui_batch_writes_stm32_mcu_checks(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "stm32-validator-ui.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-validator-ui-batch",
+            "tests/fixtures/allegro/stm32g030_mcu.net",
+            "tests/fixtures/allegro/stm32g030_mcu_bom.csv",
+            "U8=data/datasheet_profiles/stm32g030c8t6.json",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "validator-ui-batch:" in result.output
+    assert "validated=U8" in result.output
+    assert "PASS/WARN/ERROR=0/0/1" in result.output
+
+    html = output.read_text(encoding="utf-8")
+    assert "Hardwise / 设计验证器" in html
+    assert 'data-select-ref="U8"' in html
+    assert '<article class="panel active" data-panel="U8">' in html
+    assert "外围/拓扑检查" in html
+    assert "mcu_swdio" in html
+    assert "mcu_swclk" in html
+    assert "SWDIO is connected to SWCLK" in html
+    assert "SWCLK is connected to SWDIO" in html
+    assert ".brd, boardview, placement, routing, PCB geometry" in html
+
+
 def test_report_validator_ui_batch_writes_mixed_power_stage_manifest(
     tmp_path: Path,
 ) -> None:
@@ -204,6 +238,37 @@ def test_report_validator_ui_batch_writes_mixed_power_stage_manifest(
     assert "6.8 uH" in html
     assert "MBRA210LT3G" in html
     assert "gate_driver_bootstrap" in html
+
+
+def test_report_validator_ui_batch_writes_mixed_controller_manifest(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "mixed-controller-ui.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-validator-ui-batch",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--targets-manifest",
+            "tests/fixtures/allegro/mixed_controller_power_stage_targets.yaml",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "validator-ui-batch:" in result.output
+    assert "validated=U1,U12,U3,U8" in result.output
+    assert "PASS/WARN/ERROR=1/0/3" in result.output
+
+    html = output.read_text(encoding="utf-8")
+    assert 'data-select-ref="U8"' in html
+    assert '<article class="panel" data-panel="U8">' in html
+    assert "SWDIO is connected to SWCLK" in html
+    assert "SWCLK is connected to SWDIO" in html
+    assert "MBRA210LT3G" in html
 
 
 def test_design_validator_ui_auto_matches_profiles_and_writes_index(
@@ -254,6 +319,52 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     assert '"components_in_design": 18' in index_payload
     assert '"refdes": "U12"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/xl1509.json"' in index_payload
+
+
+def test_design_validator_ui_auto_matches_controller_power_stage(
+    tmp_path: Path,
+) -> None:
+    html_output = tmp_path / "controller-design-validator.html"
+    index_output = tmp_path / "controller-index.md"
+    index_json = tmp_path / "controller-index.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--output",
+            str(html_output),
+            "--index-output",
+            str(index_output),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "design-validator-ui:" in result.output
+    assert "validated=4" in result.output
+    assert "PASS/WARN/ERROR=1/0/3" in result.output
+    assert "manual=21" in result.output
+
+    html = html_output.read_text(encoding="utf-8")
+    assert "Hardwise / 设计验证器" in html
+    assert 'data-select-ref="U8"' in html
+    assert "SWDIO is connected to SWCLK" in html
+    assert "SWCLK is connected to SWDIO" in html
+    assert "外围/拓扑检查" in html
+
+    index_text = index_output.read_text(encoding="utf-8")
+    assert "| Validated components | 4 |" in index_text
+    assert "| PASS / WARN / ERROR | 1 / 0 / 3 |" in index_text
+    assert "STM32G030C8T6" in index_text
+
+    index_payload = index_json.read_text(encoding="utf-8")
+    assert '"components_in_design": 25' in index_payload
+    assert '"refdes": "U8"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/stm32g030c8t6.json"' in index_payload
 
 
 def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) -> None:
@@ -308,6 +419,30 @@ def test_suggest_validation_targets_matches_eg2132_profile(tmp_path: Path) -> No
     text = output.read_text(encoding="utf-8")
     assert "refdes: U3" in text
     assert "profile: data/datasheet_profiles/eg2132.json" in text
+
+
+def test_suggest_validation_targets_matches_stm32_profile(tmp_path: Path) -> None:
+    output = tmp_path / "stm32-targets.yaml"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "suggest-validation-targets",
+            "tests/fixtures/allegro/stm32g030_mcu_bom.csv",
+            "--profiles",
+            "data/datasheet_profiles",
+            "--matched-only",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "matched=1" in result.output
+
+    text = output.read_text(encoding="utf-8")
+    assert "refdes: U8" in text
+    assert "profile: data/datasheet_profiles/stm32g030c8t6.json" in text
 
 
 def test_suggest_validation_targets_matched_only_writes_v35_manifest(tmp_path: Path) -> None:

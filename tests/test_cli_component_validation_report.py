@@ -107,6 +107,40 @@ def test_report_component_validation_writes_eg2132_gate_driver_errors(
     assert "datasheet:eg2132.pdf#p6" in md
 
 
+def test_report_component_validation_writes_stm32_mcu_errors(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "u8-validation.md"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-component-validation",
+            "tests/fixtures/allegro/stm32g030_mcu.net",
+            "U8",
+            "data/datasheet_profiles/stm32g030c8t6.json",
+            "--bom",
+            "tests/fixtures/allegro/stm32g030_mcu_bom.csv",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "component-validation:" in result.output
+    assert "(ERROR, PASS/WARN/ERROR=9/0/0)" in result.output
+
+    md = output.read_text(encoding="utf-8")
+    assert "# Hardwise Component Validation - U8" in md
+    assert "| Profile part | STM32G030C8T6 |" in md
+    assert "| Overall status | ERROR |" in md
+    assert "mcu_swdio" in md
+    assert "mcu_swclk" in md
+    assert "SWDIO is connected to SWCLK" in md
+    assert "SWCLK is connected to SWDIO" in md
+    assert "datasheet:stm32g030.pdf#p33" in md
+
+
 def test_report_component_validation_rejects_unknown_refdes() -> None:
     result = CliRunner().invoke(
         app,

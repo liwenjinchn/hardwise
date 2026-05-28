@@ -1,0 +1,178 @@
+{
+  "part_number": "STM32G030C8T6",
+  "abs_max": {
+    "vdd": 4.0
+  },
+  "recommended": {
+    "topology_family": "mcu_basic",
+    "vdd_nominal": 3.3,
+    "vdd_min": 2.0,
+    "vdd_max": 3.6,
+    "debug_interface": "SWD",
+    "boot0_default": "low",
+    "reset_network": "pull-up or RC reset network"
+  },
+  "pin_function": {
+    "4": "VBAT backup supply",
+    "5": "VSS ground",
+    "6": "VDD/VDDA main supply",
+    "10": "NRST reset input",
+    "11": "PA0 ADC/GPIO",
+    "32": "PA10 timer/GPIO",
+    "35": "SWDIO debug data",
+    "36": "SWCLK debug clock",
+    "44": "BOOT0 boot mode select"
+  },
+  "pins": [
+    {
+      "number": "4",
+      "name": "VBAT",
+      "category": "power_input",
+      "function": "Backup-domain supply. In this fixture it is tied to the 3.3 V rail.",
+      "limits": {
+        "nominal_voltage": 3.3,
+        "recommended_voltage_min": 2.0,
+        "recommended_voltage_max": 3.6,
+        "abs_max_voltage": 4.0
+      },
+      "recommended_topology": [
+        "Tie to VDD when no separate backup battery is used."
+      ],
+      "evidence": [
+        "datasheet:stm32g030.pdf#p27",
+        "datasheet:stm32g030.pdf#p39"
+      ]
+    },
+    {
+      "number": "5",
+      "name": "VSS",
+      "category": "ground",
+      "function": "Digital ground reference.",
+      "recommended_topology": [
+        "Connect to the system ground reference."
+      ],
+      "evidence": [
+        "datasheet:stm32g030.pdf#p27"
+      ]
+    },
+    {
+      "number": "6",
+      "name": "VDD/VDDA",
+      "category": "power_input",
+      "function": "Main digital and analog supply for the fixture subset.",
+      "limits": {
+        "nominal_voltage": 3.3,
+        "recommended_voltage_min": 2.0,
+        "recommended_voltage_max": 3.6,
+        "abs_max_voltage": 4.0
+      },
+      "recommended_topology": [
+        "Connect to the 3.3 V rail with local decoupling."
+      ],
+      "evidence": [
+        "datasheet:stm32g030.pdf#p27",
+        "datasheet:stm32g030.pdf#p39"
+      ]
+    },
+    {
+      "number": "10",
+      "name": "NRST",
+      "category": "reset",
+      "function": "Active-low external reset input.",
+      "recommended_topology": [
+        "Provide a defined reset network such as pull-up and/or RC filtering."
+      ],
+      "evidence": [
+        "datasheet:stm32g030.pdf#p31"
+      ]
+    },
+    {
+      "number": "11",
+      "name": "PA0",
+      "category": "analog_input",
+      "function": "GPIO or ADC-capable input in the fixture.",
+      "recommended_topology": [
+        "Connect only when the schematic intends to use this channel."
+      ],
+      "evidence": [
+        "datasheet:stm32g030.pdf#p31"
+      ]
+    },
+    {
+      "number": "32",
+      "name": "PA10",
+      "category": "gpio",
+      "function": "GPIO or timer/PWM-capable signal in the fixture.",
+      "recommended_topology": [
+        "Connect to a named logic/PWM net when used."
+      ],
+      "evidence": [
+        "datasheet:stm32g030.pdf#p31"
+      ]
+    },
+    {
+      "number": "35",
+      "name": "SWDIO",
+      "category": "debug",
+      "function": "Serial wire debug data pin.",
+      "limits": {
+        "expected_net": "SWDIO"
+      },
+      "recommended_topology": [
+        "Connect to the SWDIO signal on the debug connector."
+      ],
+      "evidence": [
+        "datasheet:stm32g030.pdf#p31",
+        "datasheet:stm32g030.pdf#p33"
+      ]
+    },
+    {
+      "number": "36",
+      "name": "SWCLK",
+      "category": "debug",
+      "function": "Serial wire debug clock pin.",
+      "limits": {
+        "expected_net": "SWCLK"
+      },
+      "recommended_topology": [
+        "Connect to the SWCLK signal on the debug connector."
+      ],
+      "evidence": [
+        "datasheet:stm32g030.pdf#p31",
+        "datasheet:stm32g030.pdf#p33"
+      ]
+    },
+    {
+      "number": "44",
+      "name": "BOOT0",
+      "category": "boot_mode",
+      "function": "Boot-mode selection input.",
+      "recommended_topology": [
+        "Hold low for normal boot unless a programming mode is intentionally selected."
+      ],
+      "evidence": [
+        "datasheet:stm32g030.pdf#p33"
+      ]
+    }
+  ],
+  "evidence": {
+    "recommended.vdd_vdda": "datasheet:stm32g030.pdf#p39",
+    "recommended.vbat": "datasheet:stm32g030.pdf#p39",
+    "recommended.nrst": "datasheet:stm32g030.pdf#p31",
+    "recommended.boot0": "datasheet:stm32g030.pdf#p33",
+    "recommended.swd": "datasheet:stm32g030.pdf#p33",
+    "recommended.gpio": "datasheet:stm32g030.pdf#p31",
+    "pins.4": "datasheet:stm32g030.pdf#p27",
+    "pins.5": "datasheet:stm32g030.pdf#p27",
+    "pins.6": "datasheet:stm32g030.pdf#p27",
+    "pins.10": "datasheet:stm32g030.pdf#p31",
+    "pins.11": "datasheet:stm32g030.pdf#p31",
+    "pins.32": "datasheet:stm32g030.pdf#p31",
+    "pins.35": "datasheet:stm32g030.pdf#p33",
+    "pins.36": "datasheet:stm32g030.pdf#p33",
+    "pins.44": "datasheet:stm32g030.pdf#p33"
+  },
+  "extracted_at": "2026-05-28T00:00:00+08:00",
+  "extracted_model": "manual-structured-profile-v3.10",
+  "schema_version": "v2"
+}
