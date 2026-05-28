@@ -1075,6 +1075,14 @@ def design_validator_ui(
         "--index-json",
         help="Optional JSON sidecar path for the project validation index.",
     ),
+    document_index: Path | None = typer.Option(
+        None,
+        "--document-index",
+        help=(
+            "Optional CSV/TSV index of public datasheet/document links. "
+            "Adds grouped document coverage; no live supplier lookup."
+        ),
+    ),
     manual_limit: int = typer.Option(
         50,
         "--manual-limit",
@@ -1085,6 +1093,7 @@ def design_validator_ui(
     from datetime import datetime, timezone
 
     from hardwise.bom import apply_bom_to_design
+    from hardwise.documents import match_documents_to_bom, parse_document_index
     from hardwise.report.project_validation_markdown import (
         render as render_project_index,
         write_json,
@@ -1108,13 +1117,20 @@ def design_validator_ui(
         bom = resolved_bom.bom
         bom_report = resolved_bom.bom_report
         design = apply_bom_to_design(design, bom_report)
+        document_report = (
+            match_documents_to_bom(bom, parse_document_index(document_index))
+            if document_index is not None
+            else None
+        )
         candidate_report = suggest_profile_candidates(bom, profiles, project=bom.source_file.stem)
         now = datetime.now(timezone.utc)
         project_name = project_name_for_inputs(source, bom)
         index = build_project_validation_index(
             design=design,
+            bom=bom,
             bom_report=bom_report,
             candidate_report=candidate_report,
+            document_report=document_report,
             project_name=project_name,
             generated_at=now.isoformat(timespec="seconds"),
             netlist_source=str(source),

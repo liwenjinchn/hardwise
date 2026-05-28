@@ -119,6 +119,7 @@ def test_render_project_workbench_includes_zero_profile_gap(tmp_path: Path) -> N
     candidate_report = suggest_profile_candidates(bom, profiles)
     index = build_project_validation_index(
         design=design,
+        bom=bom,
         bom_report=bom_report,
         candidate_report=candidate_report,
         project_name="stm32g030_mcu",
@@ -140,7 +141,8 @@ def test_render_project_workbench_includes_zero_profile_gap(tmp_path: Path) -> N
     assert "validated 0" in html
     assert "no_result" in html
     assert "待 profile" in html
-    assert '<td class="ref">U8</td>' in html
+    assert "Component Group Coverage" in html
+    assert '<td class="ref">U8<span class="sub">1 refs</span></td>' in html
     assert "Scope Boundary" in html
     assert "Profile Gap Groups" in html
     assert "does not convert no-profile rows into electrical judgements" in html

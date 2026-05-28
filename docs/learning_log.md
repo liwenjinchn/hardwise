@@ -8,6 +8,40 @@
 
 ---
 
+## 2026-05-28 · V3.12 · Real-project coverage needs BOM groups, not raw refdes rows
+
+**Symptom**
+
+真实 Allegro/PST 项目导入后有 4010 个 design components。即使 `design-validator-ui` 能在
+`validated=0` 时生成 artifact，逐位号展示仍然会把 reviewer 淹没在 4010 条 no-profile/manual rows 里，
+不像一个可审计的项目入口。
+
+**Root cause**
+
+Profile 和 datasheet 的扩展单位不是单个 refdes，而是 BOM item / device identity。电容、电阻、连接器、
+test point 和 IC 应该先按 BOM group 聚合，再显示 normalized identity、family、profile status 和 document
+status。否则每导入一个新项目，Hardwise 看到的都是“几千个孤立缺口”，而不是“几十/上百个可补的器件组”。
+
+**Fix**
+
+新增 `validation/component_identity.py` 和 `validation/component_groups.py`，从 BOM item 构建
+`component_groups`：真实 MPN 优先，`GW_*`、`MARK`、`HOLE_*`、`TEST_POINT_*` 等占位名不当作真
+MPN；passives 用 value 作为 identity；connector / mechanical / test point 明确分 family。
+`design-validator-ui --document-index` 接入本地 document index，HTML/Markdown/JSON 都输出同一套
+group coverage。
+
+**Verification**
+
+真实公开 Allegro 文件夹 smoke：自动选择 `SWITCH BOARD 144-VA_20240712 1401(1).BOM`，输出
+4010 components / BOM matched=4010 / validated=0 / manual=4010，并把 4010 rows 聚合成 132 个
+component groups。浏览器 smoke 确认 HTML 有 `Component Group Coverage`、`Docs` 列和真实 IC 组
+如 `MP5991`。
+
+**Takeaway**
+
+真实项目的第一层产品闭环是 group-first coverage。先把“哪些器件族/identity 需要 profile 或 datasheet”
+变成可审计清单，再进入自动下载、事实抽取和 family validator。
+
 ## 2026-05-28 · Trellis workspace files must stay outside Hardwise lint/test scope
 
 **Symptom**

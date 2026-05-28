@@ -16,6 +16,10 @@ from hardwise.report.validator_multi_ui import (
     _validated_cards,
 )
 from hardwise.report.validator_multi_ui_assets import MULTI_UI_SCRIPT, MULTI_UI_STYLE
+from hardwise.report.validator_project_group_ui import (
+    component_group_table,
+    component_group_table_rows,
+)
 from hardwise.report.validator_ui import _status_class
 from hardwise.validation.project_index import (
     ProjectValidationGapGroup,
@@ -48,6 +52,7 @@ def render_project_workbench(
     validated = {item.validation.refdes: item for item in ordered}
     counts = _status_counts(ordered)
     active_refdes = ordered[0].validation.refdes if ordered else ""
+    rail_count = len(components) if ordered else len(index.component_groups)
 
     return f"""<!doctype html>
 <html lang="zh-CN">
@@ -81,11 +86,11 @@ def render_project_workbench(
           <div class="rail-head">
             <div class="section-title">
               <h2>器件</h2>
-              <span class="count">{len(components)}</span>
+              <span class="count">{rail_count}</span>
             </div>
             <input class="filter" data-filter placeholder="按位号过滤..." type="search">
           </div>
-          <div class="table-wrap">{_component_table(components, validated, active_refdes, index, bom_report)}</div>
+          <div class="table-wrap">{_rail_table(components, validated, active_refdes, index, bom_report)}</div>
         </aside>
         <aside class="verify" aria-label="验证">
           <div class="verify-head">
@@ -107,6 +112,18 @@ def render_project_workbench(
 </body>
 </html>
 """
+
+
+def _rail_table(
+    components: list[Component],
+    validated: dict[str, ValidatorUiResult],
+    active_refdes: str,
+    index: ProjectValidationIndex,
+    bom_report: BomMatchReport | None,
+) -> str:
+    if not validated and index.component_groups:
+        return component_group_table(index.component_groups)
+    return _component_table(components, validated, active_refdes, index, bom_report)
 
 
 def _component_table(
@@ -263,6 +280,10 @@ def _coverage_detail(index: ProjectValidationIndex, generated_at: str) -> str:
         '<div class="kpi"><span>WARN</span><strong>0</strong></div>'
         '<div class="kpi"><span>ERROR</span><strong>0</strong></div>'
         "</div>"
+        '<section class="section table-section"><div class="section-head"><h3>Component Group Coverage</h3></div>'
+        "<table><thead><tr><th>Count</th><th>Refdes sample</th><th>Identity</th><th>Kind</th><th>Family</th><th>Profile</th><th>Docs</th></tr></thead><tbody>"
+        f"{component_group_table_rows(index.component_groups, limit=GAP_ROW_LIMIT)}"
+        "</tbody></table></section>"
         '<section class="section table-section"><div class="section-head"><h3>Profile Gap Groups</h3></div>'
         "<table><thead><tr><th>Count</th><th>Status</th><th>Identity</th><th>Kind</th><th>Refdes sample</th><th>Reason</th></tr></thead><tbody>"
         f"{_gap_group_table_rows(profile_gap_groups(index))}"

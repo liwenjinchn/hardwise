@@ -53,6 +53,21 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
         lines.append("| - | - | - | - | - | 0 / 0 / 0 |")
     lines.append("")
 
+    lines.append("## Component Group Coverage")
+    lines.append("")
+    lines.append("| Count | Refdes sample | Identity | Kind | Family | Profile | Docs | Document |")
+    lines.append("|---:|---|---|---|---|---|---|---|")
+    for group in index.component_groups:
+        lines.append(
+            f"| {group.refdes_count} | {_escape_pipe(', '.join(group.refdes_sample))} | "
+            f"{_escape_pipe(group.identity or '-')} | {group.identity_kind} | "
+            f"{group.suggested_family} | {group.profile_status} | "
+            f"{group.document_status} | {_document_cell(group.document_title, group.document_url)} |"
+        )
+    if not index.component_groups:
+        lines.append("| 0 | - | - | - | - | - | - | - |")
+    lines.append("")
+
     lines.append("## Profile Gap Summary")
     lines.append("")
     lines.append("| Count | Status | Identity | Kind | Refdes sample | Reason |")
@@ -85,6 +100,12 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
         lines.append("| - | - | - | - | - |")
     lines.append("")
     return "\n".join(lines)
+
+
+def _document_cell(title: str | None, url: str | None) -> str:
+    if not title or not url:
+        return "-"
+    return _escape_pipe(f"[{title}]({url})")
 
 
 def write_json(index: ProjectValidationIndex, output: Path) -> None:

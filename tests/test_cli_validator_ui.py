@@ -406,7 +406,7 @@ def test_design_validator_ui_writes_gap_workbench_when_no_profiles_match(
     assert "validated 0" in html
     assert "no_result" in html
     assert "待 profile" in html
-    assert '<td class="ref">U8</td>' in html
+    assert '<td class="ref">U8<span class="sub">1 refs</span></td>' in html
     assert "does not convert no-profile rows into electrical judgements" in html
 
     index_text = index_output.read_text(encoding="utf-8")
@@ -439,6 +439,12 @@ def test_design_validator_ui_auto_selects_bom_from_pst_project_dir(
         "R1,1,10K,Fixture,RES-10K\n",
         encoding="utf-8",
     )
+    docs = tmp_path / "docs.csv"
+    docs.write_text(
+        "MPN,Manufacturer,Title,URL\n"
+        "FOO-IC,Fixture,FOO-IC datasheet,https://example.test/foo-ic.pdf\n",
+        encoding="utf-8",
+    )
     html_output = tmp_path / "project-design-validator.html"
     index_output = tmp_path / "project-index.md"
     index_json = tmp_path / "project-index.json"
@@ -454,6 +460,8 @@ def test_design_validator_ui_auto_selects_bom_from_pst_project_dir(
             str(index_output),
             "--index-json",
             str(index_json),
+            "--document-index",
+            str(docs),
         ],
     )
 
@@ -467,17 +475,23 @@ def test_design_validator_ui_auto_selects_bom_from_pst_project_dir(
 
     html = html_output.read_text(encoding="utf-8")
     assert "Hardwise Validator UI - switch_clean" in html
+    assert "FOO-IC datasheet" in html
     assert "Profile Gap Groups" in html
+    assert "Component Group Coverage" in html
     assert "FOO-IC" in html
 
     index_text = index_output.read_text(encoding="utf-8")
     assert "| Netlist source |" in index_text
     assert "switch_clean.csv" in index_text
+    assert "## Component Group Coverage" in index_text
+    assert "FOO-IC datasheet" in index_text
     assert "## Profile Gap Summary" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
+    assert '"component_groups"' in index_payload
     assert '"profile_gap_groups"' in index_payload
     assert '"identity": "FOO-IC"' in index_payload
+    assert '"document_status": "matched"' in index_payload
 
 
 def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) -> None:

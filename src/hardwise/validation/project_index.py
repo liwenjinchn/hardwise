@@ -6,10 +6,12 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from hardwise.bom.types import BomMatchReport, sort_refdes_key
+from hardwise.bom.types import Bom, BomMatchReport, sort_refdes_key
+from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Design
 from hardwise.validation.component import validate_component_against_profile
+from hardwise.validation.component_groups import ProjectComponentGroup, build_component_groups
 from hardwise.validation.profile_candidates import ProfileCandidateReport
 from hardwise.validation.types import ValidationReport
 
@@ -62,6 +64,7 @@ class ProjectValidationIndex(BaseModel):
     components_in_design: int
     bom_matched: int
     rows: list[ProjectValidationRow] = Field(default_factory=list)
+    component_groups: list[ProjectComponentGroup] = Field(default_factory=list)
 
     @property
     def validated_rows(self) -> list[ProjectValidationRow]:
@@ -88,8 +91,10 @@ class ProjectValidationIndex(BaseModel):
 def build_project_validation_index(
     *,
     design: Design,
+    bom: Bom,
     bom_report: BomMatchReport,
     candidate_report: ProfileCandidateReport,
+    document_report: DocumentMatchReport | None = None,
     project_name: str,
     generated_at: str,
     netlist_source: str,
@@ -138,6 +143,17 @@ def build_project_validation_index(
             )
         )
 
+    profile_status_by_refdes = {row.refdes: row.match_status for row in rows}
+    validation_status_by_refdes = {
+        row.refdes: row.validation.status for row in rows if row.validation is not None
+    }
+    component_groups = build_component_groups(
+        bom,
+        profile_status_by_refdes=profile_status_by_refdes,
+        validation_status_by_refdes=validation_status_by_refdes,
+        document_report=document_report,
+    )
+
     return ProjectValidationIndex(
         project_name=project_name,
         generated_at=generated_at,
@@ -148,6 +164,7 @@ def build_project_validation_index(
         components_in_design=len(design.components),
         bom_matched=len(bom_report.matched_refdes),
         rows=rows,
+        component_groups=component_groups,
     )
 
 
