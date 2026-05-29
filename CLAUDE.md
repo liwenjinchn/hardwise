@@ -61,7 +61,7 @@ Tier selection lives in `src/hardwise/agent/router.py`. Default for any review r
 
 ## Tool manifest
 
-The agent loop calls these four tools in `src/hardwise/agent/tools.py`. Each input is a Pydantic model; each output carries a `found: bool` (or discriminated-union) branch for unknowns — tools never fabricate.
+The agent loop calls these five tools in `src/hardwise/agent/tools.py`. Each input is a Pydantic model; each output carries a `found: bool` (or discriminated-union) branch for unknowns — tools never fabricate.
 
 | Tool | Input | Output | Unknown branch |
 |---|---|---|---|
@@ -69,6 +69,9 @@ The agent loop calls these four tools in `src/hardwise/agent/tools.py`. Each inp
 | `get_component` | `refdes` | `ComponentFound{component}` | `ComponentNotFound{refdes, closest_matches}` |
 | `get_nc_pins` | `refdes_filter?` | `NcPinSummary[]` + total | `found=false, pins=[]` |
 | `search_datasheet` | `query`, `part_ref?`, `top_k` | `DatasheetHit[]` (page, source_pdf, part_ref) | `found=false, hits=[], query` |
+| `run_component_validation` | `refdes` | `ValidationRan{overall, counts, checks}` | `ValidationNoProfile` / `ValidationRefdesNotFound{closest_matches}` |
+
+`run_component_validation` is the bridge from the agent loop to the deterministic family validators in `validation/`: it runs `validate_component_against_profile` for a refdes that has an assigned profile (via the Runner's `validation_targets` map) and returns structured PASS/WARN/ERROR rows with evidence tokens. It never auto-matches a profile and never fabricates a verdict.
 
 `TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[…]` shape ready for `messages.create`.
 

@@ -1689,3 +1689,55 @@ device pin, not to the board ground. Encode the reference node in both the
 arithmetic and the summary string, and WARN instead of assuming a default when
 the reference floats. A wrong default in a *spec doc* propagates to every future
 family — fix the doc, not just the code.
+
+## 2026-05-29 — Agent and validators were two demos that never met
+
+**Symptom**
+
+A codebase audit found `agent/` has zero references to `validation/`. The
+review agent exposed four tools (list/get component, NC pins, datasheet search)
+and none of them called a family validator. The deterministic validators
+(buck, gate_driver, mcu, i2c_mux, diode, connector, mosfet) — the strongest,
+most trustworthy work in the repo — were unreachable from the agent that the
+DJI pitch calls an "AI hardware review agent". Two parallel pipelines, one
+product story.
+
+**Root cause**
+
+The two halves grew on different data shapes. Agent tools run on the relational
+`Session` + `BoardRegistry` + vector `collection` (KiCad intake). Validators run
+on the IR `Design` + `Component` + `DatasheetProfile` (Allegro intake). Nothing
+bridged the seam, so the agent could describe a component but never validate it.
+
+**Fix**
+
+Added `run_component_validation(refdes)` as the fifth agent tool:
+
+- Runner gains optional `design` + `validation_targets` ({refdes -> profile})
+  constructor params, defaulting empty so existing KiCad-only callers are
+  unaffected.
+- The tool is a pure lookup-and-validate: refdes not in design -> `not_found`
+  + closest_matches (difflib 0.6 cutoff, same as `get_component`); refdes with
+  no assigned profile -> `no_profile`; assigned -> `validated` with flattened
+  PASS/WARN/ERROR rows + evidence tokens. Never auto-matches a profile, never
+  fabricates a verdict — consistent with the tools-never-fabricate rule.
+- When no design is loaded the dispatch returns a structured `not_configured`
+  payload (same backoff pattern as `search_datasheet` with no collection).
+
+**Verification**
+
+- `uv run pytest -q` → 379 passed, 7 deselected (+12). New
+  `tests/agent/test_validation_bridge.py` covers the pure tool function and the
+  runner dispatch path (FakeAnthropic, no API), including
+  `test_runner_dispatches_validation_and_returns_structured_payload` proving the
+  loop reaches the validator and gets `overall=PASS` back.
+- Two pre-existing tests rightly broke and were updated: the tool-manifest
+  count (4→5) and a part-number false-positive assertion. `ruff` clean.
+
+**Takeaway**
+
+When two subsystems speak different data shapes, the integration tool belongs at
+the shape boundary, not inside either half — inject both contexts into the
+orchestrator and keep the tool a thin, non-fabricating lookup. The highest-value
+change in a mature codebase is often not new capability but connecting capability
+that already exists. (DR-011, Phase 1.)
