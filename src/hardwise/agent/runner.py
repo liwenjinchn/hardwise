@@ -40,10 +40,12 @@ from hardwise.agent.tools import (
     GetComponentInput,
     GetNcPinsInput,
     ListComponentsInput,
+    RunComponentValidationInput,
     SearchDatasheetInput,
     get_component,
     get_nc_pins,
     list_components,
+    run_component_validation,
     search_datasheet,
 )
 from hardwise.guards.refdes import sanitize_args, sanitize_text
@@ -107,6 +109,8 @@ class Runner:
         tier: Tier = "normal",
         max_iterations: int = MAX_ITERATIONS,
         max_tokens: int = MAX_TOKENS,
+        design: Any | None = None,
+        validation_targets: dict[str, Any] | None = None,
     ) -> None:
         self.client = client
         self.router = router
@@ -116,6 +120,12 @@ class Runner:
         self.tier = tier
         self.max_iterations = max_iterations
         self.max_tokens = max_tokens
+        # IR Design + explicit refdes->DatasheetProfile assignments power the
+        # run_component_validation tool. Both default empty so the existing
+        # KiCad-only callers keep working; the tool then reports not_found /
+        # no_profile instead of fabricating a verdict.
+        self.design = design
+        self.validation_targets = validation_targets or {}
 
     def run(self, user_message: str) -> RunResult:
         result = RunResult(text="")
@@ -191,6 +201,24 @@ class Runner:
                 else:
                     out = search_datasheet(self.collection, SearchDatasheetInput(**args))
                     summary = f"hits={len(out.hits)}"
+                    payload = out.model_dump_json()
+            elif name == "run_component_validation":
+                if self.design is None:
+                    summary = "skipped: no design loaded for validation"
+                    payload = json.dumps(
+                        {
+                            "status": "not_configured",
+                            "refdes": args.get("refdes", ""),
+                            "error": "no IR design is loaded for this run",
+                        }
+                    )
+                else:
+                    out = run_component_validation(
+                        self.design,
+                        self.validation_targets,
+                        RunComponentValidationInput(**args),
+                    )
+                    summary = f"status={out.status}"
                     payload = out.model_dump_json()
             else:
                 summary = f"unknown tool: {name}"

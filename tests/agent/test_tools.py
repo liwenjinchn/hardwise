@@ -180,8 +180,14 @@ def test_search_datasheet_empty_collection_returns_not_found() -> None:
 
 
 def test_tool_definitions_match_anthropic_format() -> None:
-    assert len(TOOL_DEFINITIONS) == 4
-    expected_names = {"list_components", "get_component", "get_nc_pins", "search_datasheet"}
+    assert len(TOOL_DEFINITIONS) == 5
+    expected_names = {
+        "list_components",
+        "get_component",
+        "get_nc_pins",
+        "search_datasheet",
+        "run_component_validation",
+    }
     actual_names = {entry["name"] for entry in TOOL_DEFINITIONS}
     assert actual_names == expected_names
     for entry in TOOL_DEFINITIONS:
