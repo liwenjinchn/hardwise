@@ -107,12 +107,21 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
 **Three-terminal control devices** (MOSFET, BJT):
 - Gate/Base: `analog_input` (analog control) or `logic_input` (digital control)
 - Drain/Collector: `switch_output` (switched high-side)
-- Source/Emitter: `ground` or `switch_node` (depends on circuit topology)
+- Source/Emitter: `switch_node` — NOT `ground`. A low-side FET sits its source
+  at ground, but a high-side FET sits it on the switch node (swings to the
+  rail). Labelling the source `ground` makes the generic pin validator demand
+  a ground net and false-ERROR every high-side device.
 ```json
 {"name": "Gate", "number": "1", "category": "analog_input"},
 {"name": "Drain", "number": "2", "category": "switch_output"},
-{"name": "Source", "number": "3", "category": "ground"}
+{"name": "Source", "number": "3", "category": "switch_node"}
 ```
+- **Vgs is gate-to-source, never gate-to-ground.** Compute
+  `Vgs = voltage(gate) - voltage(source)`. The low-side case where source = GND
+  is the *only* one where gate-to-ground coincides with Vgs; do not generalise
+  it. When the gate or source net has no statically known voltage (PWM drive,
+  floating switch node), return WARN — never assume the source is at ground.
+  Same rule for `Vds = voltage(drain) - voltage(source)`.
 
 **Multi-pin connectors**:
 - VCC pins: `power_input` with `limits` dict

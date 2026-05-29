@@ -1639,3 +1639,53 @@ The scalable unit is not “one-off device JSON forever”; it is group coverage
 index row → needs-review profile draft → reviewed profile/family validator. Each stage
 has an explicit human gate, so new projects can expose gaps without pretending to verify
 parts Hardwise does not yet understand.
+
+## 2026-05-29 — MOSFET Vgs is gate-to-source, not gate-to-ground
+
+**Symptom**
+
+The try/trellis MOSFET validator (`MosfetValidator._check_vgs_range`) read
+`voltage_for_net(gate.net)` and compared that single number against the ±20 V
+abs max, calling it "Vgs". On a low-side FET it looked right. On a high-side
+FET — source on the switch node at, say, 48 V, gate bootstrapped to 58 V — it
+would read 58 V and ERROR a perfectly healthy gate drive.
+
+**Root cause**
+
+Vgs is a *differential*: `V_gate − V_source`. Gate-to-ground only equals Vgs
+when the source happens to be at ground (low-side). The old code hard-coded the
+low-side assumption. A second, quieter copy of the same bug lived in the profile
+schema: labelling the Source pin `category: "ground"` makes the generic
+`validate_pin` demand a ground net, so the high-side source would also
+false-ERROR one layer up. The validation-guidelines doc actively recommended
+`Source → ground`, so the trap was being taught forward.
+
+**Fix**
+
+Migrated MOSFET to the clean codex pattern as `validation/mosfet.py`:
+
+- `Vgs = voltage(gate) − voltage(source)`, summary always prints
+  `gate X V - source Y V` so the reference node is auditable.
+- When gate or source has no statically known voltage (PWM drive, floating
+  switch node) → WARN, explicitly "not assuming ground". Never fabricate 0 V.
+- Same differential treatment for `Vds = voltage(drain) − voltage(source)`.
+- Profile Source pin recategorised `switch_node`, abs-max limits read from the
+  profile (not hard-coded), evidence tokens attached.
+- Guidelines doc corrected: Source is `switch_node`, with the Vgs rule spelled
+  out so the next three-terminal family inherits the right reference.
+
+**Verification**
+
+- `uv run pytest tests/validation/test_mosfet.py -v` → 6 passed. The decisive
+  case (`test_highside_vgs_uses_source_reference`) sets SW=48 V, gate=58 V and
+  asserts Vgs=10 V PASS — it would ERROR under the old gate-to-ground logic, so
+  the test has teeth.
+- `uv run pytest -q` → 373 passed, 7 deselected. `uv run ruff check .` → clean.
+
+**Takeaway**
+
+For any three-terminal active device, the control voltage is referenced to a
+device pin, not to the board ground. Encode the reference node in both the
+arithmetic and the summary string, and WARN instead of assuming a default when
+the reference floats. A wrong default in a *spec doc* propagates to every future
+family — fix the doc, not just the code.

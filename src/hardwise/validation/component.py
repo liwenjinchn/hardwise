@@ -57,4 +57,8 @@ def _validate_component_topology(
         from hardwise.validation.connector import validate_connector
 
         return validate_connector(component, profile, design)
+    if family == "mosfet":
+        from hardwise.validation.mosfet import validate_mosfet
+
+        return validate_mosfet(component, profile, design)
     return []

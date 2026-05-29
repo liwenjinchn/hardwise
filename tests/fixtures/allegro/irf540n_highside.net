@@ -1,0 +1,9 @@
+$PACKAGES
+  ! 'TO220' ! IRF540N ; Q1
+  ! 'R0805' ! 100R ; R_LOAD
+$NETS
+  'BST_GATE' ; Q1.1
+  '+48V' ; Q1.2
+  'SW' ; Q1.3, R_LOAD.1
+  'GND' ; R_LOAD.2
+$END
