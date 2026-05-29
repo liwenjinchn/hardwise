@@ -20,6 +20,9 @@ dist/
 .idea/
 .claude/
 .codex_work/
+# AI coding-tool local config (Codex CLI / agents) — not part of Hardwise
+.codex/
+.agents/
 .DS_Store
 *.swp
 
