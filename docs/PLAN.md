@@ -174,6 +174,43 @@ After Gate B, pull the useful parts of closeout forward: README, GitHub, resume,
 
 ---
 
+### DR-011 — Post-migration priority is the agent↔validator bridge, not more families
+**Date**: 2026-05-29
+**Context**: Codebase audit on the `codex/migrate-codex-mainline` product trunk after the diode/connector/MOSFET family migration. Two findings drive this record:
+
+1. **Two parallel pipelines that do not connect.** Pipeline A is `hardwise review <kicad>` — checklist rules (R001/R002/R003/DS001) plus the Anthropic-format tool-use loop in `agent/runner.py` exposing four tools (`list_components`, `get_component`, `get_nc_pins`, `search_datasheet`). Pipeline B is the `design-validator-ui` / `report-validator-ui` workbench — the deterministic `validation/` family validators (buck, gate_driver, mcu, i2c_mux, diode, connector, mosfet). `agent/` has **zero** references to `validation/`; none of the four agent tools call a family validator. The strongest deterministic work (the family validators) is unreachable from the agent that is supposed to be the product's "AI hardware review agent".
+2. **Datasheet profiles are hand-authored; no real PDF has been ingested.** Every `data/datasheet_profiles/*.json` cites synthetic evidence tokens like `datasheet:irf540n.pdf#p1`, but no such PDF exists on disk. The `pdfplumber → chroma → search_datasheet` ingest path is real code but has never been exercised on a real public datasheet end-to-end, so provenance is *claimed* rather than *proven*.
+
+**Decision**: After the validator-family migration, the next two work blocks are, in priority order:
+- **Phase 1 — agent↔validator bridge (highest narrative leverage).** Add a `run_component_validation(refdes)` tool that lets the agent call `validate_component_against_profile`, receive structured PASS/WARN/ERROR, and assemble evidence-carrying findings. This fuses pipelines A and B into one "AI hardware review agent" story.
+- **Phase 2 — real datasheet evidence chain (highest credibility leverage).** Ingest one real public PDF (L78 or SS34 are public) through the existing ingest path so at least the `abs_max` facts carry real `#pN` page tokens, turning provenance from claimed into proven. Closes the Slice 3 anchor.
+
+Continuing to add device families (BJT, P-channel MOSFET) is **lower** leverage than either bridge and is explicitly deprioritised until Phase 1+2 land.
+
+**Why**: The DJI JD pitch is "AI agent for hardware efficiency". The audit shows the agent and the validators are two separate demos; the single highest-value change is making the agent actually drive the deterministic validators. Real provenance is the second pillar of the trust story (Refdes Guard being the first). Both are收口 / closure work on existing assets, not new scope — they stay inside the pre-Layout schematic-review node (DR-007).
+
+**Scope boundary**: Phase 1 wires existing components together; it adds no PCB, boardview, placement, routing, PLM, pricing, or simulation surface. Phase 2 uses only public datasheets already cited by the profiles. The bridge tool returns structured nulls for unknown refdes/profile, consistent with the tools-never-fabricate rule.
+
+**When to revisit**: If Phase 1 reveals the agent loop needs structural change to consume validator output (e.g. a new evidence shape), capture it as a follow-up DR. If real-PDF ingest proves a profile's hand-authored facts wrong, fix the profile and log it in `learning_log.md`.
+
+---
+
+## Post-migration roadmap (toward Gate B submission)
+
+The validator-family work is late-stage closure, not early build. This roadmap sequences the remaining work by leverage on the DJI submission narrative (DR-011). Each phase keeps the slice-acceptance template: one CLI/demo artifact, green `pytest` + `ruff`, an `interview_qa.md` touch, and a `learning_log.md` entry.
+
+| Phase | Goal | Key deliverable | Ship gate | Leverage |
+|---|---|---|---|---|
+| 0 | Housekeeping | Archive the two `in_progress` Trellis tasks; confirm DS001 runs end-to-end in `review` | No stale in-progress tasks; DS001 produces a finding on a profiled component | low, fast |
+| 1 | **Agent↔validator bridge** | `run_component_validation(refdes)` tool + `agent/runner.py` wiring + one end-to-end test where the agent validates a single component and returns an evidence-carrying finding | Agent run on a public/synthetic project calls a family validator and surfaces structured PASS/WARN/ERROR with source tokens | **highest** |
+| 2 | **Real datasheet evidence chain** | One real public PDF (L78 or SS34) ingested via `pdfplumber → chroma`; at least one profile's `abs_max` fact carries a real `#pN` token; `search_datasheet` returns a real hit | A finding cites a real datasheet page, not a synthetic token; Slice 3 anchor closed | **high** |
+| 3 | BJT family + MOSFET finish | `validation/bjt.py` reusing the reference-node pattern (Vbe = base − emitter); P-channel / body-diode notes as backlog | BJT fixture catches a base-drive issue; dispatch stays topology_family-only | medium |
+| 4 | End-to-end demo + narrative | Screencast on a public controller board: agent review → validator call → datasheet-cited finding → HTML workbench; update `interview_qa.md` + resume bullet | Reproducible public demo; submission materials current | = Gate B |
+
+**Sequencing note**: Phase 1 and Phase 2 are the two pieces that turn the "AI agent for hardware review" pitch into a real demo; both rank above adding more families (Phase 3). Phase 0 is a sub-hour warm-up. Phase 4 is the submission close.
+
+---
+
 ## Day 1 retrospective (summary)
 
 **Shipped**:
@@ -219,3 +256,4 @@ After Gate B, pull the useful parts of closeout forward: README, GitHub, resume,
 - 2026-05-28 — Design-validator workbench entry shipped: `design-validator-ui <netlist_or_pst> <bom>` auto-matches BOM identities against local structured profiles, runs deterministic validation for matched components, writes the screenshot-like static workbench HTML, and optionally writes markdown/JSON project validation index sidecars. It keeps `report-validator-ui-batch` for explicit target control, but gives the product demo a one-command project-level entry. It remains a local static artifact: no upload backend, account quota, hosted app state, `.brd`, boardview, placement, routing, PCB geometry, live supplier lookup, PLM, lifecycle, pricing, or availability.
 - 2026-05-28 — V3.10 STM32G030 MCU/SWD validation shipped: `data/datasheet_profiles/stm32g030c8t6.json` adds a public structured MCU fixture subset, and `validation/mcu.py` adds component-level checks for VDD/VDDA/VBAT, NRST, BOOT0, SWDIO/SWCLK, and simple GPIO connectivity. The synthetic `stm32g030_mcu` fixture validates `U8` and reports overall `ERROR` for swapped `SWDIO/SWCLK`; the mixed controller power-stage fixture lets `design-validator-ui` show `U1 PASS`, `U12 ERROR`, `U3 ERROR`, and `U8 ERROR` in one workbench. It adds no firmware, clock-tree, full alternate-function matrix, timing, PCB/layout, supplier/PLM, `.brd`, boardview, placement, routing, or PCB geometry scope.
 - 2026-05-28 — V3.11 zero-profile coverage workbench shipped: `design-validator-ui` now succeeds even when profile candidate matching produces zero validated rows. It renders a coverage/gap HTML artifact, writes markdown/JSON index sidecars, reports `validated=0` with PASS/WARN/ERROR all zero, and surfaces `no_result / ambiguous / manual_needed` rows without fabricating electrical judgement. It adds no new profiles, validation families, parsers, datasheet search, supplier/PLM scope, or PCB/layout scope.
+- 2026-05-29 — Validator-family migration (codex mainline trunk): diode + connector families (`ae04a51`), redundant MPN dispatch fallbacks removed so dispatch is uniformly `topology_family`-driven (`d318419`), and MOSFET family with gate-to-source Vgs (`b0de983`). MOSFET fix: `Vgs = V_gate − V_source` (not gate-to-ground), profile Source recategorised `switch_node`, WARN instead of assuming ground when the reference floats; see `docs/learning_log.md` 2026-05-29. DR-011 added: post-migration priority is the agent↔validator bridge (Phase 1) and real datasheet evidence chain (Phase 2), ranked above adding more families. `uv run pytest -q` → 373 passed; `uv run ruff check .` → clean.
