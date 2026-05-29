@@ -1,0 +1,44 @@
+{
+  "part_number": "SS34",
+  "description": "Schottky Diode, 40V, 3A, SMA",
+  "abs_max": {
+    "reverse_voltage": 40.0,
+    "forward_current": 3.0,
+    "power_dissipation": 1.5
+  },
+  "recommended": {
+    "topology_family": "diode",
+    "forward_voltage_typical": 0.55,
+    "reverse_current_typical": 0.2
+  },
+  "pin_function": {
+    "1": "Cathode (band end, positive terminal)",
+    "2": "Anode (negative terminal)"
+  },
+  "pins": [
+    {
+      "name": "Cathode",
+      "number": "1",
+      "category": "switch_node",
+      "function": "Cathode terminal; connects to higher voltage side",
+      "evidence": ["datasheet:ss34.pdf#p1"]
+    },
+    {
+      "name": "Anode",
+      "number": "2",
+      "category": "switch_node",
+      "function": "Anode terminal; connects to lower voltage side",
+      "evidence": ["datasheet:ss34.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "abs_max.reverse_voltage": "datasheet:ss34.pdf#p1",
+    "abs_max.forward_current": "datasheet:ss34.pdf#p1",
+    "recommended.forward_voltage_typical": "datasheet:ss34.pdf#p2",
+    "pin_function.1": "datasheet:ss34.pdf#p1",
+    "pin_function.2": "datasheet:ss34.pdf#p1"
+  },
+  "extracted_at": "2026-05-28T00:00:00Z",
+  "extracted_model": "claude-opus-4.6",
+  "schema_version": "v2"
+}

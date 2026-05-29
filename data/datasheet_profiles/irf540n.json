@@ -1,0 +1,59 @@
+{
+  "part_number": "IRF540N",
+  "description": "N-Channel MOSFET, 100V, 33A, TO-220",
+  "abs_max": {
+    "vds": 100.0,
+    "vgs": 20.0,
+    "id": 33.0,
+    "power_dissipation": 94.0
+  },
+  "recommended": {
+    "topology_family": "mosfet",
+    "vgs_typical": 10.0,
+    "vgs_threshold_min": 2.0,
+    "vgs_threshold_max": 4.0,
+    "rds_on_typical": 0.077
+  },
+  "pin_function": {
+    "1": "Gate (control input)",
+    "2": "Drain (high-side output)",
+    "3": "Source (low-side/ground reference)"
+  },
+  "pins": [
+    {
+      "name": "Gate",
+      "number": "1",
+      "category": "analog_input",
+      "function": "Gate control input; voltage controls channel conduction",
+      "evidence": ["datasheet:irf540n.pdf#p1"]
+    },
+    {
+      "name": "Drain",
+      "number": "2",
+      "category": "switch_output",
+      "function": "Drain terminal; connects to high-side load or inductor",
+      "evidence": ["datasheet:irf540n.pdf#p1"]
+    },
+    {
+      "name": "Source",
+      "number": "3",
+      "category": "ground",
+      "function": "Source terminal; typically connects to ground or current sense resistor",
+      "evidence": ["datasheet:irf540n.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "abs_max.vds": "datasheet:irf540n.pdf#p1",
+    "abs_max.vgs": "datasheet:irf540n.pdf#p1",
+    "abs_max.id": "datasheet:irf540n.pdf#p1",
+    "recommended.vgs_typical": "datasheet:irf540n.pdf#p2",
+    "recommended.vgs_threshold_min": "datasheet:irf540n.pdf#p2",
+    "recommended.vgs_threshold_max": "datasheet:irf540n.pdf#p2",
+    "pin_function.1": "datasheet:irf540n.pdf#p1",
+    "pin_function.2": "datasheet:irf540n.pdf#p1",
+    "pin_function.3": "datasheet:irf540n.pdf#p1"
+  },
+  "extracted_at": "2026-05-28T00:00:00Z",
+  "extracted_model": "claude-opus-4.6",
+  "schema_version": "v2"
+}

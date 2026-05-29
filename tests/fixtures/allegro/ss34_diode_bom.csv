@@ -1,0 +1,3 @@
+Reference,Value,Footprint,Description
+D1,SS34,SMA,Schottky diode
+R_LOAD,100R,0805,Load resistor

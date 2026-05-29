@@ -62,4 +62,16 @@ def _validate_component_topology(
 
         validator = OpAmpValidator(component, design)
         return validator.validate()
+    if profile.part_number.upper() == "IRF540N" or family == "mosfet":
+        from hardwise.validation.mosfet import validate_mosfet
+
+        return validate_mosfet(component, profile, design)
+    if profile.part_number.upper() == "SS34" or family == "diode":
+        from hardwise.validation.diode import validate_diode
+
+        return validate_diode(component, profile, design)
+    if profile.part_number.upper() == "CONN_2X5" or family == "connector":
+        from hardwise.validation.connector import validate_connector
+
+        return validate_connector(component, profile, design)
     return []

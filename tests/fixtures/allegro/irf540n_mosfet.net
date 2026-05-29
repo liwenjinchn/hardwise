@@ -1,0 +1,9 @@
+$PACKAGES
+  ! 'TO220' ! IRF540N ; Q1
+  ! 'R0805' ! 100R ; R_LOAD
+$NETS
+  '+10V' ; Q1.1
+  'DRAIN_NET' ; Q1.2, R_LOAD.1
+  '+12V' ; R_LOAD.2
+  'GND' ; Q1.3
+$END

@@ -1,0 +1,23 @@
+$PACKAGES
+  ! 'CONN_2X5' ! CONN_2X5 ; J1
+  ! 'R0805' ! 10K ; R_PULLUP
+  ! 'R0805' ! 10K ; R_PULLDOWN
+  ! 'R0805' ! 10K ; R_SIG2
+  ! 'R0805' ! 10K ; R_SIG3
+  ! 'R0805' ! 10K ; R_SIG4
+  ! 'R0805' ! 10K ; R_SIG5
+  ! 'R0805' ! 10K ; R_SIG6
+  ! 'R0805' ! 10K ; R_SIG7
+  ! 'R0805' ! 10K ; R_SIG8
+$NETS
+  '+5V' ; J1.1, R_PULLUP.1
+  'SIG1_NET' ; J1.2, R_PULLUP.2
+  'SIG2_NET' ; J1.3, R_SIG2.1
+  'SIG3_NET' ; J1.4, R_SIG3.1
+  'GND' ; J1.5, R_PULLDOWN.1
+  'SIG4_NET' ; J1.6, R_SIG4.1
+  'SIG5_NET' ; J1.7, R_SIG5.1
+  'SIG6_NET' ; J1.8, R_SIG6.1
+  'SIG7_NET' ; J1.9, R_SIG7.1
+  'SIG8_NET' ; J1.10, R_SIG8.1
+$END

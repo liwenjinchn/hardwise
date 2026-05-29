@@ -1,0 +1,4 @@
+Reference,Value,Footprint,Description
+Q1,IRF540N,TO220,N-channel MOSFET
+R_GATE,10R,0805,Gate resistor
+R_LOAD,100R,0805,Load resistor

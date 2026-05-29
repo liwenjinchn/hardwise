@@ -324,6 +324,8 @@ def _voltage_from_net_name(net_name: str) -> float | None:
     upper = net_name.upper()
     if "VBUS" in upper:
         return 5.0
+    if upper in {"GND", "AGND", "DGND", "PGND", "HV_GND", "SGND"}:
+        return 0.0
     match = re.search(r"([+-]?)(\d+)(?:V|P)(\d+)?", upper)
     if match is None:
         return None
