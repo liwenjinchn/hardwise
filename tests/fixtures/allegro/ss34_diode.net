@@ -1,0 +1,7 @@
+$PACKAGES
+  ! 'SMA' ! SS34 ; D1
+  ! 'R0805' ! 100R ; R_LOAD
+$NETS
+  '+12V' ; D1.1, R_LOAD.1
+  'GND' ; D1.2, R_LOAD.2
+$END

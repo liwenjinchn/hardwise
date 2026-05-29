@@ -25,6 +25,20 @@ def validate_xxx(
     ...
 ```
 
+### Component-family dispatch
+
+New validators MUST dispatch by `recommended.topology_family` only. Do not add
+new `profile.part_number.upper() == "..."` fallback branches; MPNs belong in
+profile data and candidate matching, not in dispatcher control flow.
+
+```python
+family = str(profile.recommended.get("topology_family", "")).lower()
+if family == "connector":
+    from hardwise.validation.connector import validate_connector
+
+    return validate_connector(component, profile, design)
+```
+
 ### Pin lookup
 
 ```python
@@ -49,6 +63,18 @@ voltage = voltage_from_net_name(pin.net)           # ❌ doesn't exist
 - `"VBUS"` → `5.0`
 - `"GND"`, `"AGND"`, `"DGND"` → `0.0` (ground nets)
 - `"SIGNAL_NET"` → `None` (cannot infer)
+
+### Ground-net classification
+
+```python
+from hardwise.validation.pins import is_ground_net
+
+if is_ground_net(pin.net): ...      # ✅ shared helper
+pin.net.upper() in {"GND", ...}     # ❌ duplicated local ground list
+```
+
+`is_ground_net()` recognizes common ground aliases and tokenized variants such
+as `HV_GND`. Validators must import it instead of maintaining local sets.
 
 ### Net connectivity (feedback / shared components)
 

@@ -1,0 +1,11 @@
+Reference,Value,Footprint,Description
+J1,CONN_2X5,CONN_2X5,2x5 pin header connector
+R_PULLUP,10K,0805,Pullup resistor
+R_PULLDOWN,10K,0805,Pulldown resistor
+R_SIG2,10K,0805,Signal 2 resistor
+R_SIG3,10K,0805,Signal 3 resistor
+R_SIG4,10K,0805,Signal 4 resistor
+R_SIG5,10K,0805,Signal 5 resistor
+R_SIG6,10K,0805,Signal 6 resistor
+R_SIG7,10K,0805,Signal 7 resistor
+R_SIG8,10K,0805,Signal 8 resistor

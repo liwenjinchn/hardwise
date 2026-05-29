@@ -10,6 +10,7 @@ from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.types import Component, Design, Net, Pin
 from hardwise.validation import validate_component_against_profile
+from hardwise.validation.pins import voltage_for_net
 
 
 def _profile() -> DatasheetProfile:
@@ -142,6 +143,12 @@ def test_validate_component_warns_when_input_voltage_unknown() -> None:
     vin = report.pin_results[0]
     assert vin.status == "WARN"
     assert "cannot be inferred" in vin.summary
+
+
+def test_voltage_for_net_recognizes_ground_alias() -> None:
+    component = _component(gnd_net="HV_GND")
+
+    assert voltage_for_net("HV_GND", _design(component)) == 0.0
 
 
 def test_validate_component_errors_when_profiled_pin_missing() -> None:

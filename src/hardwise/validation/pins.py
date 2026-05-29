@@ -101,7 +101,7 @@ def _validate_ground_pin(
     pin_profile: PinProfile,
     evidence: list[str],
 ) -> PinValidation:
-    is_ground = _is_ground_net(net_name)
+    is_ground = is_ground_net(net_name)
     return PinValidation(
         pin_number=pin_profile.number,
         pin_name=pin_profile.name,
@@ -117,7 +117,9 @@ def _validate_ground_pin(
     )
 
 
-def _is_ground_net(net_name: str) -> bool:
+def is_ground_net(net_name: str) -> bool:
+    """Return whether a net name is a recognized ground reference."""
+
     tokens = {token for token in re.split(r"[^A-Z0-9]+", net_name.upper()) if token}
     if tokens & {"GND", "AGND", "DGND", "PGND"}:
         return True
@@ -329,6 +331,8 @@ def _voltage_for_net(net_name: str, design: Design) -> float | None:
     net = design.nets.get(net_name)
     if net is not None and net.voltage_hint is not None:
         return net.voltage_hint
+    if is_ground_net(net_name):
+        return 0.0
     return _voltage_from_net_name(net_name)
 
 
