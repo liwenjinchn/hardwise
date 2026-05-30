@@ -1958,3 +1958,55 @@ In this repo, package `__init__` files should keep cross-layer convenience
 exports lazy when the target module depends back on another layer. Shared
 context builders are especially likely to surface these cycles because they
 import loader, validation, document, and report modules together.
+
+## 2026-05-30 — In-memory SQLite store is per-thread; the live workbench server hit it
+
+**Symptom**
+
+The Allegro Copilot workbench passed all 394 tests and the fake-mode smoke, but the
+first `serve-workbench` run against a real model split in two: asking about the
+selected component (U3) answered perfectly, while "is U999 on the board?" came back
+as a tool "database error (registry not initialized)" instead of a clean
+`not_found`. `run_component_validation` worked; `get_component` failed.
+
+**Root cause**
+
+`create_store(":memory:")` builds the engine with SQLAlchemy's default pool for
+in-memory SQLite, which is `SingletonThreadPool` — one connection *per thread*, and
+each `:memory:` connection is a distinct database. uvicorn runs sync FastAPI routes
+in a worker threadpool, but `populate_from_registry` ran on the CLI startup thread.
+So every request thread saw its own empty in-memory DB, and the session-backed tools
+(`get_component` / `list_components` / `get_nc_pins`, all via `query_components` /
+`query_nc_pins`) raised `SQLite objects created in a thread can only be used in that
+same thread`. `run_component_validation` and the Refdes Guard read the in-memory
+`Design` / `BoardRegistry` (plain Python, thread-safe), so they kept working — which
+is exactly why the headline U3 answer and the `⟨?U999⟩` wrap looked fine and masked
+the break. Fake-mode and unit tests never caught it because they call the service in
+a single thread; only the real threadpool server surfaced it.
+
+**Fix**
+
+`create_store` now passes `connect_args={"check_same_thread": False}` for any SQLite
+URL, and for `:memory:` also pins `poolclass=StaticPool` so a single shared
+connection backs the one in-memory database across all threads. File-based SQLite
+(`ask` / `review` default `reports/<project>.db`, single-threaded) is unaffected
+beyond the harmless relaxed thread check; non-SQLite backends get no extra kwargs.
+Added `test_in_memory_store_is_thread_safe` — populate on one thread, read on
+another — as a regression.
+
+**Verification**
+
+- `uv run pytest -q` -> 395 passed, 7 deselected (+1). `uv run ruff check .` -> clean.
+- After restarting `serve-workbench` against the real model, `U999` returned a clean
+  `not_found` (no DB error) with the guard still wrapping `⟨?U999⟩`, and an NC-pin
+  question drove `get_nc_pins` + `get_component` with no thread error.
+
+**Takeaway**
+
+"It passes tests and the fake smoke" is not "it runs under the real server".
+In-memory SQLite is thread-affine by default; the moment a session is shared across a
+web framework's threadpool it needs `StaticPool` + `check_same_thread=False`. The bug
+hid behind the one tool (`run_component_validation`) that bypassed the session — a
+partially-working path can mask a broken sibling. Single-threaded fake/unit coverage
+cannot prove a threadpool contract; one real `serve-workbench` call was the actual
+verification.
