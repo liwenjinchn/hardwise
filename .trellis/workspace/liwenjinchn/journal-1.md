@@ -71,3 +71,36 @@ Closed DR-011 Phase 2 by staging the public L78 PDF, verifying page-4 abs-max pr
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: BJT family validation
+
+**Date**: 2026-05-30
+**Task**: BJT family validation
+**Branch**: `codex/migrate-codex-mainline`
+
+### Summary
+
+Shipped the 2N3904 BJT validator with directional VEBO reverse-breakdown checks, VCEO checks, topology-family dispatch, fixtures, docs, and validation spec updates.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bfcca24` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
