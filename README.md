@@ -133,7 +133,7 @@ Produces:
 report: reports/pic_programmer-YYYYMMDD.md   (29 findings, 121 components reviewed with DS001)
 report: reports/pic_programmer-YYYYMMDD.html (28 finding R001/R002/R003 visual report with --format html)
 store:  reports/pic_programmer.db            (121 components, 77 NC pins)
-memory: memory/rules.md                      (2 candidate rule(s) appended)
+consolidator: 3 candidate rule(s) appended to memory/rules.md
 trace:  reports/trace.jsonl                  (append-only run ledger)
 ```
 

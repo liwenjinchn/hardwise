@@ -1895,3 +1895,36 @@ Submission closeout is not just making the demo look polished. It is where
 overclaims get removed. A two-track story is stronger than a fake single-track
 story because it names the actual data boundary and still shows the same trust
 contract on both sides.
+
+## 2026-05-30 — README review smoke commands should run sequentially or isolate DB output
+
+**Symptom**
+
+During submission self-check, running the two README `hardwise review`
+quickstart commands in parallel made the HTML review process fail with
+`sqlite3.OperationalError: table components already exists`.
+
+**Root cause**
+
+Both commands use the default relational store path
+`reports/pic_programmer.db`. The CLI removes and recreates that SQLite file for
+each run. Two concurrent review processes can interleave unlink/create/table
+creation against the same path, so one process observes a half-recreated store.
+
+**Fix**
+
+Reran the README quickstart commands sequentially; both succeeded:
+
+- `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component`
+  -> 29 findings, 121 components reviewed.
+- `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html`
+  -> 28 findings, 121 components reviewed.
+
+Also refreshed README's quickstart output text to match the current CLI
+`consolidator: 3 candidate rule(s)` line.
+
+**Takeaway**
+
+Default report artifacts are convenient for human sequential demos, not
+parallel smoke tests. When automating multiple `review` commands at once, give
+each run an isolated report/store output path or run them sequentially.
