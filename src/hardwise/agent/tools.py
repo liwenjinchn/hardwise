@@ -6,19 +6,17 @@ may not find their target return a discriminated union so the agent reads
 the CLAUDE.md rule "Tools return structured null/unknown, never fabricated"
 on the agent side.
 
-Four tools ship in this module, wired against the Slice 3 stores:
+Five tools ship in this module, wired against the Slice 3 stores and the
+deterministic validator boundary:
 
   - list_components   → relational store query, optional filters
   - get_component     → relational store + registry; returns closest_matches on miss
   - get_nc_pins       → relational store query, optional refdes filter
   - search_datasheet  → vector store query, optional part_ref filter
+  - run_component_validation → IR Design + explicit profile target validation
 
-`TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[...]` shape — the
-future runner.py registers it directly with `messages.create(tools=...)` and
-no further glue code is needed.
-
-CLI integration is deliberately out of scope here; this module is library-only
-and unit-testable in isolation. See `docs/PLAN.md` Slice 4 prep entry.
+`TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[...]` shape; runner.py
+registers it directly with `messages.create(tools=...)`.
 """
 
 from __future__ import annotations

@@ -1843,3 +1843,55 @@ Three-terminal validators share the reference-node discipline, not the same
 math. MOSFET `Vgs` is symmetric; BJT `VEBO` is directional. When adding a new
 family, copy the test philosophy from a nearby validator, but re-derive the
 device physics before copying the inequality.
+
+## 2026-05-30 — Phase 4 demo needs two public input tracks, not one fake board
+
+**Symptom**
+
+The first Phase 4 PRD said "a single documented demo sequence" that produced an
+agent-validation trace, datasheet-cited finding, and HTML workbench. That was
+too neat. The current repository has no public board that is both a KiCad
+project for `review` / `ask` and an Allegro netlist+BOM project for
+`design-validator-ui`.
+
+**Root cause**
+
+The two strongest surfaces intentionally consume different shapes:
+
+- KiCad `pic_programmer` powers the agent/review track and carries U3 / L78 /
+  DS001 with `datasheet:l78.pdf#p4`.
+- Allegro `mixed_controller_power_stage` powers the static project workbench
+  and shows multi-family validation (`U1` PASS, `U12`/`U3`/`U8` ERROR).
+
+Forcing them into one linear board story would overclaim the artifact and make
+the demo brittle under interview questioning.
+
+**Fix**
+
+- Reframed Phase 4 as "one trust backbone across two public input tracks":
+  registry object -> deterministic validator/rule -> evidence token -> guarded
+  agent/report explanation.
+- Rewrote `docs/demo.md` and `docs/demo.html` around that framing.
+- Refreshed README, docs index, JD alignment, and interview Q&A so the current
+  submission story no longer points first at the older V1.3 MPQ8626/PCA9548A
+  / 4010-component narrative.
+- Kept `hardware-demo.html`, `midpoint_review.*`, and
+  `interview_narrative.*` as historical/supporting pages instead of blanket
+  rewriting every HTML file.
+
+**Verification**
+
+- `uv run pytest tests/agent/test_validation_bridge.py -q` -> 6 passed.
+- `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --output /tmp/hardwise-phase4-review.md`
+  -> 29 findings, 121 components reviewed; U3 / DS001 cites
+  `datasheet:l78.pdf#p4`.
+- `uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --output /tmp/hardwise-phase4-workbench.html --index-output /tmp/hardwise-phase4-index.md --index-json /tmp/hardwise-phase4-index.json`
+  -> 25 components, 4 validated, BOM matched 25, PASS/WARN/ERROR = 1/0/3,
+  manual = 21.
+
+**Takeaway**
+
+Submission closeout is not just making the demo look polished. It is where
+overclaims get removed. A two-track story is stronger than a fake single-track
+story because it names the actual data boundary and still shows the same trust
+contract on both sides.

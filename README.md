@@ -24,26 +24,34 @@ GitHub shows HTML files as source. Use the screenshot above for a quick scan, or
 - **Hardware demo:** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
 - **Technical snapshot:** [`docs/demo.html`](docs/demo.html)
 - **Short read:** [`docs/demo.md`](docs/demo.md)
-- **Reproduce locally:** `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html`
+- **Reproduce locally:** `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component`
 
 ## What the MVP proves
 
-```bash
-$ uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
-report: reports/pic_programmer-YYYYMMDD.md (28 findings, 121 components reviewed)
-store:  reports/pic_programmer.db (121 components, 77 NC pins)
-consolidator: 2 candidate rule(s) appended to memory/rules.md
+Phase 4 is framed as one trust backbone across two public input tracks, not one board pretending to cover every command surface. The backbone is:
+
+```text
+registry object -> deterministic validator/rule -> evidence token -> guarded agent/report explanation
 ```
 
-On the public KiCad demo project `pic_programmer`, Hardwise runs three deterministic schematic-review rules:
+The KiCad track proves the agent/review/evidence path:
+
+```bash
+$ uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component
+report: reports/pic_programmer-YYYYMMDD.md (29 findings, 121 components reviewed)
+store:  reports/pic_programmer.db (121 components, 77 NC pins)
+```
+
+On the public KiCad demo project `pic_programmer`, Hardwise runs deterministic schematic-review rules:
 
 - R001: new-component candidate check
 - R002: capacitor rated-voltage field completeness
 - R003: NC-pin handling, with connector/socket aggregation
+- DS001: L78 regulator Vin absolute-maximum evidence check
 
-The current sample report has **28 findings**: 6 R002 capacitor-voltage-field findings and 22 R003 NC-pin findings after noise reduction. Each finding carries a `sch:<file>#<refdes>` evidence token; NC pins are coordinate-matched from KiCad `no_connect` markers rather than model-generated. The run also writes a relational store, a trace ledger, and human-gated candidate rules for future review.
+The current sample report has **29 findings**: 6 R002 capacitor-voltage-field findings, 22 R003 NC-pin findings after noise reduction, and one DS001 `U3` / L7805 finding that cites the reviewed profile token `datasheet:l78.pdf#p4`. DS001 stays `reviewer_to_confirm` because the current schematic path cannot infer the applied Vin rail; it does not guess. Each finding carries a source token; NC pins are coordinate-matched from KiCad `no_connect` markers rather than model-generated.
 
-For the screenshot-style design-validator flow, the CLI also supports project-level validation index output plus a static multi-component workbench:
+The Allegro track proves the static project workbench:
 
 ```bash
 uv run hardwise design-validator-ui \
@@ -54,7 +62,7 @@ uv run hardwise design-validator-ui \
   --index-json reports/controller-design-validator-index.json
 ```
 
-That path auto-matches public datasheet profiles by BOM identity and writes a single static HTML workbench with a top summary, component list, validation section, and report detail. The current controller fixture reports **25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, and 21 manual/no-profile rows**. If a real project has zero local profile matches, the same command still emits a coverage/gap workbench plus optional markdown / JSON index sidecars instead of inventing validation results.
+That path auto-matches public datasheet profiles by BOM identity and writes a single static HTML workbench with a top summary, component list, validation section, and report detail. The current controller fixture reports **25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, and 21 manual/no-profile rows**. U1/L7805 repeats the L78 evidence path in the workbench, while U12/XL1509, U3/EG2132, and U8/STM32G030 show deterministic topology/debug-interface errors. If a project has zero local profile matches, the same command still emits a coverage/gap workbench plus optional markdown / JSON index sidecars instead of inventing validation results.
 
 The public eval pack adds a wider smoke path:
 
@@ -97,7 +105,7 @@ Hardwise's main claim is narrow: **the model is not allowed to invent board obje
 |---|-----------|--------------|--------|
 | 1 | **Refdes Guard** | User-visible refdes-like tokens (`U1`, `R10`, `J5`) must hit the parsed EDA registry; unknowns are wrapped before output. | Live: `src/hardwise/guards/refdes.py` |
 | 2 | **Evidence Ledger** | Findings without evidence tokens are dropped. No token, no claim. | Live: `src/hardwise/guards/evidence.py` |
-| 3 | **Structured Tool Loop** | Agent answers schematic questions through `list_components`, `get_component`, `get_nc_pins`, and `search_datasheet`; unknown refdes return structured misses instead of fabricated facts. | Live: `src/hardwise/agent/runner.py`, `src/hardwise/agent/tools.py` |
+| 3 | **Structured Tool Loop** | Agent answers through `list_components`, `get_component`, `get_nc_pins`, `search_datasheet`, and `run_component_validation`; unknown refdes/profile/design states return structured misses instead of fabricated facts. | Live: `src/hardwise/agent/runner.py`, `src/hardwise/agent/tools.py` |
 
 Supporting mechanisms are present but secondary to the demo story: Sleep Consolidator records human-gated candidate rules, Tiered Model Routing keeps model IDs in env slots, and Prompt Caching has measured cache-read hits on the configured MiMo proxy. They are engineering completeness, not the core product claim.
 
@@ -115,15 +123,15 @@ The repository ships with a public KiCad sample under `data/projects/pic_program
 ### Review a schematic
 
 ```bash
-uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component
 uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html
 ```
 
 Produces:
 
 ```text
-report: reports/pic_programmer-YYYYMMDD.md   (28 findings, 121 components reviewed)
-report: reports/pic_programmer-YYYYMMDD.html (same data, Chinese visual report with --format html)
+report: reports/pic_programmer-YYYYMMDD.md   (29 findings, 121 components reviewed with DS001)
+report: reports/pic_programmer-YYYYMMDD.html (28 finding R001/R002/R003 visual report with --format html)
 store:  reports/pic_programmer.db            (121 components, 77 NC pins)
 memory: memory/rules.md                      (2 candidate rule(s) appended)
 trace:  reports/trace.jsonl                  (append-only run ledger)
@@ -136,7 +144,7 @@ uv run hardwise ask data/projects/pic_programmer "U4 has how many NC pins?"
 uv run hardwise ask data/projects/pic_programmer "What is U999?"
 ```
 
-The agent has four structured tools: `list_components`, `get_component`, `get_nc_pins`, and `search_datasheet`. Unknown objects return structured misses such as `found=false` plus closest matches; tools never fabricate missing refdes.
+The agent has five structured tools: `list_components`, `get_component`, `get_nc_pins`, `search_datasheet`, and `run_component_validation`. Unknown objects return structured misses such as `found=false` plus closest matches; validation without a loaded design or profile returns `not_configured` / `no_profile` instead of a fabricated verdict.
 
 ### Datasheet ingest and semantic search
 
@@ -203,8 +211,8 @@ Current MVP status:
 | 1 — R001 + Guards | Done | Finding model, Refdes Guard, Evidence Ledger |
 | 2 — R002 + Consolidator | Done | Capacitor-voltage-field check, candidate-rule memory |
 | 3 — R003 + Dual Store + Router | Done | NC-pin parser, SQLite/Chroma, datasheet ingest, tiered routing |
-| 4 — Agent Loop + Prompt Caching | Done | `hardwise ask`, four tools, live prompt-cache read hit |
-| 5 — Submission Closeout | Current focus | README/GitHub hygiene, final interview answers, resume materials |
+| 4 — Agent Loop + Prompt Caching | Done | `hardwise ask`, structured tools, live prompt-cache read hit |
+| 5 — Submission Closeout | Done | Phase 4 two-track demo narrative, README/demo/JD/interview closeout, final artifacts |
 
 The MVP intentionally stops here. R004/R005-style net-aware checks, a schematic-side net parser, a human-labeled calibration set, GitHub Action packaging, and Cadence/Allegro adapters are explicitly post-MVP. The current submission story is not "more rules"; it is a constrained design-validation workbench with registry-verified objects and evidence-gated findings.
 

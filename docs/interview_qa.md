@@ -8,7 +8,7 @@
 
 Hardwise 不是在证明“大模型可以独立评审完整硬件设计”。它证明的是一个更窄但更可信的闭环：在 pre-layout 原理图评审节点，Agent 只能通过工具查询 EDA registry 和 evidence store；所有用户可见 refdes 必须 registry-verified，所有 finding 必须有 evidence token。模型负责解释和组织证据，不能自由发明元件、pin 或 datasheet 结论。
 
-面试时优先讲这条主线：`review` 一行命令跑公开 KiCad 项目，输出带证据 token 的 report；`ask` 通过 structured tools 回答问题；`get_component("U999")` 这类 unknown path 会返回 `found=false`，而不是让模型编造。Eval Pack 只作为 regression / guardrail smoke，不包装成专家准确率 benchmark。
+面试时优先讲这条主线：Phase 4 是“一条 trust backbone，两条 public input tracks”。KiCad `pic_programmer` 轨用 `review --rules R001,R002,R003,DS001 --report-style component` 证明 registry object -> DS001/L78 `datasheet:l78.pdf#p4` -> guarded report；Allegro `mixed_controller_power_stage` 轨用 `design-validator-ui` 证明同一套 deterministic validation truth 能生成项目级 HTML workbench。`ask` / `Runner` 通过 structured tools 回答问题；`get_component("U999")` 这类 unknown path 会返回 `found=false`，而不是让模型编造。Eval Pack 只作为 regression / guardrail smoke，不包装成专家准确率 benchmark。
 
 ---
 
@@ -175,6 +175,8 @@ ComponentNotFound(
 | 2 | 5/16 | `null` | **5440** |
 
 结论要讲准：MiMo 证明了 prompt cache **read path** 确实生效，第二次几乎不再付长 prompt 的 input tokens；但它没有回传 creation 计数，`cache_creation_input_tokens` 是 `null` 而不是非零。因此当前证据不能说"creation 字段已验过非零"，只能说"cache_control 被执行、read hit 可观测；creation accounting 需要换官方 Anthropic 或另一个会暴露该字段的 endpoint 复验"。
+
+**v5.17 (Phase 4 closeout — validator bridge becomes part of the agent story)**: 工具面现在是 5 个，不是早期 4 个：`run_component_validation(refdes)` 把 agent loop 接到 deterministic validators。它不自动猜 profile：Runner 只有在注入 IR `design` 和显式 `validation_targets` 时才会返回 `validated`，否则是 `not_configured` / `no_profile` / `not_found`。`tests/agent/test_validation_bridge.py` 用 FakeAnthropic 证明模型发起 tool call 后，Runner 能派发到 `validate_component_against_profile()` 并拿回结构化 PASS/WARN/ERROR payload（6 passed，无 API key）。这就是 DR-011 Phase 1 的核心：模型不是“自己会验证硬件”，而是能调用已经存在的确定性 validator 并解释它的 evidence-backed 结果。
 
 ---
 
