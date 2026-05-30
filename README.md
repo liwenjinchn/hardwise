@@ -142,14 +142,15 @@ The agent has four structured tools: `list_components`, `get_component`, `get_nc
 
 ```bash
 # Drop a public datasheet into data/datasheets/ first.
-uv run hardwise ingest-datasheet data/datasheets/l78.pdf --part-ref U3
+# For the ST resource URL, save CD00000444.pdf locally as l78.pdf.
+uv run hardwise ingest-datasheet data/datasheets/l78.pdf --part-ref L7805
 uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
 
 # After ingesting relevant public datasheets:
 uv run hardwise review data/projects/pic_programmer --rules R003 --vector
 ```
 
-Datasheet chunks carry provenance such as `[l78.pdf p7 part=U3]`, which becomes the basis for `datasheet:<pdf>#p<N>` evidence tokens.
+Datasheet chunks carry provenance such as `[l78.pdf p4 part=L7805]`, which independently corroborates structured profile tokens such as `datasheet:l78.pdf#p4`. Rules such as DS001 read the reviewed profile JSON; they do not scrape Chroma text during `review`.
 
 ### Run the eval pack
 

@@ -1741,3 +1741,61 @@ the shape boundary, not inside either half — inject both contexts into the
 orchestrator and keep the tool a thin, non-fabricating lookup. The highest-value
 change in a mature codebase is often not new capability but connecting capability
 that already exists. (DR-011, Phase 1.)
+
+## 2026-05-30 — Real datasheet provenance is two corroborating lines, not runtime RAG extraction
+
+**Symptom**
+
+DR-011 Phase 2 originally read like one pipeline: real PDF -> Chroma ingest ->
+query -> DS001 finding token. That wording was misleading. DS001 does not
+scrape Chroma text during `review`; it reads the reviewed static
+`DatasheetProfile.evidence["abs_max.vin"]` token.
+
+**Root cause**
+
+The project had two valid evidence paths but the docs collapsed them into one.
+Line A is deterministic profile validation: `l78.json` says `abs_max.vin=35.0`
+with `datasheet:l78.pdf#p4`, and DS001 emits that token for U3. Line B is
+independent PDF provenance: the public L78 datasheet can be extracted/indexed
+with page metadata, and search should corroborate the same page. Treating Line B
+as if it dynamically generated Line A would overclaim the agent's runtime
+behavior.
+
+**Fix**
+
+- Trellis planning artifacts now state the two-line evidence model explicitly.
+- Fast tests now generate a tiny PDF and verify `extract_chunks()` preserves
+  page numbers and `datasheet:<file>#pN` tokens, then capture the exact metadata
+  handed to `ingest_chunks()` without invoking Chroma semantic ranking.
+- Chroma semantic query coverage remains slow-only, consistent with
+  `tests/store/test_vector.py`, because the default ONNX MiniLM embedder can
+  download model data on first run.
+- README, architecture notes, and interview answers now use `part_ref=L7805`
+  for datasheet identity instead of `part_ref=U3`.
+
+**Verification**
+
+- Official ST PDF web verification: `CD00000444.pdf` / L78 DS0422 Rev 38
+  (February 2025) still has "Absolute maximum ratings" on page 4, with VI =
+  35 V for VO = 5 to 18 V.
+- `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --no-consolidate --output /tmp/hardwise-phase2-ds001.md`
+  produced 29 findings and U3 / DS001 cites `datasheet:l78.pdf#p4`.
+- `uv run pytest tests/ingest/test_pdf.py tests/checklist/test_ds001.py tests/ir/test_profile.py -q`
+  -> 17 passed.
+- `uv run pytest tests/store/test_vector.py -q -m slow` -> 4 passed, keeping
+  Chroma semantic ranking in the slow lane.
+- `uv run pytest -q` -> 380 passed, 7 deselected. `uv run ruff check .` ->
+  clean.
+- After the official PDF was staged locally from
+  `/Users/liwenjin/Downloads/CD00000444.pdf` to gitignored
+  `data/datasheets/l78.pdf`, real ingest/query succeeded:
+  `ingest-datasheet` wrote 157 chunks with `part_ref=L7805`, and
+  `query-datasheet "absolute maximum input voltage"` returned top-1
+  `[l78.pdf p4 part=L7805]`.
+
+**Takeaway**
+
+For provenance demos, be precise about which layer owns the fact. A profile
+token can be independently corroborated by PDF search without being generated
+by PDF search at review time. Fast tests should lock deterministic contracts
+(page/token/metadata); embedding-backed semantic ranking belongs in slow tests.

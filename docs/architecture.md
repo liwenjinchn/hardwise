@@ -215,7 +215,7 @@ uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --no-
 uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --memory-output /tmp/rules.md
 uv run hardwise review data/projects/pic_programmer --rules R003 --db-path /tmp/pic.db
 uv run hardwise review data/projects/pic_programmer --rules R003 --trace-output /tmp/trace.jsonl
-uv run hardwise ingest-datasheet data/datasheets/l78.pdf --part-ref U3
+uv run hardwise ingest-datasheet data/datasheets/l78.pdf --part-ref L7805
 uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
 uv run hardwise report-pin-profile data/datasheet_profiles/l78.json --output reports/l78-pin-profile.md
 uv run hardwise report-component-validation tests/fixtures/allegro/l78_regulator.net U1 data/datasheet_profiles/l78.json --bom tests/fixtures/allegro/l78_regulator_bom.csv --output reports/u1-component-validation.md
@@ -237,7 +237,7 @@ uv run hardwise report-allegro-bom tests/fixtures/allegro/pst tests/fixtures/all
 
 `review` runs the requested rules over the schematic-side records, applies Refdes Guard + Evidence Ledger, writes a markdown report aligned to《SCH_review_feedback_list 汇总表》, and (by default) appends Sleep Consolidator candidates to `memory/rules.md`, populates a SQLite store at `reports/<project>.db` with components + NC pins, and appends one machine-readable run record to `trace.jsonl`. On `pic_programmer` with `--rules R001,R002,R003`, the output is 28 findings (6 R002 missing-voltage findings + 22 R003 NC findings after connector aggregation) and 2 candidate rules (R002 medium + R003 medium). `--no-consolidate` skips the memory write; `--memory-output PATH`, `--db-path PATH`, and `--trace-output PATH` redirect their respective outputs.
 
-`ingest-datasheet` chunks a PDF page-by-page and upserts into Chroma at `data/chroma/` (default), tagging every chunk with `part_ref=<refdes>`. `query-datasheet` runs a top-k semantic query and prints `[source_pdf pN part=Ux]` provenance — these are the building blocks for the Slice 4 `datasheet:<pdf>#p<N>` evidence token.
+`ingest-datasheet` chunks a PDF page-by-page and upserts into Chroma at `data/chroma/` (default), tagging every chunk with `part_ref=<component identity>`, such as `L7805`. `query-datasheet` runs a top-k semantic query and prints `[source_pdf pN part=<identity>]` provenance. This independently corroborates reviewed profile tokens such as `datasheet:l78.pdf#p4`; deterministic rules such as DS001 read the profile JSON rather than scraping Chroma text at review time.
 
 `report-pin-profile <profile.json>` writes a structured datasheet pin-profile report from `DatasheetProfile.pins`. It shows pin number/name/category/function, per-pin limits, recommended topology notes, and evidence tokens. It deliberately stops before schematic validation or PASS/WARN/ERROR judgement; V3.1 consumes these facts.
 
