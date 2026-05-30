@@ -65,6 +65,8 @@ uv run hardwise design-validator-ui \
 
 当前 mixed controller fixture 输出 **25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, 21 manual/no-profile rows**。U1/L7805 重复 L78 evidence path；U12/XL1509、U3/EG2132、U8/STM32G030 展示确定性 topology / debug-interface 错误。
 
+同一个 Allegro 工作台可以渲染一个可选的 Copilot 面板。`design-validator-ui --ai-snapshot` 把已审计的离线问答烘焙进单文件 HTML（无服务、无 key）；`serve-workbench` 起一个本地 FastAPI 服务，`--fake-ai` 模式用确定性的假 client 驱动真实 agent loop，真模型模式则连接 `.env` 里配置的任意 Anthropic-format endpoint。每条面板回答都跑同一套五工具 Runner 和同一个 Refdes Guard，所以像 `U999` 这种不存在的位号会被包成 `⟨?U999⟩` 而不是被编造出来。
+
 公开 eval pack 覆盖更宽的 smoke path：
 
 ```text
@@ -147,6 +149,24 @@ uv run hardwise ask data/projects/pic_programmer "U999 是什么器件？"
 
 Agent 有 5 个结构化工具：`list_components`、`get_component`、`get_nc_pins`、`search_datasheet`、`run_component_validation`。不存在的对象会返回结构化 miss，例如 `found=false` 和相近候选；没有加载 design 或 profile 时 validation 返回 `not_configured` / `no_profile`，工具不会编造不存在的位号或验证结论。
 
+### 带 Copilot 面板的工作台
+
+```bash
+# 离线单文件 demo（无服务、无 key）：
+uv run hardwise design-validator-ui \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --ai-snapshot --output reports/controller-workbench.html
+
+# 本地实时服务（确定性假模型，无 key）：
+uv run hardwise serve-workbench \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --fake-ai --port 8765
+```
+
+两者都渲染三栏验证工作台加右侧 Copilot 面板。离线快照把已审计问答烘焙进 HTML；实时服务暴露 `POST /api/workbench/chat`。`--fake-ai` 不需要 key 就能驱动真实 agent loop（真工具、真 Refdes Guard）；去掉它并在 `.env` 配好真模型即可走在线模式。每条回答都带一个可折叠的证据 / 工具 trace，未验证位号在显示前会被包裹。
+
 ### Datasheet ingest 和语义搜索
 
 ```bash
@@ -213,6 +233,7 @@ uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
 | 3 — R003 + Dual Store + Router | 已完成 | NC pin parser、SQLite/Chroma、datasheet ingest、tiered routing |
 | 4 — Agent Loop + Prompt Caching | 已完成 | `hardwise ask`、5 个工具、实测 prompt-cache read hit |
 | 5 — Submission Closeout | 已完成 | Phase 4 两轨 demo narrative、README/demo/JD/interview closeout、最终 artifacts |
+| Workbench — Allegro Copilot | 已完成 | `serve-workbench` 实时 agent loop + `design-validator-ui --ai-snapshot` 离线；复用五工具 Runner + Refdes Guard |
 
 MVP 到这里停止。R004/R005 式 net-aware checks、schematic-side net parser、人工标注 calibration set、GitHub Action packaging、Cadence/Allegro adapter 都明确属于 post-MVP。
 

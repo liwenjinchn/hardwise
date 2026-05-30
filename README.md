@@ -64,6 +64,8 @@ uv run hardwise design-validator-ui \
 
 That path auto-matches public datasheet profiles by BOM identity and writes a single static HTML workbench with a top summary, component list, validation section, and report detail. The current controller fixture reports **25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, and 21 manual/no-profile rows**. U1/L7805 repeats the L78 evidence path in the workbench, while U12/XL1509, U3/EG2132, and U8/STM32G030 show deterministic topology/debug-interface errors. If a project has zero local profile matches, the same command still emits a coverage/gap workbench plus optional markdown / JSON index sidecars instead of inventing validation results.
 
+The same Allegro workbench can render an optional Copilot panel. `design-validator-ui --ai-snapshot` bakes audited offline chat transcripts into the single HTML file (no server, no API key); `serve-workbench` runs a local FastAPI server whose `--fake-ai` mode drives the real agent loop with a deterministic fake client, and whose real mode talks to any Anthropic-format endpoint configured in `.env`. Every panel answer runs the same five-tool Runner and the same Refdes Guard, so an unknown refdes such as `U999` is wrapped as `⟨?U999⟩` rather than fabricated.
+
 The public eval pack adds a wider smoke path:
 
 ```text
@@ -146,6 +148,24 @@ uv run hardwise ask data/projects/pic_programmer "What is U999?"
 
 The agent has five structured tools: `list_components`, `get_component`, `get_nc_pins`, `search_datasheet`, and `run_component_validation`. Unknown objects return structured misses such as `found=false` plus closest matches; validation without a loaded design or profile returns `not_configured` / `no_profile` instead of a fabricated verdict.
 
+### Workbench with Copilot panel
+
+```bash
+# Offline single-file demo (no server, no API key):
+uv run hardwise design-validator-ui \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --ai-snapshot --output reports/controller-workbench.html
+
+# Local live server (deterministic fake model, no API key):
+uv run hardwise serve-workbench \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --fake-ai --port 8765
+```
+
+Both render the three-pane validator workbench plus a right-side Copilot panel. The offline snapshot bakes audited chat transcripts into the HTML; the live server exposes `POST /api/workbench/chat`. `--fake-ai` drives the real agent loop (real tools, real Refdes Guard) without an API key; drop it and set `.env` to use a live Anthropic-format model. Every answer carries a collapsed evidence/tool trace, and unverified refdes are wrapped before display.
+
 ### Datasheet ingest and semantic search
 
 ```bash
@@ -213,6 +233,7 @@ Current MVP status:
 | 3 — R003 + Dual Store + Router | Done | NC-pin parser, SQLite/Chroma, datasheet ingest, tiered routing |
 | 4 — Agent Loop + Prompt Caching | Done | `hardwise ask`, structured tools, live prompt-cache read hit |
 | 5 — Submission Closeout | Done | Phase 4 two-track demo narrative, README/demo/JD/interview closeout, final artifacts |
+| Workbench — Allegro Copilot | Done | `serve-workbench` live agent loop + `design-validator-ui --ai-snapshot` offline; reuses the five-tool Runner + Refdes Guard |
 
 The MVP intentionally stops here. R004/R005-style net-aware checks, a schematic-side net parser, a human-labeled calibration set, GitHub Action packaging, and Cadence/Allegro adapters are explicitly post-MVP. The current submission story is not "more rules"; it is a constrained design-validation workbench with registry-verified objects and evidence-gated findings.
 

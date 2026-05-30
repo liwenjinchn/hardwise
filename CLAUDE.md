@@ -75,6 +75,20 @@ The agent loop calls these five tools in `src/hardwise/agent/tools.py`. Each inp
 
 `TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[…]` shape ready for `messages.create`.
 
+## Workbench (Allegro Copilot)
+
+Two entrypoints render the Allegro project workbench with an optional Copilot panel; both reuse the same deterministic `validation/` truth and the same Refdes Guard.
+
+- `design-validator-ui <netlist/pst> <bom> --ai-snapshot` — single static HTML with baked, audited chat transcripts; opens via `file://`, no server, no API key. Without `--ai-snapshot` the static workbench is unchanged.
+- `serve-workbench <netlist/pst> <bom>` — local FastAPI server exposing `POST /api/workbench/chat`; `--fake-ai` runs a deterministic fake Anthropic client, real mode reads `.env`. The browser never receives API keys.
+
+Trust invariants (do not regress):
+- `--fake-ai` drives the **real** `Runner` + real tool dispatch + guard; the fake client only emits `tool_use`/text. It never bypasses the Runner.
+- Allegro reaches the agent via a `Design → BoardRegistry` shim populated into an in-memory relational `Session` (`workbench/context.py`); the Runner `registry`/`session` contract and the guard are unchanged.
+- Live mode keeps all five tools. Without a vector collection, `search_datasheet` returns its structured not-configured result.
+
+Modules: `workbench/{context,chat,server}.py`, `report/copilot_panel.py` + `report/copilot_panel_assets.py`. Server deps: `fastapi` + `uvicorn` (`serve-workbench` only).
+
 ## Run / test / lint
 
 ```bash

@@ -178,6 +178,8 @@ ComponentNotFound(
 
 **v5.17 (Phase 4 closeout — validator bridge becomes part of the agent story)**: 工具面现在是 5 个，不是早期 4 个：`run_component_validation(refdes)` 把 agent loop 接到 deterministic validators。它不自动猜 profile：Runner 只有在注入 IR `design` 和显式 `validation_targets` 时才会返回 `validated`，否则是 `not_configured` / `no_profile` / `not_found`。`tests/agent/test_validation_bridge.py` 用 FakeAnthropic 证明模型发起 tool call 后，Runner 能派发到 `validate_component_against_profile()` 并拿回结构化 PASS/WARN/ERROR payload（6 passed，无 API key）。这就是 DR-011 Phase 1 的核心：模型不是“自己会验证硬件”，而是能调用已经存在的确定性 validator 并解释它的 evidence-backed 结果。
 
+**v5.18 (Allegro Copilot workbench — agent loop becomes a product surface)**: 这 5 个工具现在还驱动一个工作台 Copilot 面板。两个入口：`design-validator-ui --ai-snapshot` 把已审计的离线问答烘焙进单文件 HTML（无服务、无 key），`serve-workbench` 起本地 FastAPI（`POST /api/workbench/chat`）。关键设计：`--fake-ai` 不绕开 Runner——它用一个确定性的假 Anthropic client 只产 `tool_use`/文本，真实的 `_dispatch` / `run_component_validation` / Refdes Guard / tool trace 照常跑；Allegro 通过 `Design → BoardRegistry` shim + 内存关系 `Session` 接入，没有改 Runner 的 registry/session 契约，也没动 guard。真模型模式在本地对一个 Anthropic-format endpoint 实跑验证过：问选中器件 U3 时模型调 `run_component_validation` 给出落在确定性判定上的答案，问 `U999` 时返回 `not_found` 且答案里 `⟨?U999⟩` 被包裹。**面试诚实点**：这套只在真·`serve-workbench` 线程池下才暴露了一个 in-memory SQLite 跨线程 bug（单线程的 fake / 单测都抓不到）——“通过测试和 fake smoke”不等于“真服务器下能跑”，最后是一条真实 HTTP 调用才完成验证（见 `learning_log.md` 2026-05-30）。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？
