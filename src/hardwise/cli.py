@@ -1088,53 +1088,33 @@ def design_validator_ui(
         "--manual-limit",
         help="Maximum no-profile/manual rows shown in the optional markdown index.",
     ),
+    ai_snapshot: bool = typer.Option(
+        False,
+        "--ai-snapshot",
+        help="Embed the offline audited Copilot panel snapshot in the static HTML.",
+    ),
 ) -> None:
     """Write a screenshot-like static design-validator workbench for matched profiles."""
-    from datetime import datetime, timezone
-
-    from hardwise.bom import apply_bom_to_design
-    from hardwise.documents import match_documents_to_bom, parse_document_index
     from hardwise.report.project_validation_markdown import (
         render as render_project_index,
         write_json,
     )
+    from hardwise.report.copilot_panel import render_copilot_panel
     from hardwise.report.validator_project_ui import render_project_workbench
-    from hardwise.project_inputs import project_name_for_inputs, resolve_bom_input
-    from hardwise.validation import ProfileCandidateError, suggest_profile_candidates
-    from hardwise.validation.project_index import build_project_validation_index
+    from hardwise.validation import ProfileCandidateError
+    from hardwise.workbench.chat import build_snapshot_responses, default_refdes
+    from hardwise.workbench.context import build_workbench_context
 
     if manual_limit < 0:
         typer.echo("error: --manual-limit must be >= 0", err=True)
         raise typer.Exit(1)
 
     try:
-        design, source, input_type, _property_count = _load_allegro_design(netlist_path)
-        resolved_bom = resolve_bom_input(
+        context = build_workbench_context(
             netlist_path=netlist_path,
             bom_path=bom_path,
-            design=design,
-        )
-        bom = resolved_bom.bom
-        bom_report = resolved_bom.bom_report
-        design = apply_bom_to_design(design, bom_report)
-        document_report = (
-            match_documents_to_bom(bom, parse_document_index(document_index))
-            if document_index is not None
-            else None
-        )
-        candidate_report = suggest_profile_candidates(bom, profiles, project=bom.source_file.stem)
-        now = datetime.now(timezone.utc)
-        project_name = project_name_for_inputs(source, bom)
-        index = build_project_validation_index(
-            design=design,
-            bom=bom,
-            bom_report=bom_report,
-            candidate_report=candidate_report,
-            document_report=document_report,
-            project_name=project_name,
-            generated_at=now.isoformat(timespec="seconds"),
-            netlist_source=str(source),
-            netlist_type=input_type,
+            profiles=profiles,
+            document_index=document_index,
         )
     except ProfileCandidateError as e:
         typer.echo(f"error: profile candidate generation failed: {e}", err=True)
@@ -1146,56 +1126,169 @@ def design_validator_ui(
     if output is None:
         reports_dir = Path("reports")
         reports_dir.mkdir(exist_ok=True)
-        output = reports_dir / f"{project_name}-design-validator.html"
+        output = reports_dir / f"{context.project_name}-design-validator.html"
     else:
         output.parent.mkdir(parents=True, exist_ok=True)
 
+    copilot_html = ""
+    if ai_snapshot:
+        snapshot_responses = build_snapshot_responses(context)
+        fallback = snapshot_responses["__fallback__"]
+        copilot_html = render_copilot_panel(
+            mode="snapshot",
+            selected_refdes=default_refdes(context),
+            suggestions=fallback.suggestions,
+            snapshot_responses=snapshot_responses,
+            datasheet_search_enabled=False,
+        )
+
     html = render_project_workbench(
-        design,
-        index,
-        project_name=project_name,
-        netlist_source=source,
-        bom_report=bom_report,
-        generated_at=index.generated_at,
+        context.design,
+        context.index,
+        project_name=context.project_name,
+        netlist_source=context.netlist_source,
+        bom_report=context.bom_report,
+        generated_at=context.index.generated_at,
+        copilot_html=copilot_html,
     )
     output.write_text(html, encoding="utf-8")
 
     if index_output is not None:
         index_output.parent.mkdir(parents=True, exist_ok=True)
         index_output.write_text(
-            render_project_index(index, manual_limit=manual_limit),
+            render_project_index(context.index, manual_limit=manual_limit),
             encoding="utf-8",
         )
     if index_json is not None:
-        write_json(index, index_json)
+        write_json(context.index, index_json)
 
-    totals = index.totals
-    typer.echo(f"selected-netlist: {source}")
-    typer.echo(f"selected-bom: {bom.source_file}")
-    if document_report is not None:
-        doc_counts = document_report.counts_by_status
+    totals = context.index.totals
+    typer.echo(f"selected-netlist: {context.netlist_source}")
+    typer.echo(f"selected-bom: {context.bom.source_file}")
+    if context.document_report is not None:
+        doc_counts = context.document_report.counts_by_status
         typer.echo(
-            f"document-index: {document_report.document_index_file} "
+            f"document-index: {context.document_report.document_index_file} "
             f"(matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
             f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']})"
         )
-    if resolved_bom.auto_selected:
-        parseable_count = sum(item.status != "parse_error" for item in resolved_bom.candidates)
-        typer.echo(
-            f"bom-candidates: {len(resolved_bom.candidates)} "
-            f"(parseable={parseable_count}, selected={bom.source_file.name})"
+    if context.resolved_bom.auto_selected:
+        parseable_count = sum(
+            item.status != "parse_error" for item in context.resolved_bom.candidates
         )
+        typer.echo(
+            f"bom-candidates: {len(context.resolved_bom.candidates)} "
+            f"(parseable={parseable_count}, selected={context.bom.source_file.name})"
+        )
+    if ai_snapshot:
+        typer.echo("ai-snapshot: enabled")
     typer.echo(
         f"design-validator-ui: {output} "
-        f"({index.components_in_design} components, validated={len(index.validated_rows)}, "
-        f"BOM matched={index.bom_matched}, "
+        f"({context.index.components_in_design} components, "
+        f"validated={len(context.index.validated_rows)}, "
+        f"BOM matched={context.index.bom_matched}, "
         f"PASS/WARN/ERROR={totals['PASS']}/{totals['WARN']}/{totals['ERROR']}, "
-        f"manual={len(index.manual_rows)})"
+        f"manual={len(context.index.manual_rows)})"
     )
     if index_output is not None:
         typer.echo(f"validation-index: {index_output}")
     if index_json is not None:
-        typer.echo(f"validation-index-json: {index_json} ({len(index.rows)} rows)")
+        typer.echo(f"validation-index-json: {index_json} ({len(context.index.rows)} rows)")
+
+
+@app.command(name="serve-workbench")
+def serve_workbench(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
+    ),
+    bom_path: Path | None = typer.Argument(
+        None,
+        help=(
+            "Path to a schematic-exported BOM file. If omitted, "
+            "BOM candidates are auto-selected from an Allegro/PST project directory."
+        ),
+    ),
+    profiles: Path = typer.Option(
+        Path("data/datasheet_profiles"),
+        "--profiles",
+        help="Directory containing structured DatasheetProfile JSON files.",
+    ),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host interface for localhost UI."),
+    port: int = typer.Option(8765, "--port", help="Port for localhost UI."),
+    tier: str = typer.Option("normal", "--tier", "-t", help="Model tier: fast | normal | deep."),
+    fake_ai: bool = typer.Option(
+        False,
+        "--fake-ai",
+        help="Use deterministic fake model blocks while still running the real Runner/tools.",
+    ),
+    persist_dir: Path = typer.Option(
+        Path("data/chroma"),
+        "--persist-dir",
+        help="Chroma persistence directory (only used with --vector).",
+    ),
+    use_vector: bool = typer.Option(
+        False,
+        "--vector/--no-vector",
+        help="Enable search_datasheet against the local Chroma store.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Build the workbench context and exit without starting the server.",
+    ),
+) -> None:
+    """Serve the Allegro-first validator workbench with live Copilot chat."""
+    from dotenv import load_dotenv
+
+    from hardwise.validation import ProfileCandidateError
+    from hardwise.workbench.chat import WorkbenchChatService
+    from hardwise.workbench.context import build_workbench_context
+    from hardwise.workbench.server import create_workbench_app
+
+    if tier not in ("fast", "normal", "deep"):
+        typer.echo(f"error: tier must be fast|normal|deep, got {tier!r}", err=True)
+        raise typer.Exit(1)
+
+    load_dotenv(override=True)
+    try:
+        context = build_workbench_context(
+            netlist_path=netlist_path,
+            bom_path=bom_path,
+            profiles=profiles,
+        )
+        collection = None
+        if use_vector:
+            from hardwise.store.vector import create_collection
+
+            collection = create_collection(persist_dir)
+        chat_service = WorkbenchChatService(
+            context,
+            mode="fake" if fake_ai else "real",
+            tier=tier,  # type: ignore[arg-type]
+            collection=collection,
+        )
+    except ProfileCandidateError as e:
+        typer.echo(f"error: profile candidate generation failed: {e}", err=True)
+        raise typer.Exit(1) from e
+    except Exception as e:
+        typer.echo(f"error: serve-workbench failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    url = f"http://{host}:{port}"
+    typer.echo(
+        f"serve-workbench: {url} "
+        f"({context.index.components_in_design} components, "
+        f"validated={len(context.index.validated_rows)}, "
+        f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'})"
+    )
+    if dry_run:
+        return
+
+    import uvicorn
+
+    app_obj = create_workbench_app(context, chat_service)
+    uvicorn.run(app_obj, host=host, port=port)
 
 
 @app.command(name="build-document-index-candidates")
@@ -1377,24 +1470,9 @@ def _echo_decision_counts(counts: dict[str, int], total: int) -> None:
 
 def _load_allegro_design(netlist_path: Path):
     """Load an Allegro schematic netlist/PST input into Design plus display metadata."""
-    from hardwise.adapters.allegro_netlist import parse_allegro_netlist
-    from hardwise.adapters.allegro_pst import is_allegro_pst_input, parse_allegro_pst
-    from hardwise.ir.build import build_design_from_netlist, build_design_from_pst
+    from hardwise.workbench.context import load_allegro_design
 
-    if is_allegro_pst_input(netlist_path):
-        registry = parse_allegro_pst(netlist_path)
-        design = build_design_from_pst(registry)
-        source = registry.source_dir
-        input_type = "Cadence Capture/Allegro PST schematic netlist topology"
-        property_count = sum(len(part.properties) for part in registry.parts)
-        return design, source, input_type, property_count
-
-    registry = parse_allegro_netlist(netlist_path)
-    design = build_design_from_netlist(registry)
-    source = registry.source_file
-    input_type = "Allegro/Telesis schematic netlist topology"
-    property_count = len(registry.properties)
-    return design, source, input_type, property_count
+    return load_allegro_design(netlist_path)
 
 
 def _report_source_name(source: Path) -> str:

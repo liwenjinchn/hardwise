@@ -92,13 +92,16 @@ MULTI_UI_SCRIPT = """
   const panels = Array.from(document.querySelectorAll('[data-panel]'));
   const cards = Array.from(document.querySelectorAll('[data-select-ref]'));
   const rows = Array.from(document.querySelectorAll('[data-row-ref]'));
+  let activeRefdes = rows.find((row) => row.classList.contains('active'))?.dataset.rowRef || '';
   const activate = (ref) => {
+    activeRefdes = ref;
     const hasPanel = panels.some((panel) => panel.dataset.panel === ref);
     if (hasPanel) {
       panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === ref));
       cards.forEach((card) => card.classList.toggle('active', card.dataset.selectRef === ref));
     }
     rows.forEach((row) => row.classList.toggle('active', row.dataset.rowRef === ref));
+    window.dispatchEvent(new CustomEvent('hardwise:refdes-selected', {detail: {refdes: activeRefdes}}));
   };
   [...cards, ...rows].forEach((node) => {
     node.addEventListener('click', () => activate(node.dataset.selectRef || node.dataset.rowRef));

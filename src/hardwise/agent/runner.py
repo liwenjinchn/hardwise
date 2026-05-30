@@ -109,6 +109,7 @@ class Runner:
         tier: Tier = "normal",
         max_iterations: int = MAX_ITERATIONS,
         max_tokens: int = MAX_TOKENS,
+        system_prompt: str | None = None,
         design: Any | None = None,
         validation_targets: dict[str, Any] | None = None,
     ) -> None:
@@ -120,6 +121,7 @@ class Runner:
         self.tier = tier
         self.max_iterations = max_iterations
         self.max_tokens = max_tokens
+        self.system_prompt = system_prompt
         # IR Design + explicit refdes->DatasheetProfile assignments power the
         # run_component_validation tool. Both default empty so the existing
         # KiCad-only callers keep working; the tool then reports not_found /
@@ -131,7 +133,7 @@ class Runner:
         result = RunResult(text="")
         messages: list[dict] = [{"role": "user", "content": user_message}]
         model = self.router.select(self.tier)
-        system_blocks = build_system_blocks()
+        system_blocks = build_system_blocks(self.system_prompt) if self.system_prompt else build_system_blocks()
 
         for iteration in range(1, self.max_iterations + 1):
             response = self.client.messages.create(

@@ -103,6 +103,7 @@ def build_project_validation_index(
     """Build a project validation index from BOM/profile candidates."""
 
     candidates = {candidate.refdes: candidate for candidate in candidate_report.candidates}
+    validation_targets = validation_targets_from_candidates(candidate_report)
     rows: list[ProjectValidationRow] = []
     for component in sorted(design.components.values(), key=lambda c: sort_refdes_key(c.refdes)):
         bom_row = bom_report.rows_by_refdes.get(component.refdes)
@@ -116,8 +117,8 @@ def build_project_validation_index(
             match_status = candidate.match_status
             reason = candidate.reason
             profile_path = candidate.profile
-            if candidate.match_status == "matched" and candidate.profile is not None:
-                profile = DatasheetProfile.load(candidate.profile)
+            profile = validation_targets.get(component.refdes)
+            if profile is not None:
                 validation = validate_component_against_profile(component, profile, design)
 
         rows.append(
@@ -166,6 +167,18 @@ def build_project_validation_index(
         rows=rows,
         component_groups=component_groups,
     )
+
+
+def validation_targets_from_candidates(
+    candidate_report: ProfileCandidateReport,
+) -> dict[str, DatasheetProfile]:
+    """Load explicit refdes -> profile targets from matched profile candidates."""
+
+    targets: dict[str, DatasheetProfile] = {}
+    for candidate in candidate_report.candidates:
+        if candidate.match_status == "matched" and candidate.profile is not None:
+            targets[candidate.refdes] = DatasheetProfile.load(candidate.profile)
+    return targets
 
 
 def profile_gap_groups(

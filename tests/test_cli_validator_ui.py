@@ -368,6 +368,49 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert '"profile_path": "data/datasheet_profiles/stm32g030c8t6.json"' in index_payload
 
 
+def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) -> None:
+    html_output = tmp_path / "controller-design-validator-ai.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--ai-snapshot",
+            "--output",
+            str(html_output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "ai-snapshot: enabled" in result.output
+    html = html_output.read_text(encoding="utf-8")
+    assert "data-ai-root" in html
+    assert "hardwise-copilot-config" in html
+    assert "Offline audited snapshot" in html
+    assert "run_component_validation" in html
+    assert "⟨?U999⟩" in html
+
+
+def test_serve_workbench_fake_ai_dry_run_does_not_require_api_key() -> None:
+    result = CliRunner().invoke(
+        app,
+        [
+            "serve-workbench",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--fake-ai",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "serve-workbench:" in result.output
+    assert "mode=fake" in result.output
+    assert "validated=4" in result.output
+
+
 def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
     tmp_path: Path,
 ) -> None:

@@ -1928,3 +1928,33 @@ Also refreshed README's quickstart output text to match the current CLI
 Default report artifacts are convenient for human sequential demos, not
 parallel smoke tests. When automating multiple `review` commands at once, give
 each run an isolated report/store output path or run them sequentially.
+
+## 2026-05-30 — Keep package exports lazy when validation and documents cross-import
+
+**Symptom**
+
+Adding the Allegro Copilot workbench context made `design-validator-ui
+--ai-snapshot` fail during import with a partially initialized
+`hardwise.validation.project_index` module.
+
+**Root cause**
+
+`hardwise.validation.project_index` imports document index types, while
+`hardwise.documents.__init__` eagerly re-exported `documents.candidates`, which
+imports `validation.project_index` again. The feature did not need a new data
+path; it exposed an existing circular import hidden behind package-level
+convenience exports.
+
+**Fix**
+
+Changed `hardwise.documents.__init__` to lazy-load candidate helper exports via
+`__getattr__`. The public import names stay available, but importing document
+types no longer pulls candidate-building code back into validation at module
+import time.
+
+**Takeaway**
+
+In this repo, package `__init__` files should keep cross-layer convenience
+exports lazy when the target module depends back on another layer. Shared
+context builders are especially likely to surface these cycles because they
+import loader, validation, document, and report modules together.

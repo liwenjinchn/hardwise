@@ -146,3 +146,50 @@ def test_render_project_workbench_includes_zero_profile_gap(tmp_path: Path) -> N
     assert "Scope Boundary" in html
     assert "Profile Gap Groups" in html
     assert "does not convert no-profile rows into electrical judgements" in html
+
+
+def test_render_project_workbench_accepts_optional_copilot_panel(tmp_path: Path) -> None:
+    from hardwise.adapters.allegro_netlist import parse_allegro_netlist
+    from hardwise.ir.build import build_design_from_netlist
+
+    profiles = tmp_path / "profiles"
+    profiles.mkdir()
+    shutil.copyfile(Path("data/datasheet_profiles/l78.json"), profiles / "l78.json")
+    design = build_design_from_netlist(
+        parse_allegro_netlist(Path("tests/fixtures/allegro/l78_regulator.net"))
+    )
+    bom = parse_bom(Path("tests/fixtures/allegro/l78_regulator_bom.csv"))
+    bom_report = match_bom_to_design(bom, design)
+    design = apply_bom_to_design(design, bom_report)
+    candidate_report = suggest_profile_candidates(bom, profiles)
+    index = build_project_validation_index(
+        design=design,
+        bom=bom,
+        bom_report=bom_report,
+        candidate_report=candidate_report,
+        project_name="l78_regulator",
+        generated_at="2026-05-30T00:00:00+00:00",
+        netlist_source="tests/fixtures/allegro/l78_regulator.net",
+        netlist_type="allegro_netlist",
+    )
+
+    plain = render_project_workbench(
+        design,
+        index,
+        project_name="l78_regulator",
+        netlist_source=Path("tests/fixtures/allegro/l78_regulator.net"),
+        bom_report=bom_report,
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+    with_panel = render_project_workbench(
+        design,
+        index,
+        project_name="l78_regulator",
+        netlist_source=Path("tests/fixtures/allegro/l78_regulator.net"),
+        bom_report=bom_report,
+        generated_at="2026-05-30T00:00:00+00:00",
+        copilot_html='<div data-ai-root></div>',
+    )
+
+    assert "data-ai-root" not in plain
+    assert "data-ai-root" in with_panel

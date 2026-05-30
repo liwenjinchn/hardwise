@@ -39,6 +39,7 @@ def render_project_workbench(
     netlist_source: Path,
     bom_report: BomMatchReport | None = None,
     generated_at: str = "",
+    copilot_html: str = "",
 ) -> str:
     """Return a static project workbench for validated and no-profile rows."""
 
@@ -53,6 +54,8 @@ def render_project_workbench(
     counts = _status_counts(ordered)
     active_refdes = ordered[0].validation.refdes if ordered else ""
     rail_count = len(index.component_groups) if index.component_groups else len(components)
+
+    copilot_block = f"{copilot_html}" if copilot_html else ""
 
     return f"""<!doctype html>
 <html lang="zh-CN">
@@ -107,7 +110,7 @@ def render_project_workbench(
         </section>
       </section>
     </section>
-  </main>
+  </main>{copilot_block}
   <script>{MULTI_UI_SCRIPT}</script>
 </body>
 </html>
