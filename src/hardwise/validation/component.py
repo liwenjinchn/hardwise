@@ -61,4 +61,8 @@ def _validate_component_topology(
         from hardwise.validation.mosfet import validate_mosfet
 
         return validate_mosfet(component, profile, design)
+    if family == "bjt":
+        from hardwise.validation.bjt import validate_bjt
+
+        return validate_bjt(component, profile, design)
     return []

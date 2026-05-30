@@ -1,0 +1,11 @@
+$PACKAGES
+  ! 'TO92' ! 2N3904 ; Q2
+  ! 'R0805' ! 1K ; R_BASE
+  ! 'R0805' ! 1K ; R_LOAD
+$NETS
+  'BASE_DRIVE' ; Q2.2, R_BASE.2
+  '+3V3' ; R_BASE.1
+  'COLLECTOR_RAIL' ; Q2.3, R_LOAD.2
+  '+12V' ; R_LOAD.1
+  'GND' ; Q2.1
+$END

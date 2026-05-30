@@ -122,6 +122,14 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
   it. When the gate or source net has no statically known voltage (PWM drive,
   floating switch node), return WARN — never assume the source is at ground.
   Same rule for `Vds = voltage(drain) - voltage(source)`.
+- **BJT base-emitter overstress is directional, not `abs(Vbe)`.** Positive
+  `Vbe ~= 0.6-0.7 V` is normal junction operation. For the first NPN validator,
+  compute `Vbe = voltage(base) - voltage(emitter)` for reporting, but check
+  reverse breakdown as `reverse_be_voltage = voltage(emitter) - voltage(base)`
+  against top-level `profile.abs_max["vebo"]`. Do not compare positive forward
+  Vbe against VEBO; base-current / resistor sizing is a separate topology check.
+  `Vceo` also lives in top-level `profile.abs_max["vceo"]`, not in per-pin
+  `limits`. Per-pin `limits` are for generic pin validators only.
 
 **Multi-pin connectors**:
 - VCC pins: `power_input` with `limits` dict

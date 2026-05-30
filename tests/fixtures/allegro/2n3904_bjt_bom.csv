@@ -1,0 +1,4 @@
+Reference,Value,Footprint,Description
+Q2,2N3904,TO92,NPN BJT
+R_BASE,1K,0805,Base resistor
+R_LOAD,1K,0805,Collector load

@@ -1,0 +1,11 @@
+$PACKAGES
+  ! 'TO92' ! 2N3904 ; Q2
+  ! 'R0805' ! 1K ; R_BASE
+  ! 'R0805' ! 1K ; R_LOAD
+$NETS
+  'BASE_NODE' ; Q2.2, R_BASE.2
+  '+15V' ; R_BASE.1
+  'COLLECTOR_NODE' ; Q2.3, R_LOAD.2
+  '+24V' ; R_LOAD.1
+  'EMITTER_NODE' ; Q2.1
+$END

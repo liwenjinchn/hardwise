@@ -1,0 +1,54 @@
+{
+  "part_number": "2N3904",
+  "description": "NPN general-purpose amplifier transistor, TO-92",
+  "abs_max": {
+    "vceo": 40.0,
+    "vcbo": 60.0,
+    "vebo": 6.0,
+    "ic": 0.2
+  },
+  "recommended": {
+    "topology_family": "bjt",
+    "polarity": "npn"
+  },
+  "pin_function": {
+    "1": "Emitter",
+    "2": "Base",
+    "3": "Collector"
+  },
+  "pins": [
+    {
+      "name": "Emitter",
+      "number": "1",
+      "category": "switch_node",
+      "function": "Emitter terminal; Vbe and Vce reference node for the first NPN validator.",
+      "evidence": ["datasheet:2n3904-d.pdf#p1"]
+    },
+    {
+      "name": "Base",
+      "number": "2",
+      "category": "analog_input",
+      "function": "Base control input; Vbe is measured against the emitter, not ground.",
+      "evidence": ["datasheet:2n3904-d.pdf#p1"]
+    },
+    {
+      "name": "Collector",
+      "number": "3",
+      "category": "switch_output",
+      "function": "Collector terminal for the switched current path.",
+      "evidence": ["datasheet:2n3904-d.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "abs_max.vceo": "datasheet:2n3904-d.pdf#p1",
+    "abs_max.vcbo": "datasheet:2n3904-d.pdf#p1",
+    "abs_max.vebo": "datasheet:2n3904-d.pdf#p1",
+    "abs_max.ic": "datasheet:2n3904-d.pdf#p1",
+    "pin_function.1": "datasheet:2n3904-d.pdf#p1",
+    "pin_function.2": "datasheet:2n3904-d.pdf#p1",
+    "pin_function.3": "datasheet:2n3904-d.pdf#p1"
+  },
+  "extracted_at": "2026-05-30T00:00:00+00:00",
+  "extracted_model": "deterministic-2n3904-v3.0",
+  "schema_version": "v2"
+}

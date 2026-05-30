@@ -1799,3 +1799,47 @@ For provenance demos, be precise about which layer owns the fact. A profile
 token can be independently corroborated by PDF search without being generated
 by PDF search at review time. Fast tests should lock deterministic contracts
 (page/token/metadata); embedding-backed semantic ranking belongs in slow tests.
+
+## 2026-05-30 — BJT Vbe checks must model reverse VEBO, not positive forward overvoltage
+
+**Symptom**
+
+The first Phase 3 plan almost copied the MOSFET pattern too literally and talked
+about a "base-emitter overvoltage" fixture. That wording implied comparing
+`abs(Vbe)` or positive forward Vbe against an abs-max number, which would make
+the validator look electrically naive in a hardware review.
+
+**Root cause**
+
+MOSFET `Vgs` is a symmetric oxide limit, so `abs(Vgs) > limit` is reasonable.
+BJT base-emitter behavior is a diode junction: positive `Vbe ~= 0.6-0.7 V` is
+normal operation, and forward abuse is primarily a current / base-resistor
+problem. The voltage abs-max to catch deterministically is reverse emitter-base
+breakdown (`VEBO`), where the emitter is driven above the base.
+
+**Fix**
+
+- Added `data/datasheet_profiles/2n3904.json` from onsemi `2n3904-d.pdf#p1`
+  with top-level `abs_max.vceo=40.0`, `abs_max.vebo=6.0`, and pinout evidence.
+- Added `src/hardwise/validation/bjt.py` with connectivity checks plus
+  `bjt_vebo_rating` and `bjt_vceo_rating`.
+- `bjt_vebo_rating` computes `reverse_be_voltage = emitter - base`; it never
+  compares positive forward Vbe against VEBO.
+- Numeric tests inject `Net.voltage_hint` for base/emitter/collector voltages.
+  This avoids pretending the net-name parser understands realistic 0.7 V nodes.
+
+**Verification**
+
+- `uv run pytest tests/validation/test_bjt.py -q` -> 6 passed.
+- The key failure case sets emitter=12 V and base=0 V. A base-to-ground check
+  would see 0 V and miss it; the emitter-referenced check reports reverse B-E
+  voltage 12 V above VEBO 6 V.
+- `uv run pytest -q` -> 386 passed, 7 deselected. `uv run ruff check .` ->
+  clean.
+
+**Takeaway**
+
+Three-terminal validators share the reference-node discipline, not the same
+math. MOSFET `Vgs` is symmetric; BJT `VEBO` is directional. When adding a new
+family, copy the test philosophy from a nearby validator, but re-derive the
+device physics before copying the inequality.
