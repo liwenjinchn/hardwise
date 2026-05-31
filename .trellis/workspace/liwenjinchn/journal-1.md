@@ -387,3 +387,41 @@ Closed the C4c analog IC coverage gap by adding public TI basic pin profiles for
 ### Next Steps
 
 - None - task complete
+
+
+## Session 12: C4d SMBJ24CA TVS rail clamp validation
+
+**Date**: 2026-05-31
+**Task**: C4d SMBJ24CA TVS rail clamp validation
+**Branch**: `codex/migrate-codex-mainline`
+
+### Summary
+
+Closed one remaining diode coverage gap by adding a public SMBJ24CA bidirectional TVS rail-clamp profile and deterministic standoff check.
+
+### Main Changes
+
+- Added reviewed public `data/datasheet_profiles/smbj24ca.json` for Littelfuse SMBJ24CA with `diode_role="bidirectional_tvs"`.
+- Extended the existing diode validator only for the bidirectional TVS sub-role: terminal connectivity, recognized ground reference, and rail-to-ground working standoff check.
+- Added focused tests for public profile shape, nominal +24 V rail clamp PASS, and +36 V overstandoff ERROR.
+- Updated CLI/ranking tests, backend validation guidelines, interview Q&A, and learning log with the C4d boundary and why inductor was not forced without public evidence.
+- Verification: targeted C4d tests -> 48 passed; full `uv run pytest -q` -> 423 passed, 7 deselected; `uv run ruff check .` -> pass; C4d smoke -> 66 components, validated=27, manual=39, PASS/WARN/ERROR=17/7/3; `recommend-next-family` drops SMBJ24CA and leaves diode as BAS316/BAV99.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `67f0c81c4952b0e554982e65865707dd5dd7c924` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
