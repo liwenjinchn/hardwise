@@ -33,6 +33,10 @@ from anthropic import Anthropic
 from sqlalchemy.orm import Session
 
 from hardwise.adapters.base import BoardRegistry
+from hardwise.agent.grounding import (
+    evidence_tokens_from_datasheet_hits,
+    trust_tier_for_datasheet_search,
+)
 from hardwise.agent.prompts import build_system_blocks
 from hardwise.agent.router import ModelRouter, Tier
 from hardwise.agent.tools import (
@@ -49,6 +53,7 @@ from hardwise.agent.tools import (
     search_datasheet,
 )
 from hardwise.guards.refdes import sanitize_args, sanitize_text
+from hardwise.trust import TrustTier
 
 MAX_ITERATIONS = 10
 MAX_TOKENS = 2048
@@ -68,6 +73,8 @@ class ToolCallTrace:
     input: dict
     output_summary: str
     wrapped: int = 0
+    evidence: list[str] = field(default_factory=list)
+    trust_tier: TrustTier | None = None
 
 
 @dataclass
@@ -176,6 +183,8 @@ class Runner:
         """
         name = tool_use.name
         args = dict(tool_use.input) if tool_use.input else {}
+        evidence: list[str] = []
+        trust_tier: TrustTier | None = None
         try:
             if name == "list_components":
                 out = list_components(self.session, ListComponentsInput(**args))
@@ -192,6 +201,7 @@ class Runner:
             elif name == "search_datasheet":
                 if self.collection is None:
                     summary = "skipped: vector store not configured"
+                    trust_tier = "l3"
                     payload = json.dumps(
                         {
                             "found": False,
@@ -203,10 +213,13 @@ class Runner:
                 else:
                     out = search_datasheet(self.collection, SearchDatasheetInput(**args))
                     summary = f"hits={len(out.hits)}"
+                    evidence = evidence_tokens_from_datasheet_hits(out.hits)
+                    trust_tier = trust_tier_for_datasheet_search(evidence)
                     payload = out.model_dump_json()
             elif name == "run_component_validation":
                 if self.design is None:
                     summary = "skipped: no design loaded for validation"
+                    trust_tier = "l3"
                     payload = json.dumps(
                         {
                             "status": "not_configured",
@@ -221,6 +234,8 @@ class Runner:
                         RunComponentValidationInput(**args),
                     )
                     summary = f"status={out.status}"
+                    evidence = _validation_evidence(out)
+                    trust_tier = "l1" if out.status == "validated" else "l3"
                     payload = out.model_dump_json()
             else:
                 summary = f"unknown tool: {name}"
@@ -251,10 +266,18 @@ class Runner:
                 "tool_use_id": tool_use.id,
                 "content": payload,
             },
-            self._build_trace(name, args, summary),
+            self._build_trace(name, args, summary, evidence=evidence, trust_tier=trust_tier),
         )
 
-    def _build_trace(self, name: str, args: dict, summary: str) -> ToolCallTrace:
+    def _build_trace(
+        self,
+        name: str,
+        args: dict,
+        summary: str,
+        *,
+        evidence: list[str] | None = None,
+        trust_tier: TrustTier | None = None,
+    ) -> ToolCallTrace:
         """Assemble a user-visible ToolCallTrace from raw tool inputs/output.
 
         Sanitizes the args dict and the summary text through the refdes guard so
@@ -268,6 +291,8 @@ class Runner:
             input=clean_args,
             output_summary=clean_summary,
             wrapped=w_args + w_sum,
+            evidence=evidence or [],
+            trust_tier=trust_tier,
         )
 
     @staticmethod
@@ -288,3 +313,20 @@ class Runner:
         result.output_tokens += int(getattr(usage, "output_tokens", 0) or 0)
         result.cache_creation_tokens += int(getattr(usage, "cache_creation_input_tokens", 0) or 0)
         result.cache_read_tokens += int(getattr(usage, "cache_read_input_tokens", 0) or 0)
+
+
+def _validation_evidence(out: Any) -> list[str]:
+    """Collect validation evidence tokens from a run_component_validation result."""
+
+    checks = getattr(out, "checks", None)
+    if not isinstance(checks, list):
+        return []
+    tokens: list[str] = []
+    for check in checks:
+        evidence = getattr(check, "evidence", None)
+        if not isinstance(evidence, list):
+            continue
+        for token in evidence:
+            if token and token not in tokens:
+                tokens.append(str(token))
+    return tokens

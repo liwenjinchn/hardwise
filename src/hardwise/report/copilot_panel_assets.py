@@ -145,6 +145,7 @@ COPILOT_SCRIPT = """
         traceSummary.textContent = item.summary;
         row.appendChild(traceSummary);
       }
+      row.appendChild(traceField('Trust', item.trust_label || item.trust_tier || '-'));
       row.appendChild(traceField('Evidence', evidenceChips(item.evidence)));
       row.appendChild(traceField('Guard wraps', String(item.wrapped || 0)));
       const inputBlock = document.createElement('pre');

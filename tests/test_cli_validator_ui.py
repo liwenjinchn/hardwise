@@ -398,6 +398,10 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     assert "run_component_validation" in html
     assert "search_datasheet" in html
     assert "Guard wraps" in html
+    assert "Trust" in html
+    assert "L2 grounded" in html
+    assert "datasheet:l78.pdf#p4" in html
+    assert "Show regulator datasheet evidence-chain smoke" in html
     assert "没有配置向量 datasheet search" in html
     assert "⟨?U999⟩" in html
 

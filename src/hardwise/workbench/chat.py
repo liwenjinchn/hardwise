@@ -14,11 +14,15 @@ from hardwise.agent.prompts import WORKBENCH_SYSTEM_PROMPT
 from hardwise.agent.router import ModelRouter, Tier
 from hardwise.agent.runner import RunResult, Runner, ToolCallTrace
 from hardwise.guards.refdes import sanitize_text
+from hardwise.trust import TrustTier, trust_label_text
 from hardwise.validation.project_index import ProjectValidationRow
 from hardwise.workbench.context import WorkbenchContext
 
 
 ChatMode = Literal["fake", "real", "snapshot"]
+C5_L2_SNAPSHOT_QUESTION = (
+    "Show regulator datasheet evidence-chain smoke for absolute maximum input voltage"
+)
 
 
 class ChatMessage(BaseModel):
@@ -45,6 +49,8 @@ class EvidenceTrace(BaseModel):
     status: str | None = None
     evidence: list[str] = Field(default_factory=list)
     wrapped: int = 0
+    trust_tier: TrustTier | None = None
+    trust_label: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -108,20 +114,22 @@ class _FakeWorkbenchMessages:
         self._last_question, self._last_selected = _parse_runner_prompt(str(content or ""))
         refdes = _choose_refdes(self._last_question, self._last_selected)
         if _needs_datasheet_search(self._last_question):
-            return _FakeResponse(
-                [
-                    _FakeToolUseBlock(
-                        id=f"hw_fake_{self._turn}_datasheet",
-                        name="search_datasheet",
-                        input={"query": self._last_question, "top_k": 3},
-                    ),
+            tool_uses: list[Any] = [
+                _FakeToolUseBlock(
+                    id=f"hw_fake_{self._turn}_datasheet",
+                    name="search_datasheet",
+                    input={"query": self._last_question, "top_k": 3},
+                )
+            ]
+            if not _is_evidence_chain_smoke(self._last_question):
+                tool_uses.append(
                     _FakeToolUseBlock(
                         id=f"hw_fake_{self._turn}_validation",
                         name="run_component_validation",
                         input={"refdes": refdes},
-                    ),
-                ]
-            )
+                    )
+                )
+            return _FakeResponse(tool_uses)
         return _FakeResponse(
             [
                 _FakeToolUseBlock(
@@ -257,6 +265,37 @@ class FakeWorkbenchAnthropic:
         self.messages = _FakeWorkbenchMessages()
 
 
+class _AuditedL78SnapshotCollection:
+    """Hermetic search collection for the static L78 evidence-chain smoke."""
+
+    def count(self) -> int:
+        return 1
+
+    def query(self, query_texts: list[str], n_results: int) -> dict[str, list[list[Any]]]:
+        del query_texts, n_results
+        return {
+            "documents": [
+                [
+                    (
+                        "Absolute maximum ratings table: input voltage VI is 35 V "
+                        "for VO = 5 to 18 V."
+                    )
+                ]
+            ],
+            "metadatas": [
+                [
+                    {
+                        "part_ref": "L7805",
+                        "source_pdf": "l78.pdf",
+                        "page": 4,
+                        "chunk_index": 0,
+                    }
+                ]
+            ],
+            "distances": [[0.0]],
+        }
+
+
 class WorkbenchChatService:
     """Run workbench questions through Runner and normalize the response."""
 
@@ -333,8 +372,9 @@ class WorkbenchChatService:
     def _trace_from_runner_trace(self, trace: ToolCallTrace) -> EvidenceTrace:
         refdes = _trace_refdes(trace)
         row = self._row_for_refdes(refdes)
-        evidence = _row_evidence(row)
+        evidence = trace.evidence or _row_evidence(row)
         status = row.status if row is not None else None
+        trust_tier = trace.trust_tier
         return EvidenceTrace(
             tool=trace.name,
             input=trace.input,
@@ -342,6 +382,8 @@ class WorkbenchChatService:
             status=status,
             evidence=evidence,
             wrapped=trace.wrapped,
+            trust_tier=trust_tier,
+            trust_label=trust_label_text(trust_tier) if trust_tier else None,
         )
 
     def _row_for_refdes(self, refdes: str | None) -> ProjectValidationRow | None:
@@ -399,6 +441,11 @@ def build_snapshot_responses(context: WorkbenchContext) -> dict[str, ChatRespons
     """Precompute audited snapshot answers with the fake model and real Runner."""
 
     service = WorkbenchChatService(context, mode="snapshot")
+    l2_service = WorkbenchChatService(
+        context,
+        mode="snapshot",
+        collection=_AuditedL78SnapshotCollection(),
+    )
     selected = default_refdes(context)
     questions = [
         f"这个 {selected or '器件'} 为什么是 ERROR/WARN?",
@@ -409,7 +456,11 @@ def build_snapshot_responses(context: WorkbenchContext) -> dict[str, ChatRespons
     responses: dict[str, ChatResponse] = {}
     for question in questions:
         responses[question] = service.ask(ChatRequest(question=question, selected_refdes=selected))
+    responses[C5_L2_SNAPSHOT_QUESTION] = l2_service.ask(
+        ChatRequest(question=C5_L2_SNAPSHOT_QUESTION, selected_refdes=selected)
+    )
     fallback = service.fallback_response("", selected)
+    fallback.suggestions.append(C5_L2_SNAPSHOT_QUESTION)
     responses["__fallback__"] = fallback
     return responses
 
@@ -486,6 +537,10 @@ def _needs_datasheet_search(question: str) -> bool:
         "额定",
     )
     return any(needle in text for needle in needles)
+
+
+def _is_evidence_chain_smoke(question: str) -> bool:
+    return "evidence-chain smoke" in question.lower()
 
 
 def _important_checks(checks: list[Any]) -> list[str]:

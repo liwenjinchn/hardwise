@@ -4,19 +4,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from html import escape
-from typing import Literal
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
+from hardwise.trust import TRUST_LABELS, TrustTier, trust_label_text
 from hardwise.validation.types import ValidationReport
 
-TrustTier = Literal["l1", "l2", "l3"]
-
-TRUST_LABELS: dict[TrustTier, str] = {
-    "l1": "L1 deterministic",
-    "l2": "L2 grounded",
-    "l3": "L3 manual",
-}
+__all__ = [
+    "TRUST_LABELS",
+    "TrustTier",
+    "trust_label_text",
+    "trust_label_html",
+    "evidence_chips_html",
+    "build_pin_consistency",
+    "schematic_connection_path",
+    "profile_has_thermal_or_package_evidence",
+]
 
 
 @dataclass(frozen=True)
@@ -108,12 +111,6 @@ def profile_has_thermal_or_package_evidence(profile: DatasheetProfile | None) ->
         return False
     markers = ("thermal", "theta", "rth", "tj", "junction", "package", "power_dissipation")
     return any(any(marker in key.lower() for marker in markers) for key in profile.evidence)
-
-
-def trust_label_text(tier: TrustTier) -> str:
-    """Return the stable UI trust label for a presentation-only tier."""
-
-    return TRUST_LABELS[tier]
 
 
 def trust_label_html(tier: TrustTier) -> str:

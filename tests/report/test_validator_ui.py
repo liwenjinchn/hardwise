@@ -220,4 +220,5 @@ def test_copilot_snapshot_fallback_uses_boundary_answer_only() -> None:
     assert "item !== '__fallback__' && !/U999/i.test(item)" not in COPILOT_SCRIPT
     assert "ai-trace-field" in COPILOT_SCRIPT
     assert "Guard wraps" in COPILOT_SCRIPT
+    assert "Trust" in COPILOT_SCRIPT
     assert "input=${JSON.stringify" not in COPILOT_SCRIPT

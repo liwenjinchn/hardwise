@@ -196,6 +196,8 @@ ComponentNotFound(
 
 **v5.18 (Allegro Copilot workbench — agent loop becomes a product surface)**: 这 5 个工具现在还驱动一个工作台 Copilot 面板。两个入口：`design-validator-ui --ai-snapshot` 把已审计的离线问答烘焙进单文件 HTML（无服务、无 key），`serve-workbench` 起本地 FastAPI（`POST /api/workbench/chat`）。关键设计：`--fake-ai` 不绕开 Runner——它用一个确定性的假 Anthropic client 只产 `tool_use`/文本，真实的 `_dispatch` / `run_component_validation` / Refdes Guard / tool trace 照常跑；Allegro 通过 `Design → BoardRegistry` shim + 内存关系 `Session` 接入，没有改 Runner 的 registry/session 契约，也没动 guard。真模型模式在本地对一个 Anthropic-format endpoint 实跑验证过：问选中器件 U3 时模型调 `run_component_validation` 给出落在确定性判定上的答案，问 `U999` 时返回 `not_found` 且答案里 `⟨?U999⟩` 被包裹。**面试诚实点**：这套只在真·`serve-workbench` 线程池下才暴露了一个 in-memory SQLite 跨线程 bug（单线程的 fake / 单测都抓不到）——“通过测试和 fake smoke”不等于“真服务器下能跑”，最后是一条真实 HTTP 调用才完成验证（见 `learning_log.md` 2026-05-30）。
 
+**v5.27 (C5 grounded trace tier)**: C5 没让 LLM 生成新的硬件 verdict，而是把已有 `L1 deterministic / L2 grounded / L3 manual` tier 延伸到 datasheet 问答 trace。`search_datasheet` 如果返回带 `source_pdf + page` 的 hit，Runner 的 `ToolCallTrace` 会生成 `datasheet:<pdf>#p<N>` evidence，并把该 trace 标成 `L2 grounded`；没有 vector store 或没有 hit 时就是 `L3 manual`。`run_component_validation` trace 仍是 `L1 deterministic`，它的 PASS/WARN/ERROR 仍由 validator 决定，L2 只能解释或附证据，不能覆盖 L1。为了让 file:// 静态 demo 也看得到 L2，`design-validator-ui --ai-snapshot` 新增一个 hermetic L78 evidence-chain smoke：用 seeded fake collection 返回经过审计的 `l78.pdf` 第 4 页片段和 `datasheet:l78.pdf#p4` token，不提交 Chroma artifact，也不暗示 Allegro U12 的问题引用了 L78。测试锁住两条边界：有 hit → `L2 grounded` + evidence chip；无 vector → `L3 manual` + validation fallback。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？

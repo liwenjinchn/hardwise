@@ -76,6 +76,20 @@ class FakeAnthropic:
         self.messages = FakeMessages(script)
 
 
+class StubCollection:
+    """Minimal vector collection stub for Runner search trace tests."""
+
+    def __init__(self, canned: dict[str, list[list[Any]]] | None = None) -> None:
+        self._canned = canned or {}
+
+    def count(self) -> int:
+        return 1
+
+    def query(self, query_texts: list[str], n_results: int) -> dict[str, list[list[Any]]]:
+        del query_texts, n_results
+        return self._canned
+
+
 def _mock_registry() -> BoardRegistry:
     return BoardRegistry(
         project_dir=Path("/tmp/mock"),
@@ -226,9 +240,81 @@ def test_runner_search_datasheet_without_collection_returns_not_configured() -> 
     )
     result = runner.run("找一下 U3 的最大输入电压?")
     assert "skipped" in result.tool_calls[0].output_summary
+    assert result.tool_calls[0].evidence == []
+    assert result.tool_calls[0].trust_tier == "l3"
     payload = json.loads(client.messages.calls[1]["messages"][-1]["content"][0]["content"])
     assert payload["found"] is False
     assert "not configured" in payload["error"]
+
+
+def test_runner_search_datasheet_trace_carries_l2_evidence() -> None:
+    collection = StubCollection(
+        {
+            "documents": [["Absolute maximum input voltage is 35 V."]],
+            "metadatas": [
+                [
+                    {
+                        "source_pdf": "l78.pdf",
+                        "page": 4,
+                        "part_ref": "L7805",
+                    }
+                ]
+            ],
+            "distances": [[0.0]],
+        }
+    )
+    runner, client = _build_runner(
+        [
+            FakeResponse(
+                content=[
+                    FakeToolUseBlock(
+                        id="t1",
+                        name="search_datasheet",
+                        input={"query": "absolute maximum input voltage", "top_k": 1},
+                    )
+                ]
+            ),
+            FakeResponse(content=[FakeTextBlock(text="l78.pdf p4 says 35 V")]),
+        ],
+        collection=collection,
+    )
+
+    result = runner.run("find the L7805 abs max")
+
+    trace = result.tool_calls[0]
+    assert trace.name == "search_datasheet"
+    assert trace.output_summary == "hits=1"
+    assert trace.evidence == ["datasheet:l78.pdf#p4"]
+    assert trace.trust_tier == "l2"
+    payload = json.loads(client.messages.calls[1]["messages"][-1]["content"][0]["content"])
+    assert payload["hits"][0]["source_pdf"] == "l78.pdf"
+    assert payload["hits"][0]["page"] == 4
+
+
+def test_runner_search_datasheet_no_hits_stays_l3() -> None:
+    collection = StubCollection({"documents": [[]], "metadatas": [[]], "distances": [[]]})
+    runner, _ = _build_runner(
+        [
+            FakeResponse(
+                content=[
+                    FakeToolUseBlock(
+                        id="t1",
+                        name="search_datasheet",
+                        input={"query": "unsupported thermal package claim"},
+                    )
+                ]
+            ),
+            FakeResponse(content=[FakeTextBlock(text="No retrieved evidence; ask reviewer.")]),
+        ],
+        collection=collection,
+    )
+
+    result = runner.run("unsupported thermal package claim")
+
+    trace = result.tool_calls[0]
+    assert trace.output_summary == "hits=0"
+    assert trace.evidence == []
+    assert trace.trust_tier == "l3"
 
 
 def test_runner_unknown_tool_returns_is_error() -> None:

@@ -2457,3 +2457,51 @@ maximum input voltage", and ran `hardwise ask --vector` with tool trace showing
 For trust architecture docs, evidence should be classified by how it was
 obtained. A reviewed profile token is valid L1 evidence, but it is not the same
 claim as a live retrieval-backed agent citation.
+
+## 2026-05-31 — C5 L2 grounding is trace evidence, not a new verdict
+
+**Symptom**
+
+The workbench already had `L1 deterministic`, `L2 grounded`, and `L3 manual`
+labels in the report UI, but Copilot datasheet traces could not actually show
+why a search-backed answer was grounded. `search_datasheet` returned page/source
+hits to the model, yet the user-visible `EvidenceTrace.evidence` was populated
+by refdes validation rows, so search traces had no evidence tokens.
+
+**Root cause**
+
+The trace model carried only tool name, input, summary, and guard wraps. It did
+not carry evidence or trust tier from Runner dispatch. The chat layer then tried
+to infer evidence from `trace.input["refdes"]`, which works for
+`run_component_validation` but not for `search_datasheet`.
+
+**Fix**
+
+Added a small grounding helper: datasheet hits with `source_pdf + page` become
+`datasheet:<pdf>#p<N>` tokens and classify the trace as `L2 grounded`; missing
+or unavailable search evidence classifies the trace as `L3 manual`.
+`run_component_validation` remains `L1 deterministic`. The Copilot panel now
+renders a separate Trust field beside Evidence / Guard wraps / Input.
+
+The static `--ai-snapshot` HTML also gets one hermetic L78 evidence-chain smoke
+question backed by a seeded fake collection with an audited `l78.pdf` page 4
+excerpt. That makes L2 visible in the offline artifact without committing a
+Chroma store or pretending every profile token was retrieved live.
+
+**Verification**
+
+Focused tests covered Runner search evidence propagation, L3 no-vector
+downgrade, L1 validation trace preservation, static snapshot L2 rendering, and
+Copilot asset rendering:
+
+```text
+uv run pytest tests/agent/test_runner.py tests/workbench/test_chat.py \
+  tests/report/test_validator_ui.py tests/test_cli_validator_ui.py -q
+48 passed
+```
+
+**Takeaway**
+
+C5's L2 means "this turn surfaced retrievable page evidence for reviewer
+inspection." It is not sentence-level NLP entailment and it does not promote or
+override deterministic L1 validator truth.

@@ -135,7 +135,7 @@
   <main>
     <header class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Hardwise / Phase 4 closeout</p>
+        <p class="eyebrow">Hardwise / Phase 4 + C5 closeout</p>
         <h1>One trust architecture, two public input tracks</h1>
         <p class="lead">Hardwise 不把两种 EDA 输入硬凑成“一块万能 demo 板”。KiCad 轨展示 agent、registry guard 和 L78 live retrieval smoke；Allegro 轨展示项目级 deterministic validation workbench。</p>
       </div>
@@ -152,7 +152,7 @@
       <div class="chain" aria-label="trust chain">
         <div><span>01</span><b>Registry object</b><p>位号必须来自 KiCad registry 或 Allegro netlist/BOM identity。</p></div>
         <div><span>02</span><b>Deterministic check</b><p>规则或 validator 产出 Finding / ValidationReport，不靠模型自由判断。</p></div>
-        <div><span>03</span><b>Evidence token</b><p>区分 live retrieval、reviewed profile token 和 coverage artifact。</p></div>
+        <div><span>03</span><b>Evidence token</b><p>区分 live retrieval、reviewed profile token、L2 grounded trace 和 coverage artifact。</p></div>
         <div><span>04</span><b>Guarded explanation</b><p>模型只能解释工具返回；未知 refdes 返回 structured miss。</p></div>
       </div>
     </section>
@@ -177,10 +177,11 @@ U3 / DS001 -> datasheet:l78.pdf#p4</code></pre>
       <article class="track">
         <div class="tagrow"><span class="tag">Complementary track</span><span class="tag">Allegro</span><span class="tag">Static workbench</span></div>
         <h3>mixed_controller_power_stage: UI workbench</h3>
-        <p>同一套 deterministic validation truth 渲染成 HTML：U1 PASS，U12/U3/U8 ERROR，其余 21 个器件透明显示 no-profile/manual。</p>
+        <p>同一套 deterministic validation truth 渲染成 HTML：U1 PASS，U12/U3/U8 ERROR，其余 21 个器件透明显示 no-profile/manual。C5 的离线 Copilot snapshot 还烤进一个 L78 evidence-chain smoke，展示 L2 grounded trace。</p>
         <pre><code>uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --ai-snapshot \
   --output /tmp/hardwise-phase4-workbench.html \
   --index-output /tmp/hardwise-phase4-index.md \
   --index-json /tmp/hardwise-phase4-index.json
@@ -188,6 +189,7 @@ U3 / DS001 -> datasheet:l78.pdf#p4</code></pre>
 # output
 25 components, validated=4
 PASS/WARN/ERROR=1/0/3, manual=21</code></pre>
+        <p style="margin-top:14px">C5 snapshot trace: <code>Trust: L2 grounded</code> + <code>datasheet:l78.pdf#p4</code> when the seeded L78 search hit is present; ordinary datasheet questions without vector evidence remain <code>L3 manual</code>.</p>
       </article>
     </section>
 
@@ -199,6 +201,7 @@ PASS/WARN/ERROR=1/0/3, manual=21</code></pre>
           <tbody>
             <tr><td>KiCad</td><td>U3 / L7805 / DS001</td><td>reviewer_to_confirm</td><td>`datasheet:l78.pdf#p4`; Vin abs max is reviewed, applied Vin still needs human confirmation.</td></tr>
             <tr><td>Agent bridge test</td><td>run_component_validation(refdes)</td><td class="status-pass">PASS path covered</td><td>`tests/agent/test_validation_bridge.py` proves Runner dispatches to validator with FakeAnthropic, no API key.</td></tr>
+            <tr><td>C5 trace tier</td><td>L78 evidence-chain smoke</td><td class="status-pass">L2 grounded</td><td>`search_datasheet` trace carries `datasheet:l78.pdf#p4`; no-hit searches stay L3 manual.</td></tr>
             <tr><td>Allegro</td><td>U1 / L7805</td><td class="status-pass">PASS</td><td>L78 profile pin checks include `datasheet:l78.pdf#p3/#p4/#p6`.</td></tr>
             <tr><td>Allegro</td><td>U12 / XL1509</td><td class="status-error">ERROR</td><td>D5 is not Schottky-style; L1 is below profile inductor range.</td></tr>
             <tr><td>Allegro</td><td>U3 / EG2132</td><td class="status-error">ERROR</td><td>Bootstrap diode rating is too low for the 24 V-class path.</td></tr>
