@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
+- **Total Sessions**: 7
 - **Last Active**: 2026-05-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~208 | Active |
+| `journal-1.md` | ~242 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 7 | 2026-05-31 | Evidence-first UI | `4ac7626`, `2402806` | `codex/migrate-codex-mainline` |
 | 6 | 2026-05-31 | Archive Allegro Copilot workbench | `58cf87f`, `c12fea3`, `9c41cd7` | `codex/migrate-codex-mainline` |
 | 5 | 2026-05-31 | Six-section validator report polish | `c12fea3`, `9c41cd7` | `codex/migrate-codex-mainline` |
 | 4 | 2026-05-30 | Phase 4 demo closeout | `2503cc5` | `codex/migrate-codex-mainline` |

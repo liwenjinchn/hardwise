@@ -206,3 +206,37 @@ Archived the completed Allegro-first Copilot workbench parent after the workbenc
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: Evidence-first UI
+
+**Date**: 2026-05-31
+**Task**: Evidence-first UI
+**Branch**: `codex/migrate-codex-mainline`
+
+### Summary
+
+Added evidence-first trust labels, source-token chips, structured Copilot trace rendering, and documented the report/workbench contracts.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4ac7626` | (see git log) |
+| `2402806` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
