@@ -2100,3 +2100,39 @@ Offline demos should fail closed. A snapshot is an audited answer table, not a f
 retriever; unknown questions must hit the boundary copy. Fake clients are still part of
 the trust story: they can be deterministic, but their tool choices must exercise the
 same Runner contracts the real model is expected to use.
+
+## 2026-05-31 — Coverage fixtures need classifier-friendly refdes prefixes
+
+**Symptom**
+
+The new C3 `motor_sensor_controller` fixture parsed and validated, but
+`recommend-next-family` ranked `unknown` too high. The unknown bucket included
+plain passive identities such as `1uF` and `10K`, which made the family
+recommendation look like a real active long-tail gap.
+
+**Root cause**
+
+The grouped coverage classifier infers `suggested_family` from refdes prefix and
+BOM identity. Synthetic passive refdes such as `CS1` and `RBOOT` do not match the
+standard `C` / `R` prefix paths, so they fell through to `unknown`.
+
+**Fix**
+
+Renamed those fixture-only passives to standard designators (`C20`-style
+capacitors and `R30`-style resistors) while keeping intentional unknowns as
+oscillator/crystal rows. The same fixture now ranks diode, transistor, IC,
+inductor, ferrite, and only two real unknown rows.
+
+**Verification**
+
+- `uv run hardwise inspect-allegro-netlist tests/fixtures/allegro/motor_sensor_controller.net`
+  reports 65 components.
+- `uv run hardwise recommend-next-family /tmp/large-index.json -o /tmp/next-family.md`
+  reports 6 families with `unknown` limited to the oscillator/crystal sample.
+- Full gate: `uv run pytest -q` and `uv run ruff check .` pass.
+
+**Takeaway**
+
+Synthetic coverage fixtures should use classifier-friendly refdes prefixes for
+ordinary passives. Otherwise a fixture meant to demonstrate active coverage gaps
+can accidentally test the classifier's fallback path instead.
