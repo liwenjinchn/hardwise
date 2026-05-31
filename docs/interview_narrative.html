@@ -193,8 +193,8 @@
         <section id="position"><div class="num">01</div><div>
           <h2>核心定位</h2>
           <p>Hardwise 不是在证明“大模型可以独立评审完整硬件设计”。它证明的是一个更窄但更重要的点：</p>
-          <blockquote>硬件评审 Agent 不能自由发明工程对象。所有 refdes 必须来自 EDA registry，所有 finding 必须带 evidence token。</blockquote>
-          <p>所以这个项目的核心不是“功能很多”，而是“边界很硬”。确定性的 Python 工具负责解析公开 KiCad 工程，形成可信的位号、pin、datasheet 证据记录；模型负责解释、组织、查询这些记录，但不能自己生成元件、pin 或 datasheet 结论。</p>
+          <blockquote>硬件评审 Agent 不能自由发明工程对象。所有 refdes 必须来自 EDA registry，所有 finding 必须带 evidence token；datasheet claim 要区分 live retrieval 和 reviewed profile token。</blockquote>
+          <p>所以这个项目的核心不是“功能很多”，而是“边界很硬”。确定性的 Python 工具负责解析公开工程，形成可信的位号、pin、datasheet profile 和检索证据；模型负责解释、组织、查询这些记录，但不能自己生成元件、pin 或 datasheet 结论。</p>
         </div></section>
 
         <section id="opening"><div class="num">02</div><div>
@@ -202,16 +202,16 @@
           <div class="script">
             <p>我做 Hardwise 是为了验证一个硬件 AI Agent 的最小可信闭环，不是为了两周内做一个完整硬件评审平台。</p>
             <p>我选了一个很窄的节点：pre-layout 原理图评审。这个节点里最危险的问题不是模型说错一句话，而是它编出一个看起来很像真的位号、pin 或 datasheet 参数。所以我把模型放到两个约束后面：第一，用户可见的 refdes 必须命中 KiCad 解析出来的 EDA registry；第二，每条 finding 必须带 <code>sch:&lt;file&gt;#&lt;refdes&gt;</code> 或 <code>datasheet:&lt;pdf&gt;#p&lt;N&gt;</code> 这样的 evidence token。</p>
-            <p>当前 demo 在公开 KiCad <code>pic_programmer</code> 项目上能解析 121 个 components，定位 77 个 NC pins，输出 28 条 review findings，并且 0 个未验证 refdes、0 条无证据 finding。</p>
+            <p>当前 demo 在公开 KiCad <code>pic_programmer</code> 项目上能解析 121 个 components，定位 77 个 NC pins，输出 29 条 review findings；其中 DS001 会把 <code>U3</code> 的 L78 Vin absolute maximum 落到 reviewed profile token <code>datasheet:l78.pdf#p4</code>。L78 另有 live smoke：157 个 Chroma chunks，<code>search_datasheet</code> top hit 是 <code>[l78.pdf p4 part=L7805]</code>，<code>ask --vector</code> 会先检索再回答第 4 页 / 35 V。</p>
           </div>
-          <div class="facts"><div class="fact"><strong>121</strong><span>components reviewed</span></div><div class="fact"><strong>77</strong><span>NC pins located</span></div><div class="fact"><strong>28</strong><span>review findings</span></div><div class="fact"><strong>0</strong><span>unverified refdes</span></div><div class="fact"><strong>0</strong><span>evidence-less findings</span></div></div>
+          <div class="facts"><div class="fact"><strong>121</strong><span>components reviewed</span></div><div class="fact"><strong>77</strong><span>NC pins located</span></div><div class="fact"><strong>29</strong><span>review findings</span></div><div class="fact"><strong>157</strong><span>L78 vector chunks</span></div><div class="fact"><strong>p4</strong><span>L78 retrieval hit</span></div></div>
         </div></section>
 
         <section id="story"><div class="num">03</div><div>
           <h2>2 分钟版本</h2>
           <p>这个项目起点是硬件原理图评审里的一个真实痛点：评审人不是只看一个错误，而是在 SCH、位号、value 字段、pin 连接、datasheet 和 checklist 之间反复交叉确认。LLM 如果自由回答，最危险的失败不是措辞不专业，而是把不存在的工程事实说得很像真的。</p>
           <p>所以我把 MVP 收窄到一个工作流节点：公开 KiCad 工程上的 pre-layout schematic review。我有意不做 PCB review、仿真、PLM、GitHub PR comment，也不使用任何公司内部硬件数据。在这个窄节点里，我实现了一个最小闭环：</p>
-          <ol><li>解析 KiCad schematic，生成真实 refdes 和 pin 事实的 registry。</li><li>跑确定性规则，统一输出 <code>Finding</code> schema。</li><li>报告出口经过 Refdes Guard 和 Evidence Ledger。</li><li>Agent 问答只能通过 <code>get_component</code>、<code>get_nc_pins</code>、<code>search_datasheet</code> 这类结构化工具。</li></ol>
+          <ol><li>解析 KiCad/Allegro schematic-side 输入，生成真实 refdes、pin、net 和 BOM identity。</li><li>跑确定性规则 / validator，统一输出 <code>Finding</code> 或 <code>ValidationReport</code>。</li><li>报告出口经过 Refdes Guard 和 Evidence Ledger。</li><li>Agent 问答只能通过 <code>get_component</code>、<code>get_nc_pins</code>、<code>search_datasheet</code>、<code>run_component_validation</code> 这类结构化工具。</li></ol>
           <p>比如模型不能自己判断 <code>U999</code> 是否存在。它必须调用 <code>get_component</code>，工具查 registry 后返回 <code>found=false</code> 和可能的 closest matches。模型可以解释“没找到这个位号”，但不能编一个合法器件记录出来。</p>
           <div class="callout">Eval Pack 只讲 regression / guardrail：5 个公开仓库、6 个有 components 的 KiCad project、1707 个 parsed components，另有 10 个空 KiCad directory 被标成 skipped；不包装成专家准确率 benchmark。</div>
         </div></section>
@@ -219,14 +219,14 @@
         <section id="demo"><div class="num">04</div><div>
           <h2>Demo 顺序</h2>
           <p>面试屏幕共享时按这个顺序讲：</p>
-          <pre><code>uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003</code></pre>
-          <ol><li>先指出主输出：121 components reviewed、28 findings、relational store 写入 121 components + 77 NC pins。</li><li>打开 report 看一条 R002：refdes 是真实电容，message 指出 value 字段缺额定耐压后缀，evidence token 指回 <code>sch:pic_programmer.kicad_sch#C2</code>。</li><li>再看一条 R003：NC pin 来自 KiCad <code>no_connect</code> marker 和 pin 坐标匹配；connector/socket 批量 NC 聚合成低优先级 <code>likely_ok</code>；IC/module NC 在没有 datasheet 证据时保持 <code>reviewer_to_confirm</code>。</li><li>最后跑 unknown path，重点不是模型文采，而是工具返回 structured miss，不让模型编造 <code>U999</code>。</li></ol>
+          <pre><code>uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component</code></pre>
+          <ol><li>先指出主输出：121 components reviewed、29 findings、DS001 引用 <code>datasheet:l78.pdf#p4</code>。</li><li>打开 report 看一条 R002：refdes 是真实电容，message 指出 value 字段缺额定耐压后缀，evidence token 指回 <code>sch:pic_programmer.kicad_sch#C2</code>。</li><li>再看一条 R003：NC pin 来自 KiCad <code>no_connect</code> marker 和 pin 坐标匹配；IC/module NC 在没有 datasheet 证据时保持 <code>reviewer_to_confirm</code>。</li><li>跑 L78 evidence smoke：<code>ask --vector</code> trace 里出现 <code>search_datasheet -> hits</code> 和 <code>get_component(U3) -> found</code>，回答引用 <code>l78.pdf p4</code>。</li><li>最后跑 unknown path，重点不是模型文采，而是工具返回 structured miss，不让模型编造 <code>U999</code>。</li></ol>
           <pre><code>uv run hardwise ask data/projects/pic_programmer "What is U999?"</code></pre>
         </div></section>
 
         <section id="emphasis"><div class="num">05</div><div>
           <h2>重点与红线</h2>
-          <div class="two-col"><div class="note-card"><h3>重点讲</h3><ul><li>只做 pre-layout schematic review 这一个节点。</li><li>只使用公开 KiCad 项目和公开 datasheet。</li><li>确定性事实抽取和模型推理分开。</li><li>Unknown 是一等结果，不把“不知道”藏起来。</li><li>Pydantic 工具 schema 都有 typed miss path。</li><li><code>decision</code> 和人工 review <code>status</code> 分离。</li></ul></div><div class="note-card"><h3>不要这么说</h3><ul><li>不说 Hardwise 已经能完整评审硬件设计。</li><li>不说 eval pack 证明专家级准确率。</li><li>不把 prompt caching 或 tiered routing 讲成主创新。</li><li>不说 R004/R005 或 schematic net parser 已完成。</li><li>不暗示 demo 里每颗器件都有 datasheet 证据。</li><li>不说 Sleep Consolidator 会自动晋升规则。</li></ul></div></div>
+          <div class="two-col"><div class="note-card"><h3>重点讲</h3><ul><li>只做 pre-layout schematic review 这一个节点。</li><li>只使用公开 KiCad 项目、public-safe synthetic Allegro fixture 和公开 datasheet。</li><li>确定性事实抽取和模型推理分开。</li><li>Unknown 是一等结果，不把“不知道”藏起来。</li><li>L78 是完整 <code>ingest -> retrieve -> agent citation</code> smoke。</li><li>C3/C4 coverage loop 是支撑材料，不是主角。</li></ul></div><div class="note-card"><h3>不要这么说</h3><ul><li>不说 Hardwise 已经能完整评审硬件设计。</li><li>不说 eval pack 证明专家级准确率。</li><li>不把 prompt caching 或 tiered routing 讲成主创新。</li><li>不说 R004/R005 或 schematic net parser 已完成。</li><li>不暗示 demo 里每颗器件都有 datasheet 证据。</li><li>不把所有 profile token 都说成 Chroma 检索结果。</li></ul></div></div>
         </div></section>
 
         <section id="bigger"><div class="num">06</div><div>

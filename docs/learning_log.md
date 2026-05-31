@@ -2417,3 +2417,43 @@ Coverage ranking is a planning input, not a product strategy by itself. Once the
 loop's generality is demonstrated, stop adding family slices and spend the next
 unit of work on whatever makes the public AI trust story more truthful and
 reviewable.
+
+## 2026-05-31 — Evidence tokens need retrieval-class labels
+
+**Symptom**
+
+The narrative was starting to blur three different facts: L78 has a real
+`ingest -> retrieve -> agent citation` smoke, C4 profiles carry reviewed
+`datasheet:<part>.pdf#pN` tokens, and C3/C4 ranking proves a coverage loop.
+Those are all useful, but only the first one proves live datasheet retrieval.
+
+**Root cause**
+
+The same token shape (`datasheet:...#pN`) appears in reviewed profile JSON and
+in retrieval-backed chunks. Without a label, readers can reasonably infer that
+every profile token came from Chroma search. That would overclaim the current
+repo state: only `data/datasheets/l78.pdf` is locally staged and smoke-tested
+through vector retrieval.
+
+**Fix**
+
+Added `docs/evidence_chain_audit.md` and rewrote the narrative entry points to
+separate:
+
+- live retrieved evidence: `[l78.pdf p4 part=L7805]` from `search_datasheet`;
+- reviewed profile tokens: deterministic validator inputs such as
+  `datasheet:bas316.pdf#p2`;
+- coverage/ranking artifacts: C3/C4 planning proof, not the headline AI claim.
+
+**Verification**
+
+The smoke rebuilt `/tmp/hardwise-evidence-audit`, ingested `l78.pdf` into 157
+chunks, returned `[l78.pdf p4 part=L7805]` as the top query hit for "absolute
+maximum input voltage", and ran `hardwise ask --vector` with tool trace showing
+`search_datasheet -> hits=5` followed by `get_component(U3) -> found`.
+
+**Takeaway**
+
+For trust architecture docs, evidence should be classified by how it was
+obtained. A reviewed profile token is valid L1 evidence, but it is not the same
+claim as a live retrieval-backed agent citation.

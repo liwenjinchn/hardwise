@@ -28,11 +28,13 @@ GitHub shows HTML files as source. Use the screenshot above for a quick scan, or
 
 ## What the MVP proves
 
-Phase 4 is framed as one trust backbone across two public input tracks, not one board pretending to cover every command surface. The backbone is:
+Phase 4 is framed as one trust architecture across two public input tracks, not one board pretending to cover every command surface. The backbone is:
 
 ```text
-registry object -> deterministic validator/rule -> evidence token -> guarded agent/report explanation
+Refdes Guard + Evidence Ledger + L1 deterministic validators + structured tools
 ```
+
+The C3/C4 coverage loop is supporting evidence: C3 ranks profile gaps, and C4 moves selected groups from L3/manual rows into L1 deterministic rows. That proves the loop is repeatable, but the headline remains trust: the model is bounded by registry objects, evidence tokens, and tool returns.
 
 The KiCad track proves the agent/review/evidence path:
 
@@ -50,6 +52,8 @@ On the public KiCad demo project `pic_programmer`, Hardwise runs deterministic s
 - DS001: L78 regulator Vin absolute-maximum evidence check
 
 The current sample report has **29 findings**: 6 R002 capacitor-voltage-field findings, 22 R003 NC-pin findings after noise reduction, and one DS001 `U3` / L7805 finding that cites the reviewed profile token `datasheet:l78.pdf#p4`. DS001 stays `reviewer_to_confirm` because the current schematic path cannot infer the applied Vin rail; it does not guess. Each finding carries a source token; NC pins are coordinate-matched from KiCad `no_connect` markers rather than model-generated.
+
+The L78 path also has a live retrieval smoke: `l78.pdf` is ingested into Chroma, `query-datasheet "absolute maximum input voltage"` returns `[l78.pdf p4 part=L7805]`, and `hardwise ask ... --vector` calls `search_datasheet` before citing page 4. See [`docs/evidence_chain_audit.md`](docs/evidence_chain_audit.md). Other C4 profile tokens are reviewed public profile evidence unless their PDFs have also been staged and queried.
 
 The Allegro track proves the static project workbench:
 
@@ -179,6 +183,8 @@ uv run hardwise review data/projects/pic_programmer --rules R003 --vector
 ```
 
 Datasheet chunks carry provenance such as `[l78.pdf p4 part=L7805]`, which independently corroborates structured profile tokens such as `datasheet:l78.pdf#p4`. Rules such as DS001 read the reviewed profile JSON; they do not scrape Chroma text during `review`.
+
+Current evidence-chain boundary: only the L78 datasheet is staged locally and smoke-tested through `ingest -> retrieve -> agent citation`. The remaining profile JSON files are reviewed deterministic inputs, not proof that every profile fact was retrieved live from Chroma.
 
 ### Run the eval pack
 

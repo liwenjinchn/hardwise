@@ -136,8 +136,8 @@
     <header class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Hardwise / Phase 4 closeout</p>
-        <h1>One trust backbone, two public input tracks</h1>
-        <p class="lead">Hardwise 不把两种 EDA 输入硬凑成“一块万能 demo 板”。KiCad 轨展示 agent、registry guard 和真实 L78 datasheet token；Allegro 轨展示项目级 deterministic validation workbench。</p>
+        <h1>One trust architecture, two public input tracks</h1>
+        <p class="lead">Hardwise 不把两种 EDA 输入硬凑成“一块万能 demo 板”。KiCad 轨展示 agent、registry guard 和 L78 live retrieval smoke；Allegro 轨展示项目级 deterministic validation workbench。</p>
       </div>
       <div class="summary" aria-label="phase 4 metrics">
         <div class="metric"><span>KiCad review</span><strong>29</strong><code>findings on pic_programmer</code></div>
@@ -152,7 +152,7 @@
       <div class="chain" aria-label="trust chain">
         <div><span>01</span><b>Registry object</b><p>位号必须来自 KiCad registry 或 Allegro netlist/BOM identity。</p></div>
         <div><span>02</span><b>Deterministic check</b><p>规则或 validator 产出 Finding / ValidationReport，不靠模型自由判断。</p></div>
-        <div><span>03</span><b>Evidence token</b><p>结论要落到 `sch:`、`datasheet:`、`bom:` 或 `rule:` token。</p></div>
+        <div><span>03</span><b>Evidence token</b><p>区分 live retrieval、reviewed profile token 和 coverage artifact。</p></div>
         <div><span>04</span><b>Guarded explanation</b><p>模型只能解释工具返回；未知 refdes 返回 structured miss。</p></div>
       </div>
     </section>
@@ -161,7 +161,7 @@
       <article class="track">
         <div class="tagrow"><span class="tag">Hero track</span><span class="tag">KiCad</span><span class="tag">No API gate</span></div>
         <h3>pic_programmer: agent/review evidence</h3>
-        <p>运行 R001/R002/R003/DS001，U3 的 L7805 finding 带真实 reviewed profile token `datasheet:l78.pdf#p4`。由于 schematic 还不能推断 Vin，结果保持 `reviewer_to_confirm`。</p>
+        <p>运行 R001/R002/R003/DS001，U3 的 L7805 finding 带 reviewed profile token `datasheet:l78.pdf#p4`。L78 另有 `ingest -> retrieve -> ask --vector` smoke，能从 `search_datasheet` 引到 `l78.pdf p4`。</p>
         <pre><code>uv run hardwise review \
   data/projects/pic_programmer \
   --rules R001,R002,R003,DS001 \
@@ -171,6 +171,7 @@
 # output
 29 findings, 121 components reviewed
 U3 / DS001 -> datasheet:l78.pdf#p4</code></pre>
+        <p style="margin-top:14px">Evidence audit: `query-datasheet "absolute maximum input voltage"` top-1 是 `[l78.pdf p4 part=L7805]`；`ask --vector` trace 显示 `search_datasheet -> hits` 和 `get_component(U3) -> found`。C4 其它 profile token 是 reviewed public profile evidence，不等于每个 PDF 都已 live retrieval。</p>
       </article>
 
       <article class="track">
@@ -208,7 +209,7 @@ PASS/WARN/ERROR=1/0/3, manual=21</code></pre>
     </section>
 
     <section class="section note">
-      <p><b>Boundary:</b> all inputs are public fixtures or public datasheet-derived profiles. Phase 4 does not add PCB/boardview, placement/routing, simulation, PLM, supplier/lifecycle/pricing, hosted app state, or company-internal hardware data. BJT is already proven by its Phase 3 tests and stays out of the main demo unless an existing fixture exposes it without new scope.</p>
+      <p><b>Boundary:</b> C3/C4 coverage ranking is supporting material, not the headline. The headline is the trust architecture: registry-verified objects, evidence labels, deterministic validators, and structured tools. Phase 4 does not add PCB/boardview, placement/routing, simulation, PLM, supplier/lifecycle/pricing, hosted app state, or company-internal hardware data.</p>
     </section>
   </main>
 </body>
