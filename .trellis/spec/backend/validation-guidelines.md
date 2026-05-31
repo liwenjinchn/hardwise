@@ -155,6 +155,10 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
   Vbe against VEBO; base-current / resistor sizing is a separate topology check.
   `Vceo` also lives in top-level `profile.abs_max["vceo"]`, not in per-pin
   `limits`. Per-pin `limits` are for generic pin validators only.
+- **Package pinout is part-specific.** Do not reuse a TO-92 `2N3904` profile for
+  an SOT-23 `MMBT3904`: both may be NPN 3904-family devices, but their package
+  pin numbering differs. Add a profile-level pinout regression when introducing
+  package variants.
 
 **Multi-pin connectors**:
 - VCC pins: `power_input` with `limits` dict

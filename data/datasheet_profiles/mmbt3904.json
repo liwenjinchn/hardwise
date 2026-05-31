@@ -1,0 +1,56 @@
+{
+  "part_number": "MMBT3904",
+  "part_number_aliases": ["MMBT3904L", "MMBT3904LT1G", "SMMBT3904L"],
+  "review_status": "ready",
+  "description": "NPN general-purpose transistor, SOT-23",
+  "abs_max": {
+    "vceo": 40.0,
+    "vcbo": 60.0,
+    "vebo": 6.0,
+    "ic": 0.2
+  },
+  "recommended": {
+    "topology_family": "bjt",
+    "polarity": "npn"
+  },
+  "pin_function": {
+    "1": "Base",
+    "2": "Emitter",
+    "3": "Collector"
+  },
+  "pins": [
+    {
+      "name": "Base",
+      "number": "1",
+      "category": "analog_input",
+      "function": "Base control input; Vbe is measured against the emitter, not ground.",
+      "evidence": ["datasheet:mmbt3904lt1-d.pdf#p1"]
+    },
+    {
+      "name": "Emitter",
+      "number": "2",
+      "category": "switch_node",
+      "function": "Emitter terminal; Vbe and Vce reference node for the first NPN validator.",
+      "evidence": ["datasheet:mmbt3904lt1-d.pdf#p1"]
+    },
+    {
+      "name": "Collector",
+      "number": "3",
+      "category": "switch_output",
+      "function": "Collector terminal for the switched current path.",
+      "evidence": ["datasheet:mmbt3904lt1-d.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "abs_max.vceo": "datasheet:mmbt3904lt1-d.pdf#p1",
+    "abs_max.vcbo": "datasheet:mmbt3904lt1-d.pdf#p1",
+    "abs_max.vebo": "datasheet:mmbt3904lt1-d.pdf#p1",
+    "abs_max.ic": "datasheet:mmbt3904lt1-d.pdf#p1",
+    "pin_function.1": "datasheet:mmbt3904lt1-d.pdf#p1",
+    "pin_function.2": "datasheet:mmbt3904lt1-d.pdf#p1",
+    "pin_function.3": "datasheet:mmbt3904lt1-d.pdf#p1"
+  },
+  "extracted_at": "2026-05-31T00:00:00+08:00",
+  "extracted_model": "manual-profile-c4b-mmbt3904",
+  "schema_version": "v2"
+}

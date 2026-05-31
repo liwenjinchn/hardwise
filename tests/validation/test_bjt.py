@@ -20,6 +20,11 @@ def bjt_profile() -> DatasheetProfile:
     return DatasheetProfile.load(Path("data/datasheet_profiles/2n3904.json"))
 
 
+@pytest.fixture
+def mmbt3904_profile() -> DatasheetProfile:
+    return DatasheetProfile.load(Path("data/datasheet_profiles/mmbt3904.json"))
+
+
 def _design(net_name: str, bom_name: str):
     netlist = parse_allegro_netlist(Path(f"tests/fixtures/allegro/{net_name}"))
     bom = parse_bom(Path(f"tests/fixtures/allegro/{bom_name}"))
@@ -131,3 +136,59 @@ def test_routes_by_family_without_mpn_fallback(bjt_profile, lowside_design):
 
     check_names = {c.check for c in results.component_checks}
     assert "bjt_vebo_rating" in check_names
+
+
+def test_mmbt3904_profile_matches_public_sot23_pinout(mmbt3904_profile):
+    assert mmbt3904_profile.pin_function["1"] == "Base"
+    assert mmbt3904_profile.pin_function["2"] == "Emitter"
+    assert mmbt3904_profile.pin_function["3"] == "Collector"
+    assert [(pin.number, pin.name) for pin in mmbt3904_profile.pins] == [
+        ("1", "Base"),
+        ("2", "Emitter"),
+        ("3", "Collector"),
+    ]
+
+
+def test_mmbt3904_sot23_nominal_all_pass(mmbt3904_profile, tmp_path):
+    design = _design_from_text(
+        tmp_path,
+        """$PACKAGES
+  ! 'SOT23' ! MMBT3904 ; Q10
+  ! 'R0402' ! 1K ; R_BASE
+  ! 'R0402' ! 1K ; R_LOAD
+$NETS
+  'BASE_DRIVE' ; Q10.1, R_BASE.2
+  '+3V3' ; R_BASE.1
+  'GND' ; Q10.2
+  'COLLECTOR_RAIL' ; Q10.3, R_LOAD.2
+  '+12V' ; R_LOAD.1
+$END
+""",
+        """Reference,Quantity,Value,Manufacturer,MPN
+Q10,1,MMBT3904,onsemi,MMBT3904
+R_BASE,1,1K,Fixture,RES-1K
+R_LOAD,1,1K,Fixture,RES-1K
+""",
+    )
+    design.nets["BASE_DRIVE"].voltage_hint = 0.7
+    design.nets["COLLECTOR_RAIL"].voltage_hint = 12.0
+
+    results = validate_component_against_profile(design.components["Q10"], mmbt3904_profile, design)
+
+    assert results.status == "PASS"
+    assert results.component_counts_by_status == {"PASS": 5, "WARN": 0, "ERROR": 0}
+    checks = {c.check: c for c in results.component_checks}
+    assert checks["bjt_vebo_rating"].evidence == ["datasheet:mmbt3904lt1-d.pdf#p1"]
+    assert "base 0.7 V - emitter 0 V" in checks["bjt_vebo_rating"].summary
+
+
+def _design_from_text(tmp_path: Path, netlist_content: str, bom_content: str):
+    netlist_path = tmp_path / "test.net"
+    netlist_path.write_text(netlist_content)
+    bom_path = tmp_path / "test_bom.csv"
+    bom_path.write_text(bom_content)
+
+    netlist = parse_allegro_netlist(netlist_path)
+    bom = parse_bom(bom_path)
+    design = build_design_from_netlist(netlist)
+    return apply_bom_to_design(design, match_bom_to_design(bom, design))

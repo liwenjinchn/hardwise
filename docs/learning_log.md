@@ -2220,3 +2220,43 @@ different inferred voltage from the opposite LED pin. Shared LED banks now say
 For reviewed profiles, pinout evidence needs its own regression independent of
 the fixture. Topology checks should name the topology they prove; a generic
 "neighbor exists" check is usually too weak for hardware review.
+
+## 2026-05-31 — Package variants need their own BJT pinout profile
+
+**Symptom**
+
+C4b selected the C3/C4-ranked transistor gap: six `MMBT3904` rows in the
+public-safe synthetic Allegro fixture. Hardwise already had a `2N3904` BJT
+profile and validator, but applying that profile directly to the SOT-23
+`MMBT3904` group would silently use the wrong package pin numbering.
+
+**Root cause**
+
+`2N3904` and `MMBT3904` are electrically similar NPN 3904-family devices, but
+the existing profile was a TO-92 profile with pin 1 = Emitter, pin 2 = Base,
+pin 3 = Collector. The onsemi SOT-23 `MMBT3904` datasheet uses pin 1 = Base,
+pin 2 = Emitter, pin 3 = Collector. Reusing the electrical family name as a
+profile identity would repeat the C4 LED mistake: tests could be internally
+consistent while the package pinout was wrong.
+
+**Fix**
+
+Added a separate reviewed `mmbt3904.json` profile with SOT-23 pinout evidence
+and the existing BJT limits (`VCEO=40 V`, `VEBO=6 V`). The synthetic fixture was
+updated so Q10-Q15 use base pins on `DRV10`-`DRV15`, emitters on `GND`, and
+collectors on `OUT10`-`OUT15`. The existing BJT validator was reused unchanged.
+
+**Verification**
+
+- `tests/validation/test_bjt.py` asserts the MMBT3904 profile pinout and a
+  nominal SOT-23 low-side case with voltage hints.
+- C4b smoke reports 66 components / validated=22 / manual=44 /
+  PASS-WARN-ERROR=12-7-3.
+- `recommend-next-family` drops the transistor group; next highest family is
+  `ic`.
+
+**Takeaway**
+
+For package-sensitive components, the profile identity is not just the silicon
+family. Package pinout must be checked independently before a no-profile group
+is promoted into deterministic validation.
