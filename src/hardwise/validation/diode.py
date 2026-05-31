@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
+from hardwise.validation.diode_led_current import led_current_limit_summary
 from hardwise.validation.pins import voltage_for_net
-from hardwise.validation.topology import components_on_net
 from hardwise.validation.types import ComponentValidation
 
 
@@ -162,10 +162,7 @@ def _validate_led_indicator_polarity(
         check="led_indicator_polarity",
         status="PASS",
         refdes=component.refdes,
-        summary=(
-            f"LED anode is at {anode_voltage:g} V and cathode is at "
-            f"{cathode_voltage:g} V."
-        ),
+        summary=(f"LED anode is at {anode_voltage:g} V and cathode is at {cathode_voltage:g} V."),
         evidence=evidence,
     )
 
@@ -202,20 +199,23 @@ def _validate_led_current_limit(
             evidence=evidence,
         )
 
-    limiting_net = _current_limit_net(component, design, (anode.net, cathode.net))
-    if limiting_net is None:
+    summary = led_current_limit_summary(component, design, anode.net, cathode.net)
+    if summary is None:
         return ComponentValidation(
             check="led_current_limit",
             status="ERROR",
             refdes=component.refdes,
-            summary="LED indicator has no resistor neighbor on its anode or cathode net.",
+            summary=(
+                "LED indicator has no deterministic series current-limit resistor "
+                "on its anode or cathode branch."
+            ),
             evidence=evidence,
         )
     return ComponentValidation(
         check="led_current_limit",
         status="PASS",
         refdes=component.refdes,
-        summary=f"LED indicator has a resistor neighbor on {limiting_net}.",
+        summary=summary,
         evidence=evidence,
     )
 
@@ -248,20 +248,6 @@ def _is_led_indicator(profile: DatasheetProfile) -> bool:
 
 def _bool_recommended(profile: DatasheetProfile, key: str) -> bool:
     return profile.recommended.get(key) is True
-
-
-def _current_limit_net(
-    component: Component,
-    design: Design,
-    net_names: tuple[str, str],
-) -> str | None:
-    for net_name in net_names:
-        if any(
-            neighbor.refdes.startswith("R")
-            for neighbor in components_on_net(design, net_name, exclude_refdes=component.refdes)
-        ):
-            return net_name
-    return None
 
 
 def _profile_evidence(profile: DatasheetProfile, key: str) -> list[str]:

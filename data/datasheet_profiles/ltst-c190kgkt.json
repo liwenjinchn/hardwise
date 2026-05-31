@@ -11,22 +11,22 @@
     "requires_current_limit": true
   },
   "pin_function": {
-    "1": "Anode",
-    "2": "Cathode"
+    "1": "Cathode",
+    "2": "Anode"
   },
   "pins": [
     {
-      "name": "Anode",
+      "name": "Cathode",
       "number": "1",
       "category": "switch_node",
-      "function": "LED anode; expected to be on the higher-potential side of the indicator path.",
+      "function": "LED cathode; expected to be on the lower-potential side of the indicator path.",
       "evidence": ["public_profile:ltst-c190kgkt#pinout"]
     },
     {
-      "name": "Cathode",
+      "name": "Anode",
       "number": "2",
       "category": "switch_node",
-      "function": "LED cathode; expected to be on the lower-potential side of the indicator path.",
+      "function": "LED anode; expected to be on the higher-potential side of the indicator path.",
       "evidence": ["public_profile:ltst-c190kgkt#pinout"]
     }
   ],

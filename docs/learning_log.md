@@ -2174,3 +2174,49 @@ current-limit checks only for that sub-role.
 Use `topology_family` for dispatch and structured role fields for narrow
 subcases. That preserves existing validator routing while letting one C3-ranked
 gap become L1 deterministic.
+
+## 2026-05-31 — LED profile pinout must not be fixture-derived
+
+**Symptom**
+
+C4's `LTST-C190KGKT` profile mapped pin 1 to Anode and pin 2 to Cathode. Public
+pinout evidence shows the opposite polarity, so the deterministic LED polarity
+check could accept a reversed fixture and reject a correct one. The current-limit
+check also passed if any `R*` component touched either LED pin net, including an
+unrelated resistor on a global rail.
+
+**Root cause**
+
+The profile and tests were coupled to the synthetic fixture's pin numbering
+instead of independently proving the package pinout. That made the tests
+tautological: nominal and reversed cases exercised the validator, but both used
+the same wrong anode/cathode map. The current-limit rule encoded "resistor
+neighbor" rather than "series branch resistor," so it did not distinguish a
+branch net like `GND_LED` from a raw rail like `+3V3`.
+
+**Fix**
+
+Changed `ltst-c190kgkt.json` to pin 1 = Cathode and pin 2 = Anode, then swapped
+the LED fixture pins to keep D10-D17 electrically nominal. Replaced the neighbor
+scan with a conservative one-resistor-hop branch check: ignore raw rails, require
+a resistor on an LED branch net, and require the resistor's other side to have a
+different inferred voltage from the opposite LED pin. Shared LED banks now say
+"shared current-limit resistor" in the summary.
+
+**Verification**
+
+- `tests/validation/test_diode.py` now asserts the profile pinout directly.
+- Added regressions for unrelated rail resistors and shared resistor-bank
+  summary wording.
+- Focused diode gate: `uv run pytest -q tests/validation/test_diode.py` passes.
+- Full gate: `uv run pytest -q` reports 412 passed / 7 deselected, and
+  `uv run ruff check .` passes.
+- C4 smoke remains 66 components / validated=16 / manual=50 /
+  PASS-WARN-ERROR=12-1-3, with D10 reporting shared current-limit resistor R32
+  on cathode branch `GND_LED`.
+
+**Takeaway**
+
+For reviewed profiles, pinout evidence needs its own regression independent of
+the fixture. Topology checks should name the topology they prove; a generic
+"neighbor exists" check is usually too weak for hardware review.

@@ -99,6 +99,10 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
 **Two-terminal passive devices** (diodes, resistors, capacitors):
 - Use `switch_node` for both pins (cathode/anode, terminal1/terminal2)
 - Validator logic determines polarity based on voltage differential
+- Do not infer package pin numbers from fixture wiring. Before marking a
+  profile `review_status="ready"`, compare the public datasheet or public ECAD
+  pin diagram against the `pin_function` map and add a regression that would
+  fail if anode/cathode were swapped.
 ```json
 {"name": "Cathode", "number": "1", "category": "switch_node"},
 {"name": "Anode", "number": "2", "category": "switch_node"}
@@ -118,9 +122,12 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
 }
 ```
 - LED-only checks may verify anode/cathode polarity and the presence of a
-  nearby current-limit resistor, but must not infer current magnitude,
-  brightness, optics, thermal behavior, TVS behavior, or Schottky/freewheel
-  suitability.
+  one-resistor-hop series-branch current-limit resistor, but must not infer
+  current magnitude, brightness, optics, thermal behavior, TVS behavior, or
+  Schottky/freewheel suitability.
+- Current-limit checks must not treat any resistor attached to a global rail
+  (for example `+3V3` or `GND`) as limiting the LED. Require the resistor on an
+  LED branch net, and make shared resistor-bank summaries explicit.
 
 **Three-terminal control devices** (MOSFET, BJT):
 - Gate/Base: `analog_input` (analog control) or `logic_input` (digital control)
