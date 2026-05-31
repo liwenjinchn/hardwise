@@ -19,6 +19,7 @@ This directory contains guidelines for backend development. Fill in each file wi
 | [Error Handling](./error-handling.md) | Error types, handling strategies | To fill |
 | [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | Filled |
 | [Logging Guidelines](./logging-guidelines.md) | Structured logging, log levels | To fill |
+| [Reporting Guidelines](./reporting-guidelines.md) | Deterministic report rendering and validator UI contracts | Filled |
 | [Validation Guidelines](./validation-guidelines.md) | Deterministic component validators | Filled |
 | [Workbench Guidelines](./workbench-guidelines.md) | Copilot panel, snapshot, and fake/live chat contracts | Filled |
 
