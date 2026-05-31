@@ -129,6 +129,27 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
   (for example `+3V3` or `GND`) as limiting the LED. Require the resistor on an
   LED branch net, and make shared resistor-bank summaries explicit.
 
+**Bidirectional TVS rail clamps**:
+- Keep dispatch on `recommended.topology_family: "diode"`; do not add a
+  separate TVS dispatch branch.
+- Use a structured sub-role for TVS-only checks:
+```json
+{
+  "recommended": {
+    "topology_family": "diode",
+    "diode_role": "bidirectional_tvs",
+    "working_standoff_voltage": 24.0
+  }
+}
+```
+- Bidirectional TVS terminals are not cathode/anode oriented. Use neutral pin
+  names such as `Terminal 1` and `Terminal 2`.
+- TVS checks may verify terminal connectivity, a recognized ground reference,
+  and rail-to-ground working voltage against standoff voltage when the rail can
+  be inferred. They must not infer surge-current sizing, ESD standard coverage,
+  clamp waveform behavior, capacitance suitability, thermal behavior, connector
+  completeness, placement, routing, or PCB geometry.
+
 **Three-terminal control devices** (MOSFET, BJT):
 - Gate/Base: `analog_input` (analog control) or `logic_input` (digital control)
 - Drain/Collector: `switch_output` (switched high-side)

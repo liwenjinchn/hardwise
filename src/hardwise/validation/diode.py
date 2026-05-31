@@ -5,7 +5,7 @@ from __future__ import annotations
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.diode_led_current import led_current_limit_summary
-from hardwise.validation.pins import voltage_for_net
+from hardwise.validation.pins import is_ground_net, voltage_for_net
 from hardwise.validation.types import ComponentValidation
 
 
@@ -15,6 +15,17 @@ def validate_diode(
     design: Design,
 ) -> list[ComponentValidation]:
     """Validate a two-terminal diode against its structured pin profile."""
+
+    if _is_bidirectional_tvs(profile):
+        return [
+            _validate_pin_connected(
+                component, profile, "Terminal 1", "tvs_terminal_1_connectivity"
+            ),
+            _validate_pin_connected(
+                component, profile, "Terminal 2", "tvs_terminal_2_connectivity"
+            ),
+            _validate_bidirectional_tvs_standoff(component, profile, design),
+        ]
 
     checks = [
         _validate_pin_connected(component, profile, "Cathode", "diode_cathode_connectivity"),
@@ -220,6 +231,90 @@ def _validate_led_current_limit(
     )
 
 
+def _validate_bidirectional_tvs_standoff(
+    component: Component,
+    profile: DatasheetProfile,
+    design: Design,
+) -> ComponentValidation:
+    evidence = _profile_evidence(profile, "recommended.working_standoff_voltage")
+    terminal_1 = _pin_by_profile_name(component, profile, "Terminal 1")
+    terminal_2 = _pin_by_profile_name(component, profile, "Terminal 2")
+    if terminal_1 is None or not terminal_1.net:
+        return ComponentValidation(
+            check="tvs_working_standoff",
+            status="ERROR",
+            summary="TVS terminal 1 is not connected; cannot check rail clamp.",
+            evidence=evidence,
+        )
+    if terminal_2 is None or not terminal_2.net:
+        return ComponentValidation(
+            check="tvs_working_standoff",
+            status="ERROR",
+            summary="TVS terminal 2 is not connected; cannot check rail clamp.",
+            evidence=evidence,
+        )
+
+    terminals = (terminal_1, terminal_2)
+    ground_terminals = [terminal for terminal in terminals if is_ground_net(terminal.net or "")]
+    if not ground_terminals:
+        return ComponentValidation(
+            check="tvs_working_standoff",
+            status="WARN",
+            refdes=component.refdes,
+            summary="Bidirectional TVS has no terminal on a recognized ground net; rail clamp cannot be confirmed.",
+            evidence=evidence,
+        )
+    if len(ground_terminals) == 2:
+        return ComponentValidation(
+            check="tvs_working_standoff",
+            status="ERROR",
+            refdes=component.refdes,
+            summary="Bidirectional TVS terminals are both on ground-like nets; no protected rail is present.",
+            evidence=evidence,
+        )
+
+    reference = ground_terminals[0]
+    protected = terminal_2 if reference.number == terminal_1.number else terminal_1
+    reference_voltage = voltage_for_net(reference.net or "", design)
+    protected_voltage = voltage_for_net(protected.net or "", design)
+    if reference_voltage is None or protected_voltage is None:
+        return ComponentValidation(
+            check="tvs_working_standoff",
+            status="WARN",
+            refdes=component.refdes,
+            summary=(
+                "Bidirectional TVS rail voltage cannot be inferred from terminal nets "
+                f"{protected.net} and {reference.net}."
+            ),
+            evidence=evidence,
+        )
+
+    working_voltage = abs(protected_voltage - reference_voltage)
+    standoff = _float_recommended(profile, "working_standoff_voltage")
+    if standoff is not None and working_voltage > standoff:
+        return ComponentValidation(
+            check="tvs_working_standoff",
+            status="ERROR",
+            refdes=component.refdes,
+            summary=(
+                f"Bidirectional TVS sees {working_voltage:g} V from {protected.net} to "
+                f"{reference.net}, above working standoff {standoff:g} V."
+            ),
+            evidence=evidence,
+        )
+    return ComponentValidation(
+        check="tvs_working_standoff",
+        status="PASS",
+        refdes=component.refdes,
+        summary=(
+            f"Bidirectional TVS clamps {protected.net} to {reference.net}; "
+            f"working voltage {working_voltage:g} V"
+            + (f" is within standoff {standoff:g} V." if standoff else ".")
+        ),
+        evidence=evidence,
+    )
+
+
 def _pin_by_profile_name(component: Component, profile: DatasheetProfile, name: str):
     number = _pin_number(profile, name)
     if number is None:
@@ -240,6 +335,17 @@ def _float_abs_max(profile: DatasheetProfile, key: str) -> float | None:
     if isinstance(value, (int, float)):
         return float(value)
     return None
+
+
+def _float_recommended(profile: DatasheetProfile, key: str) -> float | None:
+    value = profile.recommended.get(key)
+    if isinstance(value, (int, float)):
+        return float(value)
+    return None
+
+
+def _is_bidirectional_tvs(profile: DatasheetProfile) -> bool:
+    return str(profile.recommended.get("diode_role", "")).lower() == "bidirectional_tvs"
 
 
 def _is_led_indicator(profile: DatasheetProfile) -> bool:

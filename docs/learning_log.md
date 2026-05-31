@@ -2300,3 +2300,44 @@ instead of accidentally becoming a missing-pin finding.
 Use profile metadata that names the validation scope when there is no dispatcher
 behind it. Reserve `topology_family` for real component-level validators, and
 keep analog behavior out of basic pin-profile closures.
+
+## 2026-05-31 — Bidirectional TVS is a diode sub-role, not cathode/anode logic
+
+**Symptom**
+
+After C4c, `recommend-next-family` ranked inductor first and diode second.
+Inductor had a slightly higher score, but the synthetic fixture only had
+fixture identities (`IND-6R8`, `IND-10UH`) without public datasheet evidence.
+The remaining diode sample included `SMBJ24CA`, which has public Littelfuse
+data but is a bidirectional TVS, not an ordinary cathode/anode diode.
+
+**Root cause**
+
+The ranking score is advisory, not permission to create evidence-free profiles.
+For `SMBJ24CA`, reusing the ordinary diode cathode/anode path would also be
+wrong: the `CA` bidirectional TVS variant has neutral terminals, and the useful
+schematic-level check is rail-to-ground standoff, not polarity.
+
+**Fix**
+
+Added `smbj24ca.json` as a reviewed public profile with
+`recommended.topology_family="diode"` and
+`recommended.diode_role="bidirectional_tvs"`. The diode validator now handles
+that sub-role by checking terminal connectivity, a recognized ground reference,
+and protected rail voltage against the 24 V working standoff. It does not infer
+surge sizing, ESD coverage, clamp waveforms, capacitance, thermals, or layout.
+
+**Verification**
+
+- Focused diode tests assert the SMBJ24CA TVS profile and cover nominal 24 V
+  rail clamp PASS plus 36 V overstandoff ERROR.
+- C4d smoke reports 66 components / validated=27 / manual=39 /
+  PASS-WARN-ERROR=17-7-3.
+- `recommend-next-family` drops `SMBJ24CA`; remaining diode identities are
+  `BAS316` and `BAV99`.
+
+**Takeaway**
+
+Treat coverage ranking as a queue for reviewed evidence, not a reason to invent
+synthetic datasheets. For bidirectional TVS parts, model the deterministic
+schematic fact that matters: the protected rail-to-reference working voltage.

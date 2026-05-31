@@ -24,6 +24,12 @@ def led_profile() -> DatasheetProfile:
 
 
 @pytest.fixture
+def tvs_profile() -> DatasheetProfile:
+    """Load SMBJ24CA bidirectional TVS profile."""
+    return DatasheetProfile.load(Path("data/datasheet_profiles/smbj24ca.json"))
+
+
+@pytest.fixture
 def diode_design():
     """Load diode fixture."""
     netlist = parse_allegro_netlist(Path("tests/fixtures/allegro/ss34_diode.net"))
@@ -63,6 +69,69 @@ def test_ltst_c190kgkt_pinout_matches_public_pin_diagram(led_profile):
     assert led_profile.pin_function["2"] == "Anode"
     assert led_profile.pin_by_number("1").name == "Cathode"
     assert led_profile.pin_by_number("2").name == "Anode"
+
+
+def test_smbj24ca_profile_matches_public_bidirectional_tvs(tvs_profile):
+    assert tvs_profile.recommended["topology_family"] == "diode"
+    assert tvs_profile.recommended["diode_role"] == "bidirectional_tvs"
+    assert tvs_profile.recommended["working_standoff_voltage"] == 24.0
+    assert tvs_profile.pin_function == {"1": "Terminal 1", "2": "Terminal 2"}
+    assert [(pin.number, pin.name) for pin in tvs_profile.pins] == [
+        ("1", "Terminal 1"),
+        ("2", "Terminal 2"),
+    ]
+
+
+def test_bidirectional_tvs_nominal_rail_clamp_passes(tvs_profile, tmp_path):
+    design = _design_from_text(
+        tmp_path,
+        """$PACKAGES
+  ! 'DO214' ! SMBJ24CA ; D20
+$NETS
+  '+24V' ; D20.1
+  'GND' ; D20.2
+$END
+""",
+        """Reference,Quantity,Value,Manufacturer,MPN
+D20,1,SMBJ24CA,Littelfuse,SMBJ24CA
+""",
+    )
+
+    results = validate_component_against_profile(design.components["D20"], tvs_profile, design)
+
+    assert results.status == "PASS"
+    assert results.counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
+    assert results.component_counts_by_status == {"PASS": 3, "WARN": 0, "ERROR": 0}
+    standoff = next(
+        check for check in results.component_checks if check.check == "tvs_working_standoff"
+    )
+    assert "clamps +24V to GND" in standoff.summary
+    assert "within standoff 24 V" in standoff.summary
+
+
+def test_bidirectional_tvs_rail_above_standoff_errors(tvs_profile, tmp_path):
+    design = _design_from_text(
+        tmp_path,
+        """$PACKAGES
+  ! 'DO214' ! SMBJ24CA ; D20
+$NETS
+  '+36V' ; D20.1
+  'GND' ; D20.2
+$END
+""",
+        """Reference,Quantity,Value,Manufacturer,MPN
+D20,1,SMBJ24CA,Littelfuse,SMBJ24CA
+""",
+    )
+
+    results = validate_component_against_profile(design.components["D20"], tvs_profile, design)
+
+    standoff = next(
+        check for check in results.component_checks if check.check == "tvs_working_standoff"
+    )
+    assert results.status == "ERROR"
+    assert standoff.status == "ERROR"
+    assert "above working standoff 24 V" in standoff.summary
 
 
 def test_led_indicator_nominal_current_limited_path_passes(led_profile, tmp_path):
