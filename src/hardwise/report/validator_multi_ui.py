@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from hardwise.bom.types import BomMatchReport, sort_refdes_key
+from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.report.component_validation_markdown import render as render_validation_markdown
 from hardwise.report.validator_multi_ui_assets import MULTI_UI_SCRIPT, MULTI_UI_STYLE
@@ -15,7 +16,9 @@ from hardwise.report.validator_multi_ui_sections import (
     basic_info,
     compliance_checks,
     connectivity_table,
+    evidence_details,
     model_check,
+    pin_consistency,
     pin_summary,
     scope_panel,
     summary,
@@ -31,6 +34,7 @@ class ValidatorUiResult:
 
     validation: ValidationReport
     profile_path: Path
+    profile: DatasheetProfile | None = None
 
 
 def render(
@@ -137,7 +141,11 @@ def _component_table(
     matched = set(bom_report.matched_refdes) if bom_report else set()
     for component in components:
         item = validated.get(component.refdes)
-        status = item.validation.status if item else ("Matched" if component.refdes in matched else "No Result")
+        status = (
+            item.validation.status
+            if item
+            else ("Matched" if component.refdes in matched else "No Result")
+        )
         status_class = _status_class(status) if item else "pending"
         active = " active" if component.refdes == active_refdes else ""
         document = "已匹配" if item else "待完善"
@@ -145,8 +153,8 @@ def _component_table(
             f'<tr class="component-row{active}" data-row-ref="{escape(component.refdes)}">'
             f'<td class="ref">{escape(component.refdes)}</td>'
             f"<td>{escape(component.value or '-')}</td>"
-            f"<td>{escape(component.part_number or component.value or '-')}<span class=\"sub\">{len(component.pins)} pins · {escape(status)}</span></td>"
-            f"<td><span class=\"status {status_class}\">{escape(document)}</span></td>"
+            f'<td>{escape(component.part_number or component.value or "-")}<span class="sub">{len(component.pins)} pins · {escape(status)}</span></td>'
+            f'<td><span class="status {status_class}">{escape(document)}</span></td>'
             "</tr>"
         )
     rows.append("</tbody></table>")
@@ -193,9 +201,7 @@ def _detail_panels(
     active_refdes: str,
     generated_at: str,
 ) -> str:
-    return "".join(
-        _detail_panel(design, item, active_refdes, generated_at) for item in results
-    )
+    return "".join(_detail_panel(design, item, active_refdes, generated_at) for item in results)
 
 
 def _detail_panel(
@@ -208,7 +214,13 @@ def _detail_panel(
     component = design.components[validation.refdes]
     counts = validation.counts_by_status
     component_counts = validation.component_counts_by_status
-    markdown = render_validation_markdown(validation, profile_path=item.profile_path)
+    markdown = render_validation_markdown(
+        validation,
+        profile_path=item.profile_path,
+        profile=item.profile,
+        component=component,
+        design=design,
+    )
     download_href = "data:text/markdown;charset=utf-8," + quote(markdown)
     active = " active" if validation.refdes == active_refdes else ""
     return f"""
@@ -234,10 +246,12 @@ def _detail_panel(
       {pin_summary(validation)}
       {basic_info(component, validation)}
       {model_check(validation)}
-      {connectivity_table(validation)}
+      {connectivity_table(validation, component, design)}
+      {pin_consistency(component, validation, item.profile)}
       {compliance_checks(validation)}
-      {topology_panel(component, design)}
+      {evidence_details(validation, item.profile)}
       {summary(validation)}
+      {topology_panel(component, design)}
       {scope_panel(generated_at, item.profile_path)}
     </article>
     """

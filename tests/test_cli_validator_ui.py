@@ -355,6 +355,10 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert 'data-select-ref="U8"' in html
     assert "SWDIO is connected to SWCLK" in html
     assert "SWCLK is connected to SWDIO" in html
+    assert "引脚一致性检查" in html
+    assert "证据 / Datasheet 详情" in html
+    assert "recommended.swd" in html
+    assert "datasheet:stm32g030.pdf#p33" in html
     assert "外围/拓扑检查" in html
 
     index_text = index_output.read_text(encoding="utf-8")

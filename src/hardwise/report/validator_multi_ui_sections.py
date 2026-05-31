@@ -5,7 +5,13 @@ from __future__ import annotations
 from html import escape
 from pathlib import Path
 
+from hardwise.ir.profile import DatasheetProfile, ProfileValue
 from hardwise.ir.types import Component, Design
+from hardwise.report.component_validation_details import (
+    build_pin_consistency,
+    profile_has_thermal_or_package_evidence,
+    schematic_connection_path,
+)
 from hardwise.report.validator_ui import _evidence, _status_class
 from hardwise.validation.types import ValidationReport
 
@@ -29,7 +35,7 @@ def pin_summary(validation: ValidationReport) -> str:
 def basic_info(component: Component, validation: ValidationReport) -> str:
     return (
         '<section class="section table-section"><div class="section-head"><h3>器件基本信息</h3></div>'
-        '<table><tbody>'
+        "<table><tbody>"
         f"<tr><th>位号</th><td>{escape(validation.refdes)}</td></tr>"
         f"<tr><th>描述</th><td>{escape(component.value or '-')}</td></tr>"
         f"<tr><th>MPN</th><td>{escape(component.part_number or '-')}</td></tr>"
@@ -48,7 +54,7 @@ def model_check(validation: ValidationReport) -> str:
     )
     return (
         '<section class="section table-section"><div class="section-head"><h3>型号核对</h3></div>'
-        '<table><thead><tr><th>项目</th><th>匹配型号</th><th>Profile 型号</th><th>结论</th><th>说明</th></tr></thead><tbody>'
+        "<table><thead><tr><th>项目</th><th>匹配型号</th><th>Profile 型号</th><th>结论</th><th>说明</th></tr></thead><tbody>"
         "<tr>"
         "<td>Part number</td>"
         f"<td>{escape(validation.part_number or '-')}</td>"
@@ -60,23 +66,51 @@ def model_check(validation: ValidationReport) -> str:
     )
 
 
-def connectivity_table(validation: ValidationReport) -> str:
+def connectivity_table(
+    validation: ValidationReport,
+    component: Component,
+    design: Design,
+) -> str:
     rows = [
         '<section class="section table-section"><div class="section-head"><h3>引脚功能与连接关系</h3><span class="pill">原理图</span></div>',
-        "<table><thead><tr><th>Pin</th><th>Name</th><th>Category</th><th>Net</th><th>Evidence</th></tr></thead><tbody>",
+        "<table><thead><tr><th>Pin</th><th>Name</th><th>Category</th><th>Net</th><th>Topology Path</th><th>Evidence</th></tr></thead><tbody>",
     ]
     for pin in validation.pin_results:
+        path = schematic_connection_path(component, design, pin.pin_number, pin.net)
         rows.append(
             "<tr>"
             f'<td class="ref">{escape(pin.pin_number)}</td>'
             f"<td>{escape(pin.pin_name)}</td>"
             f"<td>{escape(pin.category)}</td>"
             f"<td>{escape(pin.net or '-')}</td>"
+            f"<td>{escape(path)}</td>"
             f'<td class="evidence">{_evidence(pin.evidence)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table></section>")
     return "".join(rows)
+
+
+def pin_consistency(
+    component: Component,
+    validation: ValidationReport,
+    profile: DatasheetProfile | None,
+) -> str:
+    consistency = build_pin_consistency(component, validation, profile)
+    return (
+        '<section class="section table-section"><div class="section-head"><h3>引脚一致性检查</h3><span class="pill">report-only</span></div>'
+        "<table><thead><tr><th>项目</th><th>Profile</th><th>原理图</th><th>Status</th><th>说明</th></tr></thead><tbody>"
+        "<tr>"
+        "<td>Pin count</td>"
+        f"<td>{consistency.profile_pin_count}</td>"
+        f"<td>{consistency.schematic_pin_count}</td>"
+        f'<td><span class="status {_status_class(consistency.status)}">{escape(consistency.status)}</span></td>'
+        f"<td>{escape(consistency.note)}</td>"
+        "</tr>"
+        "</tbody></table>"
+        '<p class="scope">This section compares structured profile pins with parsed schematic pins for display only. It does not change deterministic PASS/WARN/ERROR verdicts.</p>'
+        "</section>"
+    )
 
 
 def compliance_checks(validation: ValidationReport) -> str:
@@ -119,6 +153,19 @@ def compliance_checks(validation: ValidationReport) -> str:
             )
         rows.append("</div>")
     rows.append("</section>")
+    return "".join(rows)
+
+
+def evidence_details(validation: ValidationReport, profile: DatasheetProfile | None) -> str:
+    rows = [
+        '<section class="section table-section"><div class="section-head"><h3>证据 / Datasheet 详情</h3><span class="pill">Path A</span></div>',
+        _profile_meta(validation, profile),
+        _profile_fact_table(profile),
+        _profile_pin_detail_table(profile),
+        _profile_evidence_table(profile),
+        _thermal_package_note(profile),
+        "</section>",
+    ]
     return "".join(rows)
 
 
@@ -170,3 +217,105 @@ def scope_panel(generated_at: str, profile_path: Path) -> str:
         "<li>Out of scope: .brd, boardview, placement, routing, PCB geometry, live supplier lookup, PLM, lifecycle, pricing, and availability.</li>"
         "</ul></section>"
     )
+
+
+def _profile_meta(validation: ValidationReport, profile: DatasheetProfile | None) -> str:
+    if profile is None:
+        return (
+            '<p class="scope">Profile detail was not loaded for this detail panel. '
+            "Only the ValidationReport pin/check evidence is available.</p>"
+        )
+    return (
+        "<table><tbody>"
+        f"<tr><th>Validation source</th><td>{escape(validation.profile_part_number)}</td></tr>"
+        f"<tr><th>Profile part</th><td>{escape(profile.part_number)}</td></tr>"
+        f"<tr><th>Review status</th><td>{escape(profile.review_status)}</td></tr>"
+        f"<tr><th>Schema</th><td>{escape(profile.schema_version)}</td></tr>"
+        f"<tr><th>Extracted model</th><td>{escape(profile.extracted_model)}</td></tr>"
+        "</tbody></table>"
+    )
+
+
+def _profile_fact_table(profile: DatasheetProfile | None) -> str:
+    if profile is None:
+        return ""
+    rows = [
+        '<div class="section-head inline-head"><h4>结构化规格</h4></div>',
+        "<table><thead><tr><th>Group</th><th>Key</th><th>Value</th><th>Evidence</th></tr></thead><tbody>",
+    ]
+    for group, facts in (("abs_max", profile.abs_max), ("recommended", profile.recommended)):
+        if not facts:
+            rows.append(f"<tr><td>{group}</td><td>-</td><td>-</td><td>-</td></tr>")
+            continue
+        for key, value in sorted(facts.items()):
+            token = profile.evidence.get(f"{group}.{key}", "")
+            rows.append(
+                "<tr>"
+                f"<td>{group}</td>"
+                f"<td>{escape(key)}</td>"
+                f"<td>{escape(_format_profile_value(value))}</td>"
+                f'<td class="evidence">{_evidence([token] if token else [])}</td>'
+                "</tr>"
+            )
+    rows.append("</tbody></table>")
+    return "".join(rows)
+
+
+def _profile_pin_detail_table(profile: DatasheetProfile | None) -> str:
+    if profile is None:
+        return ""
+    rows = [
+        '<div class="section-head inline-head"><h4>Profile 引脚细节</h4></div>',
+        "<table><thead><tr><th>Pin</th><th>Name</th><th>Limits</th><th>Recommended topology</th><th>Evidence</th></tr></thead><tbody>",
+    ]
+    for pin in profile.pins:
+        rows.append(
+            "<tr>"
+            f'<td class="ref">{escape(pin.number)}</td>'
+            f"<td>{escape(pin.name)}</td>"
+            f"<td>{escape(_format_mapping(pin.limits))}</td>"
+            f"<td>{escape('; '.join(pin.recommended_topology) or '-')}</td>"
+            f'<td class="evidence">{_evidence(pin.evidence)}</td>'
+            "</tr>"
+        )
+    rows.append("</tbody></table>")
+    return "".join(rows)
+
+
+def _profile_evidence_table(profile: DatasheetProfile | None) -> str:
+    if profile is None:
+        return ""
+    rows = [
+        '<div class="section-head inline-head"><h4>Profile evidence ledger</h4></div>',
+        "<table><thead><tr><th>Claim key</th><th>Source token</th></tr></thead><tbody>",
+    ]
+    if not profile.evidence:
+        rows.append("<tr><td>-</td><td>-</td></tr>")
+    for key, token in sorted(profile.evidence.items()):
+        rows.append(
+            f'<tr><td>{escape(key)}</td><td class="evidence">{_evidence([token])}</td></tr>'
+        )
+    rows.append("</tbody></table>")
+    return "".join(rows)
+
+
+def _thermal_package_note(profile: DatasheetProfile | None) -> str:
+    if profile_has_thermal_or_package_evidence(profile):
+        return '<p class="scope">Thermal/package-related rows are shown only where the structured profile already carries source tokens.</p>'
+    return '<p class="scope">No profile-level thermal/package source token is present for this component. Hardwise does not infer missing thermal or package facts in this slice.</p>'
+
+
+def _format_mapping(values: dict[str, ProfileValue]) -> str:
+    if not values:
+        return "-"
+    return ", ".join(
+        f"{key}={_format_profile_value(value)}" for key, value in sorted(values.items())
+    )
+
+
+def _format_profile_value(value: ProfileValue) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, float):
+        return f"{value:g}"
+    return str(value)

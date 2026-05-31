@@ -859,7 +859,16 @@ def report_component_validation(
     else:
         output.parent.mkdir(parents=True, exist_ok=True)
 
-    output.write_text(render(validation_report, profile_path=profile_path), encoding="utf-8")
+    output.write_text(
+        render(
+            validation_report,
+            profile_path=profile_path,
+            profile=profile,
+            component=component,
+            design=design,
+        ),
+        encoding="utf-8",
+    )
     counts = validation_report.counts_by_status
     typer.echo(
         f"component-validation: {output} "
@@ -924,6 +933,7 @@ def report_validator_ui(
         project_name=project_name,
         netlist_source=source,
         profile_path=profile_path,
+        profile=profile,
         bom_report=bom_report,
         generated_at=now.isoformat(timespec="seconds"),
     )
@@ -999,7 +1009,11 @@ def report_validator_ui_batch(
             profile = DatasheetProfile.load(target.profile_path)
             validation = validate_component_against_profile(component, profile, design)
             validation_results.append(
-                ValidatorUiResult(validation=validation, profile_path=target.profile_path)
+                ValidatorUiResult(
+                    validation=validation,
+                    profile_path=target.profile_path,
+                    profile=profile,
+                )
             )
     except typer.Exit:
         raise

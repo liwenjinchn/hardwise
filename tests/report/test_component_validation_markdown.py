@@ -34,12 +34,24 @@ def test_render_component_validation_markdown() -> None:
     )
     report = validate_component_against_profile(component, profile, design)
 
-    md = render(report, profile_path=Path("data/datasheet_profiles/l78.json"))
+    md = render(
+        report,
+        profile_path=Path("data/datasheet_profiles/l78.json"),
+        profile=profile,
+        component=component,
+        design=design,
+    )
 
     assert "# Hardwise Component Validation - U1" in md
     assert "| Overall status | PASS |" in md
     assert "| Pin PASS/WARN/ERROR | 3 / 0 / 0 |" in md
     assert "Single-component schematic pin validation only" in md
     assert "does not parse PCB layout, boardview" in md
+    assert "## Pin Consistency" in md
+    assert "| Pin count | 3 | 3 | PASS |" in md
+    assert "## Evidence / Datasheet Details" in md
+    assert "| abs_max | tj | 125 | `datasheet:l78.pdf#p4` |" in md
+    assert "### Profile Evidence Ledger" in md
     assert "| 1 | VI | power_input | +12V | PASS |" in md
+    assert "| 1 | VI | power_input | +12V | +12V -> U1-1 |" in md
     assert "`datasheet:l78.pdf#p4`" in md

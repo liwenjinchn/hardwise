@@ -34,6 +34,7 @@ def test_render_validator_ui_includes_index_detail_and_scope() -> None:
         project_name="l78_regulator",
         netlist_source=Path("tests/fixtures/allegro/l78_regulator.net"),
         profile_path=Path("data/datasheet_profiles/l78.json"),
+        profile=profile,
         bom_report=bom_report,
         generated_at="2026-05-27T00:00:00+00:00",
     )
@@ -71,10 +72,12 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
             ValidatorUiResult(
                 validation=u1,
                 profile_path=Path("data/datasheet_profiles/l78.json"),
+                profile=l78_profile,
             ),
             ValidatorUiResult(
                 validation=u12,
                 profile_path=Path("data/datasheet_profiles/xl1509.json"),
+                profile=xl1509_profile,
             ),
         ],
         project_name="mixed_regulators",
@@ -95,7 +98,15 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert "器件基本信息" in html
     assert "型号核对" in html
     assert "引脚功能与连接关系" in html
+    assert "Topology Path" in html
+    assert "+24V" in html
+    assert "U12-1" in html
+    assert "引脚一致性检查" in html
     assert "综合合规性检查" in html
+    assert "证据 / Datasheet 详情" in html
+    assert "recommended.inductor" in html
+    assert "datasheet:xl1509.pdf#p9" in html
+    assert "No profile-level thermal/package source token is present" in html
     assert "综合总结" in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
@@ -188,7 +199,7 @@ def test_render_project_workbench_accepts_optional_copilot_panel(tmp_path: Path)
         netlist_source=Path("tests/fixtures/allegro/l78_regulator.net"),
         bom_report=bom_report,
         generated_at="2026-05-30T00:00:00+00:00",
-        copilot_html='<div data-ai-root></div>',
+        copilot_html="<div data-ai-root></div>",
     )
 
     assert "data-ai-root" not in plain

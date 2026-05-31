@@ -33,6 +33,8 @@ def test_report_component_validation_writes_report(tmp_path: Path) -> None:
     md = output.read_text(encoding="utf-8")
     assert "# Hardwise Component Validation - U1" in md
     assert "| Component MPN | L7805 |" in md
+    assert "## Pin Consistency" in md
+    assert "## Evidence / Datasheet Details" in md
     assert "| 3 | VO | power_output | +5V | PASS |" in md
 
 
@@ -65,7 +67,11 @@ def test_report_component_validation_writes_xl1509_dcdc_errors(tmp_path: Path) -
     assert "Component Basic Info" in md
     assert "Model Check" in md
     assert "Pin Function and Connectivity" in md
+    assert "Pin Consistency" in md
     assert "Compliance Checks" in md
+    assert "Evidence / Datasheet Details" in md
+    assert "recommended.inductor" in md
+    assert "datasheet:xl1509.pdf#p9" in md
     assert "Summary" in md
     assert "D5 (1N4007W)" in md
     assert "not a Schottky-style diode family" in md
@@ -104,6 +110,7 @@ def test_report_component_validation_writes_eg2132_gate_driver_errors(
     assert "gate_driver_bootstrap" in md
     assert "MBRA210LT3G" in md
     assert "below required 24 V" in md
+    assert "recommended.bootstrap_diode" in md
     assert "datasheet:eg2132.pdf#p6" in md
 
 
@@ -138,6 +145,7 @@ def test_report_component_validation_writes_stm32_mcu_errors(
     assert "mcu_swclk" in md
     assert "SWDIO is connected to SWCLK" in md
     assert "SWCLK is connected to SWDIO" in md
+    assert "recommended.swd" in md
     assert "datasheet:stm32g030.pdf#p33" in md
 
 

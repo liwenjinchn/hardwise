@@ -7,6 +7,7 @@ from html import escape
 from pathlib import Path
 
 from hardwise.bom.types import BomMatchReport, sort_refdes_key
+from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.report.validator_multi_ui import (
     ValidatorUiResult,
@@ -44,7 +45,11 @@ def render_project_workbench(
     """Return a static project workbench for validated and no-profile rows."""
 
     results = [
-        ValidatorUiResult(validation=row.validation, profile_path=Path(row.profile_path))
+        ValidatorUiResult(
+            validation=row.validation,
+            profile_path=Path(row.profile_path),
+            profile=DatasheetProfile.load(Path(row.profile_path)),
+        )
         for row in index.validated_rows
         if row.validation is not None and row.profile_path is not None
     ]
