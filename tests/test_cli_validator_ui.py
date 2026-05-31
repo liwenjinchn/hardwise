@@ -390,6 +390,8 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     assert "hardwise-copilot-config" in html
     assert "Offline audited snapshot" in html
     assert "run_component_validation" in html
+    assert "search_datasheet" in html
+    assert "没有配置向量 datasheet search" in html
     assert "⟨?U999⟩" in html
 
 

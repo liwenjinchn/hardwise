@@ -107,8 +107,7 @@ COPILOT_SCRIPT = """
       const key = Object.keys(snapshots).find((item) => /U999/i.test(item));
       if (key) return snapshots[key];
     }
-    const key = Object.keys(snapshots).find((item) => item !== '__fallback__' && !/U999/i.test(item));
-    return snapshots[key] || snapshots.__fallback__ || {
+    return snapshots.__fallback__ || {
       answer: 'This static snapshot only contains audited demo answers.',
       trace: [],
       suggestions: config.suggestions || []

@@ -2060,3 +2060,43 @@ anti-hallucination guarantee (invented designators are absent from the data) whi
 removing the false positive on real part numbers and packages. When you relax a
 hard-rule guard, update the rule's own description in the same change so the relaxation
 is not mistaken for a hole later.
+
+## 2026-05-30 — Snapshot Copilot must fail closed on unsupported questions
+
+**Symptom**
+
+The offline Copilot snapshot could answer an unsupported free-form question with the
+first precomputed component transcript. Datasheet questions in fake/snapshot mode also
+looked like ordinary validation questions, so the panel did not demonstrate the
+"vector datasheet search is unavailable; fallback to profile evidence" boundary.
+
+**Root cause**
+
+The static JS `fallbackResponse()` treated any non-`U999` question as close enough to
+the first audited snapshot. Separately, the fake Anthropic client always emitted only a
+`run_component_validation` tool call, regardless of whether the user asked for
+datasheet evidence. Both bugs preserved the happy path but blurred the boundary between
+"audited transcript" and "unsupported question".
+
+**Fix**
+
+The static snapshot now returns an exact transcript match, the explicit `U999` guard
+demo, or `__fallback__`; it no longer picks a nearby transcript. Fake/snapshot mode now
+detects datasheet/rating questions and asks Runner for both `search_datasheet` and
+`run_component_validation`. With no vector collection, the answer states that vector
+datasheet search is not configured and then summarizes the deterministic validation
+evidence. Regression tests cover fake chat, snapshot embedding, CLI HTML output, and
+the static fallback asset.
+
+**Verification**
+
+- Focused regression tests: 7 passed.
+- Generated `/tmp/hardwise-copilot-fixed.html` contains `search_datasheet`, the
+  unavailable-vector wording, and no arbitrary first-transcript fallback.
+
+**Takeaway**
+
+Offline demos should fail closed. A snapshot is an audited answer table, not a fuzzy
+retriever; unknown questions must hit the boundary copy. Fake clients are still part of
+the trust story: they can be deterministic, but their tool choices must exercise the
+same Runner contracts the real model is expected to use.

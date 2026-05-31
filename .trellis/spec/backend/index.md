@@ -20,6 +20,7 @@ This directory contains guidelines for backend development. Fill in each file wi
 | [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | Filled |
 | [Logging Guidelines](./logging-guidelines.md) | Structured logging, log levels | To fill |
 | [Validation Guidelines](./validation-guidelines.md) | Deterministic component validators | Filled |
+| [Workbench Guidelines](./workbench-guidelines.md) | Copilot panel, snapshot, and fake/live chat contracts | Filled |
 
 ---
 

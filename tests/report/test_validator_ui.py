@@ -193,3 +193,10 @@ def test_render_project_workbench_accepts_optional_copilot_panel(tmp_path: Path)
 
     assert "data-ai-root" not in plain
     assert "data-ai-root" in with_panel
+
+
+def test_copilot_snapshot_fallback_uses_boundary_answer_only() -> None:
+    from hardwise.report.copilot_panel_assets import COPILOT_SCRIPT
+
+    assert "return snapshots.__fallback__" in COPILOT_SCRIPT
+    assert "item !== '__fallback__' && !/U999/i.test(item)" not in COPILOT_SCRIPT

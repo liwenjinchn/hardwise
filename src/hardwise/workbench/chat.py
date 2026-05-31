@@ -107,6 +107,21 @@ class _FakeWorkbenchMessages:
         self._turn += 1
         self._last_question, self._last_selected = _parse_runner_prompt(str(content or ""))
         refdes = _choose_refdes(self._last_question, self._last_selected)
+        if _needs_datasheet_search(self._last_question):
+            return _FakeResponse(
+                [
+                    _FakeToolUseBlock(
+                        id=f"hw_fake_{self._turn}_datasheet",
+                        name="search_datasheet",
+                        input={"query": self._last_question, "top_k": 3},
+                    ),
+                    _FakeToolUseBlock(
+                        id=f"hw_fake_{self._turn}_validation",
+                        name="run_component_validation",
+                        input={"refdes": refdes},
+                    ),
+                ]
+            )
         return _FakeResponse(
             [
                 _FakeToolUseBlock(
@@ -118,14 +133,67 @@ class _FakeWorkbenchMessages:
         )
 
     def _answer_from_tool_result(self, blocks: list[dict[str, Any]]) -> str:
-        payload = _first_tool_payload(blocks)
-        if payload is None:
+        payloads = _tool_payloads(blocks)
+        if not payloads:
             return _localized(
                 self._last_question,
                 "I could not read the tool result.",
                 "我没有读到工具返回结果。",
             )
+        search_payload = _search_payload(payloads)
+        validation_payload = _validation_payload(payloads)
+        if search_payload is not None:
+            return self._answer_from_datasheet_result(search_payload, validation_payload)
+        if validation_payload is None:
+            return _localized(
+                self._last_question,
+                "The tool returned a result, but this fake workbench mode cannot summarize it yet.",
+                "工具已经返回结果，但 fake workbench 模式暂时不能总结这个结果。",
+            )
+        return self._answer_from_validation_result(validation_payload)
 
+    def _answer_from_datasheet_result(
+        self,
+        search_payload: dict[str, Any],
+        validation_payload: dict[str, Any] | None,
+    ) -> str:
+        hits = search_payload.get("hits") if isinstance(search_payload.get("hits"), list) else []
+        if not search_payload.get("found") and search_payload.get("error"):
+            if _wants_english(self._last_question):
+                prefix = (
+                    "Vector datasheet search is not configured for this workbench run. "
+                    "I checked the structured profile/validation evidence instead: "
+                )
+            else:
+                prefix = (
+                    "这次 workbench 没有配置向量 datasheet search。"
+                    "先回退到结构化 profile/validation 证据: "
+                )
+            if validation_payload is not None:
+                return prefix + self._answer_from_validation_result(validation_payload)
+            return prefix + _localized(
+                self._last_question,
+                "no validation evidence was available for the selected component.",
+                "当前选中器件没有可用的 validation 证据。",
+            )
+
+        if hits:
+            hit = hits[0]
+            source = hit.get("source_pdf") or "datasheet"
+            page = hit.get("page") or "?"
+            text = str(hit.get("text") or "").strip()
+            snippet = text[:220]
+            if _wants_english(self._last_question):
+                return f"Datasheet search found {source} p{page}: {snippet}"
+            return f"datasheet search 找到 {source} 第 {page} 页: {snippet}"
+
+        return _localized(
+            self._last_question,
+            "Datasheet search returned no matching chunks for this question.",
+            "datasheet search 没有找到匹配片段。",
+        )
+
+    def _answer_from_validation_result(self, payload: dict[str, Any]) -> str:
         status = payload.get("status")
         refdes = str(payload.get("refdes") or self._last_selected or "")
         if status == "validated":
@@ -294,6 +362,7 @@ class WorkbenchChatService:
         raw = [
             f"这个 {refdes} 为什么是 ERROR/WARN?",
             f"Show evidence for {refdes}",
+            f"datasheet 里 {refdes} 的关键限制是什么?",
             "板上有没有 U999?",
         ]
         return [_sanitize_chat_copy(item, self.context) for item in raw]
@@ -334,6 +403,7 @@ def build_snapshot_responses(context: WorkbenchContext) -> dict[str, ChatRespons
     questions = [
         f"这个 {selected or '器件'} 为什么是 ERROR/WARN?",
         f"Show evidence for {selected or 'this component'}",
+        f"datasheet 里 {selected or '这个器件'} 的关键限制是什么?",
         "板上有没有 U999?",
     ]
     responses: dict[str, ChatResponse] = {}
@@ -367,7 +437,8 @@ def _choose_refdes(question: str, selected: str) -> str:
     return selected or "U1"
 
 
-def _first_tool_payload(blocks: list[dict[str, Any]]) -> dict[str, Any] | None:
+def _tool_payloads(blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    payloads: list[dict[str, Any]] = []
     for block in blocks:
         if block.get("type") != "tool_result":
             continue
@@ -379,8 +450,42 @@ def _first_tool_payload(blocks: list[dict[str, Any]]) -> dict[str, Any] | None:
         except json.JSONDecodeError:
             continue
         if isinstance(payload, dict):
+            payloads.append(payload)
+    return payloads
+
+
+def _search_payload(payloads: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for payload in payloads:
+        if "hits" in payload and "query" in payload:
             return payload
     return None
+
+
+def _validation_payload(payloads: list[dict[str, Any]]) -> dict[str, Any] | None:
+    validation_statuses = {"validated", "not_found", "no_profile", "not_configured"}
+    for payload in payloads:
+        status = payload.get("status")
+        if isinstance(status, str) and status in validation_statuses:
+            return payload
+    return None
+
+
+def _needs_datasheet_search(question: str) -> bool:
+    text = question.lower()
+    needles = (
+        "datasheet",
+        "data sheet",
+        "absolute maximum",
+        "abs max",
+        "rating",
+        "rated",
+        "规格书",
+        "数据手册",
+        "手册",
+        "绝对最大",
+        "额定",
+    )
+    return any(needle in text for needle in needles)
 
 
 def _important_checks(checks: list[Any]) -> list[str]:

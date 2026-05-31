@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "The feature spans CLI, backend server, chat service, report HTML/JS, and agent runner contracts."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "The implementation should reuse the existing design-validator setup instead of duplicating loader/BOM/profile logic."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Fast tests must not depend on network, live models, or vector embedding downloads."}
+{"file": ".trellis/spec/backend/validation-guidelines.md", "reason": "Workbench chat must explain deterministic validators without changing validator semantics."}
