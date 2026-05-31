@@ -1,0 +1,100 @@
+{
+  "part_number": "TLV9062",
+  "part_number_aliases": ["TLV9062ID", "TLV9062IDR"],
+  "review_status": "ready",
+  "description": "Dual operational amplifier, 8-pin package",
+  "abs_max": {},
+  "recommended": {
+    "validation_scope": "basic_pin_profile",
+    "device_role": "dual_op_amp",
+    "vcc_min": 1.8,
+    "vcc_max": 5.5
+  },
+  "pin_function": {
+    "1": "OUT A",
+    "2": "IN- A",
+    "3": "IN+ A",
+    "4": "V-",
+    "5": "IN+ B",
+    "6": "IN- B",
+    "7": "OUT B",
+    "8": "V+"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "OUT A",
+      "category": "analog_output",
+      "function": "Amplifier A output.",
+      "evidence": ["datasheet:tlv9062.pdf#p4"]
+    },
+    {
+      "number": "2",
+      "name": "IN- A",
+      "category": "analog_input",
+      "function": "Amplifier A inverting input.",
+      "evidence": ["datasheet:tlv9062.pdf#p4"]
+    },
+    {
+      "number": "3",
+      "name": "IN+ A",
+      "category": "analog_input",
+      "function": "Amplifier A non-inverting input.",
+      "evidence": ["datasheet:tlv9062.pdf#p4"]
+    },
+    {
+      "number": "4",
+      "name": "V-",
+      "category": "power_input",
+      "function": "Negative supply rail.",
+      "evidence": ["datasheet:tlv9062.pdf#p4"]
+    },
+    {
+      "number": "5",
+      "name": "IN+ B",
+      "category": "analog_input",
+      "function": "Amplifier B non-inverting input.",
+      "evidence": ["datasheet:tlv9062.pdf#p4"]
+    },
+    {
+      "number": "6",
+      "name": "IN- B",
+      "category": "analog_input",
+      "function": "Amplifier B inverting input.",
+      "evidence": ["datasheet:tlv9062.pdf#p4"]
+    },
+    {
+      "number": "7",
+      "name": "OUT B",
+      "category": "analog_output",
+      "function": "Amplifier B output.",
+      "evidence": ["datasheet:tlv9062.pdf#p4"]
+    },
+    {
+      "number": "8",
+      "name": "V+",
+      "category": "power_input",
+      "function": "Positive supply rail.",
+      "limits": {
+        "recommended_voltage_min": 1.8,
+        "recommended_voltage_max": 5.5
+      },
+      "evidence": ["datasheet:tlv9062.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "recommended.vcc_min": "datasheet:tlv9062.pdf#p1",
+    "recommended.vcc_max": "datasheet:tlv9062.pdf#p1",
+    "pin_function.1": "datasheet:tlv9062.pdf#p4",
+    "pin_function.2": "datasheet:tlv9062.pdf#p4",
+    "pin_function.3": "datasheet:tlv9062.pdf#p4",
+    "pin_function.4": "datasheet:tlv9062.pdf#p4",
+    "pin_function.5": "datasheet:tlv9062.pdf#p4",
+    "pin_function.6": "datasheet:tlv9062.pdf#p4",
+    "pin_function.7": "datasheet:tlv9062.pdf#p4",
+    "pin_function.8": "datasheet:tlv9062.pdf#p4"
+  },
+  "extracted_at": "2026-05-31T00:00:00+08:00",
+  "extracted_model": "manual-profile-c4c-analog-ic",
+  "schema_version": "v2"
+}

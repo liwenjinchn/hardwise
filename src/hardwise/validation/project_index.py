@@ -6,10 +6,12 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from hardwise.bom.types import BomMatchReport, sort_refdes_key
+from hardwise.bom.types import Bom, BomMatchReport, sort_refdes_key
+from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Design
 from hardwise.validation.component import validate_component_against_profile
+from hardwise.validation.component_groups import ProjectComponentGroup, build_component_groups
 from hardwise.validation.profile_candidates import ProfileCandidateReport
 from hardwise.validation.types import ValidationReport
 
@@ -39,6 +41,17 @@ class ProjectValidationRow(BaseModel):
         return self.validation.status
 
 
+class ProjectValidationGapGroup(BaseModel):
+    """Grouped no-profile/manual rows for coverage triage."""
+
+    match_status: str
+    identity: str
+    identity_kind: str
+    reason: str
+    refdes_count: int
+    refdes_sample: list[str] = Field(default_factory=list)
+
+
 class ProjectValidationIndex(BaseModel):
     """Project-level summary and validation rows."""
 
@@ -51,6 +64,7 @@ class ProjectValidationIndex(BaseModel):
     components_in_design: int
     bom_matched: int
     rows: list[ProjectValidationRow] = Field(default_factory=list)
+    component_groups: list[ProjectComponentGroup] = Field(default_factory=list)
 
     @property
     def validated_rows(self) -> list[ProjectValidationRow]:
@@ -77,8 +91,10 @@ class ProjectValidationIndex(BaseModel):
 def build_project_validation_index(
     *,
     design: Design,
+    bom: Bom,
     bom_report: BomMatchReport,
     candidate_report: ProfileCandidateReport,
+    document_report: DocumentMatchReport | None = None,
     project_name: str,
     generated_at: str,
     netlist_source: str,
@@ -87,6 +103,7 @@ def build_project_validation_index(
     """Build a project validation index from BOM/profile candidates."""
 
     candidates = {candidate.refdes: candidate for candidate in candidate_report.candidates}
+    validation_targets = validation_targets_from_candidates(candidate_report)
     rows: list[ProjectValidationRow] = []
     for component in sorted(design.components.values(), key=lambda c: sort_refdes_key(c.refdes)):
         bom_row = bom_report.rows_by_refdes.get(component.refdes)
@@ -100,8 +117,8 @@ def build_project_validation_index(
             match_status = candidate.match_status
             reason = candidate.reason
             profile_path = candidate.profile
-            if candidate.match_status == "matched" and candidate.profile is not None:
-                profile = DatasheetProfile.load(candidate.profile)
+            profile = validation_targets.get(component.refdes)
+            if profile is not None:
                 validation = validate_component_against_profile(component, profile, design)
 
         rows.append(
@@ -127,6 +144,17 @@ def build_project_validation_index(
             )
         )
 
+    profile_status_by_refdes = {row.refdes: row.match_status for row in rows}
+    validation_status_by_refdes = {
+        row.refdes: row.validation.status for row in rows if row.validation is not None
+    }
+    component_groups = build_component_groups(
+        bom,
+        profile_status_by_refdes=profile_status_by_refdes,
+        validation_status_by_refdes=validation_status_by_refdes,
+        document_report=document_report,
+    )
+
     return ProjectValidationIndex(
         project_name=project_name,
         generated_at=generated_at,
@@ -137,4 +165,56 @@ def build_project_validation_index(
         components_in_design=len(design.components),
         bom_matched=len(bom_report.matched_refdes),
         rows=rows,
+        component_groups=component_groups,
     )
+
+
+def validation_targets_from_candidates(
+    candidate_report: ProfileCandidateReport,
+) -> dict[str, DatasheetProfile]:
+    """Load explicit refdes -> profile targets from matched profile candidates."""
+
+    targets: dict[str, DatasheetProfile] = {}
+    for candidate in candidate_report.candidates:
+        if candidate.match_status == "matched" and candidate.profile is not None:
+            targets[candidate.refdes] = DatasheetProfile.load(candidate.profile)
+    return targets
+
+
+def profile_gap_groups(
+    index: ProjectValidationIndex,
+    *,
+    limit: int = 30,
+    sample_limit: int = 8,
+) -> list[ProjectValidationGapGroup]:
+    """Group manual/no-profile rows by identity so large projects are scannable."""
+
+    grouped: dict[tuple[str, str, str, str], list[str]] = {}
+    for row in index.manual_rows:
+        identity, identity_kind = _gap_identity(row)
+        key = (row.match_status, identity, identity_kind, row.reason)
+        grouped.setdefault(key, []).append(row.refdes)
+
+    groups = [
+        ProjectValidationGapGroup(
+            match_status=match_status,
+            identity=identity,
+            identity_kind=identity_kind,
+            reason=reason,
+            refdes_count=len(refdes),
+            refdes_sample=refdes[:sample_limit],
+        )
+        for (match_status, identity, identity_kind, reason), refdes in grouped.items()
+    ]
+    return sorted(
+        groups,
+        key=lambda group: (-group.refdes_count, group.match_status, group.identity),
+    )[:limit]
+
+
+def _gap_identity(row: ProjectValidationRow) -> tuple[str, str]:
+    if row.part_number:
+        return row.part_number, "part_number"
+    if row.bom_value:
+        return row.bom_value, "bom_value"
+    return "-", "missing"

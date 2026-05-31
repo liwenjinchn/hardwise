@@ -70,6 +70,7 @@ def test_ds001_no_inferred_vin_yields_reviewer_confirm() -> None:
     assert finding.pin_number == "1"
     assert finding.evidence_tokens == ["datasheet:l78.pdf#p4"]
     assert finding.evidence_chain[0].source == "datasheet"
+    assert finding.evidence_chain[0].token == "datasheet:l78.pdf#p4"
 
 
 def test_ds001_vin_over_abs_max_is_likely_issue() -> None:

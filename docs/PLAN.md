@@ -51,7 +51,7 @@ In two weeks, ship a CLI tool `hardwise review <project> --rules R001[,R002,...]
 | 1 | First end-to-end loop (R001 新建器件候选识别) | `hardwise review --rules R001` → markdown report + tests + screencast; `checklist/finding.py` 统一 Finding 数据模型在此 slice 立 | Refdes Guard + Evidence Ledger |
 | 2 | R002 电容耐压 80% | `--rules R001,R002` + first Sleep Consolidator candidates | Sleep Consolidator |
 | 3 | R003 NC pin + 双库进场 | chromadb + sentence-transformers + pdfplumber installed; datasheet ingest; first datasheet-evidence finding | Tiered Model Routing |
-| 4 | Agent loop + prompt caching | `hardwise ask` with 4 tools; unknown-refdes path; cache-read observable in run log | Prompt Caching |
+| 4 | Agent loop + prompt caching | `hardwise ask` with structured tools; unknown-refdes path; cache-read observable in run log | Prompt Caching |
 | 5 | Submission closeout | README quickstart / demo pages / `interview_qa.md` / `jd_alignment.md` / resume materials | none |
 | Post-MVP | Schematic net parser + R004/R005 | Net-aware checks after `.kicad_sch` topology parser exists | none |
 
@@ -174,6 +174,166 @@ After Gate B, pull the useful parts of closeout forward: README, GitHub, resume,
 
 ---
 
+### DR-011 — Post-migration priority is the agent↔validator bridge, not more families
+**Date**: 2026-05-29
+**Context**: Codebase audit on the `codex/migrate-codex-mainline` product trunk after the diode/connector/MOSFET family migration. Two findings drive this record:
+
+1. **Two parallel pipelines that do not connect.** Pipeline A is `hardwise review <kicad>` — checklist rules (R001/R002/R003/DS001) plus the Anthropic-format tool-use loop in `agent/runner.py` exposing four tools (`list_components`, `get_component`, `get_nc_pins`, `search_datasheet`). Pipeline B is the `design-validator-ui` / `report-validator-ui` workbench — the deterministic `validation/` family validators (buck, gate_driver, mcu, i2c_mux, diode, connector, mosfet). `agent/` has **zero** references to `validation/`; none of the four agent tools call a family validator. The strongest deterministic work (the family validators) is unreachable from the agent that is supposed to be the product's "AI hardware review agent".
+2. **Datasheet profiles are hand-authored; no real PDF has been ingested.** Every `data/datasheet_profiles/*.json` cites synthetic evidence tokens like `datasheet:irf540n.pdf#p1`, but no such PDF exists on disk. The `pdfplumber → chroma → search_datasheet` ingest path is real code but has never been exercised on a real public datasheet end-to-end, so provenance is *claimed* rather than *proven*.
+
+**Decision**: After the validator-family migration, the next two work blocks are, in priority order:
+- **Phase 1 — agent↔validator bridge (highest narrative leverage).** Add a `run_component_validation(refdes)` tool that lets the agent call `validate_component_against_profile`, receive structured PASS/WARN/ERROR, and assemble evidence-carrying findings. This fuses pipelines A and B into one "AI hardware review agent" story.
+- **Phase 2 — real datasheet evidence chain (highest credibility leverage).** Ingest one real public PDF (L78 or SS34 are public) through the existing ingest path so at least the `abs_max` facts carry real `#pN` page tokens, turning provenance from claimed into proven. Closes the Slice 3 anchor.
+
+Continuing to add device families (BJT, P-channel MOSFET) is **lower** leverage than either bridge and is explicitly deprioritised until Phase 1+2 land.
+
+**Why**: The DJI JD pitch is "AI agent for hardware efficiency". The audit shows the agent and the validators are two separate demos; the single highest-value change is making the agent actually drive the deterministic validators. Real provenance is the second pillar of the trust story (Refdes Guard being the first). Both are收口 / closure work on existing assets, not new scope — they stay inside the pre-Layout schematic-review node (DR-007).
+
+**Scope boundary**: Phase 1 wires existing components together; it adds no PCB, boardview, placement, routing, PLM, pricing, or simulation surface. Phase 2 uses only public datasheets already cited by the profiles. The bridge tool returns structured nulls for unknown refdes/profile, consistent with the tools-never-fabricate rule.
+
+**When to revisit**: If Phase 1 reveals the agent loop needs structural change to consume validator output (e.g. a new evidence shape), capture it as a follow-up DR. If real-PDF ingest proves a profile's hand-authored facts wrong, fix the profile and log it in `learning_log.md`.
+
+### DR-012 — Allegro Copilot workbench adapts to the agent contract, not vice versa
+**Date**: 2026-05-30
+**Context**: The Allegro project workbench (`design-validator-ui`) needed an interviewer-facing Copilot panel that answers questions about a selected component, its evidence, and refdes safety — in both an offline static page and a local live server.
+**Decision**: Three choices keep the trust invariants intact:
+1. `--fake-ai` does **not** bypass the Runner. A deterministic fake Anthropic-compatible client emits only `tool_use`/text; the real `Runner._dispatch`, `run_component_validation`, tool trace, and Refdes Guard all run. Tests and demos need no API key, but the dispatch/guard path stays real.
+2. Allegro reaches the agent via a `Design → BoardRegistry` shim populated into an in-memory relational `Session` (`workbench/context.py`, reusing `board_registry_from_design()` + the existing `populate_from_registry()`). The Runner `registry`/`session` contract and the BoardRegistry-backed guard are unchanged.
+3. Live mode keeps all five existing tools. The panel steers the model toward `run_component_validation` and `search_datasheet`, but the agent is not hard-limited; without a vector collection, `search_datasheet` returns its structured not-configured result.
+**Why**: The alternative — relaxing the Runner/guard contract so Allegro could flow through directly — would weaken Hard rule #3 (no hallucinated refdes) for the sake of one feature. Adapting at the workbench boundary keeps anti-hallucination structural and reuses the tested store-population path.
+**Scope boundary**: The FastAPI server is isolated under `workbench/`; the static no-AI `design-validator-ui` path is unchanged. No token streaming, no backend chat persistence, no browser-direct model calls, no `.brd`/boardview/PCB scope.
+**When to revisit**: If multi-user concurrency is needed, move from one shared read-only session to a session-per-request pattern (the in-memory store is already `StaticPool` + `check_same_thread=False` for the threadpool; see `learning_log.md` 2026-05-30).
+
+### DR-013 — Constrained LLM validation is the coverage path
+**Date**: 2026-05-30
+**Context**: The product-like validator target combines two capabilities that
+look similar in the UI but have different trust properties. Hardwise already
+catches high-value deterministic errors on `mixed_controller_power_stage`
+(`U12` XL1509 freewheel diode / inductor, `U8` STM32 SWD swap, `U3` EG2132
+bootstrap diode) with structured profile evidence. The remaining gap is long-tail
+coverage: parts without ready profiles, such as LED polarity or small-transistor
+voltage-margin checks, still fall back to manual/no-profile rows. A purely
+deterministic validator would preserve trust but cap productivity at the profiled
+families; a free-form LLM reviewer would increase coverage but weaken the
+anti-hallucination claim.
+**Decision**: Hardwise should evolve from "pure deterministic validation" to a
+**constrained LLM validator** while keeping deterministic checks as the highest
+trust tier. The agent may help cover long-tail components only when its claims
+are grounded in board facts and datasheet evidence.
+
+Trust tiers:
+
+| Tier | Name | Allowed output | Required evidence |
+|---|---|---|---|
+| L1 | Deterministic | `PASS` / `WARN` / `ERROR` verdicts suitable for reports | `ValidationReport` from a structured profile and validator, with source tokens |
+| L2 | Grounded LLM | Bounded review suggestions or provisional findings | Registry-verified board objects plus retrieved datasheet/page evidence; no unsupported spec claims |
+| L3 | Manual / ungrounded | Coverage gap or reviewer-to-confirm prompt only | Board object may be known, but datasheet/profile evidence is absent or insufficient |
+
+Enforcement rules:
+
+1. Refdes Guard remains non-negotiable. LLM-generated text cannot introduce
+   unverified refdes, nets, or board objects.
+2. Specification claims must point to datasheet evidence. A claim such as a
+   voltage limit, recovery-time requirement, thermal rating, or recommended
+   inductor range cannot be promoted to L2 without a retrieved page/token.
+3. Evidence Ledger becomes the release gate for L2 claims: no source token means
+   downgrade to L3, not a weaker-looking factual statement.
+4. L2 cannot overwrite L1. If a deterministic validator has a verdict, the LLM
+   may explain, translate, or ask follow-up questions, but it must not replace
+   the structured result.
+5. Every user-visible conclusion should carry a trust label so interviews and
+   reports distinguish deterministic findings from grounded suggestions.
+
+**Why**: The project goal is hardware-review productivity, not only formal rule
+coverage. Deterministic validators are the best way to prove the anti-hallucination
+backbone, but they do not scale to every commodity part quickly enough. A
+constrained LLM tier preserves the project's differentiator: the model can help
+review more of the board, but only inside registry, tool, and evidence contracts.
+
+**Sequence**: First polish the workbench/report presentation so the existing L1
+findings look like a real review artifact. Then extend the coverage loop
+(`document-index candidates -> draft profile -> human review -> ready profile ->
+validation target`), add high-value deterministic families selected from that
+coverage data, and only then add L2 grounded-LLM review for the long tail. Hosted
+upload/login/product shell remains after the local trust story is solid.
+
+**Scope boundary**: This does not authorize browser-direct model calls, internal
+hardware data, PCB layout/boardview scope, PLM/supplier/lifecycle claims, or
+reverse-engineering an external product UI. The comparison target can inform
+product shape, but Hardwise must keep its own code, evidence contracts, and public
+demo data.
+
+**When to revisit**: After the first L2 grounded-LLM prototype exists, audit
+whether the evidence gate catches unsupported spec claims. If unsupported claims
+can reach user-visible report text as facts, demote L2 back to an experimental
+chat-only feature until the guard/ledger contract is stronger.
+
+---
+
+### DR-014 — Freeze C4 deterministic expansion before public submission
+**Date**: 2026-05-31
+**Context**: C3's coverage ranking successfully drove C4 through several
+L3/manual-to-L1 deterministic slices: LED indicator, MMBT3904 transistor,
+basic analog IC pin profiles, SMBJ24CA TVS, and BAS316 small-signal diode.
+That chain proves the product loop better than a single LED slice would have:
+Hardwise can rank coverage gaps, select a public-evidence-backed family, add a
+reviewed profile or narrow validator path, and make manual rows deterministic.
+
+The same success creates a scope trap. By C4c, the loop had already been proven
+across several different shapes of hardware evidence. Continuing into every
+remaining family, such as BAV99 dual-diode arrays, inductors, or ferrites, has
+lower submission leverage than making the public demo and AI trust story
+available on `main`.
+
+**Decision**: Freeze C4 family expansion after BAS316. Do not start another
+deterministic family slice until the submission path below is handled.
+
+Current sequence:
+
+1. **Public-main readiness**: resolve the local Xcode/git license blocker,
+   audit the `codex/migrate-codex-mainline` branch against `origin/main`,
+   consolidate the work into the public line, and push only with explicit user
+   authorization.
+2. **Evidence-chain audit**: separate claims backed by real
+   `pdfplumber -> Chroma -> search_datasheet` retrieval from reviewed profile
+   tokens such as `datasheet:<part>.pdf#pN`. Narrative must not imply that all
+   C4 profiles were generated or checked by live vector retrieval.
+3. **Narrative reset**: lead with the trust architecture: Refdes Guard,
+   Evidence Ledger, L1 deterministic truth, and the planned L2 grounded tier.
+   The C3/C4 coverage loop is supporting evidence, not the headline.
+4. **Thin C5 L2 trust slice**: add the smallest grounded-LLM proof that cites
+   retrieved datasheet evidence, downgrades unsupported claims to L3/manual,
+   and never overrides L1 deterministic verdicts.
+5. **Submission closeout**: update README/demo/interview/resume material around
+   what is actually present on public GitHub.
+
+**Scope boundary**: BAV99 dual-diode modeling, inductor/ferrite profiles,
+supplier lookup, PLM, layout, simulation, and hosted shell work are deferred.
+C5 is not a coverage push; it is an evidence-gating proof for the agent layer.
+
+**When to revisit**: After public `main` is current and the C5 trust slice
+passes an unsupported-claim downgrade test, rerun `recommend-next-family` and
+decide whether another deterministic family helps the next interview/demo more
+than packaging, evaluation, or UI polish.
+
+---
+
+## Post-migration roadmap (toward Gate B submission)
+
+The validator-family work is late-stage closure, not early build. This roadmap sequences the remaining work by leverage on the DJI submission narrative (DR-011). Each phase keeps the slice-acceptance template: one CLI/demo artifact, green `pytest` + `ruff`, an `interview_qa.md` touch, and a `learning_log.md` entry.
+
+| Phase | Goal | Key deliverable | Ship gate | Leverage |
+|---|---|---|---|---|
+| 0 | Housekeeping | Archive the two `in_progress` Trellis tasks; confirm DS001 runs end-to-end in `review` | No stale in-progress tasks; DS001 produces a finding on a profiled component | low, fast |
+| 1 | **Agent↔validator bridge** | `run_component_validation(refdes)` tool + `agent/runner.py` wiring + one end-to-end test where the agent validates a single component and returns an evidence-carrying finding | Agent run on a public/synthetic project calls a family validator and surfaces structured PASS/WARN/ERROR with source tokens | **highest** |
+| 2 | **Real datasheet evidence chain** | One real public PDF (L78 or SS34) ingested via `pdfplumber → chroma`; at least one profile's `abs_max` fact carries a real `#pN` token; `search_datasheet` returns a real hit | A finding cites a real datasheet page, not a synthetic token; Slice 3 anchor closed | **high** |
+| 3 | BJT family + MOSFET finish | `validation/bjt.py` reusing the reference-node pattern (Vbe = base − emitter); P-channel / body-diode notes as backlog | BJT fixture catches a base-drive issue; dispatch stays topology_family-only | medium |
+| 4 | End-to-end demo + narrative | Reproducible two-track artifacts: KiCad agent/review path → datasheet-cited finding, plus Allegro validator path → static HTML workbench; update `interview_qa.md` + resume bullet | Reproducible public demo; submission materials current | = Gate B |
+
+**Sequencing note**: Phase 1 and Phase 2 are the two pieces that turn the "AI agent for hardware review" pitch into a real demo; both rank above adding more families (Phase 3). Phase 0 is a sub-hour warm-up. Phase 4 is the submission close.
+
+---
+
 ## Day 1 retrospective (summary)
 
 **Shipped**:
@@ -218,3 +378,11 @@ After Gate B, pull the useful parts of closeout forward: README, GitHub, resume,
 - 2026-05-27 — V3.8 EG2132 gate-driver validation shipped: `data/datasheet_profiles/eg2132.json` adds public structured EG2132 pin facts and half-bridge driver recommendations; `validation/gate_driver.py` adds component-level checks for VCC, HIN/LIN, HO/LO gate loads, VS switch node, and VB/VS bootstrap topology. The synthetic Allegro+BOM fixture `eg2132_gate_driver.net` + `eg2132_gate_driver_bom.csv` validates `U3` and reports overall `ERROR` for `D1=MBRA210LT3G` as a low-reverse-voltage bootstrap diode in a 24 V-class path, while nominal diode/load variants return no component ERROR. It adds no MCU/LED/transistor template, timing/deadtime simulation, MOSFET loss calculation, hosted app state, supplier/PLM scope, `.brd`, boardview, placement, routing, or PCB geometry.
 - 2026-05-28 — Design-validator workbench entry shipped: `design-validator-ui <netlist_or_pst> <bom>` auto-matches BOM identities against local structured profiles, runs deterministic validation for matched components, writes the screenshot-like static workbench HTML, and optionally writes markdown/JSON project validation index sidecars. It keeps `report-validator-ui-batch` for explicit target control, but gives the product demo a one-command project-level entry. It remains a local static artifact: no upload backend, account quota, hosted app state, `.brd`, boardview, placement, routing, PCB geometry, live supplier lookup, PLM, lifecycle, pricing, or availability.
 - 2026-05-28 — V3.10 STM32G030 MCU/SWD validation shipped: `data/datasheet_profiles/stm32g030c8t6.json` adds a public structured MCU fixture subset, and `validation/mcu.py` adds component-level checks for VDD/VDDA/VBAT, NRST, BOOT0, SWDIO/SWCLK, and simple GPIO connectivity. The synthetic `stm32g030_mcu` fixture validates `U8` and reports overall `ERROR` for swapped `SWDIO/SWCLK`; the mixed controller power-stage fixture lets `design-validator-ui` show `U1 PASS`, `U12 ERROR`, `U3 ERROR`, and `U8 ERROR` in one workbench. It adds no firmware, clock-tree, full alternate-function matrix, timing, PCB/layout, supplier/PLM, `.brd`, boardview, placement, routing, or PCB geometry scope.
+- 2026-05-28 — V3.11 zero-profile coverage workbench shipped: `design-validator-ui` now succeeds even when profile candidate matching produces zero validated rows. It renders a coverage/gap HTML artifact, writes markdown/JSON index sidecars, reports `validated=0` with PASS/WARN/ERROR all zero, and surfaces `no_result / ambiguous / manual_needed` rows without fabricating electrical judgement. It adds no new profiles, validation families, parsers, datasheet search, supplier/PLM scope, or PCB/layout scope.
+- 2026-05-29 — Validator-family migration (codex mainline trunk): diode + connector families (`ae04a51`), redundant MPN dispatch fallbacks removed so dispatch is uniformly `topology_family`-driven (`d318419`), and MOSFET family with gate-to-source Vgs (`b0de983`). MOSFET fix: `Vgs = V_gate − V_source` (not gate-to-ground), profile Source recategorised `switch_node`, WARN instead of assuming ground when the reference floats; see `docs/learning_log.md` 2026-05-29. DR-011 added: post-migration priority is the agent↔validator bridge (Phase 1) and real datasheet evidence chain (Phase 2), ranked above adding more families. `uv run pytest -q` → 373 passed; `uv run ruff check .` → clean.
+- 2026-05-30 — DR-011 Phase 0 housekeeping discharged: Trellis now reports no active tasks, and `task.py list-archive 2026-05` shows the relevant May work items archived with `task.json.status = completed`, including `05-30-real-datasheet-evidence-chain`, `05-30-bjt-family-validation`, and `05-30-phase4-demo-closeout`; the DS001 smoke is captured in the Phase 4 entry below.
+- 2026-05-30 — DR-011 Phase 1 agent↔validator bridge discharged at `029ce67`: `run_component_validation(refdes)` became the fifth agent tool, `Runner` dispatches it into deterministic family validators, and `tests/agent/test_validation_bridge.py` proves structured PASS/WARN/ERROR payloads flow through the model tool loop; later Trellis archive state keeps the bridge represented in completed Phase 4 closeout artifacts.
+- 2026-05-30 — DR-011 Phase 2 real datasheet evidence chain hardened: official ST L78 PDF staged locally as gitignored `data/datasheets/l78.pdf`; page 4 verified to contain the Absolute maximum ratings table with `VI` = 35 V for `VO=5 to 18 V`; `ingest-datasheet ... --part-ref L7805 --extract-profile --persist-dir /tmp/hardwise-l78-chroma` produced 157 chunks; `query-datasheet "absolute maximum input voltage"` returned top-1 `[l78.pdf p4 part=L7805]`; DS001 component report on `pic_programmer` still produces U3 finding with reviewed profile token `datasheet:l78.pdf#p4`. Fast tests now cover deterministic page/token/metadata extraction without Chroma ranking; slow vector tests remain marked `@pytest.mark.slow`. `uv run pytest -q` → 380 passed, 7 deselected; `uv run pytest tests/store/test_vector.py -q -m slow` → 4 passed; `uv run ruff check .` → clean.
+- 2026-05-30 — DR-011 Phase 3 BJT family shipped: `data/datasheet_profiles/2n3904.json` captures onsemi 2N3904 NPN facts (`VCEO=40 V`, `VEBO=6 V`, pinout 1/2/3 = Emitter/Base/Collector, all source-tokened to `datasheet:2n3904-d.pdf#p1`); `validation/bjt.py` dispatches only via `recommended.topology_family="bjt"` and adds base/collector/emitter connectivity plus directional `bjt_vebo_rating` (`reverse_be_voltage = emitter - base`) and `bjt_vceo_rating`; fixtures cover nominal low-side and non-ground-emitter cases. The key test catches the hardware bug a base-to-ground implementation would miss: emitter=12 V, base=0 V exceeds `VEBO=6 V` and returns ERROR. P-channel MOSFET, body-diode modeling, beta/current gain, base-resistor sizing, SPICE, and PCB scope remain out of scope. `uv run pytest tests/validation/test_bjt.py -q` → 6 passed; `uv run pytest -q` → 386 passed, 7 deselected; `uv run ruff check .` → clean.
+- 2026-05-30 — DR-011 Phase 4 demo closeout shipped as reproducible artifacts, not a video: docs now frame the final demo as one trust backbone across two public input tracks instead of overclaiming one board for every command. KiCad hero track: `hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component` produced 29 findings / 121 components, with U3 / DS001 citing reviewed `datasheet:l78.pdf#p4`. Agent bridge evidence: `tests/agent/test_validation_bridge.py` proves `run_component_validation(refdes)` dispatches through Runner into deterministic validators with structured PASS/WARN/ERROR payloads. Allegro workbench track: `design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net ...` produced 25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, and 21 manual/no-profile rows. `docs/demo.md` / `docs/demo.html` were rewritten; README, docs index, JD alignment, and interview Q&A were refreshed around the Phase 4 story; historical HTML pages are left as historical/supporting material. `uv run pytest tests/agent/test_validation_bridge.py -q` → 6 passed.
+- 2026-05-30 — Allegro Copilot workbench shipped (`7d3ba1b`): `design-validator-ui --ai-snapshot` writes a single offline HTML with baked, audited chat transcripts, and `serve-workbench` runs a local FastAPI server (`POST /api/workbench/chat`) whose `--fake-ai` mode drives the real five-tool Runner + Refdes Guard with a deterministic fake client. Allegro reaches the agent through a `Design → BoardRegistry` shim + in-memory relational `Session` (`workbench/context.py`), leaving the Runner/guard contract unchanged (DR-012). New modules: `workbench/{context,chat,server}.py`, `report/copilot_panel{,_assets}.py`; `fastapi`/`uvicorn` added. Follow-up `fix(store)` (`9cbcbce`) made the in-memory SQLite session thread-safe (`StaticPool` + `check_same_thread=False`) after a real `serve-workbench` run against a live Anthropic-format model exposed that uvicorn's worker threadpool could not see the startup-thread-populated `:memory:` database; verified afterward that `U999` returns a clean `not_found` with `⟨?U999⟩` wrapped (see `learning_log.md` 2026-05-30). `uv run pytest -q` → 395 passed, 7 deselected; `uv run ruff check .` → clean.

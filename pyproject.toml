@@ -17,6 +17,8 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "chromadb>=0.5.0",
     "pdfplumber>=0.11.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
 ]
 
 [project.optional-dependencies]
@@ -44,6 +46,7 @@ packages = ["src/hardwise"]
 line-length = 100
 target-version = "py311"
 exclude = [
+    ".trellis",
     "eval/projects",
     "reports/eval",
 ]
@@ -53,4 +56,4 @@ markers = [
     "slow: tests that take >1s or pull heavyweight deps (e.g. chromadb embedder)",
 ]
 addopts = "-m 'not slow'"
-norecursedirs = [".claude", "eval/projects"]
+norecursedirs = [".claude", ".trellis", "eval/projects"]

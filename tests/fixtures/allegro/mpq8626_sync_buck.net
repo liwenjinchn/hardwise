@@ -1,0 +1,19 @@
+$PACKAGES
+  ! 'QFN14' ! MPQ8626GD ; U13
+  ! 'IND' ! WSRPG0603-1R5M-L ; PL1
+  ! 'C0402' ! 0.1uF ; CBOOT
+  ! 'R0402' ! 0R ; RBOOT
+$NETS
+  'P12V' ; U13.3
+  'GND' ; U13.1, U13.7, U13.14
+  'SW' ; U13.2, U13.11, PL1.1, CBOOT.1
+  'P1V8' ; PL1.2
+  'BST' ; U13.10, RBOOT.1, CBOOT.2
+  'FB' ; U13.6
+  'EN_P1V8' ; U13.5
+  'PGOOD' ; U13.9
+  'MODE' ; U13.12
+  'CS' ; U13.4
+  'TRK_REF' ; U13.8
+  'VCC_BIAS' ; U13.13
+$END

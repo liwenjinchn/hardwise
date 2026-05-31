@@ -32,6 +32,43 @@ def test_suggest_profile_candidates_matches_mixed_regulators() -> None:
     assert matches["D5"].match_status == "no_result"
 
 
+def test_suggest_profile_candidates_matches_profile_aliases(tmp_path: Path) -> None:
+    bom_path = tmp_path / "bom.csv"
+    bom_path.write_text(
+        "Reference,Quantity,Value,Manufacturer,MPN\n"
+        "U13,1,MPQ8626GD,MPS,MPQ8626GD\n"
+        "U23,1,MPQ8626GD-Z,MPS,MPQ8626GD-Z\n",
+        encoding="utf-8",
+    )
+
+    report = suggest_profile_candidates(parse_bom(bom_path), Path("data/datasheet_profiles"))
+
+    matches = {candidate.refdes: candidate for candidate in report.candidates}
+    assert matches["U13"].profile == Path("data/datasheet_profiles/mpq8626.json")
+    assert matches["U23"].profile == Path("data/datasheet_profiles/mpq8626.json")
+
+
+def test_suggest_profile_candidates_skips_needs_review_drafts(tmp_path: Path) -> None:
+    profiles = tmp_path / "profiles"
+    profiles.mkdir()
+    draft = profiles / "draft.json"
+    draft.write_text(
+        '{"part_number":"DRAFT123","review_status":"needs_review",'
+        '"extracted_at":"2026-05-29T00:00:00+00:00","extracted_model":"test"}',
+        encoding="utf-8",
+    )
+    bom_path = tmp_path / "bom.csv"
+    bom_path.write_text(
+        "Reference,Quantity,Value,Manufacturer,MPN\nU1,1,DRAFT123,Fixture,DRAFT123\n",
+        encoding="utf-8",
+    )
+
+    report = suggest_profile_candidates(parse_bom(bom_path), profiles)
+
+    assert report.candidates[0].match_status == "no_result"
+    assert report.candidates[0].profile is None
+
+
 def test_suggest_profile_candidates_reports_manual_needed_for_missing_identity(
     tmp_path: Path,
 ) -> None:

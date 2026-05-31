@@ -1,0 +1,5 @@
+Reference,Quantity,Value,Manufacturer,MPN
+U13,1,MPQ8626GD,MPS,MPQ8626GD
+PL1,1,WSRPG0603-1R5M-L,Fixture,GW_Inductor
+CBOOT,1,0.1uF,Fixture,GW_CAPACITOR
+RBOOT,1,0R,Fixture,GW_RESISTOR

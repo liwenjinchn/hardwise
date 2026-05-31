@@ -1,0 +1,53 @@
+{
+  "part_number": "SMBJ24CA",
+  "part_number_aliases": ["SMBJ24CA-E3/52", "SMBJ24CA-E3/5B"],
+  "review_status": "ready",
+  "description": "Bidirectional 24 V working-standoff TVS diode, SMB package",
+  "abs_max": {
+    "peak_pulse_power_w": 600.0,
+    "working_standoff_voltage": 24.0,
+    "breakdown_voltage_min": 26.7,
+    "breakdown_voltage_max": 29.5,
+    "clamping_voltage_max": 38.9
+  },
+  "recommended": {
+    "topology_family": "diode",
+    "diode_role": "bidirectional_tvs",
+    "working_standoff_voltage": 24.0,
+    "reference_net": "ground"
+  },
+  "pin_function": {
+    "1": "Terminal 1",
+    "2": "Terminal 2"
+  },
+  "pins": [
+    {
+      "name": "Terminal 1",
+      "number": "1",
+      "category": "switch_node",
+      "function": "Bidirectional TVS terminal; polarity is not assigned for the CA bidirectional variant.",
+      "evidence": ["datasheet:littelfuse_smbj_series.pdf#p1"]
+    },
+    {
+      "name": "Terminal 2",
+      "number": "2",
+      "category": "switch_node",
+      "function": "Bidirectional TVS terminal; polarity is not assigned for the CA bidirectional variant.",
+      "evidence": ["datasheet:littelfuse_smbj_series.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "abs_max.peak_pulse_power_w": "datasheet:littelfuse_smbj_series.pdf#p1",
+    "abs_max.working_standoff_voltage": "datasheet:littelfuse_smbj_series.pdf#p3",
+    "abs_max.breakdown_voltage_min": "datasheet:littelfuse_smbj_series.pdf#p3",
+    "abs_max.breakdown_voltage_max": "datasheet:littelfuse_smbj_series.pdf#p3",
+    "abs_max.clamping_voltage_max": "datasheet:littelfuse_smbj_series.pdf#p3",
+    "recommended.diode_role": "datasheet:littelfuse_smbj_series.pdf#p1",
+    "recommended.working_standoff_voltage": "datasheet:littelfuse_smbj_series.pdf#p3",
+    "pin_function.1": "datasheet:littelfuse_smbj_series.pdf#p1",
+    "pin_function.2": "datasheet:littelfuse_smbj_series.pdf#p1"
+  },
+  "extracted_at": "2026-05-31T00:00:00+08:00",
+  "extracted_model": "manual-profile-c4d-tvs",
+  "schema_version": "v2"
+}

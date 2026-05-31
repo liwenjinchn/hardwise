@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Check that document/no-result/ambiguous states are visible structured outcomes, not swallowed failures."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check that outputs avoid fabricated data and all claims preserve evidence/source tokens."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Check that grouped rows, document status, extracted facts, family classification, and reports agree across layers."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check that new family logic uses shared data shapes and does not fork report/validation contracts."}

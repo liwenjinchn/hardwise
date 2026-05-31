@@ -8,6 +8,131 @@
 
 ---
 
+## 2026-05-29 · V3.13 · V1 should validate one real power family, not all devices
+
+**Symptom**
+
+Grouped coverage made真实项目可读了，但如果下一步继续“按器件一个个补 profile”，项目又会发散成一个无限
+器件库维护任务。真实 Allegro 项目里有 132 个 BOM/device groups，其中电源相关 IC 很适合作为第一条
+深验证链路，但不能承诺全 BOM 自动验证。
+
+**Root cause**
+
+V1 的闭环单位应该是“全项目 coverage + 少数高价值 family validation”。全项目层负责暴露 132 个 groups、
+document/profile 状态和缺口；验证层只在 structured profile + family validator 都可信时输出
+PASS/WARN/ERROR。否则就会把 coverage、datasheet resolution、fact extraction 和 electrical judgement
+混成一个看似自动、实际不可审计的大功能。
+
+**Fix**
+
+选 `MPQ8626` 同步 buck 作为 V1 power family target。新增 `mpq8626.json` structured profile，使用
+`part_number_aliases` 匹配 `MPQ8626GD` / `MPQ8626GD-Z`；新增 `power_v1_docs.csv` 本地公开文档索引，
+链接到 MPS 公开产品/资料页；扩展 buck validator 支持 `SW1/SW2`、`PL` 前缀电感和同步 buck
+“不需要外部续流二极管”的规则。真实项目中 `U13/U20/U23/U26` 自动进入验证。
+
+**Verification**
+
+真实公开 Allegro 文件夹 smoke 加 `--document-index data/document_indexes/power_v1_docs.csv` 后输出：
+4010 components / 132 groups / document matched=2 BOM groups / validated=4 /
+PASS-WARN-ERROR=4-0-0 / manual=4006。JSON 中 `MPQ8626GD` 和 `MPQ8626GD-Z` 两个 groups 都是
+`profile_status=matched`、`document_status=matched`、`validation_status=PASS`。浏览器 smoke 确认
+HTML 显示 132 groups、4 个 validated devices、MPQ8626 docs、`buck_inductor` 和同步 buck 结论。
+
+**Takeaway**
+
+V1 的收束语句是：全项目 coverage 可见，power family 深验证。不要把“新器件很多”当成要无限补
+MPN profiles；先让 document/profile/family 三层状态可审计，再按 family 扩。
+
+## 2026-05-28 · V3.12 · Real-project coverage needs BOM groups, not raw refdes rows
+
+**Symptom**
+
+真实 Allegro/PST 项目导入后有 4010 个 design components。即使 `design-validator-ui` 能在
+`validated=0` 时生成 artifact，逐位号展示仍然会把 reviewer 淹没在 4010 条 no-profile/manual rows 里，
+不像一个可审计的项目入口。
+
+**Root cause**
+
+Profile 和 datasheet 的扩展单位不是单个 refdes，而是 BOM item / device identity。电容、电阻、连接器、
+test point 和 IC 应该先按 BOM group 聚合，再显示 normalized identity、family、profile status 和 document
+status。否则每导入一个新项目，Hardwise 看到的都是“几千个孤立缺口”，而不是“几十/上百个可补的器件组”。
+
+**Fix**
+
+新增 `validation/component_identity.py` 和 `validation/component_groups.py`，从 BOM item 构建
+`component_groups`：真实 MPN 优先，`GW_*`、`MARK`、`HOLE_*`、`TEST_POINT_*` 等占位名不当作真
+MPN；passives 用 value 作为 identity；connector / mechanical / test point 明确分 family。
+`design-validator-ui --document-index` 接入本地 document index，HTML/Markdown/JSON 都输出同一套
+group coverage。
+
+**Verification**
+
+真实公开 Allegro 文件夹 smoke：自动选择 `SWITCH BOARD 144-VA_20240712 1401(1).BOM`，输出
+4010 components / BOM matched=4010 / validated=0 / manual=4010，并把 4010 rows 聚合成 132 个
+component groups。浏览器 smoke 确认 HTML 有 `Component Group Coverage`、`Docs` 列和真实 IC 组
+如 `MP5991`。
+
+**Takeaway**
+
+真实项目的第一层产品闭环是 group-first coverage。先把“哪些器件族/identity 需要 profile 或 datasheet”
+变成可审计清单，再进入自动下载、事实抽取和 family validator。
+
+## 2026-05-28 · Trellis workspace files must stay outside Hardwise lint/test scope
+
+**Symptom**
+
+After Trellis was initialized in the repo, `uv run ruff check .` started reporting style errors under
+`.trellis/scripts/`, even though those files are generated workflow tooling rather than Hardwise source.
+
+**Root cause**
+
+Ruff scans the repository tree unless configured otherwise. The project already had the same boundary for public eval
+checkouts, but Trellis added another generated/tooling tree with Python files.
+
+**Fix**
+
+Added `.trellis` to Ruff's `exclude` list and pytest's `norecursedirs` so repo quality gates cover Hardwise-owned code,
+tests, and docs instead of generated workflow tooling.
+
+**Takeaway**
+
+Local workflow/runtime folders need an explicit lint/test boundary as soon as they enter the repo tree.
+
+---
+
+## 2026-05-28 · V3.11 · Zero-profile real projects still need a workbench
+
+**Symptom**
+
+真实 Allegro/PST 项目可以成功解析 topology，BOM 也能 100% join，但本地 profile library 对它可能
+`matched=0`。旧的 `design-validator-ui` 会在这种情况下退出失败，让 reviewer 看不到已经可信的
+intake facts 和 profile coverage 缺口。
+
+**Root cause**
+
+CLI 把“没有 deterministic validation result”误当成“不能生成 artifact”。这混淆了两层事实：
+EDA/BOM intake 已经可信，电气 PASS/WARN/ERROR 只是 profile 覆盖后的下一层。没有 profile 时应该
+展示 coverage boundary，而不是失败或假装验证。
+
+**Fix**
+
+新增项目级 workbench renderer。`design-validator-ui` 现在把 `ProjectValidationIndex` 交给 renderer：
+有 validated rows 时继续展示现有多器件 validation detail；没有 validated rows 时展示
+Profile coverage gap、profile status counts、前 50 条 no-profile/manual rows、scope boundary，并继续写
+markdown/JSON sidecars。
+
+**Verification**
+
+Focused tests cover zero-profile CLI output and renderer HTML. Smoke path with a temporary profile directory containing
+only `l78.json` over `stm32g030_mcu` produces 7 components / 0 validated / PASS-WARN-ERROR 0-0-0 / 7 manual.
+
+**Takeaway**
+
+Coverage is a valid review artifact. Hardwise should fail only when evidence cannot be parsed or indexed, not when the
+honest result is “we can import this project, but profile coverage is not there yet.”
+
+---
+
 ## 2026-05-28 · V3.10 · MCU checks need a startup/debug slice, not a fake full MCU validator
 
 **Symptom**
@@ -1465,3 +1590,830 @@ pinned, but it should not become part of the product's lint/test ownership surfa
 **Takeaway:** When the brainstorm uses informal `@dataclass` sketches, the implementation plan should reconcile against the codebase's actual model framework. Carrying the inconsistency forward would force a mid-sub-slice refactor.
 
 **Next:** V2.2 plan (per-component check flip + `Finding.pin_number` extension + R001-R003 outer-loop rewrite). To be drafted in a fresh planning session.
+
+---
+
+## 2026-05-29 — V1.1-V1.3 coverage loop should advance by reviewable groups
+
+**Symptom**
+
+After V1, the real Allegro project could be imported and grouped, but the next useful
+step was still too manual: no concise document-index draft, no safe profile-draft
+lifecycle state, and only one validated family path. A candidate CSV also risked
+including passive-looking values such as `470uF 2.5V 20%` when the grouped family fell
+back to `unknown`.
+
+**Root cause**
+
+Grouped coverage was readable in HTML/Markdown/JSON, but it did not yet create a
+review artifact that a human could fill into `document-index` rows. Draft profiles had
+the same file shape as reviewed profiles, so they needed an explicit lifecycle field to
+avoid accidental validation. Candidate filtering also trusted `suggested_family` too
+much and needed a second passive-value guard on the identity itself.
+
+**Fix**
+
+Added the V1.1-V1.3 loop:
+
+- `build-document-index-candidates <validation-index.json>` writes a stable CSV of
+  non-passive, non-mechanical, unmatched groups for document review.
+- `draft-datasheet-profile ... --identity ...` writes `review_status=needs_review`
+  profile scaffolds, and profile matching skips anything not marked `ready`.
+- `pca9548a.json` plus an `i2c_mux` validator add a second real family path beyond the
+  MPQ8626 buck validator.
+- Candidate generation now filters passive-looking identities even when family
+  inference says `unknown`.
+
+**Verification**
+
+- `uv run pytest -q` → 358 passed, 7 deselected.
+- `uv run ruff check .` → all checks passed.
+- Real public Allegro smoke with `data/document_indexes/family_v1_3_docs.csv` selected
+  `SWITCH BOARD 144-VA_20240712 1401(1).BOM`, matched BOM `4010/4010`, produced 132
+  groups, and validated 9 components: U13/U20/U23/U26 via MPQ8626 plus
+  U8/U9/U10/U11/U130 via PCA9548A. Rollup was PASS/WARN/ERROR = 9/0/0, manual = 4001.
+
+**Takeaway**
+
+The scalable unit is not “one-off device JSON forever”; it is group coverage → document
+index row → needs-review profile draft → reviewed profile/family validator. Each stage
+has an explicit human gate, so new projects can expose gaps without pretending to verify
+parts Hardwise does not yet understand.
+
+## 2026-05-29 — MOSFET Vgs is gate-to-source, not gate-to-ground
+
+**Symptom**
+
+The try/trellis MOSFET validator (`MosfetValidator._check_vgs_range`) read
+`voltage_for_net(gate.net)` and compared that single number against the ±20 V
+abs max, calling it "Vgs". On a low-side FET it looked right. On a high-side
+FET — source on the switch node at, say, 48 V, gate bootstrapped to 58 V — it
+would read 58 V and ERROR a perfectly healthy gate drive.
+
+**Root cause**
+
+Vgs is a *differential*: `V_gate − V_source`. Gate-to-ground only equals Vgs
+when the source happens to be at ground (low-side). The old code hard-coded the
+low-side assumption. A second, quieter copy of the same bug lived in the profile
+schema: labelling the Source pin `category: "ground"` makes the generic
+`validate_pin` demand a ground net, so the high-side source would also
+false-ERROR one layer up. The validation-guidelines doc actively recommended
+`Source → ground`, so the trap was being taught forward.
+
+**Fix**
+
+Migrated MOSFET to the clean codex pattern as `validation/mosfet.py`:
+
+- `Vgs = voltage(gate) − voltage(source)`, summary always prints
+  `gate X V - source Y V` so the reference node is auditable.
+- When gate or source has no statically known voltage (PWM drive, floating
+  switch node) → WARN, explicitly "not assuming ground". Never fabricate 0 V.
+- Same differential treatment for `Vds = voltage(drain) − voltage(source)`.
+- Profile Source pin recategorised `switch_node`, abs-max limits read from the
+  profile (not hard-coded), evidence tokens attached.
+- Guidelines doc corrected: Source is `switch_node`, with the Vgs rule spelled
+  out so the next three-terminal family inherits the right reference.
+
+**Verification**
+
+- `uv run pytest tests/validation/test_mosfet.py -v` → 6 passed. The decisive
+  case (`test_highside_vgs_uses_source_reference`) sets SW=48 V, gate=58 V and
+  asserts Vgs=10 V PASS — it would ERROR under the old gate-to-ground logic, so
+  the test has teeth.
+- `uv run pytest -q` → 373 passed, 7 deselected. `uv run ruff check .` → clean.
+
+**Takeaway**
+
+For any three-terminal active device, the control voltage is referenced to a
+device pin, not to the board ground. Encode the reference node in both the
+arithmetic and the summary string, and WARN instead of assuming a default when
+the reference floats. A wrong default in a *spec doc* propagates to every future
+family — fix the doc, not just the code.
+
+## 2026-05-29 — Agent and validators were two demos that never met
+
+**Symptom**
+
+A codebase audit found `agent/` has zero references to `validation/`. The
+review agent exposed four tools (list/get component, NC pins, datasheet search)
+and none of them called a family validator. The deterministic validators
+(buck, gate_driver, mcu, i2c_mux, diode, connector, mosfet) — the strongest,
+most trustworthy work in the repo — were unreachable from the agent that the
+DJI pitch calls an "AI hardware review agent". Two parallel pipelines, one
+product story.
+
+**Root cause**
+
+The two halves grew on different data shapes. Agent tools run on the relational
+`Session` + `BoardRegistry` + vector `collection` (KiCad intake). Validators run
+on the IR `Design` + `Component` + `DatasheetProfile` (Allegro intake). Nothing
+bridged the seam, so the agent could describe a component but never validate it.
+
+**Fix**
+
+Added `run_component_validation(refdes)` as the fifth agent tool:
+
+- Runner gains optional `design` + `validation_targets` ({refdes -> profile})
+  constructor params, defaulting empty so existing KiCad-only callers are
+  unaffected.
+- The tool is a pure lookup-and-validate: refdes not in design -> `not_found`
+  + closest_matches (difflib 0.6 cutoff, same as `get_component`); refdes with
+  no assigned profile -> `no_profile`; assigned -> `validated` with flattened
+  PASS/WARN/ERROR rows + evidence tokens. Never auto-matches a profile, never
+  fabricates a verdict — consistent with the tools-never-fabricate rule.
+- When no design is loaded the dispatch returns a structured `not_configured`
+  payload (same backoff pattern as `search_datasheet` with no collection).
+
+**Verification**
+
+- `uv run pytest -q` → 379 passed, 7 deselected (+12). New
+  `tests/agent/test_validation_bridge.py` covers the pure tool function and the
+  runner dispatch path (FakeAnthropic, no API), including
+  `test_runner_dispatches_validation_and_returns_structured_payload` proving the
+  loop reaches the validator and gets `overall=PASS` back.
+- Two pre-existing tests rightly broke and were updated: the tool-manifest
+  count (4→5) and a part-number false-positive assertion. `ruff` clean.
+
+**Takeaway**
+
+When two subsystems speak different data shapes, the integration tool belongs at
+the shape boundary, not inside either half — inject both contexts into the
+orchestrator and keep the tool a thin, non-fabricating lookup. The highest-value
+change in a mature codebase is often not new capability but connecting capability
+that already exists. (DR-011, Phase 1.)
+
+## 2026-05-30 — Real datasheet provenance is two corroborating lines, not runtime RAG extraction
+
+**Symptom**
+
+DR-011 Phase 2 originally read like one pipeline: real PDF -> Chroma ingest ->
+query -> DS001 finding token. That wording was misleading. DS001 does not
+scrape Chroma text during `review`; it reads the reviewed static
+`DatasheetProfile.evidence["abs_max.vin"]` token.
+
+**Root cause**
+
+The project had two valid evidence paths but the docs collapsed them into one.
+Line A is deterministic profile validation: `l78.json` says `abs_max.vin=35.0`
+with `datasheet:l78.pdf#p4`, and DS001 emits that token for U3. Line B is
+independent PDF provenance: the public L78 datasheet can be extracted/indexed
+with page metadata, and search should corroborate the same page. Treating Line B
+as if it dynamically generated Line A would overclaim the agent's runtime
+behavior.
+
+**Fix**
+
+- Trellis planning artifacts now state the two-line evidence model explicitly.
+- Fast tests now generate a tiny PDF and verify `extract_chunks()` preserves
+  page numbers and `datasheet:<file>#pN` tokens, then capture the exact metadata
+  handed to `ingest_chunks()` without invoking Chroma semantic ranking.
+- Chroma semantic query coverage remains slow-only, consistent with
+  `tests/store/test_vector.py`, because the default ONNX MiniLM embedder can
+  download model data on first run.
+- README, architecture notes, and interview answers now use `part_ref=L7805`
+  for datasheet identity instead of `part_ref=U3`.
+
+**Verification**
+
+- Official ST PDF web verification: `CD00000444.pdf` / L78 DS0422 Rev 38
+  (February 2025) still has "Absolute maximum ratings" on page 4, with VI =
+  35 V for VO = 5 to 18 V.
+- `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --no-consolidate --output /tmp/hardwise-phase2-ds001.md`
+  produced 29 findings and U3 / DS001 cites `datasheet:l78.pdf#p4`.
+- `uv run pytest tests/ingest/test_pdf.py tests/checklist/test_ds001.py tests/ir/test_profile.py -q`
+  -> 17 passed.
+- `uv run pytest tests/store/test_vector.py -q -m slow` -> 4 passed, keeping
+  Chroma semantic ranking in the slow lane.
+- `uv run pytest -q` -> 380 passed, 7 deselected. `uv run ruff check .` ->
+  clean.
+- After the official PDF was staged locally from
+  `/Users/liwenjin/Downloads/CD00000444.pdf` to gitignored
+  `data/datasheets/l78.pdf`, real ingest/query succeeded:
+  `ingest-datasheet` wrote 157 chunks with `part_ref=L7805`, and
+  `query-datasheet "absolute maximum input voltage"` returned top-1
+  `[l78.pdf p4 part=L7805]`.
+
+**Takeaway**
+
+For provenance demos, be precise about which layer owns the fact. A profile
+token can be independently corroborated by PDF search without being generated
+by PDF search at review time. Fast tests should lock deterministic contracts
+(page/token/metadata); embedding-backed semantic ranking belongs in slow tests.
+
+## 2026-05-30 — BJT Vbe checks must model reverse VEBO, not positive forward overvoltage
+
+**Symptom**
+
+The first Phase 3 plan almost copied the MOSFET pattern too literally and talked
+about a "base-emitter overvoltage" fixture. That wording implied comparing
+`abs(Vbe)` or positive forward Vbe against an abs-max number, which would make
+the validator look electrically naive in a hardware review.
+
+**Root cause**
+
+MOSFET `Vgs` is a symmetric oxide limit, so `abs(Vgs) > limit` is reasonable.
+BJT base-emitter behavior is a diode junction: positive `Vbe ~= 0.6-0.7 V` is
+normal operation, and forward abuse is primarily a current / base-resistor
+problem. The voltage abs-max to catch deterministically is reverse emitter-base
+breakdown (`VEBO`), where the emitter is driven above the base.
+
+**Fix**
+
+- Added `data/datasheet_profiles/2n3904.json` from onsemi `2n3904-d.pdf#p1`
+  with top-level `abs_max.vceo=40.0`, `abs_max.vebo=6.0`, and pinout evidence.
+- Added `src/hardwise/validation/bjt.py` with connectivity checks plus
+  `bjt_vebo_rating` and `bjt_vceo_rating`.
+- `bjt_vebo_rating` computes `reverse_be_voltage = emitter - base`; it never
+  compares positive forward Vbe against VEBO.
+- Numeric tests inject `Net.voltage_hint` for base/emitter/collector voltages.
+  This avoids pretending the net-name parser understands realistic 0.7 V nodes.
+
+**Verification**
+
+- `uv run pytest tests/validation/test_bjt.py -q` -> 6 passed.
+- The key failure case sets emitter=12 V and base=0 V. A base-to-ground check
+  would see 0 V and miss it; the emitter-referenced check reports reverse B-E
+  voltage 12 V above VEBO 6 V.
+- `uv run pytest -q` -> 386 passed, 7 deselected. `uv run ruff check .` ->
+  clean.
+
+**Takeaway**
+
+Three-terminal validators share the reference-node discipline, not the same
+math. MOSFET `Vgs` is symmetric; BJT `VEBO` is directional. When adding a new
+family, copy the test philosophy from a nearby validator, but re-derive the
+device physics before copying the inequality.
+
+## 2026-05-30 — Phase 4 demo needs two public input tracks, not one fake board
+
+**Symptom**
+
+The first Phase 4 PRD said "a single documented demo sequence" that produced an
+agent-validation trace, datasheet-cited finding, and HTML workbench. That was
+too neat. The current repository has no public board that is both a KiCad
+project for `review` / `ask` and an Allegro netlist+BOM project for
+`design-validator-ui`.
+
+**Root cause**
+
+The two strongest surfaces intentionally consume different shapes:
+
+- KiCad `pic_programmer` powers the agent/review track and carries U3 / L78 /
+  DS001 with `datasheet:l78.pdf#p4`.
+- Allegro `mixed_controller_power_stage` powers the static project workbench
+  and shows multi-family validation (`U1` PASS, `U12`/`U3`/`U8` ERROR).
+
+Forcing them into one linear board story would overclaim the artifact and make
+the demo brittle under interview questioning.
+
+**Fix**
+
+- Reframed Phase 4 as "one trust backbone across two public input tracks":
+  registry object -> deterministic validator/rule -> evidence token -> guarded
+  agent/report explanation.
+- Rewrote `docs/demo.md` and `docs/demo.html` around that framing.
+- Refreshed README, docs index, JD alignment, and interview Q&A so the current
+  submission story no longer points first at the older V1.3 MPQ8626/PCA9548A
+  / 4010-component narrative.
+- Kept `hardware-demo.html`, `midpoint_review.*`, and
+  `interview_narrative.*` as historical/supporting pages instead of blanket
+  rewriting every HTML file.
+
+**Verification**
+
+- `uv run pytest tests/agent/test_validation_bridge.py -q` -> 6 passed.
+- `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --output /tmp/hardwise-phase4-review.md`
+  -> 29 findings, 121 components reviewed; U3 / DS001 cites
+  `datasheet:l78.pdf#p4`.
+- `uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --output /tmp/hardwise-phase4-workbench.html --index-output /tmp/hardwise-phase4-index.md --index-json /tmp/hardwise-phase4-index.json`
+  -> 25 components, 4 validated, BOM matched 25, PASS/WARN/ERROR = 1/0/3,
+  manual = 21.
+
+**Takeaway**
+
+Submission closeout is not just making the demo look polished. It is where
+overclaims get removed. A two-track story is stronger than a fake single-track
+story because it names the actual data boundary and still shows the same trust
+contract on both sides.
+
+## 2026-05-30 — README review smoke commands should run sequentially or isolate DB output
+
+**Symptom**
+
+During submission self-check, running the two README `hardwise review`
+quickstart commands in parallel made the HTML review process fail with
+`sqlite3.OperationalError: table components already exists`.
+
+**Root cause**
+
+Both commands use the default relational store path
+`reports/pic_programmer.db`. The CLI removes and recreates that SQLite file for
+each run. Two concurrent review processes can interleave unlink/create/table
+creation against the same path, so one process observes a half-recreated store.
+
+**Fix**
+
+Reran the README quickstart commands sequentially; both succeeded:
+
+- `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component`
+  -> 29 findings, 121 components reviewed.
+- `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003 --format html`
+  -> 28 findings, 121 components reviewed.
+
+Also refreshed README's quickstart output text to match the current CLI
+`consolidator: 3 candidate rule(s)` line.
+
+**Takeaway**
+
+Default report artifacts are convenient for human sequential demos, not
+parallel smoke tests. When automating multiple `review` commands at once, give
+each run an isolated report/store output path or run them sequentially.
+
+## 2026-05-30 — Keep package exports lazy when validation and documents cross-import
+
+**Symptom**
+
+Adding the Allegro Copilot workbench context made `design-validator-ui
+--ai-snapshot` fail during import with a partially initialized
+`hardwise.validation.project_index` module.
+
+**Root cause**
+
+`hardwise.validation.project_index` imports document index types, while
+`hardwise.documents.__init__` eagerly re-exported `documents.candidates`, which
+imports `validation.project_index` again. The feature did not need a new data
+path; it exposed an existing circular import hidden behind package-level
+convenience exports.
+
+**Fix**
+
+Changed `hardwise.documents.__init__` to lazy-load candidate helper exports via
+`__getattr__`. The public import names stay available, but importing document
+types no longer pulls candidate-building code back into validation at module
+import time.
+
+**Takeaway**
+
+In this repo, package `__init__` files should keep cross-layer convenience
+exports lazy when the target module depends back on another layer. Shared
+context builders are especially likely to surface these cycles because they
+import loader, validation, document, and report modules together.
+
+## 2026-05-30 — In-memory SQLite store is per-thread; the live workbench server hit it
+
+**Symptom**
+
+The Allegro Copilot workbench passed all 394 tests and the fake-mode smoke, but the
+first `serve-workbench` run against a real model split in two: asking about the
+selected component (U3) answered perfectly, while "is U999 on the board?" came back
+as a tool "database error (registry not initialized)" instead of a clean
+`not_found`. `run_component_validation` worked; `get_component` failed.
+
+**Root cause**
+
+`create_store(":memory:")` builds the engine with SQLAlchemy's default pool for
+in-memory SQLite, which is `SingletonThreadPool` — one connection *per thread*, and
+each `:memory:` connection is a distinct database. uvicorn runs sync FastAPI routes
+in a worker threadpool, but `populate_from_registry` ran on the CLI startup thread.
+So every request thread saw its own empty in-memory DB, and the session-backed tools
+(`get_component` / `list_components` / `get_nc_pins`, all via `query_components` /
+`query_nc_pins`) raised `SQLite objects created in a thread can only be used in that
+same thread`. `run_component_validation` and the Refdes Guard read the in-memory
+`Design` / `BoardRegistry` (plain Python, thread-safe), so they kept working — which
+is exactly why the headline U3 answer and the `⟨?U999⟩` wrap looked fine and masked
+the break. Fake-mode and unit tests never caught it because they call the service in
+a single thread; only the real threadpool server surfaced it.
+
+**Fix**
+
+`create_store` now passes `connect_args={"check_same_thread": False}` for any SQLite
+URL, and for `:memory:` also pins `poolclass=StaticPool` so a single shared
+connection backs the one in-memory database across all threads. File-based SQLite
+(`ask` / `review` default `reports/<project>.db`, single-threaded) is unaffected
+beyond the harmless relaxed thread check; non-SQLite backends get no extra kwargs.
+Added `test_in_memory_store_is_thread_safe` — populate on one thread, read on
+another — as a regression.
+
+**Verification**
+
+- `uv run pytest -q` -> 395 passed, 7 deselected (+1). `uv run ruff check .` -> clean.
+- After restarting `serve-workbench` against the real model, `U999` returned a clean
+  `not_found` (no DB error) with the guard still wrapping `⟨?U999⟩`, and an NC-pin
+  question drove `get_nc_pins` + `get_component` with no thread error.
+
+**Takeaway**
+
+"It passes tests and the fake smoke" is not "it runs under the real server".
+In-memory SQLite is thread-affine by default; the moment a session is shared across a
+web framework's threadpool it needs `StaticPool` + `check_same_thread=False`. The bug
+hid behind the one tool (`run_component_validation`) that bypassed the session — a
+partially-working path can mask a broken sibling. Single-threaded fake/unit coverage
+cannot prove a threadpool contract; one real `serve-workbench` call was the actual
+verification.
+
+## 2026-05-30 — Refdes guard should pass verified part numbers, not just verified refdes
+
+**Symptom**
+
+Running the live workbench against a real model, the U3 answer rendered as
+"U3 (⟨?EG2132⟩, ⟨?SOP8⟩)" — the gate driver's part number and package were wrapped
+as if they were hallucinated reference designators.
+
+**Root cause**
+
+The guard regex `\b[A-Z]{1,3}\d{1,4}\b` is shape-only: `EG2132` and `SOP8` match it
+just like `U3` does. The guard then asked only `registry.has_refdes()`, which is false
+for a part number, so both were wrapped. This is the over-wrap the 2026-05-14 entry
+documented as an accepted trade-off — and that same entry pointed at the real fix:
+disambiguate via parsed facts (Layer 1), not the regex. Both tokens are literally
+present in the parsed component: `U3.value="EG2132"`, `U3.footprint="SOP8"`. They are
+verified board facts, not hallucinations.
+
+**Fix**
+
+`guards/refdes.py` now builds a set of refdes-shaped tokens that occur in the parsed
+components' identity fields (value / footprint / datasheet) and lets a token through
+when it is a verified refdes OR a member of that set. A token that is neither —
+`U999`, or a near-miss like `EG2133` — is still wrapped. The guard signature is
+unchanged (it already takes the registry); `sanitize_text` just consults one more
+registry-derived set. Hard rule #3 Layer 2 wording was updated in CLAUDE.md / AGENTS.md
+so a future session does not "re-fix" the allowance as if it were a hole.
+
+**Verification**
+
+- New `test_sanitize_text_passes_verified_part_number_and_package` proves `EG2132` /
+  `SOP8` pass while `EG2133` (near-miss) and `Q999` (unknown) wrap; `wrapped == 2`.
+  Existing guard tests are unaffected — they use registries with empty identity fields
+  (no allowance) or keep part numbers out of user-visible text, so the documented
+  invariants still hold. Two `tests/agent/test_runner.py` cases that pinned the old
+  `⟨?LM7805⟩` over-wrap were updated to assert the part number now passes (their fixture
+  has `U3.value=LM7805`).
+- `uv run pytest -q` → 396 passed, 7 deselected. `uv run ruff check .` → clean.
+- Against the real `mixed_controller_power_stage` registry, sanitizing
+  "U3 (EG2132, SOP8)" now wraps 0 tokens; `U999` still wraps.
+
+**Takeaway**
+
+A shape-only guard needs a verified-from-source allowance, not a looser regex. The safe
+widening is "this token is literally in the parsed board data" — that preserves the
+anti-hallucination guarantee (invented designators are absent from the data) while
+removing the false positive on real part numbers and packages. When you relax a
+hard-rule guard, update the rule's own description in the same change so the relaxation
+is not mistaken for a hole later.
+
+## 2026-05-30 — Snapshot Copilot must fail closed on unsupported questions
+
+**Symptom**
+
+The offline Copilot snapshot could answer an unsupported free-form question with the
+first precomputed component transcript. Datasheet questions in fake/snapshot mode also
+looked like ordinary validation questions, so the panel did not demonstrate the
+"vector datasheet search is unavailable; fallback to profile evidence" boundary.
+
+**Root cause**
+
+The static JS `fallbackResponse()` treated any non-`U999` question as close enough to
+the first audited snapshot. Separately, the fake Anthropic client always emitted only a
+`run_component_validation` tool call, regardless of whether the user asked for
+datasheet evidence. Both bugs preserved the happy path but blurred the boundary between
+"audited transcript" and "unsupported question".
+
+**Fix**
+
+The static snapshot now returns an exact transcript match, the explicit `U999` guard
+demo, or `__fallback__`; it no longer picks a nearby transcript. Fake/snapshot mode now
+detects datasheet/rating questions and asks Runner for both `search_datasheet` and
+`run_component_validation`. With no vector collection, the answer states that vector
+datasheet search is not configured and then summarizes the deterministic validation
+evidence. Regression tests cover fake chat, snapshot embedding, CLI HTML output, and
+the static fallback asset.
+
+**Verification**
+
+- Focused regression tests: 7 passed.
+- Generated `/tmp/hardwise-copilot-fixed.html` contains `search_datasheet`, the
+  unavailable-vector wording, and no arbitrary first-transcript fallback.
+
+**Takeaway**
+
+Offline demos should fail closed. A snapshot is an audited answer table, not a fuzzy
+retriever; unknown questions must hit the boundary copy. Fake clients are still part of
+the trust story: they can be deterministic, but their tool choices must exercise the
+same Runner contracts the real model is expected to use.
+
+## 2026-05-31 — Coverage fixtures need classifier-friendly refdes prefixes
+
+**Symptom**
+
+The new C3 `motor_sensor_controller` fixture parsed and validated, but
+`recommend-next-family` ranked `unknown` too high. The unknown bucket included
+plain passive identities such as `1uF` and `10K`, which made the family
+recommendation look like a real active long-tail gap.
+
+**Root cause**
+
+The grouped coverage classifier infers `suggested_family` from refdes prefix and
+BOM identity. Synthetic passive refdes such as `CS1` and `RBOOT` do not match the
+standard `C` / `R` prefix paths, so they fell through to `unknown`.
+
+**Fix**
+
+Renamed those fixture-only passives to standard designators (`C20`-style
+capacitors and `R30`-style resistors) while keeping intentional unknowns as
+oscillator/crystal rows. The same fixture now ranks diode, transistor, IC,
+inductor, ferrite, and only two real unknown rows.
+
+**Verification**
+
+- At C3, `uv run hardwise inspect-allegro-netlist tests/fixtures/allegro/motor_sensor_controller.net`
+  reported 65 components; C4 later adds one LED current-limit resistor, so the
+  current fixture reports 66 components.
+- `uv run hardwise recommend-next-family /tmp/large-index.json -o /tmp/next-family.md`
+  reports 6 families with `unknown` limited to the oscillator/crystal sample.
+- Full gate: `uv run pytest -q` and `uv run ruff check .` pass.
+
+**Takeaway**
+
+Synthetic coverage fixtures should use classifier-friendly refdes prefixes for
+ordinary passives. Otherwise a fixture meant to demonstrate active coverage gaps
+can accidentally test the classifier's fallback path instead.
+
+## 2026-05-31 — LED indicators stay under diode dispatch
+
+**Symptom**
+
+C4 needed to validate `LTST-C190KGKT` LED indicators without turning the whole
+diode family into a generic LED/TVS/Schottky expansion. A tempting design was to
+set `recommended.topology_family="led_indicator"` and add a new dispatch branch.
+
+**Root cause**
+
+Hardwise dispatches deterministic validators only by
+`recommended.topology_family`. A new `"led_indicator"` topology would either be
+ignored by the existing dispatcher or require a new dispatch branch, widening
+the feature beyond the selected C4 slice.
+
+**Fix**
+
+Kept `topology_family="diode"` and added a structured sub-role:
+`recommended.diode_role="led_indicator"`. `diode.py` still runs the generic
+diode checks for every diode profile, then appends LED-only polarity and
+current-limit checks only for that sub-role.
+
+**Verification**
+
+- `tests/validation/test_diode.py` keeps SS34 generic diode counts unchanged.
+- Focused LED tests cover nominal, missing current-limit, and reversed polarity
+  cases.
+- `motor_sensor_controller` now reports 66 components / validated=16 /
+  manual=50, and `recommend-next-family` drops diode uncovered count from 11 to
+  3.
+
+**Takeaway**
+
+Use `topology_family` for dispatch and structured role fields for narrow
+subcases. That preserves existing validator routing while letting one C3-ranked
+gap become L1 deterministic.
+
+## 2026-05-31 — LED profile pinout must not be fixture-derived
+
+**Symptom**
+
+C4's `LTST-C190KGKT` profile mapped pin 1 to Anode and pin 2 to Cathode. Public
+pinout evidence shows the opposite polarity, so the deterministic LED polarity
+check could accept a reversed fixture and reject a correct one. The current-limit
+check also passed if any `R*` component touched either LED pin net, including an
+unrelated resistor on a global rail.
+
+**Root cause**
+
+The profile and tests were coupled to the synthetic fixture's pin numbering
+instead of independently proving the package pinout. That made the tests
+tautological: nominal and reversed cases exercised the validator, but both used
+the same wrong anode/cathode map. The current-limit rule encoded "resistor
+neighbor" rather than "series branch resistor," so it did not distinguish a
+branch net like `GND_LED` from a raw rail like `+3V3`.
+
+**Fix**
+
+Changed `ltst-c190kgkt.json` to pin 1 = Cathode and pin 2 = Anode, then swapped
+the LED fixture pins to keep D10-D17 electrically nominal. Replaced the neighbor
+scan with a conservative one-resistor-hop branch check: ignore raw rails, require
+a resistor on an LED branch net, and require the resistor's other side to have a
+different inferred voltage from the opposite LED pin. Shared LED banks now say
+"shared current-limit resistor" in the summary.
+
+**Verification**
+
+- `tests/validation/test_diode.py` now asserts the profile pinout directly.
+- Added regressions for unrelated rail resistors and shared resistor-bank
+  summary wording.
+- Focused diode gate: `uv run pytest -q tests/validation/test_diode.py` passes.
+- Full gate: `uv run pytest -q` reports 412 passed / 7 deselected, and
+  `uv run ruff check .` passes.
+- C4 smoke remains 66 components / validated=16 / manual=50 /
+  PASS-WARN-ERROR=12-1-3, with D10 reporting shared current-limit resistor R32
+  on cathode branch `GND_LED`.
+
+**Takeaway**
+
+For reviewed profiles, pinout evidence needs its own regression independent of
+the fixture. Topology checks should name the topology they prove; a generic
+"neighbor exists" check is usually too weak for hardware review.
+
+## 2026-05-31 — Package variants need their own BJT pinout profile
+
+**Symptom**
+
+C4b selected the C3/C4-ranked transistor gap: six `MMBT3904` rows in the
+public-safe synthetic Allegro fixture. Hardwise already had a `2N3904` BJT
+profile and validator, but applying that profile directly to the SOT-23
+`MMBT3904` group would silently use the wrong package pin numbering.
+
+**Root cause**
+
+`2N3904` and `MMBT3904` are electrically similar NPN 3904-family devices, but
+the existing profile was a TO-92 profile with pin 1 = Emitter, pin 2 = Base,
+pin 3 = Collector. The onsemi SOT-23 `MMBT3904` datasheet uses pin 1 = Base,
+pin 2 = Emitter, pin 3 = Collector. Reusing the electrical family name as a
+profile identity would repeat the C4 LED mistake: tests could be internally
+consistent while the package pinout was wrong.
+
+**Fix**
+
+Added a separate reviewed `mmbt3904.json` profile with SOT-23 pinout evidence
+and the existing BJT limits (`VCEO=40 V`, `VEBO=6 V`). The synthetic fixture was
+updated so Q10-Q15 use base pins on `DRV10`-`DRV15`, emitters on `GND`, and
+collectors on `OUT10`-`OUT15`. The existing BJT validator was reused unchanged.
+
+**Verification**
+
+- `tests/validation/test_bjt.py` asserts the MMBT3904 profile pinout and a
+  nominal SOT-23 low-side case with voltage hints.
+- C4b smoke reports 66 components / validated=22 / manual=44 /
+  PASS-WARN-ERROR=12-7-3.
+- `recommend-next-family` drops the transistor group; next highest family is
+  `ic`.
+
+**Takeaway**
+
+For package-sensitive components, the profile identity is not just the silicon
+family. Package pinout must be checked independently before a no-profile group
+is promoted into deterministic validation.
+
+## 2026-05-31 — Basic analog IC profiles should not become fake topology families
+
+**Symptom**
+
+C4c selected the post-C4b ranked IC group: `LMV358`, `LM393`, `INA180A1`, and
+`TLV9062` in the public-safe synthetic Allegro fixture. The work needed
+deterministic rows, but adding a generic IC / op-amp / comparator validator would
+turn a profile backfill into a behavior-modeling milestone.
+
+**Root cause**
+
+Profile matching and component dispatch serve different purposes. A ready
+profile can safely make a component deterministic at the pin-connectivity level,
+but `recommended.topology_family` is a dispatch key for behavior/topology
+validators. Inventing `topology_family="basic_pin_profile"` would look like a
+validator family even though no component-level analog behavior exists.
+
+**Fix**
+
+Added four reviewed public TI profiles using
+`recommended.validation_scope="basic_pin_profile"` instead of a new dispatch
+family. Extended generic pin validation only for connected output-style
+categories: `analog_output` and `open_collector_output`. The synthetic fixture
+was completed for U20/U21/U23 second-channel pins so the C4c proof stays nominal
+instead of accidentally becoming a missing-pin finding.
+
+**Verification**
+
+- Focused tests assert all four public pinout maps and validate U20-U23 through
+  generic pin checks.
+- C4c smoke reports 66 components / validated=26 / manual=40 /
+  PASS-WARN-ERROR=16-7-3.
+- `recommend-next-family` drops the IC group; next highest family is `inductor`.
+
+**Takeaway**
+
+Use profile metadata that names the validation scope when there is no dispatcher
+behind it. Reserve `topology_family` for real component-level validators, and
+keep analog behavior out of basic pin-profile closures.
+
+## 2026-05-31 — Bidirectional TVS is a diode sub-role, not cathode/anode logic
+
+**Symptom**
+
+After C4c, `recommend-next-family` ranked inductor first and diode second.
+Inductor had a slightly higher score, but the synthetic fixture only had
+fixture identities (`IND-6R8`, `IND-10UH`) without public datasheet evidence.
+The remaining diode sample included `SMBJ24CA`, which has public Littelfuse
+data but is a bidirectional TVS, not an ordinary cathode/anode diode.
+
+**Root cause**
+
+The ranking score is advisory, not permission to create evidence-free profiles.
+For `SMBJ24CA`, reusing the ordinary diode cathode/anode path would also be
+wrong: the `CA` bidirectional TVS variant has neutral terminals, and the useful
+schematic-level check is rail-to-ground standoff, not polarity.
+
+**Fix**
+
+Added `smbj24ca.json` as a reviewed public profile with
+`recommended.topology_family="diode"` and
+`recommended.diode_role="bidirectional_tvs"`. The diode validator now handles
+that sub-role by checking terminal connectivity, a recognized ground reference,
+and protected rail voltage against the 24 V working standoff. It does not infer
+surge sizing, ESD coverage, clamp waveforms, capacitance, thermals, or layout.
+
+**Verification**
+
+- Focused diode tests assert the SMBJ24CA TVS profile and cover nominal 24 V
+  rail clamp PASS plus 36 V overstandoff ERROR.
+- C4d smoke reports 66 components / validated=27 / manual=39 /
+  PASS-WARN-ERROR=17-7-3.
+- `recommend-next-family` drops `SMBJ24CA`; remaining diode identities are
+  `BAS316` and `BAV99`.
+
+**Takeaway**
+
+Treat coverage ranking as a queue for reviewed evidence, not a reason to invent
+synthetic datasheets. For bidirectional TVS parts, model the deterministic
+schematic fact that matters: the protected rail-to-reference working voltage.
+
+## 2026-05-31 — Profile-only diode closure can legitimately produce WARN
+
+**Symptom**
+
+C4e selected the remaining simple diode group, `BAS316`, after C4d removed
+`SMBJ24CA` from diode coverage. D21 in the public-safe synthetic Allegro fixture
+connects `CANH` to `GND`, so the existing diode validator can prove pin
+connectivity but cannot infer the protected bus voltage from the net name.
+
+**Root cause**
+
+Not every L1 deterministic row is a PASS. A reviewed profile plus deterministic
+validator can still return WARN when the board fact needed for a numeric check is
+not available. For BAS316, the public profile gives cathode/anode pinout and
+100 V reverse-voltage rating, but the fixture does not encode a voltage hint for
+`CANH`.
+
+**Fix**
+
+Added `bas316.json` as a reviewed public Nexperia profile and reused the
+existing diode validator unchanged. Focused tests cover the public SOD323 pinout,
+a nominal +12 V reverse-voltage PASS, and +120 V reverse-voltage ERROR. The
+motor fixture D21 row now validates deterministically with WARN for unknown CANH
+voltage.
+
+**Verification**
+
+- Focused C4e tests report 51 passed.
+- C4e smoke reports 66 components / validated=28 / manual=38 /
+  PASS-WARN-ERROR=17-8-3.
+- `recommend-next-family` drops `BAS316`; the remaining diode identity is
+  `BAV99`.
+
+**Takeaway**
+
+Coverage closure means moving from manual/no-profile into an evidence-backed
+deterministic row. It does not require every row to be PASS. WARN is the correct
+truth-preserving result when the profile is known but a rail voltage is not.
+
+## 2026-05-31 — Ranking-driven closure can become a scope trap
+
+**Symptom**
+
+C3/C4 coverage ranking worked well enough that it encouraged one more
+deterministic family slice after another: LED indicator, transistor, analog IC
+pin profiles, TVS, and BAS316. Each slice was useful, but by the third distinct
+family shape the general product loop was already proven.
+
+**Root cause**
+
+Ranking converts ambiguity into an ordered queue, which is exactly what a
+coverage loop should do. The downside is that the queue feels like a mandate.
+For submission, the next highest row is not automatically the next highest
+leverage task; public-main readiness, evidence-chain truthfulness, and the
+agent trust narrative can matter more than shrinking manual rows again.
+
+**Fix**
+
+Freeze C4 expansion after BAS316. Keep BAV99 dual-diode arrays, inductors, and
+ferrites as explicit deferred work. Move the next execution lane to public-main
+readiness, evidence-chain audit, narrative reset, and a thin C5 grounded-LLM
+trust slice.
+
+**Verification**
+
+`docs/PLAN.md` DR-014 now records the freeze decision and the current sequence:
+public-main readiness, evidence-chain audit, narrative reset, C5 trust slice,
+then submission closeout.
+
+**Takeaway**
+
+Coverage ranking is a planning input, not a product strategy by itself. Once the
+loop's generality is demonstrated, stop adding family slices and spend the next
+unit of work on whatever makes the public AI trust story more truthful and
+reviewable.

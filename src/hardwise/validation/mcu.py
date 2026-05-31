@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from hardwise.ir.profile import DatasheetProfile, PinProfile
 from hardwise.ir.types import Component, Design, Pin
-from hardwise.validation.pins import voltage_for_net
+from hardwise.validation.pins import is_ground_net, voltage_for_net
 from hardwise.validation.topology import components_on_net
 from hardwise.validation.types import ComponentValidation
 
@@ -130,7 +130,7 @@ def _validate_boot0(
             summary="MCU BOOT0 pin is missing or has no connected net.",
             evidence=evidence,
         )
-    if _is_ground_net(pin.net) or _has_component_between_net_and_ground(design, pin.net, "R"):
+    if is_ground_net(pin.net) or _has_component_between_net_and_ground(design, pin.net, "R"):
         return ComponentValidation(
             check="mcu_boot0",
             status="PASS",
@@ -264,13 +264,9 @@ def _has_component_between_net_and_ground(design: Design, net_name: str, prefix:
         if not component.refdes.startswith(prefix):
             continue
         nets = {pin.net for pin in component.pins if pin.net}
-        if any(_is_ground_net(net) for net in nets if net != net_name):
+        if any(is_ground_net(net) for net in nets if net != net_name):
             return True
     return False
-
-
-def _is_ground_net(net_name: str) -> bool:
-    return net_name.upper() in {"GND", "AGND", "DGND", "PGND"}
 
 
 def _profile_evidence(profile: DatasheetProfile, key: str) -> list[str]:

@@ -152,3 +152,35 @@ def test_pcb_nets_repopulate_is_idempotent(tmp_path: Path) -> None:
         assert len(nets) == 111
     finally:
         session.close()
+
+
+def test_in_memory_store_is_thread_safe() -> None:
+    """An in-memory store populated on one thread must be readable on another.
+
+    Regression for the live workbench server (``serve-workbench``): uvicorn runs
+    sync routes in a worker threadpool, so the session populated at startup is
+    queried from a different thread. The default ``SingletonThreadPool`` gave
+    each thread its own empty ``:memory:`` database and raised "SQLite objects
+    created in a thread can only be used in that same thread".
+    """
+    import threading
+
+    session = create_store(":memory:")
+    try:
+        populate_from_registry(session, _mock_registry())
+        result: dict[str, object] = {}
+
+        def worker() -> None:
+            try:
+                result["refdes"] = {c.refdes for c in query_components(session)}
+            except Exception as exc:  # noqa: BLE001 — capture for the assertion
+                result["error"] = f"{type(exc).__name__}: {exc}"
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join()
+
+        assert "error" not in result, result.get("error")
+        assert result["refdes"] == {"U1", "C1"}
+    finally:
+        session.close()

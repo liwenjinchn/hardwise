@@ -6,19 +6,17 @@ may not find their target return a discriminated union so the agent reads
 the CLAUDE.md rule "Tools return structured null/unknown, never fabricated"
 on the agent side.
 
-Four tools ship in this module, wired against the Slice 3 stores:
+Five tools ship in this module, wired against the Slice 3 stores and the
+deterministic validator boundary:
 
   - list_components   → relational store query, optional filters
   - get_component     → relational store + registry; returns closest_matches on miss
   - get_nc_pins       → relational store query, optional refdes filter
   - search_datasheet  → vector store query, optional part_ref filter
+  - run_component_validation → IR Design + explicit profile target validation
 
-`TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[...]` shape — the
-future runner.py registers it directly with `messages.create(tools=...)` and
-no further glue code is needed.
-
-CLI integration is deliberately out of scope here; this module is library-only
-and unit-testable in isolation. See `docs/PLAN.md` Slice 4 prep entry.
+`TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[...]` shape; runner.py
+registers it directly with `messages.create(tools=...)`.
 """
 
 from __future__ import annotations
@@ -248,6 +246,112 @@ def search_datasheet(collection: Any, tool_input: SearchDatasheetInput) -> Searc
     return SearchDatasheetResult(found=len(hits) > 0, hits=hits, query=tool_input.query)
 
 
+# ─────────────────────────── 5. run_component_validation ───────────────────
+
+
+class RunComponentValidationInput(BaseModel):
+    """Run the deterministic family validator for one assigned component."""
+
+    refdes: str
+
+
+class ValidationCheckSummary(BaseModel):
+    """One check row (pin or component-level) flattened for the agent reply."""
+
+    check: str
+    status: Literal["PASS", "WARN", "ERROR"]
+    summary: str
+    evidence: list[str] = Field(default_factory=list)
+
+
+class ValidationRan(BaseModel):
+    """Discriminated success branch — the validator produced a report."""
+
+    status: Literal["validated"] = "validated"
+    refdes: str
+    profile_part_number: str
+    overall: Literal["PASS", "WARN", "ERROR"]
+    counts: dict[str, int]
+    checks: list[ValidationCheckSummary] = Field(default_factory=list)
+
+
+class ValidationNoProfile(BaseModel):
+    """Refdes exists in the design but has no assigned validation profile."""
+
+    status: Literal["no_profile"] = "no_profile"
+    refdes: str
+    reason: str = "No validation profile is assigned to this refdes; manual review."
+
+
+class ValidationRefdesNotFound(BaseModel):
+    """Refdes is not in the design — never fabricates it."""
+
+    status: Literal["not_found"] = "not_found"
+    refdes: str
+    closest_matches: list[str] = Field(default_factory=list)
+
+
+def run_component_validation(
+    design: Any,
+    targets: dict[str, Any],
+    tool_input: RunComponentValidationInput,
+) -> ValidationRan | ValidationNoProfile | ValidationRefdesNotFound:
+    """Validate one assigned component against its structured profile.
+
+    `targets` maps refdes -> DatasheetProfile (the explicit assignment, same
+    concept as the V3.5 validation-targets manifest). The tool never auto-matches
+    a profile and never fabricates a refdes:
+
+      - refdes not in the design        -> not_found + closest_matches
+      - refdes in design, no profile    -> no_profile (manual review)
+      - refdes assigned a profile       -> validated + PASS/WARN/ERROR rows
+
+    Importing the validator lazily keeps `agent/tools.py` import-cheap and mirrors
+    the dispatch pattern in `validation/component.py`.
+    """
+    from hardwise.validation.component import validate_component_against_profile
+
+    refdes = tool_input.refdes
+    component = design.components.get(refdes)
+    if component is None:
+        candidates = sorted(design.components.keys())
+        suggestions = difflib.get_close_matches(refdes, candidates, n=5, cutoff=0.6)
+        return ValidationRefdesNotFound(refdes=refdes, closest_matches=suggestions)
+
+    profile = targets.get(refdes)
+    if profile is None:
+        return ValidationNoProfile(refdes=refdes)
+
+    report = validate_component_against_profile(component, profile, design)
+    checks = [
+        ValidationCheckSummary(
+            check=pin.pin_name or pin.pin_number,
+            status=pin.status,
+            summary=pin.summary,
+            evidence=pin.evidence,
+        )
+        for pin in report.pin_results
+    ] + [
+        ValidationCheckSummary(
+            check=check.check,
+            status=check.status,
+            summary=check.summary,
+            evidence=check.evidence,
+        )
+        for check in report.component_checks
+    ]
+    pin_counts = report.counts_by_status
+    comp_counts = report.component_counts_by_status
+    counts = {k: pin_counts[k] + comp_counts[k] for k in ("PASS", "WARN", "ERROR")}
+    return ValidationRan(
+        refdes=refdes,
+        profile_part_number=report.profile_part_number,
+        overall=report.status,
+        counts=counts,
+        checks=checks,
+    )
+
+
 # ─────────────────────────── Anthropic SDK manifest ────────────────────────
 
 
@@ -288,5 +392,18 @@ TOOL_DEFINITIONS: list[dict] = [
             "Use for cross-checking schematic decisions against vendor specs."
         ),
         "input_schema": SearchDatasheetInput.model_json_schema(),
+    },
+    {
+        "name": "run_component_validation",
+        "description": (
+            "Run the deterministic family validator for one component by exact refdes "
+            "(e.g. 'Q1'). Returns structured pin/topology PASS/WARN/ERROR rows with "
+            "evidence tokens — use this whenever asked whether a component is wired "
+            "correctly, instead of reasoning about electrical limits yourself. On a "
+            "refdes with no assigned profile, returns 'no_profile' (manual review); on "
+            "an unknown refdes, returns closest-matching suggestions — NEVER fabricate "
+            "a refdes or a PASS/FAIL verdict."
+        ),
+        "input_schema": RunComponentValidationInput.model_json_schema(),
     },
 ]

@@ -1,5 +1,6 @@
 {
   "part_number": "EG2132",
+  "review_status": "ready",
   "abs_max": {
     "vcc": 20.0,
     "vb_vs": 20.0,

@@ -1,0 +1,120 @@
+{
+  "part_number": "CONN_2X5",
+  "review_status": "ready",
+  "description": "2x5 Pin Header Connector, 10 pins",
+  "abs_max": {
+    "voltage": 50.0,
+    "current_per_pin": 3.0
+  },
+  "recommended": {
+    "topology_family": "connector",
+    "voltage_range": "3.3V to 5V"
+  },
+  "pin_function": {
+    "1": "VCC (power supply)",
+    "2": "Signal 1",
+    "3": "Signal 2",
+    "4": "Signal 3",
+    "5": "GND (ground)",
+    "6": "Signal 4",
+    "7": "Signal 5",
+    "8": "Signal 6",
+    "9": "Signal 7",
+    "10": "Signal 8"
+  },
+  "pins": [
+    {
+      "name": "VCC",
+      "number": "1",
+      "category": "power_input",
+      "function": "Power supply input (3.3V to 5V)",
+      "evidence": ["datasheet:connector_2x5.pdf#p1"],
+      "limits": {
+        "abs_max_voltage": 50.0,
+        "recommended_voltage_min": 3.0,
+        "recommended_voltage_max": 5.5
+      }
+    },
+    {
+      "name": "SIGNAL_1",
+      "number": "2",
+      "category": "gpio",
+      "function": "General purpose signal pin",
+      "evidence": ["datasheet:connector_2x5.pdf#p1"]
+    },
+    {
+      "name": "SIGNAL_2",
+      "number": "3",
+      "category": "gpio",
+      "function": "General purpose signal pin",
+      "evidence": ["datasheet:connector_2x5.pdf#p1"]
+    },
+    {
+      "name": "SIGNAL_3",
+      "number": "4",
+      "category": "gpio",
+      "function": "General purpose signal pin",
+      "evidence": ["datasheet:connector_2x5.pdf#p1"]
+    },
+    {
+      "name": "GND",
+      "number": "5",
+      "category": "ground",
+      "function": "Ground reference",
+      "evidence": ["datasheet:connector_2x5.pdf#p1"]
+    },
+    {
+      "name": "SIGNAL_4",
+      "number": "6",
+      "category": "gpio",
+      "function": "General purpose signal pin",
+      "evidence": ["datasheet:connector_2x5.pdf#p1"]
+    },
+    {
+      "name": "SIGNAL_5",
+      "number": "7",
+      "category": "gpio",
+      "function": "General purpose signal pin",
+      "evidence": ["datasheet:connector_2x5.pdf#p1"]
+    },
+    {
+      "name": "SIGNAL_6",
+      "number": "8",
+      "category": "gpio",
+      "function": "General purpose signal pin",
+      "evidence": ["datasheet:connector_2x5.pdf#p1"]
+    },
+    {
+      "name": "SIGNAL_7",
+      "number": "9",
+      "category": "gpio",
+      "function": "General purpose signal pin",
+      "evidence": ["datasheet:connector_2x5.pdf#p1"]
+    },
+    {
+      "name": "SIGNAL_8",
+      "number": "10",
+      "category": "gpio",
+      "function": "General purpose signal pin",
+      "evidence": ["datasheet:connector_2x5.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "abs_max.voltage": "datasheet:connector_2x5.pdf#p1",
+    "abs_max.current_per_pin": "datasheet:connector_2x5.pdf#p1",
+    "recommended.voltage_range": "datasheet:connector_2x5.pdf#p1",
+    "pin_function.1": "datasheet:connector_2x5.pdf#p1",
+    "pin_function.2": "datasheet:connector_2x5.pdf#p1",
+    "pin_function.3": "datasheet:connector_2x5.pdf#p1",
+    "pin_function.4": "datasheet:connector_2x5.pdf#p1",
+    "pin_function.5": "datasheet:connector_2x5.pdf#p1",
+    "pin_function.6": "datasheet:connector_2x5.pdf#p1",
+    "pin_function.7": "datasheet:connector_2x5.pdf#p1",
+    "pin_function.8": "datasheet:connector_2x5.pdf#p1",
+    "pin_function.9": "datasheet:connector_2x5.pdf#p1",
+    "pin_function.10": "datasheet:connector_2x5.pdf#p1"
+  },
+  "extracted_at": "2026-05-28T00:00:00Z",
+  "extracted_model": "claude-opus-4.6",
+  "schema_version": "v2"
+}

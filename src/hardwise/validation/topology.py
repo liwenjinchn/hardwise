@@ -7,7 +7,9 @@ import re
 from hardwise.ir.types import Component, Design
 
 
-def components_on_net(design: Design, net_name: str, *, exclude_refdes: str = "") -> list[Component]:
+def components_on_net(
+    design: Design, net_name: str, *, exclude_refdes: str = ""
+) -> list[Component]:
     """Return components connected to ``net_name``, excluding one refdes if requested."""
 
     net = design.nets.get(net_name)
@@ -29,7 +31,22 @@ def components_on_net(design: Design, net_name: str, *, exclude_refdes: str = ""
 def first_by_prefix(components: list[Component], prefix: str) -> Component | None:
     """Return the first component whose refdes starts with ``prefix``."""
 
-    return next((component for component in components if component.refdes.startswith(prefix)), None)
+    return next(
+        (component for component in components if component.refdes.startswith(prefix)), None
+    )
+
+
+def first_by_prefixes(components: list[Component], prefixes: tuple[str, ...]) -> Component | None:
+    """Return the first component whose refdes starts with any requested prefix."""
+
+    return next(
+        (
+            component
+            for component in components
+            if any(component.refdes.startswith(prefix) for prefix in prefixes)
+        ),
+        None,
+    )
 
 
 def parse_inductance_uh(value: str) -> float | None:
@@ -37,10 +54,20 @@ def parse_inductance_uh(value: str) -> float | None:
 
     compact = value.strip().replace("μ", "u").replace("µ", "u").upper()
     match = re.search(r"(\d+(?:\.\d+)?)\s*(UH|NH|MH|H)\b", compact)
-    if match is None:
+    if match is not None:
+        amount = float(match.group(1))
+        unit = match.group(2)
+        return _inductance_to_uh(amount, unit)
+
+    coded = re.search(r"(?:^|[-_])(\d*)R(\d+)(?=[A-Z0-9_-]*$)", compact)
+    if coded is None:
         return None
-    amount = float(match.group(1))
-    unit = match.group(2)
+    whole = coded.group(1) or "0"
+    amount = float(f"{int(whole)}.{coded.group(2)}")
+    return _inductance_to_uh(amount, "UH")
+
+
+def _inductance_to_uh(amount: float, unit: str) -> float:
     if unit == "NH":
         return amount / 1000.0
     if unit == "UH":

@@ -1,0 +1,5 @@
+MPN,Manufacturer,Title,URL,Description
+MPQ8626GD,MPS,MPQ8626 public MPS product page and datasheet,https://www.monolithicpower.com/en/mpq8626.html,Public manufacturer page used by the V1 power-family validation smoke.
+MPQ8626GD-Z,MPS,MPQ8626 public MPS product page and datasheet,https://www.monolithicpower.com/en/mpq8626.html,Public manufacturer page used by the V1 power-family validation smoke.
+PCA9548APW,NXP,PCA9548A public NXP product page and datasheet,https://www.nxp.com/products/interfaces/ic-spi-i3c-interface-devices/ic-logic-multiplexers-switches/eight-channel-ic-bus-switch-with-reset:PCA9548A,Public manufacturer page used by the V1.3 I2C mux validation smoke.
+PCA9548APW_1,NXP,PCA9548A public NXP product page and datasheet,https://www.nxp.com/products/interfaces/ic-spi-i3c-interface-devices/ic-logic-multiplexers-switches/eight-channel-ic-bus-switch-with-reset:PCA9548A,Public manufacturer page used by the V1.3 I2C mux validation smoke.

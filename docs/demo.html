@@ -3,150 +3,212 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hardwise Design Validator Demo</title>
+  <title>Hardwise Phase 4 Demo</title>
   <style>
     :root {
-      --ink: #171b19; --muted: #5f6a66; --line: #d6d8d0; --paper: #f3f0e7;
-      --panel: #fffdf7; --rail: #233831; --copper: #b05d32; --blue: #286d86;
-      --green: #4f7452; --mono: "SFMono-Regular", "Cascadia Code", monospace;
-      --sans: "Avenir Next", "Segoe UI", sans-serif; --serif: "Iowan Old Style", Georgia, serif;
+      --ink: #17201d;
+      --muted: #5f6964;
+      --line: #d5d9d1;
+      --paper: #f6f4ed;
+      --panel: #fffdf8;
+      --green: #1d5c49;
+      --copper: #a95f3f;
+      --blue: #2c6680;
+      --shadow: 0 24px 60px rgba(32, 38, 34, .13);
+      --sans: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --serif: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
+      --mono: "SFMono-Regular", "Cascadia Code", Menlo, monospace;
     }
     * { box-sizing: border-box; }
     body {
-      margin: 0; color: var(--ink); font-family: var(--sans); line-height: 1.45;
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.52;
       background:
-        linear-gradient(90deg, rgba(35,56,49,.08) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(35,56,49,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(29, 92, 73, .07) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(44, 102, 128, .06) 1px, transparent 1px),
         var(--paper);
-      background-size: 32px 32px;
+      background-size: 34px 34px;
     }
-    main { width: min(1160px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 48px; }
-    .sheet { background: rgba(255,253,247,.94); border: 1px solid var(--line); box-shadow: 0 22px 60px rgba(29,38,34,.14); }
-    .hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); border-bottom: 1px solid var(--line); }
-    .title { padding: 38px 42px; border-left: 10px solid var(--rail); }
-    .eyebrow { margin: 0 0 14px; color: var(--muted); font: 700 12px/1 var(--mono); text-transform: uppercase; }
-    h1 { margin: 0; max-width: 780px; font-family: var(--serif); font-size: clamp(44px, 7vw, 84px); line-height: .95; letter-spacing: 0; }
-    .lede { margin: 22px 0 0; max-width: 740px; color: #303934; font-size: 18px; }
-    .metrics { display: grid; grid-template-columns: 1fr 1fr; border-left: 1px solid var(--line); background: #faf8f1; }
-    .metric { min-height: 150px; padding: 22px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 30px 0 48px; }
+    code, pre { font-family: var(--mono); }
+    a { color: inherit; }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.06fr) minmax(320px, .94fr);
+      border: 1px solid var(--line);
+      background: rgba(255, 253, 248, .95);
+      box-shadow: var(--shadow);
+    }
+    .hero-copy { padding: clamp(28px, 5vw, 54px); border-left: 10px solid var(--green); }
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--copper);
+      font: 800 12px/1.1 var(--mono);
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      max-width: 760px;
+      font: clamp(42px, 6.6vw, 86px)/.98 var(--serif);
+      letter-spacing: 0;
+    }
+    .lead { margin: 22px 0 0; max-width: 720px; color: #39433f; font-size: 19px; }
+    .summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-left: 1px solid var(--line);
+      background: #fbfaf5;
+    }
+    .metric {
+      min-height: 150px;
+      padding: 22px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
     .metric:nth-child(2n) { border-right: 0; }
-    .metric span, .step span { display: block; color: var(--muted); font: 700 11px/1.2 var(--mono); text-transform: uppercase; }
-    .metric strong { display: block; margin-top: 10px; font-family: var(--serif); font-size: 52px; line-height: .95; }
-    .metric code { display: block; margin-top: 12px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
-    .band { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(0, 1.1fr); border-bottom: 1px solid var(--line); }
-    .panel { padding: 28px 34px; border-right: 1px solid var(--line); }
-    .panel:last-child { border-right: 0; }
-    h2 { margin: 0 0 16px; font-size: 18px; }
-    .chips { display: flex; flex-wrap: wrap; gap: 9px; }
-    .chip {
-      display: inline-flex; align-items: center; min-height: 32px; padding: 6px 10px;
-      border: 1px solid var(--line); background: #fffaf0; font-family: var(--mono); font-size: 12px;
+    .metric span { display: block; color: var(--muted); font: 800 11px/1.2 var(--mono); text-transform: uppercase; }
+    .metric strong { display: block; margin-top: 10px; font: 52px/.94 var(--serif); }
+    .metric code { display: block; margin-top: 10px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .section { margin-top: 22px; }
+    .section h2 { margin: 0 0 12px; font: 30px/1.15 var(--serif); letter-spacing: 0; }
+    .band {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
     }
-    .chip b { margin-left: 8px; color: var(--ink); font-size: 14px; }
-    .blue { color: var(--blue); } .green { color: var(--green); } .copper { color: var(--copper); }
-    .report { padding: 24px; border-bottom: 1px solid var(--line); }
-    .report-grid { display: grid; grid-template-columns: 104px minmax(0, 1fr) minmax(220px, .44fr); border: 1px solid var(--line); background: var(--panel); }
-    .side { padding: 18px; border-right: 1px solid var(--line); background: #faf7ef; }
-    .idx { display: block; margin-bottom: 14px; color: var(--muted); font-family: var(--mono); font-size: 12px; }
-    .severity { display: inline-block; padding: 5px 8px; border: 1px solid currentColor; color: var(--copper); font: 700 11px/1 var(--mono); text-transform: uppercase; }
-    .finding-main { padding: 18px 20px; min-width: 0; }
-    .targets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-    .target { padding: 4px 8px; border: 1px solid var(--line); background: #fffaf0; font-family: var(--mono); font-size: 12px; }
-    .message { margin: 0 0 14px; font-size: 15px; }
-    .action { margin: 0; padding-left: 14px; border-left: 3px solid var(--copper); color: #403a32; font-size: 14px; }
-    .evidence { padding: 18px; border-left: 1px solid var(--line); background: #fcfbf6; }
-    .evidence h3 { margin: 0 0 10px; color: var(--muted); font: 700 11px/1 var(--mono); text-transform: uppercase; }
-    .token { display: block; padding: 8px; background: #edf3f0; color: #24352f; font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
-    .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--line); border-top: 1px solid var(--line); }
-    .step { min-height: 136px; padding: 18px; background: var(--panel); }
-    .step b { display: block; margin: 10px 0 8px; font-size: 15px; }
-    .step p, .note { margin: 0; color: #46504b; font-size: 13px; }
-    .commands { padding: 28px 34px 34px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr); gap: 24px; }
-    pre { margin: 0; padding: 18px; overflow: auto; background: #1d2a25; color: #f3f0e7; font: 13px/1.55 var(--mono); }
-    .commands .note { font-size: 15px; }
+    .track, .note, .table-wrap {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: rgba(255, 253, 248, .94);
+      box-shadow: 0 14px 34px rgba(32, 38, 34, .08);
+    }
+    .track { padding: 24px; }
+    .track h3 { margin: 0 0 8px; font-size: 21px; }
+    .track p { margin: 0 0 14px; color: var(--muted); }
+    .tagrow { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .tag { padding: 5px 8px; border: 1px solid var(--line); color: var(--blue); background: #f6fbfa; font: 800 11px/1.1 var(--mono); }
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow: auto;
+      color: #f8f3e9;
+      background: #1b2722;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .chain {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      border: 1px solid var(--line);
+      background: var(--line);
+    }
+    .chain div { min-height: 132px; padding: 18px; background: var(--panel); }
+    .chain span { display: block; color: var(--copper); font: 800 11px/1.1 var(--mono); text-transform: uppercase; }
+    .chain b { display: block; margin: 10px 0 7px; }
+    .chain p { margin: 0; color: var(--muted); font-size: 13px; }
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; background: var(--panel); }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #34423c; background: #edf4f1; font-size: 13px; }
+    td { color: #36413c; }
+    .status-pass { color: var(--green); font-weight: 800; }
+    .status-error { color: #9b342b; font-weight: 800; }
+    .note { padding: 22px 24px; }
+    .note p { margin: 0; color: #3f4743; }
+    .note b { color: var(--green); }
     @media (max-width: 860px) {
-      main { width: min(100% - 20px, 1160px); padding: 16px 0 32px; }
-      .hero, .band, .report-grid, .commands { grid-template-columns: 1fr; }
-      .title { padding: 28px 24px; }
-      .metrics { border-left: 0; }
-      .panel, .side, .evidence { border-right: 0; border-left: 0; }
-      .flow { grid-template-columns: 1fr; }
+      main { width: min(100% - 20px, 1180px); padding-top: 16px; }
+      .hero, .band, .chain { grid-template-columns: 1fr; }
+      .summary { border-left: 0; }
+      .hero-copy { padding: 28px 24px; }
+      .track { padding: 20px; }
+      .track h3, .track p, td { overflow-wrap: anywhere; }
     }
   </style>
 </head>
 <body>
   <main>
-    <section class="sheet" aria-label="Hardwise design validator demo">
-      <header class="hero">
-        <div class="title">
-          <p class="eyebrow">Hardwise / Mechanism snapshot</p>
-          <h1>Design validation workbench</h1>
-          <p class="lede">把 schematic netlist、BOM identity 和 structured datasheet profiles 接成可审计的本地静态设计验证器。LLM 不自由评审硬件，只在 registry guard 与 evidence guard 的边界内解释确定性检查结果。</p>
-        </div>
-        <div class="metrics" aria-label="demo metrics">
-          <div class="metric"><span>Project components</span><strong>25</strong><code>Allegro netlist + BOM</code></div>
-          <div class="metric"><span>Validated targets</span><strong>4</strong><code>L78 / XL1509 / EG2132 / STM32</code></div>
-          <div class="metric"><span>Status rollup</span><strong>1/0/3</strong><code>PASS / WARN / ERROR</code></div>
-          <div class="metric"><span>Manual rows</span><strong>21</strong><code>visible no-profile scope</code></div>
-        </div>
-      </header>
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Hardwise / Phase 4 closeout</p>
+        <h1>One trust backbone, two public input tracks</h1>
+        <p class="lead">Hardwise 不把两种 EDA 输入硬凑成“一块万能 demo 板”。KiCad 轨展示 agent、registry guard 和真实 L78 datasheet token；Allegro 轨展示项目级 deterministic validation workbench。</p>
+      </div>
+      <div class="summary" aria-label="phase 4 metrics">
+        <div class="metric"><span>KiCad review</span><strong>29</strong><code>findings on pic_programmer</code></div>
+        <div class="metric"><span>Registry size</span><strong>121</strong><code>components, 77 NC pins</code></div>
+        <div class="metric"><span>Workbench</span><strong>4</strong><code>validated targets / 25 components</code></div>
+        <div class="metric"><span>Rollup</span><strong>1/0/3</strong><code>PASS / WARN / ERROR</code></div>
+      </div>
+    </header>
 
-      <section class="band">
-        <div class="panel">
-          <h2>What this proves</h2>
-          <div class="chips">
-            <span class="chip blue">Static workbench <b>live</b></span>
-            <span class="chip green">Refdes Guard <b>live</b></span>
-            <span class="chip copper">Evidence Ledger <b>live</b></span>
-            <span class="chip blue">Profile matching <b>local</b></span>
-            <span class="chip green">Public data only <b>yes</b></span>
-          </div>
-        </div>
-        <div class="panel">
-          <h2>One-sentence pitch</h2>
-          <p class="note">Hardwise does not ask a model to freely review hardware; it turns schematic netlist, BOM identity, and structured datasheet profiles into an auditable deterministic validation workbench, while the LLM stays behind registry/evidence guards.</p>
-        </div>
-      </section>
+    <section class="section">
+      <h2>Core Chain</h2>
+      <div class="chain" aria-label="trust chain">
+        <div><span>01</span><b>Registry object</b><p>位号必须来自 KiCad registry 或 Allegro netlist/BOM identity。</p></div>
+        <div><span>02</span><b>Deterministic check</b><p>规则或 validator 产出 Finding / ValidationReport，不靠模型自由判断。</p></div>
+        <div><span>03</span><b>Evidence token</b><p>结论要落到 `sch:`、`datasheet:`、`bom:` 或 `rule:` token。</p></div>
+        <div><span>04</span><b>Guarded explanation</b><p>模型只能解释工具返回；未知 refdes 返回 structured miss。</p></div>
+      </div>
+    </section>
 
-      <section class="report" aria-label="sample finding">
-        <div class="report-grid">
-          <div class="side"><span class="idx">#001</span><span class="severity">需确认</span></div>
-          <div class="finding-main">
-            <div class="targets">
-              <span class="target">器件：U12</span><span class="target">profile：XL1509</span><span class="target">状态：ERROR</span>
-            </div>
-            <p class="message">OUTPUT topology contains D5=1N4007W and L1=6.8uH. The XL1509 profile requires a Schottky-style freewheel diode and a larger inductor range for the 24V-to-12V fixture.</p>
-            <p class="action">建议替换续流二极管并按 profile 重新选择电感；同一工作台还会显示 U3 bootstrap diode 和 U8 SWDIO/SWCLK 互换错误。</p>
-          </div>
-          <aside class="evidence">
-            <h3>Evidence token</h3>
-            <code class="token">datasheet:xl1509.pdf#p9 · bom:mixed_controller_power_stage#D5/L1</code>
-          </aside>
-        </div>
-      </section>
+    <section class="section band" aria-label="demo tracks">
+      <article class="track">
+        <div class="tagrow"><span class="tag">Hero track</span><span class="tag">KiCad</span><span class="tag">No API gate</span></div>
+        <h3>pic_programmer: agent/review evidence</h3>
+        <p>运行 R001/R002/R003/DS001，U3 的 L7805 finding 带真实 reviewed profile token `datasheet:l78.pdf#p4`。由于 schematic 还不能推断 Vin，结果保持 `reviewer_to_confirm`。</p>
+        <pre><code>uv run hardwise review \
+  data/projects/pic_programmer \
+  --rules R001,R002,R003,DS001 \
+  --report-style component \
+  --output /tmp/hardwise-phase4-review.md
 
-      <section class="flow" aria-label="mechanisms">
-        <div class="step"><span>01</span><b>Parse design</b><p>从公开 netlist + BOM 构建 component、net、BOM registry。</p></div>
-        <div class="step"><span>02</span><b>Match profiles</b><p>本地 catalog 匹配 L78、XL1509、EG2132、STM32G030。</p></div>
-        <div class="step"><span>03</span><b>Run checks</b><p>电源、DCDC、gate driver、MCU basic 规则输出结构化 validation。</p></div>
-        <div class="step"><span>04</span><b>Guard output</b><p>未命中 registry 的位号会被包成 `⟨?U999⟩`，结论带 evidence/scope。</p></div>
-        <div class="step"><span>05</span><b>Write workbench</b><p>生成单文件 HTML、markdown index 和 JSON sidecar。</p></div>
-      </section>
+# output
+29 findings, 121 components reviewed
+U3 / DS001 -> datasheet:l78.pdf#p4</code></pre>
+      </article>
 
-      <section class="commands">
-        <pre><code>uv sync
-uv run hardwise design-validator-ui \
+      <article class="track">
+        <div class="tagrow"><span class="tag">Complementary track</span><span class="tag">Allegro</span><span class="tag">Static workbench</span></div>
+        <h3>mixed_controller_power_stage: UI workbench</h3>
+        <p>同一套 deterministic validation truth 渲染成 HTML：U1 PASS，U12/U3/U8 ERROR，其余 21 个器件透明显示 no-profile/manual。</p>
+        <pre><code>uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
-  --output reports/controller-design-validator.html \
-  --index-output reports/controller-design-validator-index.md \
-  --index-json reports/controller-design-validator-index.json
+  --output /tmp/hardwise-phase4-workbench.html \
+  --index-output /tmp/hardwise-phase4-index.md \
+  --index-json /tmp/hardwise-phase4-index.json
 
 # output
 25 components, validated=4
 PASS/WARN/ERROR=1/0/3, manual=21</code></pre>
-        <p class="note">Demo 输入只使用公开 synthetic fixture 和公开风格 structured profiles。项目边界锁定在 pre-Layout schematic-side validation；上传后端、账号次数、PCB/boardview、placement/routing、PLM、supplier 和公司内部硬件数据都不进入这个版本。</p>
-      </section>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2>Validated Targets</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Track</th><th>Object</th><th>Status</th><th>Evidence / point</th></tr></thead>
+          <tbody>
+            <tr><td>KiCad</td><td>U3 / L7805 / DS001</td><td>reviewer_to_confirm</td><td>`datasheet:l78.pdf#p4`; Vin abs max is reviewed, applied Vin still needs human confirmation.</td></tr>
+            <tr><td>Agent bridge test</td><td>run_component_validation(refdes)</td><td class="status-pass">PASS path covered</td><td>`tests/agent/test_validation_bridge.py` proves Runner dispatches to validator with FakeAnthropic, no API key.</td></tr>
+            <tr><td>Allegro</td><td>U1 / L7805</td><td class="status-pass">PASS</td><td>L78 profile pin checks include `datasheet:l78.pdf#p3/#p4/#p6`.</td></tr>
+            <tr><td>Allegro</td><td>U12 / XL1509</td><td class="status-error">ERROR</td><td>D5 is not Schottky-style; L1 is below profile inductor range.</td></tr>
+            <tr><td>Allegro</td><td>U3 / EG2132</td><td class="status-error">ERROR</td><td>Bootstrap diode rating is too low for the 24 V-class path.</td></tr>
+            <tr><td>Allegro</td><td>U8 / STM32G030</td><td class="status-error">ERROR</td><td>SWDIO/SWCLK are swapped in the fixture.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section note">
+      <p><b>Boundary:</b> all inputs are public fixtures or public datasheet-derived profiles. Phase 4 does not add PCB/boardview, placement/routing, simulation, PLM, supplier/lifecycle/pricing, hosted app state, or company-internal hardware data. BJT is already proven by its Phase 3 tests and stays out of the main demo unless an existing fixture exposes it without new scope.</p>
     </section>
   </main>
 </body>

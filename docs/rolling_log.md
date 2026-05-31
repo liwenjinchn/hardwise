@@ -8,6 +8,68 @@
 
 ---
 
+## Constrained LLM validator roadmap — staged after Copilot workbench
+
+**Trigger**: The Allegro Copilot workbench (`serve-workbench` plus
+`design-validator-ui --ai-snapshot`) is stable enough to demo selected-component
+questions, evidence traces, and the unknown-refdes path.
+
+**Where it lands**: `docs/PLAN.md` DR-013 records the architectural decision.
+Implementation should be split into future Trellis tasks, with `docs/architecture.md`
+and `docs/interview_qa.md` updated only when a stage ships.
+
+**What to build**: Move Hardwise from a deterministic-only validator toward a
+constrained LLM validator. Deterministic validators remain the highest-confidence
+source of `PASS` / `WARN` / `ERROR`; grounded LLM review is added later for
+long-tail coverage, and only when board objects are registry-verified and
+datasheet claims have page/token evidence.
+
+| Stage | Product shape | Data/logic needed | Ship gate |
+|---|---|---|---|
+| C0 | Copilot workbench closeout | Finish current fake/live/snapshot paths, tests, docs, and commit | A local demo can ask about the selected component, show trace, and wrap `U999` |
+| C1 | Six-section review report polish | Re-render existing `ValidationReport` truth into model check, pin summary, pin path, compliance matrix, evidence/page details, and final summary | `mixed_controller_power_stage` visibly explains the existing `U12` / `U8` / `U3` hard errors without changing validator semantics |
+| C2 | Evidence-first UI | Trust labels (`deterministic`, `grounded`, `manual`), page/token chips, tool trace, and topology path shown beside each finding | Review detail makes evidence provenance obvious without opening raw JSON or markdown |
+| C3 | Coverage/profile loop | Document-index candidates -> draft profile -> human review -> ready profile -> validation target | A large public board can move from grouped coverage gaps to reviewed profile candidates without auto-validating unfinished drafts |
+| C4 | High-value deterministic family expansion | Select families from coverage data; likely LED polarity, small BJT/VCEO margin, common LDO/buck/gate-driver/MCU-debug refinements | At least one current no-profile/manual class becomes an L1 deterministic finding with tests and profile evidence |
+| C5 | Grounded LLM long tail | L2 claim schema, datasheet retrieval requirement, evidence downgrade path, and report trust labels | A no-profile component can receive a grounded suggestion only when the answer cites retrieved datasheet evidence; missing evidence downgrades to manual |
+| C6 | Hosted shell | Upload/login/project persistence around the local trust loop | Hosted demo preserves the same guard/ledger/tool contracts and does not expose model secrets to the browser |
+
+**Acceptance details for C1 report polish**:
+
+1. Do not change validator verdicts or add new electrical rules in this stage.
+2. Reuse existing `ValidationReport`, `component_checks`, pin rows, topology path
+   facts, and evidence tokens.
+3. The report should read like a hardware review artifact: model match,
+   pin-check summary, pin function / connection path, consistency check,
+   compliance matrix, thermal/electrical evidence where available, and final
+   issue summary.
+4. If evidence lacks an actual datasheet page token, render the gap explicitly
+   instead of implying page-level proof.
+
+**Acceptance details for C3 coverage/profile loop**:
+
+1. Unready profile drafts must be marked `needs_review` and excluded from
+   automatic validation.
+2. Candidate generation should prioritize BOM/document groups that are frequent,
+   safety-relevant, or likely to become deterministic family validators.
+3. Public document indexes and public datasheets remain the only allowed inputs.
+4. The loop should help choose the next deterministic family; it should not
+   become live supplier lookup, PLM, lifecycle, price, availability, or PCB scope.
+
+**Acceptance details for C5 grounded LLM**:
+
+1. L2 answers must cite retrieved datasheet page/token evidence for every
+   datasheet specification claim.
+2. L2 answers may reference only registry-verified board objects; the existing
+   Refdes Guard remains the final egress check.
+3. Unsupported claims become L3 reviewer-to-confirm text, not factual findings.
+4. L2 must not override L1 deterministic results. It may explain or translate
+   them, but the structured validator remains authoritative.
+5. Tests must include an unsupported-spec case that proves the claim is
+   downgraded when evidence retrieval fails.
+
+---
+
 ## Final validator roadmap — staged after Allegro+BOM intake
 
 **Trigger**: V2.7 Allegro/PST + schematic BOM intake report shipped.

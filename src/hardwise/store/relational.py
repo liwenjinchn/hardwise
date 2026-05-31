@@ -18,6 +18,7 @@ from pathlib import Path
 
 from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from hardwise.adapters.base import (
     BoardRegistry,
@@ -97,10 +98,30 @@ def create_store(db_url_or_path: str | Path) -> Session:
     ``mysql+pymysql://...``) or a filesystem path / ``Path`` object for
     SQLite. Tables are created if they don't exist.
     """
-    engine = create_engine(_resolve_url(db_url_or_path), future=True)
+    engine = create_engine(_resolve_url(db_url_or_path), future=True, **_sqlite_thread_kwargs(db_url_or_path))
     Base.metadata.create_all(engine)
     session_factory = sessionmaker(bind=engine, future=True)
     return session_factory()
+
+
+def _sqlite_thread_kwargs(db_url_or_path: str | Path) -> dict:
+    """Thread-safety kwargs for SQLite so a session can be read across threads.
+
+    SQLite connections are thread-affine by default, and the live workbench
+    server (``serve-workbench``) reads one session from uvicorn worker threads.
+    ``check_same_thread=False`` relaxes that guard. For ``:memory:`` we also pin
+    a single shared connection via ``StaticPool`` — the default
+    ``SingletonThreadPool`` hands each thread its own *empty* in-memory database,
+    so tables populated on the startup thread would be invisible to request
+    threads. Non-SQLite backends (Postgres/MySQL) get no extra kwargs.
+    """
+    url = _resolve_url(db_url_or_path)
+    if not url.startswith("sqlite"):
+        return {}
+    kwargs: dict = {"connect_args": {"check_same_thread": False}}
+    if ":memory:" in url:
+        kwargs["poolclass"] = StaticPool
+    return kwargs
 
 
 def populate_from_registry(session: Session, registry: BoardRegistry) -> tuple[int, int]:

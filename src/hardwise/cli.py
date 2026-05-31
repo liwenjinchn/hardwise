@@ -859,7 +859,16 @@ def report_component_validation(
     else:
         output.parent.mkdir(parents=True, exist_ok=True)
 
-    output.write_text(render(validation_report, profile_path=profile_path), encoding="utf-8")
+    output.write_text(
+        render(
+            validation_report,
+            profile_path=profile_path,
+            profile=profile,
+            component=component,
+            design=design,
+        ),
+        encoding="utf-8",
+    )
     counts = validation_report.counts_by_status
     typer.echo(
         f"component-validation: {output} "
@@ -924,6 +933,7 @@ def report_validator_ui(
         project_name=project_name,
         netlist_source=source,
         profile_path=profile_path,
+        profile=profile,
         bom_report=bom_report,
         generated_at=now.isoformat(timespec="seconds"),
     )
@@ -999,7 +1009,11 @@ def report_validator_ui_batch(
             profile = DatasheetProfile.load(target.profile_path)
             validation = validate_component_against_profile(component, profile, design)
             validation_results.append(
-                ValidatorUiResult(validation=validation, profile_path=target.profile_path)
+                ValidatorUiResult(
+                    validation=validation,
+                    profile_path=target.profile_path,
+                    profile=profile,
+                )
             )
     except typer.Exit:
         raise
@@ -1047,7 +1061,13 @@ def design_validator_ui(
         ...,
         help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
     ),
-    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
+    bom_path: Path | None = typer.Argument(
+        None,
+        help=(
+            "Path to a schematic-exported BOM file. If omitted, "
+            "BOM candidates are auto-selected from an Allegro/PST project directory."
+        ),
+    ),
     profiles: Path = typer.Option(
         Path("data/datasheet_profiles"),
         "--profiles",
@@ -1069,44 +1089,46 @@ def design_validator_ui(
         "--index-json",
         help="Optional JSON sidecar path for the project validation index.",
     ),
+    document_index: Path | None = typer.Option(
+        None,
+        "--document-index",
+        help=(
+            "Optional CSV/TSV index of public datasheet/document links. "
+            "Adds grouped document coverage; no live supplier lookup."
+        ),
+    ),
     manual_limit: int = typer.Option(
         50,
         "--manual-limit",
         help="Maximum no-profile/manual rows shown in the optional markdown index.",
     ),
+    ai_snapshot: bool = typer.Option(
+        False,
+        "--ai-snapshot",
+        help="Embed the offline audited Copilot panel snapshot in the static HTML.",
+    ),
 ) -> None:
     """Write a screenshot-like static design-validator workbench for matched profiles."""
-    from datetime import datetime, timezone
-
-    from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
     from hardwise.report.project_validation_markdown import (
         render as render_project_index,
         write_json,
     )
-    from hardwise.report.validator_multi_ui import ValidatorUiResult, render
-    from hardwise.validation import ProfileCandidateError, suggest_profile_candidates
-    from hardwise.validation.project_index import build_project_validation_index
+    from hardwise.report.copilot_panel import render_copilot_panel
+    from hardwise.report.validator_project_ui import render_project_workbench
+    from hardwise.validation import ProfileCandidateError
+    from hardwise.workbench.chat import build_snapshot_responses, default_refdes
+    from hardwise.workbench.context import build_workbench_context
 
     if manual_limit < 0:
         typer.echo("error: --manual-limit must be >= 0", err=True)
         raise typer.Exit(1)
 
     try:
-        design, source, input_type, _property_count = _load_allegro_design(netlist_path)
-        bom = parse_bom(bom_path)
-        bom_report = match_bom_to_design(bom, design)
-        design = apply_bom_to_design(design, bom_report)
-        candidate_report = suggest_profile_candidates(bom, profiles, project=bom_path.stem)
-        now = datetime.now(timezone.utc)
-        project_name = _report_source_name(source)
-        index = build_project_validation_index(
-            design=design,
-            bom_report=bom_report,
-            candidate_report=candidate_report,
-            project_name=project_name,
-            generated_at=now.isoformat(timespec="seconds"),
-            netlist_source=str(source),
-            netlist_type=input_type,
+        context = build_workbench_context(
+            netlist_path=netlist_path,
+            bom_path=bom_path,
+            profiles=profiles,
+            document_index=document_index,
         )
     except ProfileCandidateError as e:
         typer.echo(f"error: profile candidate generation failed: {e}", err=True)
@@ -1115,56 +1137,304 @@ def design_validator_ui(
         typer.echo(f"error: design validator UI failed: {type(e).__name__}: {e}", err=True)
         raise typer.Exit(1) from e
 
-    validation_results = [
-        ValidatorUiResult(validation=row.validation, profile_path=Path(row.profile_path))
-        for row in index.validated_rows
-        if row.validation is not None and row.profile_path is not None
-    ]
-    if not validation_results:
-        typer.echo(
-            "error: no matched profiles produced validation results; "
-            "run suggest-validation-targets to inspect profile coverage",
-            err=True,
-        )
-        raise typer.Exit(1)
-
     if output is None:
         reports_dir = Path("reports")
         reports_dir.mkdir(exist_ok=True)
-        output = reports_dir / f"{project_name}-design-validator.html"
+        output = reports_dir / f"{context.project_name}-design-validator.html"
     else:
         output.parent.mkdir(parents=True, exist_ok=True)
 
-    html = render(
-        design,
-        validation_results,
-        project_name=project_name,
-        netlist_source=source,
-        bom_report=bom_report,
-        generated_at=index.generated_at,
+    copilot_html = ""
+    if ai_snapshot:
+        snapshot_responses = build_snapshot_responses(context)
+        fallback = snapshot_responses["__fallback__"]
+        copilot_html = render_copilot_panel(
+            mode="snapshot",
+            selected_refdes=default_refdes(context),
+            suggestions=fallback.suggestions,
+            snapshot_responses=snapshot_responses,
+            datasheet_search_enabled=False,
+        )
+
+    html = render_project_workbench(
+        context.design,
+        context.index,
+        project_name=context.project_name,
+        netlist_source=context.netlist_source,
+        bom_report=context.bom_report,
+        generated_at=context.index.generated_at,
+        copilot_html=copilot_html,
     )
     output.write_text(html, encoding="utf-8")
 
     if index_output is not None:
         index_output.parent.mkdir(parents=True, exist_ok=True)
         index_output.write_text(
-            render_project_index(index, manual_limit=manual_limit),
+            render_project_index(context.index, manual_limit=manual_limit),
             encoding="utf-8",
         )
     if index_json is not None:
-        write_json(index, index_json)
+        write_json(context.index, index_json)
 
-    totals = index.totals
+    totals = context.index.totals
+    typer.echo(f"selected-netlist: {context.netlist_source}")
+    typer.echo(f"selected-bom: {context.bom.source_file}")
+    if context.document_report is not None:
+        doc_counts = context.document_report.counts_by_status
+        typer.echo(
+            f"document-index: {context.document_report.document_index_file} "
+            f"(matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
+            f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']})"
+        )
+    if context.resolved_bom.auto_selected:
+        parseable_count = sum(
+            item.status != "parse_error" for item in context.resolved_bom.candidates
+        )
+        typer.echo(
+            f"bom-candidates: {len(context.resolved_bom.candidates)} "
+            f"(parseable={parseable_count}, selected={context.bom.source_file.name})"
+        )
+    if ai_snapshot:
+        typer.echo("ai-snapshot: enabled")
     typer.echo(
         f"design-validator-ui: {output} "
-        f"({index.components_in_design} components, validated={len(index.validated_rows)}, "
+        f"({context.index.components_in_design} components, "
+        f"validated={len(context.index.validated_rows)}, "
+        f"BOM matched={context.index.bom_matched}, "
         f"PASS/WARN/ERROR={totals['PASS']}/{totals['WARN']}/{totals['ERROR']}, "
-        f"manual={len(index.manual_rows)})"
+        f"manual={len(context.index.manual_rows)})"
     )
     if index_output is not None:
         typer.echo(f"validation-index: {index_output}")
     if index_json is not None:
-        typer.echo(f"validation-index-json: {index_json} ({len(index.rows)} rows)")
+        typer.echo(f"validation-index-json: {index_json} ({len(context.index.rows)} rows)")
+
+
+@app.command(name="serve-workbench")
+def serve_workbench(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
+    ),
+    bom_path: Path | None = typer.Argument(
+        None,
+        help=(
+            "Path to a schematic-exported BOM file. If omitted, "
+            "BOM candidates are auto-selected from an Allegro/PST project directory."
+        ),
+    ),
+    profiles: Path = typer.Option(
+        Path("data/datasheet_profiles"),
+        "--profiles",
+        help="Directory containing structured DatasheetProfile JSON files.",
+    ),
+    host: str = typer.Option("127.0.0.1", "--host", help="Host interface for localhost UI."),
+    port: int = typer.Option(8765, "--port", help="Port for localhost UI."),
+    tier: str = typer.Option("normal", "--tier", "-t", help="Model tier: fast | normal | deep."),
+    fake_ai: bool = typer.Option(
+        False,
+        "--fake-ai",
+        help="Use deterministic fake model blocks while still running the real Runner/tools.",
+    ),
+    persist_dir: Path = typer.Option(
+        Path("data/chroma"),
+        "--persist-dir",
+        help="Chroma persistence directory (only used with --vector).",
+    ),
+    use_vector: bool = typer.Option(
+        False,
+        "--vector/--no-vector",
+        help="Enable search_datasheet against the local Chroma store.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Build the workbench context and exit without starting the server.",
+    ),
+) -> None:
+    """Serve the Allegro-first validator workbench with live Copilot chat."""
+    from dotenv import load_dotenv
+
+    from hardwise.validation import ProfileCandidateError
+    from hardwise.workbench.chat import WorkbenchChatService
+    from hardwise.workbench.context import build_workbench_context
+    from hardwise.workbench.server import create_workbench_app
+
+    if tier not in ("fast", "normal", "deep"):
+        typer.echo(f"error: tier must be fast|normal|deep, got {tier!r}", err=True)
+        raise typer.Exit(1)
+
+    load_dotenv(override=True)
+    try:
+        context = build_workbench_context(
+            netlist_path=netlist_path,
+            bom_path=bom_path,
+            profiles=profiles,
+        )
+        collection = None
+        if use_vector:
+            from hardwise.store.vector import create_collection
+
+            collection = create_collection(persist_dir)
+        chat_service = WorkbenchChatService(
+            context,
+            mode="fake" if fake_ai else "real",
+            tier=tier,  # type: ignore[arg-type]
+            collection=collection,
+        )
+    except ProfileCandidateError as e:
+        typer.echo(f"error: profile candidate generation failed: {e}", err=True)
+        raise typer.Exit(1) from e
+    except Exception as e:
+        typer.echo(f"error: serve-workbench failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    url = f"http://{host}:{port}"
+    typer.echo(
+        f"serve-workbench: {url} "
+        f"({context.index.components_in_design} components, "
+        f"validated={len(context.index.validated_rows)}, "
+        f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'})"
+    )
+    if dry_run:
+        return
+
+    import uvicorn
+
+    app_obj = create_workbench_app(context, chat_service)
+    uvicorn.run(app_obj, host=host, port=port)
+
+
+@app.command(name="build-document-index-candidates")
+def build_document_index_candidates(
+    validation_index: Path = typer.Argument(
+        ...,
+        help="Project validation index JSON generated by design-validator-ui --index-json.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output CSV path (default: reports/<index-stem>-document-candidates.csv).",
+    ),
+) -> None:
+    """Write reviewable document-index candidate rows from grouped coverage."""
+
+    from hardwise.documents import (
+        DocumentCandidateError,
+        build_document_candidate_report,
+        render_document_candidate_csv,
+    )
+
+    try:
+        report = build_document_candidate_report(validation_index)
+    except DocumentCandidateError as e:
+        typer.echo(f"error: document candidate generation failed: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    if output is None:
+        output = Path("reports") / f"{validation_index.stem}-document-candidates.csv"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(render_document_candidate_csv(report), encoding="utf-8")
+    typer.echo(
+        f"document-index-candidates: {output} "
+        f"(groups={report.component_group_count}, candidates={len(report.candidates)}, "
+        f"skipped_passive={report.skipped_passive}, "
+        f"skipped_mechanical={report.skipped_mechanical}, "
+        f"skipped_matched={report.skipped_matched_document})"
+    )
+
+
+@app.command(name="recommend-next-family")
+def recommend_next_family(
+    validation_index: Path = typer.Argument(
+        ...,
+        help="Project validation index JSON generated by design-validator-ui --index-json.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output Markdown path (default: reports/<index-stem>-next-family.md).",
+    ),
+) -> None:
+    """Write advisory next-family recommendations from grouped coverage."""
+
+    from hardwise.validation.coverage_priority import (
+        CoveragePriorityError,
+        build_family_coverage_report,
+        render_family_coverage_markdown,
+    )
+
+    try:
+        report = build_family_coverage_report(validation_index)
+    except CoveragePriorityError as e:
+        typer.echo(f"error: next-family recommendation failed: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    if output is None:
+        output = Path("reports") / f"{validation_index.stem}-next-family.md"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(render_family_coverage_markdown(report), encoding="utf-8")
+    try_existing = sum(
+        item.recommended_action == "try_existing_validator_profile"
+        for item in report.recommendations
+    )
+    triage_new = sum(
+        item.recommended_action == "triage_for_new_validator" for item in report.recommendations
+    )
+    typer.echo(
+        f"next-family: {output} "
+        f"(families={len(report.recommendations)}, "
+        f"try_existing={try_existing}, triage_new={triage_new})"
+    )
+
+
+@app.command(name="draft-datasheet-profile")
+def draft_datasheet_profile(
+    validation_index: Path = typer.Argument(
+        ...,
+        help="Project validation index JSON generated by design-validator-ui --index-json.",
+    ),
+    identity: str = typer.Option(
+        ...,
+        "--identity",
+        help="Component group identity to draft, e.g. PCA9548APW.",
+    ),
+    document_index: Path | None = typer.Option(
+        None,
+        "--document-index",
+        help="Optional reviewed document index CSV/TSV used to select the public document.",
+    ),
+    output: Path = typer.Option(
+        ...,
+        "--output",
+        "-o",
+        help="Output needs-review DatasheetProfile draft JSON path.",
+    ),
+) -> None:
+    """Create a needs-review DatasheetProfile draft from grouped coverage."""
+
+    from hardwise.ir.profile_draft import ProfileDraftError, draft_profile_from_project_index
+
+    try:
+        profile = draft_profile_from_project_index(
+            validation_index,
+            identity=identity,
+            document_index_path=document_index,
+        )
+        profile.save(output)
+    except ProfileDraftError as e:
+        typer.echo(f"error: profile draft failed: {e}", err=True)
+        raise typer.Exit(1) from e
+    except Exception as e:
+        typer.echo(f"error: profile draft failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    typer.echo(
+        f"profile-draft: {output} "
+        f"(part_number={profile.part_number}, review_status={profile.review_status})"
+    )
 
 
 @app.command(name="eval")
@@ -1259,24 +1529,9 @@ def _echo_decision_counts(counts: dict[str, int], total: int) -> None:
 
 def _load_allegro_design(netlist_path: Path):
     """Load an Allegro schematic netlist/PST input into Design plus display metadata."""
-    from hardwise.adapters.allegro_netlist import parse_allegro_netlist
-    from hardwise.adapters.allegro_pst import is_allegro_pst_input, parse_allegro_pst
-    from hardwise.ir.build import build_design_from_netlist, build_design_from_pst
+    from hardwise.workbench.context import load_allegro_design
 
-    if is_allegro_pst_input(netlist_path):
-        registry = parse_allegro_pst(netlist_path)
-        design = build_design_from_pst(registry)
-        source = registry.source_dir
-        input_type = "Cadence Capture/Allegro PST schematic netlist topology"
-        property_count = sum(len(part.properties) for part in registry.parts)
-        return design, source, input_type, property_count
-
-    registry = parse_allegro_netlist(netlist_path)
-    design = build_design_from_netlist(registry)
-    source = registry.source_file
-    input_type = "Allegro/Telesis schematic netlist topology"
-    property_count = len(registry.properties)
-    return design, source, input_type, property_count
+    return load_allegro_design(netlist_path)
 
 
 def _report_source_name(source: Path) -> str:

@@ -1,0 +1,43 @@
+{
+  "part_number": "LTST-C190KGKT",
+  "review_status": "ready",
+  "description": "Green 0603 LED indicator used by the public-safe C4 demo fixture",
+  "abs_max": {
+    "reverse_voltage": 5.0
+  },
+  "recommended": {
+    "topology_family": "diode",
+    "diode_role": "led_indicator",
+    "requires_current_limit": true
+  },
+  "pin_function": {
+    "1": "Cathode",
+    "2": "Anode"
+  },
+  "pins": [
+    {
+      "name": "Cathode",
+      "number": "1",
+      "category": "switch_node",
+      "function": "LED cathode; expected to be on the lower-potential side of the indicator path.",
+      "evidence": ["public_profile:ltst-c190kgkt#pinout"]
+    },
+    {
+      "name": "Anode",
+      "number": "2",
+      "category": "switch_node",
+      "function": "LED anode; expected to be on the higher-potential side of the indicator path.",
+      "evidence": ["public_profile:ltst-c190kgkt#pinout"]
+    }
+  ],
+  "evidence": {
+    "abs_max.reverse_voltage": "public_profile:ltst-c190kgkt#reverse-voltage",
+    "pin_function.1": "public_profile:ltst-c190kgkt#pinout",
+    "pin_function.2": "public_profile:ltst-c190kgkt#pinout",
+    "recommended.diode_role": "public_profile:ltst-c190kgkt#application",
+    "recommended.requires_current_limit": "public_profile:ltst-c190kgkt#application"
+  },
+  "extracted_at": "2026-05-31T00:00:00+08:00",
+  "extracted_model": "manual-profile-c4-led-indicator",
+  "schema_version": "v2"
+}

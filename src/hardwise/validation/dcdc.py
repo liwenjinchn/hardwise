@@ -7,6 +7,7 @@ from hardwise.ir.types import Component, Design, Pin
 from hardwise.validation.topology import (
     components_on_net,
     first_by_prefix,
+    first_by_prefixes,
     is_likely_schottky_diode,
     parse_inductance_uh,
 )
@@ -20,7 +21,7 @@ def validate_buck_topology(
 ) -> list[ComponentValidation]:
     """Validate the selected component as a buck converter."""
 
-    output_pin = _pin_by_profile_name(component, profile, "OUTPUT")
+    output_pin = _switch_output_pin(component, profile)
     if output_pin is None or not output_pin.net:
         return [
             ComponentValidation(
@@ -32,10 +33,13 @@ def validate_buck_topology(
         ]
 
     neighbors = components_on_net(design, output_pin.net, exclude_refdes=component.refdes)
-    return [
-        _validate_buck_inductor(first_by_prefix(neighbors, "L"), profile),
-        _validate_buck_diode(first_by_prefix(neighbors, "D"), profile),
-    ]
+    inductor = first_by_prefixes(neighbors, ("L", "PL"))
+    checks = [_validate_buck_inductor(inductor, profile)]
+    if _external_freewheel_diode_required(profile):
+        checks.append(_validate_buck_diode(first_by_prefix(neighbors, "D"), profile))
+    else:
+        checks.append(_validate_synchronous_buck_freewheel(profile))
+    return checks
 
 
 def _validate_buck_inductor(
@@ -81,6 +85,17 @@ def _validate_buck_inductor(
             summary=(
                 f"Inductor {inductor.refdes} is {inductance:g} uH, above the "
                 f"profile maximum {max_uh:g} uH."
+            ),
+            evidence=evidence,
+        )
+    if min_uh is None and max_uh is None:
+        return ComponentValidation(
+            check="buck_inductor",
+            status="PASS",
+            refdes=inductor.refdes,
+            summary=(
+                f"Inductor {inductor.refdes} value {inductance:g} uH is present; "
+                "this profile does not specify a numeric inductor range."
             ),
             evidence=evidence,
         )
@@ -156,6 +171,37 @@ def _pin_by_profile_name(
         if pin_profile.name.upper() == name.upper():
             return component.pin_by_number(pin_profile.number)
     return None
+
+
+def _switch_output_pin(component: Component, profile: DatasheetProfile) -> Pin | None:
+    named = _pin_by_profile_name(component, profile, "OUTPUT")
+    if named is not None:
+        return named
+    for pin_profile in profile.pins:
+        if pin_profile.category == "switch_output":
+            pin = component.pin_by_number(pin_profile.number)
+            if pin is not None:
+                return pin
+    return None
+
+
+def _external_freewheel_diode_required(profile: DatasheetProfile) -> bool:
+    value = profile.recommended.get("external_freewheel_diode_required")
+    if isinstance(value, bool):
+        return value
+    return str(profile.recommended.get("buck_topology", "")).lower() != "synchronous"
+
+
+def _validate_synchronous_buck_freewheel(profile: DatasheetProfile) -> ComponentValidation:
+    return ComponentValidation(
+        check="buck_freewheel_diode",
+        status="PASS",
+        summary=(
+            "Synchronous buck profile uses an integrated low-side switch; "
+            "no external freewheel diode is required by this profile."
+        ),
+        evidence=_profile_evidence(profile, "recommended.synchronous_rectification"),
+    )
 
 
 def _float_recommended(profile: DatasheetProfile, key: str) -> float | None:

@@ -33,6 +33,37 @@ def test_sanitize_text_wraps_only_unverified_refdes() -> None:
     assert wrapped == 2
 
 
+def test_sanitize_text_passes_verified_part_number_and_package() -> None:
+    """Refdes-shaped part numbers / packages from the registry pass; near-misses don't.
+
+    `EG2132` (value) and `SOP8` (footprint) are real board identifiers that match
+    the refdes regex — wrapping them is a false positive. A near-miss like
+    `EG2133` and an unknown designator like `Q999` are absent from the board and
+    must still be wrapped, so anti-hallucination is preserved.
+    """
+    reg = BoardRegistry(
+        project_dir=Path("/tmp/x"),
+        components=[
+            ComponentRecord(
+                refdes="U3",
+                value="EG2132",
+                footprint="SOP8",
+                datasheet="",
+                source_file=Path("/tmp/x.kicad_sch"),
+                source_kind="schematic",
+            )
+        ],
+    )
+
+    out, wrapped = sanitize_text("U3 (EG2132, SOP8) but EG2133 and Q999 are invented", reg)
+
+    assert "EG2132" in out and "⟨?EG2132⟩" not in out
+    assert "SOP8" in out and "⟨?SOP8⟩" not in out
+    assert "⟨?EG2133⟩" in out
+    assert "⟨?Q999⟩" in out
+    assert wrapped == 2
+
+
 def test_sanitize_text_handles_no_refdes_in_text() -> None:
     reg = _registry(["U1"])
     out, wrapped = sanitize_text("plain prose with no designators here", reg)

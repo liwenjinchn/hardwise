@@ -20,9 +20,18 @@ REFDES_PATTERN = re.compile(r"\b[A-Z]{1,3}\d{1,4}\b")
 
 
 def sanitize_text(text: str, registry: BoardRegistry) -> tuple[str, int]:
-    """Wrap unverified refdes-shaped tokens. Return (sanitized_text, num_wrapped)."""
+    """Wrap unverified refdes-shaped tokens. Return (sanitized_text, num_wrapped).
+
+    A token is left untouched when it is a verified refdes, a pin name (see
+    `_looks_like_pin_name`), or a refdes-shaped identifier that literally appears
+    in a parsed component's identity fields — a part number or package such as
+    `EG2132` or `SOP8`. Those are verified board facts, not hallucinated refdes;
+    a hallucinated designator like `U999` is absent from the board and stays
+    wrapped, so anti-hallucination is preserved.
+    """
 
     wrapped = 0
+    verified_identifiers = _identity_tokens(registry)
 
     def _wrap(match: re.Match[str]) -> str:
         nonlocal wrapped
@@ -31,10 +40,31 @@ def sanitize_text(text: str, registry: BoardRegistry) -> tuple[str, int]:
             return token
         if registry.has_refdes(token):
             return token
+        if token in verified_identifiers:
+            return token
         wrapped += 1
         return f"⟨?{token}⟩"
 
     return REFDES_PATTERN.sub(_wrap, text), wrapped
+
+
+def _identity_tokens(registry: BoardRegistry) -> set[str]:
+    """Refdes-shaped tokens that occur in parsed component identity fields.
+
+    Part numbers and packages such as `EG2132` or `SOP8` match the refdes regex
+    but are verified board facts, not reference designators. When such a token is
+    literally present in a component's value / footprint / datasheet, the guard
+    treats it as verified-from-source and does not wrap it. Hallucinated refdes
+    never appear here, so they stay wrapped — this removes the false positive
+    without weakening refdes anti-hallucination (the 2026-05-14 learning_log
+    entry pointed to exactly this: disambiguate via parsed facts, not the regex).
+    """
+    tokens: set[str] = set()
+    for component in registry.components:
+        for field_value in (component.value, component.footprint, component.datasheet):
+            if field_value:
+                tokens.update(REFDES_PATTERN.findall(field_value))
+    return tokens
 
 
 def _looks_like_pin_name(text: str, start: int, end: int) -> bool:
