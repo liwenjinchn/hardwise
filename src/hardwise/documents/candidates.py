@@ -9,6 +9,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, ValidationError
 
+from hardwise.validation.coverage_priority import score_candidate
 from hardwise.validation.component_groups import ProjectComponentGroup
 from hardwise.validation.project_index import ProjectValidationIndex
 
@@ -33,6 +34,8 @@ class DocumentCandidateRow(BaseModel):
     document_status: str
     profile_status: str
     search_query: str
+    priority_score: float = 0.0
+    priority_band: str = "low"
     notes: str = ""
 
 
@@ -65,6 +68,7 @@ CSV_COLUMNS = [
     "ProfileStatus",
     "SearchQuery",
     "Notes",
+    "Priority",
 ]
 
 _PASSIVE_FAMILIES = {"capacitor", "resistor"}
@@ -105,6 +109,7 @@ def build_document_candidate_report(index_path: Path) -> DocumentCandidateReport
             report.skipped_missing_identity += 1
         else:
             report.skipped_other += 1
+    report.candidates.sort(key=_candidate_sort_key)
     return report
 
 
@@ -131,6 +136,7 @@ def render_document_candidate_csv(report: DocumentCandidateReport) -> str:
                 "ProfileStatus": row.profile_status,
                 "SearchQuery": row.search_query,
                 "Notes": row.notes,
+                "Priority": row.priority_band,
             }
         )
     return output.getvalue()
@@ -153,6 +159,7 @@ def _candidate_for_group(group: ProjectComponentGroup) -> tuple[DocumentCandidat
         return None, "missing_identity"
     if _looks_like_passive_identity(identity):
         return None, "passive"
+    priority_score, priority_band = score_candidate(group.suggested_family, group.refdes_count)
     return (
         DocumentCandidateRow(
             mpn=identity,
@@ -165,9 +172,16 @@ def _candidate_for_group(group: ProjectComponentGroup) -> tuple[DocumentCandidat
             document_status=group.document_status,
             profile_status=group.profile_status,
             search_query=_search_query(identity, group.manufacturer),
+            priority_score=priority_score,
+            priority_band=priority_band,
         ),
         "",
     )
+
+
+def _candidate_sort_key(row: DocumentCandidateRow) -> tuple[int, float, int, str]:
+    profile_gap_first = 0 if row.profile_status != "matched" else 1
+    return (profile_gap_first, -row.priority_score, -row.refdes_count, row.mpn)
 
 
 def _search_query(identity: str, manufacturer: str) -> str:
