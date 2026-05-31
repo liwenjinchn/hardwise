@@ -2380,3 +2380,40 @@ voltage.
 Coverage closure means moving from manual/no-profile into an evidence-backed
 deterministic row. It does not require every row to be PASS. WARN is the correct
 truth-preserving result when the profile is known but a rail voltage is not.
+
+## 2026-05-31 — Ranking-driven closure can become a scope trap
+
+**Symptom**
+
+C3/C4 coverage ranking worked well enough that it encouraged one more
+deterministic family slice after another: LED indicator, transistor, analog IC
+pin profiles, TVS, and BAS316. Each slice was useful, but by the third distinct
+family shape the general product loop was already proven.
+
+**Root cause**
+
+Ranking converts ambiguity into an ordered queue, which is exactly what a
+coverage loop should do. The downside is that the queue feels like a mandate.
+For submission, the next highest row is not automatically the next highest
+leverage task; public-main readiness, evidence-chain truthfulness, and the
+agent trust narrative can matter more than shrinking manual rows again.
+
+**Fix**
+
+Freeze C4 expansion after BAS316. Keep BAV99 dual-diode arrays, inductors, and
+ferrites as explicit deferred work. Move the next execution lane to public-main
+readiness, evidence-chain audit, narrative reset, and a thin C5 grounded-LLM
+trust slice.
+
+**Verification**
+
+`docs/PLAN.md` DR-014 now records the freeze decision and the current sequence:
+public-main readiness, evidence-chain audit, narrative reset, C5 trust slice,
+then submission closeout.
+
+**Takeaway**
+
+Coverage ranking is a planning input, not a product strategy by itself. Once the
+loop's generality is demonstrated, stop adding family slices and spend the next
+unit of work on whatever makes the public AI trust story more truthful and
+reviewable.

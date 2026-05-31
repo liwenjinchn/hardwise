@@ -270,6 +270,54 @@ chat-only feature until the guard/ledger contract is stronger.
 
 ---
 
+### DR-014 — Freeze C4 deterministic expansion before public submission
+**Date**: 2026-05-31
+**Context**: C3's coverage ranking successfully drove C4 through several
+L3/manual-to-L1 deterministic slices: LED indicator, MMBT3904 transistor,
+basic analog IC pin profiles, SMBJ24CA TVS, and BAS316 small-signal diode.
+That chain proves the product loop better than a single LED slice would have:
+Hardwise can rank coverage gaps, select a public-evidence-backed family, add a
+reviewed profile or narrow validator path, and make manual rows deterministic.
+
+The same success creates a scope trap. By C4c, the loop had already been proven
+across several different shapes of hardware evidence. Continuing into every
+remaining family, such as BAV99 dual-diode arrays, inductors, or ferrites, has
+lower submission leverage than making the public demo and AI trust story
+available on `main`.
+
+**Decision**: Freeze C4 family expansion after BAS316. Do not start another
+deterministic family slice until the submission path below is handled.
+
+Current sequence:
+
+1. **Public-main readiness**: resolve the local Xcode/git license blocker,
+   audit the `codex/migrate-codex-mainline` branch against `origin/main`,
+   consolidate the work into the public line, and push only with explicit user
+   authorization.
+2. **Evidence-chain audit**: separate claims backed by real
+   `pdfplumber -> Chroma -> search_datasheet` retrieval from reviewed profile
+   tokens such as `datasheet:<part>.pdf#pN`. Narrative must not imply that all
+   C4 profiles were generated or checked by live vector retrieval.
+3. **Narrative reset**: lead with the trust architecture: Refdes Guard,
+   Evidence Ledger, L1 deterministic truth, and the planned L2 grounded tier.
+   The C3/C4 coverage loop is supporting evidence, not the headline.
+4. **Thin C5 L2 trust slice**: add the smallest grounded-LLM proof that cites
+   retrieved datasheet evidence, downgrades unsupported claims to L3/manual,
+   and never overrides L1 deterministic verdicts.
+5. **Submission closeout**: update README/demo/interview/resume material around
+   what is actually present on public GitHub.
+
+**Scope boundary**: BAV99 dual-diode modeling, inductor/ferrite profiles,
+supplier lookup, PLM, layout, simulation, and hosted shell work are deferred.
+C5 is not a coverage push; it is an evidence-gating proof for the agent layer.
+
+**When to revisit**: After public `main` is current and the C5 trust slice
+passes an unsupported-claim downgrade test, rerun `recommend-next-family` and
+decide whether another deterministic family helps the next interview/demo more
+than packaging, evaluation, or UI polish.
+
+---
+
 ## Post-migration roadmap (toward Gate B submission)
 
 The validator-family work is late-stage closure, not early build. This roadmap sequences the remaining work by leverage on the DJI submission narrative (DR-011). Each phase keeps the slice-acceptance template: one CLI/demo artifact, green `pytest` + `ruff`, an `interview_qa.md` touch, and a `learning_log.md` entry.
