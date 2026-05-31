@@ -1,0 +1,50 @@
+{
+  "part_number": "BAS316",
+  "part_number_aliases": ["BAS316,115", "BAS316,135"],
+  "review_status": "ready",
+  "description": "High-speed switching diode, SOD323",
+  "abs_max": {
+    "reverse_voltage": 100.0,
+    "repetitive_peak_reverse_voltage": 100.0,
+    "average_forward_current": 0.25,
+    "non_repetitive_peak_forward_current": 4.0
+  },
+  "recommended": {
+    "topology_family": "diode",
+    "diode_role": "small_signal_switching",
+    "reverse_recovery_time_ns": 4.0
+  },
+  "pin_function": {
+    "1": "Cathode",
+    "2": "Anode"
+  },
+  "pins": [
+    {
+      "name": "Cathode",
+      "number": "1",
+      "category": "switch_node",
+      "function": "Cathode terminal.",
+      "evidence": ["datasheet:bas316.pdf#p1"]
+    },
+    {
+      "name": "Anode",
+      "number": "2",
+      "category": "switch_node",
+      "function": "Anode terminal.",
+      "evidence": ["datasheet:bas316.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "abs_max.reverse_voltage": "datasheet:bas316.pdf#p2",
+    "abs_max.repetitive_peak_reverse_voltage": "datasheet:bas316.pdf#p2",
+    "abs_max.average_forward_current": "datasheet:bas316.pdf#p2",
+    "abs_max.non_repetitive_peak_forward_current": "datasheet:bas316.pdf#p2",
+    "recommended.diode_role": "datasheet:bas316.pdf#p1",
+    "recommended.reverse_recovery_time_ns": "datasheet:bas316.pdf#p2",
+    "pin_function.1": "datasheet:bas316.pdf#p1",
+    "pin_function.2": "datasheet:bas316.pdf#p1"
+  },
+  "extracted_at": "2026-05-31T00:00:00+08:00",
+  "extracted_model": "manual-profile-c4e-bas316",
+  "schema_version": "v2"
+}

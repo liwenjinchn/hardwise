@@ -2341,3 +2341,42 @@ surge sizing, ESD coverage, clamp waveforms, capacitance, thermals, or layout.
 Treat coverage ranking as a queue for reviewed evidence, not a reason to invent
 synthetic datasheets. For bidirectional TVS parts, model the deterministic
 schematic fact that matters: the protected rail-to-reference working voltage.
+
+## 2026-05-31 — Profile-only diode closure can legitimately produce WARN
+
+**Symptom**
+
+C4e selected the remaining simple diode group, `BAS316`, after C4d removed
+`SMBJ24CA` from diode coverage. D21 in the public-safe synthetic Allegro fixture
+connects `CANH` to `GND`, so the existing diode validator can prove pin
+connectivity but cannot infer the protected bus voltage from the net name.
+
+**Root cause**
+
+Not every L1 deterministic row is a PASS. A reviewed profile plus deterministic
+validator can still return WARN when the board fact needed for a numeric check is
+not available. For BAS316, the public profile gives cathode/anode pinout and
+100 V reverse-voltage rating, but the fixture does not encode a voltage hint for
+`CANH`.
+
+**Fix**
+
+Added `bas316.json` as a reviewed public Nexperia profile and reused the
+existing diode validator unchanged. Focused tests cover the public SOD323 pinout,
+a nominal +12 V reverse-voltage PASS, and +120 V reverse-voltage ERROR. The
+motor fixture D21 row now validates deterministically with WARN for unknown CANH
+voltage.
+
+**Verification**
+
+- Focused C4e tests report 51 passed.
+- C4e smoke reports 66 components / validated=28 / manual=38 /
+  PASS-WARN-ERROR=17-8-3.
+- `recommend-next-family` drops `BAS316`; the remaining diode identity is
+  `BAV99`.
+
+**Takeaway**
+
+Coverage closure means moving from manual/no-profile into an evidence-backed
+deterministic row. It does not require every row to be PASS. WARN is the correct
+truth-preserving result when the profile is known but a rail voltage is not.

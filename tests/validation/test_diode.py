@@ -30,6 +30,12 @@ def tvs_profile() -> DatasheetProfile:
 
 
 @pytest.fixture
+def bas316_profile() -> DatasheetProfile:
+    """Load BAS316 small-signal diode profile."""
+    return DatasheetProfile.load(Path("data/datasheet_profiles/bas316.json"))
+
+
+@pytest.fixture
 def diode_design():
     """Load diode fixture."""
     netlist = parse_allegro_netlist(Path("tests/fixtures/allegro/ss34_diode.net"))
@@ -80,6 +86,68 @@ def test_smbj24ca_profile_matches_public_bidirectional_tvs(tvs_profile):
         ("1", "Terminal 1"),
         ("2", "Terminal 2"),
     ]
+
+
+def test_bas316_profile_matches_public_sod323_pinout(bas316_profile):
+    assert bas316_profile.recommended["topology_family"] == "diode"
+    assert bas316_profile.recommended["diode_role"] == "small_signal_switching"
+    assert bas316_profile.abs_max["reverse_voltage"] == 100.0
+    assert bas316_profile.pin_function == {"1": "Cathode", "2": "Anode"}
+    assert [(pin.number, pin.name) for pin in bas316_profile.pins] == [
+        ("1", "Cathode"),
+        ("2", "Anode"),
+    ]
+
+
+def test_bas316_nominal_reverse_voltage_passes(bas316_profile, tmp_path):
+    design = _design_from_text(
+        tmp_path,
+        """$PACKAGES
+  ! 'SOD323' ! BAS316 ; D21
+$NETS
+  '+12V' ; D21.1
+  'GND' ; D21.2
+$END
+""",
+        """Reference,Quantity,Value,Manufacturer,MPN
+D21,1,BAS316,Nexperia,BAS316
+""",
+    )
+
+    results = validate_component_against_profile(design.components["D21"], bas316_profile, design)
+
+    assert results.status == "PASS"
+    assert results.counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
+    assert results.component_counts_by_status == {"PASS": 3, "WARN": 0, "ERROR": 0}
+    reverse = next(
+        check for check in results.component_checks if check.check == "diode_reverse_voltage"
+    )
+    assert "within profile maximum 100 V" in reverse.summary
+
+
+def test_bas316_reverse_voltage_overstress_errors(bas316_profile, tmp_path):
+    design = _design_from_text(
+        tmp_path,
+        """$PACKAGES
+  ! 'SOD323' ! BAS316 ; D21
+$NETS
+  '+120V' ; D21.1
+  'GND' ; D21.2
+$END
+""",
+        """Reference,Quantity,Value,Manufacturer,MPN
+D21,1,BAS316,Nexperia,BAS316
+""",
+    )
+
+    results = validate_component_against_profile(design.components["D21"], bas316_profile, design)
+
+    reverse = next(
+        check for check in results.component_checks if check.check == "diode_reverse_voltage"
+    )
+    assert results.status == "ERROR"
+    assert reverse.status == "ERROR"
+    assert "above profile maximum 100 V" in reverse.summary
 
 
 def test_bidirectional_tvs_nominal_rail_clamp_passes(tvs_profile, tmp_path):

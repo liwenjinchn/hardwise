@@ -558,8 +558,8 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert "66 components" in result.output
-    assert "validated=27" in result.output
-    assert "manual=39" in result.output
+    assert "validated=28" in result.output
+    assert "manual=38" in result.output
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"refdes": "D10"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/ltst-c190kgkt.json"' in index_payload
@@ -569,6 +569,8 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
     assert '"profile_path": "data/datasheet_profiles/lmv358.json"' in index_payload
     assert '"refdes": "D20"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/smbj24ca.json"' in index_payload
+    assert '"refdes": "D21"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/bas316.json"' in index_payload
 
     output = tmp_path / "next-family.md"
     result = CliRunner().invoke(
@@ -583,10 +585,11 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
     assert "triage_new=3" in result.output
     text = output.read_text(encoding="utf-8")
     assert "| inductor | 5 | 2 | 2.5 | - | 6.8uH, 10uH" in text
-    assert "| diode | 2 | 2 | 1.6 | diode | BAS316, BAV99" in text
+    assert "| diode | 1 | 1 | 0.8 | diode | BAV99" in text
     assert "LTST-C190KGKT" not in text
     assert "MMBT3904" not in text
     assert "SMBJ24CA" not in text
+    assert "BAS316" not in text
     assert "LMV358" not in text
     assert "LM393" not in text
     assert "INA180A1" not in text
