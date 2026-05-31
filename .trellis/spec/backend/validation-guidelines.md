@@ -104,6 +104,24 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
 {"name": "Anode", "number": "2", "category": "switch_node"}
 ```
 
+**LED indicators**:
+- Keep dispatch on `recommended.topology_family: "diode"`; do not add a
+  separate `led_indicator` dispatch branch.
+- Use a structured sub-role for LED-only checks:
+```json
+{
+  "recommended": {
+    "topology_family": "diode",
+    "diode_role": "led_indicator",
+    "requires_current_limit": true
+  }
+}
+```
+- LED-only checks may verify anode/cathode polarity and the presence of a
+  nearby current-limit resistor, but must not infer current magnitude,
+  brightness, optics, thermal behavior, TVS behavior, or Schottky/freewheel
+  suitability.
+
 **Three-terminal control devices** (MOSFET, BJT):
 - Gate/Base: `analog_input` (analog control) or `logic_input` (digital control)
 - Drain/Collector: `switch_output` (switched high-side)

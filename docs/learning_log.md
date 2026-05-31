@@ -2125,8 +2125,9 @@ inductor, ferrite, and only two real unknown rows.
 
 **Verification**
 
-- `uv run hardwise inspect-allegro-netlist tests/fixtures/allegro/motor_sensor_controller.net`
-  reports 65 components.
+- At C3, `uv run hardwise inspect-allegro-netlist tests/fixtures/allegro/motor_sensor_controller.net`
+  reported 65 components; C4 later adds one LED current-limit resistor, so the
+  current fixture reports 66 components.
 - `uv run hardwise recommend-next-family /tmp/large-index.json -o /tmp/next-family.md`
   reports 6 families with `unknown` limited to the oscillator/crystal sample.
 - Full gate: `uv run pytest -q` and `uv run ruff check .` pass.
@@ -2136,3 +2137,40 @@ inductor, ferrite, and only two real unknown rows.
 Synthetic coverage fixtures should use classifier-friendly refdes prefixes for
 ordinary passives. Otherwise a fixture meant to demonstrate active coverage gaps
 can accidentally test the classifier's fallback path instead.
+
+## 2026-05-31 — LED indicators stay under diode dispatch
+
+**Symptom**
+
+C4 needed to validate `LTST-C190KGKT` LED indicators without turning the whole
+diode family into a generic LED/TVS/Schottky expansion. A tempting design was to
+set `recommended.topology_family="led_indicator"` and add a new dispatch branch.
+
+**Root cause**
+
+Hardwise dispatches deterministic validators only by
+`recommended.topology_family`. A new `"led_indicator"` topology would either be
+ignored by the existing dispatcher or require a new dispatch branch, widening
+the feature beyond the selected C4 slice.
+
+**Fix**
+
+Kept `topology_family="diode"` and added a structured sub-role:
+`recommended.diode_role="led_indicator"`. `diode.py` still runs the generic
+diode checks for every diode profile, then appends LED-only polarity and
+current-limit checks only for that sub-role.
+
+**Verification**
+
+- `tests/validation/test_diode.py` keeps SS34 generic diode counts unchanged.
+- Focused LED tests cover nominal, missing current-limit, and reversed polarity
+  cases.
+- `motor_sensor_controller` now reports 66 components / validated=16 /
+  manual=50, and `recommend-next-family` drops diode uncovered count from 11 to
+  3.
+
+**Takeaway**
+
+Use `topology_family` for dispatch and structured role fields for narrow
+subcases. That preserves existing validator routing while letting one C3-ranked
+gap become L1 deterministic.
