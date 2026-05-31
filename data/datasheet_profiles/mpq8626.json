@@ -4,6 +4,7 @@
     "MPQ8626GD",
     "MPQ8626GD-Z"
   ],
+  "review_status": "ready",
   "abs_max": {},
   "recommended": {
     "topology_family": "buck",

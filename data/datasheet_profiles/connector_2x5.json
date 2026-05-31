@@ -1,5 +1,6 @@
 {
   "part_number": "CONN_2X5",
+  "review_status": "ready",
   "description": "2x5 Pin Header Connector, 10 pins",
   "abs_max": {
     "voltage": 50.0,

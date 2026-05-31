@@ -1,5 +1,6 @@
 {
   "part_number": "IRF540N",
+  "review_status": "ready",
   "description": "N-Channel MOSFET, 100V, 33A, TO-220",
   "abs_max": {
     "vds": 100.0,

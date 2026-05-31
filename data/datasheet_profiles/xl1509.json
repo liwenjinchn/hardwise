@@ -1,5 +1,6 @@
 {
   "part_number": "XL1509-12E1",
+  "review_status": "ready",
   "abs_max": {
     "vin": 45.0,
     "on_off": 45.0

@@ -1,5 +1,6 @@
 {
   "part_number": "2N3904",
+  "review_status": "ready",
   "description": "NPN general-purpose amplifier transistor, TO-92",
   "abs_max": {
     "vceo": 40.0,

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Union
+from typing import Literal, Union
 
 from pydantic import BaseModel, Field
 
@@ -29,7 +29,7 @@ class DatasheetProfile(BaseModel):
 
     part_number: str
     part_number_aliases: list[str] = Field(default_factory=list)
-    review_status: str = "ready"
+    review_status: Literal["ready", "needs_review"] = "ready"
     abs_max: dict[str, ProfileValue] = Field(default_factory=dict)
     recommended: dict[str, ProfileValue] = Field(default_factory=dict)
     pin_function: dict[str, str] = Field(default_factory=dict)

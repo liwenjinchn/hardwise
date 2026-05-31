@@ -1,5 +1,6 @@
 {
   "part_number": "STM32G030C8T6",
+  "review_status": "ready",
   "abs_max": {
     "vdd": 4.0
   },

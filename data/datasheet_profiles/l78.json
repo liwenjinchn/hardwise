@@ -1,5 +1,6 @@
 {
   "part_number": "L7805",
+  "review_status": "ready",
   "abs_max": {
     "vin": 35.0,
     "iout": "internally limited",
