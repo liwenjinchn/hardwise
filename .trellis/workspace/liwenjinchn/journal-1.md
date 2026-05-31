@@ -276,3 +276,38 @@ Implemented C3 coverage/profile prioritization: hardened profile review_status, 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: C4 LED indicator deterministic validation
+
+**Date**: 2026-05-31
+**Task**: C4 LED indicator deterministic validation
+**Branch**: `codex/migrate-codex-mainline`
+
+### Summary
+
+Implemented the C4 diode-to-LED slice: added the LTST-C190KGKT ready profile, extended diode validation for led_indicator sub-role checks, proved D10-D17 move from manual coverage to L1 deterministic rows, and documented the profile/dispatch boundary.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2be793b` | (see git log) |
+| `eaac664` | (see git log) |
+| `eccda37` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
