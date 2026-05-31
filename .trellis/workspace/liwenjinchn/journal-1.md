@@ -425,3 +425,40 @@ Closed one remaining diode coverage gap by adding a public SMBJ24CA bidirectiona
 ### Next Steps
 
 - None - task complete
+
+
+## Session 13: C4e BAS316 small-signal diode profile
+
+**Date**: 2026-05-31
+**Task**: C4e BAS316 small-signal diode profile
+**Branch**: `codex/migrate-codex-mainline`
+
+### Summary
+
+Closed the BAS316 diode coverage gap with a public Nexperia profile and existing diode validator.
+
+### Main Changes
+
+- Added reviewed public `data/datasheet_profiles/bas316.json`.
+- Reused existing diode validator; no dispatch or BAV99 dual-diode modeling.
+- D21 now validates as an L1 deterministic WARN in the motor fixture because CANH voltage is unknown.
+- Verification: targeted C4e tests -> 51 passed; full `uv run pytest -q` -> 426 passed, 7 deselected; `uv run ruff check .` -> pass; C4e smoke -> 66 components, validated=28, manual=38, PASS/WARN/ERROR=17/8/3; `recommend-next-family` leaves diode as BAV99 only.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8e73c2ec77ea0999adc9801b9f3d7c79644ade53` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
