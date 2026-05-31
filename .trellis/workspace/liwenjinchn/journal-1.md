@@ -349,3 +349,41 @@ Closed the C4b MMBT3904 transistor coverage gap by adding a reviewed SOT-23 prof
 ### Next Steps
 
 - None - task complete
+
+
+## Session 11: C4c analog IC basic pin profiles
+
+**Date**: 2026-05-31
+**Task**: C4c analog IC basic pin profiles
+**Branch**: `codex/migrate-codex-mainline`
+
+### Summary
+
+Closed the C4c analog IC coverage gap by adding public TI basic pin profiles for U20-U23 and keeping analog behavior out of dispatch.
+
+### Main Changes
+
+- Added reviewed public basic pin profiles for `LMV358`, `LM393`, `INA180A1`, and `TLV9062` using `recommended.validation_scope="basic_pin_profile"` rather than a new dispatch family.
+- Extended generic pin-level validation only for connected output categories: `analog_output` and `open_collector_output`.
+- Completed U20/U21/U23 synthetic fixture second-channel pin connectivity so U20-U23 prove nominal basic pin-profile coverage.
+- Updated CLI/ranking tests, backend validation guidelines, interview Q&A, and learning log with the C4c boundary.
+- Verification: targeted C4c tests -> 67 passed; full `uv run pytest -q` -> 420 passed, 7 deselected; `uv run ruff check .` -> pass; C4c smoke -> 66 components, validated=26, manual=40, PASS/WARN/ERROR=16/7/3; `recommend-next-family` drops IC and ranks inductor next.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `774ac7ad8e0029f6055b7fb21693c0b2ca633422` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
