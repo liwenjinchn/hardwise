@@ -16,9 +16,16 @@ COPILOT_STYLE = """
 .ai-msg p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .ai-trace{margin-top:9px;border-top:1px solid var(--line);padding-top:7px}
 .ai-trace summary{cursor:pointer;color:var(--muted);font:12px var(--mono)}
-.ai-trace-row{margin-top:7px;padding:8px;border:1px solid var(--line);background:#0b0e0d}
-.ai-trace-row strong{display:block;font:12px var(--mono);margin-bottom:5px;color:var(--rail)}
-.ai-trace-row code{font:12px var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.ai-trace-row{margin-top:7px;padding:9px;border:1px solid var(--line);background:#0b0e0d;display:grid;gap:7px}
+.ai-trace-row-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ai-trace-row strong{font:12px var(--mono);color:var(--rail);overflow-wrap:anywhere}
+.ai-trace-status{font:11px var(--mono);color:var(--ink);border:1px solid var(--line);padding:2px 5px}
+.ai-trace-summary{margin:0;color:var(--ink);font-size:12px}
+.ai-trace-field{display:grid;grid-template-columns:82px minmax(0,1fr);gap:8px;align-items:start;font:12px var(--mono)}
+.ai-trace-label{color:var(--muted)}
+.ai-trace-value{color:var(--ink);overflow-wrap:anywhere}
+.ai-trace-input{margin:0;padding:7px;border:1px solid var(--line);background:#070908;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere;font:11px var(--mono)}
+.evidence-chip{display:inline-block;margin:0 4px 4px 0;padding:3px 5px;border:1px solid #263f39;background:#17211f;color:#b7e8d7;font:11px var(--mono)}
 .ai-suggest{padding:10px 14px 0;display:flex;flex-wrap:wrap;gap:7px}
 .ai-chip{border:1px solid var(--line);background:#101413;color:var(--ink);padding:7px 9px;font-size:12px;cursor:pointer}
 .ai-chip:hover{border-color:var(--rail)}
@@ -86,16 +93,64 @@ COPILOT_SCRIPT = """
     const summary = document.createElement('summary');
     summary.textContent = 'Evidence / Tool trace';
     details.appendChild(summary);
+    const traceField = (label, valueNode) => {
+      const field = document.createElement('div');
+      field.className = 'ai-trace-field';
+      const key = document.createElement('span');
+      key.className = 'ai-trace-label';
+      key.textContent = label;
+      const value = document.createElement('div');
+      value.className = 'ai-trace-value';
+      if (typeof valueNode === 'string') {
+        value.textContent = valueNode;
+      } else {
+        value.appendChild(valueNode);
+      }
+      field.appendChild(key);
+      field.appendChild(value);
+      return field;
+    };
+    const evidenceChips = (tokens) => {
+      const wrap = document.createElement('span');
+      const items = tokens || [];
+      if (!items.length) {
+        wrap.textContent = '-';
+        return wrap;
+      }
+      items.forEach((token) => {
+        const chip = document.createElement('span');
+        chip.className = 'evidence-chip';
+        chip.dataset.source = String(token).includes(':') ? String(token).split(':')[0] : 'source';
+        chip.textContent = String(token);
+        wrap.appendChild(chip);
+      });
+      return wrap;
+    };
     trace.forEach((item) => {
       const row = document.createElement('div');
       row.className = 'ai-trace-row';
+      const head = document.createElement('div');
+      head.className = 'ai-trace-row-head';
       const title = document.createElement('strong');
-      title.textContent = `${item.tool || 'tool'} · ${item.status || item.summary || ''}`;
-      const body = document.createElement('code');
-      const evidence = (item.evidence || []).join(', ') || '-';
-      body.textContent = `input=${JSON.stringify(item.input || {})} evidence=${evidence} wrapped=${item.wrapped || 0}`;
-      row.appendChild(title);
-      row.appendChild(body);
+      title.textContent = item.tool || 'tool';
+      const status = document.createElement('span');
+      status.className = 'ai-trace-status';
+      status.textContent = item.status || 'trace';
+      head.appendChild(title);
+      head.appendChild(status);
+      row.appendChild(head);
+      if (item.summary) {
+        const traceSummary = document.createElement('p');
+        traceSummary.className = 'ai-trace-summary';
+        traceSummary.textContent = item.summary;
+        row.appendChild(traceSummary);
+      }
+      row.appendChild(traceField('Evidence', evidenceChips(item.evidence)));
+      row.appendChild(traceField('Guard wraps', String(item.wrapped || 0)));
+      const inputBlock = document.createElement('pre');
+      inputBlock.className = 'ai-trace-input';
+      inputBlock.textContent = JSON.stringify(item.input || {}, null, 2);
+      row.appendChild(traceField('Input', inputBlock));
       details.appendChild(row);
     });
     node.appendChild(details);

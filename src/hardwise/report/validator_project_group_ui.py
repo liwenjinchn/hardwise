@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from html import escape
 
+from hardwise.report.component_validation_details import trust_label_html
 from hardwise.report.validator_ui import _status_class
 from hardwise.validation.component_groups import ProjectComponentGroup
 
@@ -21,7 +22,8 @@ def component_group_table(groups: list[ProjectComponentGroup]) -> str:
             f'<td class="ref">{escape(", ".join(group.refdes_sample))}'
             f'<span class="sub">{group.refdes_count} refs</span></td>'
             f"<td>{escape(group.identity or '-')}"
-            f'<span class="sub">{escape(group.identity_kind)} · {escape(group.profile_status)}</span></td>'
+            f'<span class="sub">{escape(group.identity_kind)} · {escape(group.profile_status)}</span>'
+            f"{_group_trust(group)}</td>"
             f"<td>{escape(group.suggested_family)}</td>"
             f"<td>{document_status_cell(group)}</td>"
             "</tr>"
@@ -48,18 +50,19 @@ def component_group_table_rows(
             f"<td>{escape(group.suggested_family)}</td>"
             f"<td>{escape(group.profile_status)}</td>"
             f"<td>{document_status_cell(group)}</td>"
+            f"<td>{_group_trust(group)}</td>"
             "</tr>"
         )
     if len(groups) > limit:
         rendered.append(
             "<tr>"
             f"<td>+{len(groups) - limit}</td>"
-            '<td colspan="6">More component groups are available in the markdown/JSON index.</td>'
+            '<td colspan="7">More component groups are available in the markdown/JSON index.</td>'
             "</tr>"
         )
     if not rendered:
         rendered.append(
-            "<tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>"
+            "<tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>"
         )
     return "".join(rendered)
 
@@ -78,6 +81,10 @@ def document_status_cell(group: ProjectComponentGroup) -> str:
     if group.document_reason:
         return status_chip + f'<span class="sub">{escape(group.document_reason)}</span>'
     return status_chip
+
+
+def _group_trust(group: ProjectComponentGroup) -> str:
+    return trust_label_html("l1" if group.profile_status == "matched" else "l3")
 
 
 def _coverage_status_class(status: str) -> str:

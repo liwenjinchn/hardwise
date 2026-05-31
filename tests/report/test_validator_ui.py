@@ -46,6 +46,9 @@ def test_render_validator_ui_includes_index_detail_and_scope() -> None:
     assert "Download report" in html
     assert "PASS/WARN/ERROR" in html
     assert "Pin 1 - -> +12V" in html
+    assert "L1 deterministic" in html
+    assert "evidence-chip" in html
+    assert 'data-source="datasheet">datasheet:l78.pdf#p4' in html
     assert "datasheet:l78.pdf#p4" in html
     assert ".brd, boardview, placement, routing, PCB geometry" in html
 
@@ -99,6 +102,9 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert "型号核对" in html
     assert "引脚功能与连接关系" in html
     assert "Topology Path" in html
+    assert "L1 deterministic" in html
+    assert "evidence-chip" in html
+    assert 'data-source="datasheet">datasheet:xl1509.pdf#p9' in html
     assert "+24V" in html
     assert "U12-1" in html
     assert "引脚一致性检查" in html
@@ -150,6 +156,7 @@ def test_render_project_workbench_includes_zero_profile_gap(tmp_path: Path) -> N
 
     assert "Profile coverage gap" in html
     assert "validated 0" in html
+    assert "L3 manual" in html
     assert "no_result" in html
     assert "待 profile" in html
     assert "Component Group Coverage" in html
@@ -211,3 +218,6 @@ def test_copilot_snapshot_fallback_uses_boundary_answer_only() -> None:
 
     assert "return snapshots.__fallback__" in COPILOT_SCRIPT
     assert "item !== '__fallback__' && !/U999/i.test(item)" not in COPILOT_SCRIPT
+    assert "ai-trace-field" in COPILOT_SCRIPT
+    assert "Guard wraps" in COPILOT_SCRIPT
+    assert "input=${JSON.stringify" not in COPILOT_SCRIPT

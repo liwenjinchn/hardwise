@@ -43,6 +43,7 @@ def test_render_component_validation_markdown() -> None:
     )
 
     assert "# Hardwise Component Validation - U1" in md
+    assert "| Trust tier | L1 deterministic |" in md
     assert "| Overall status | PASS |" in md
     assert "| Pin PASS/WARN/ERROR | 3 / 0 / 0 |" in md
     assert "Single-component schematic pin validation only" in md

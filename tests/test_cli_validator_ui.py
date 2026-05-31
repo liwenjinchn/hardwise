@@ -357,6 +357,8 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert "SWCLK is connected to SWDIO" in html
     assert "引脚一致性检查" in html
     assert "证据 / Datasheet 详情" in html
+    assert "L1 deterministic" in html
+    assert "evidence-chip" in html
     assert "recommended.swd" in html
     assert "datasheet:stm32g030.pdf#p33" in html
     assert "外围/拓扑检查" in html
@@ -395,6 +397,7 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     assert "Offline audited snapshot" in html
     assert "run_component_validation" in html
     assert "search_datasheet" in html
+    assert "Guard wraps" in html
     assert "没有配置向量 datasheet search" in html
     assert "⟨?U999⟩" in html
 

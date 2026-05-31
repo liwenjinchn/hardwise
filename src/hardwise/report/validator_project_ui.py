@@ -9,6 +9,7 @@ from pathlib import Path
 from hardwise.bom.types import BomMatchReport, sort_refdes_key
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
+from hardwise.report.component_validation_details import trust_label_html
 from hardwise.report.validator_multi_ui import (
     ValidatorUiResult,
     _detail_panels,
@@ -158,7 +159,8 @@ def _component_table(
             f'<td class="ref">{escape(component.refdes)}</td>'
             f"<td>{escape(component.value or '-')}</td>"
             f"<td>{escape(component.part_number or component.value or '-')}"
-            f'<span class="sub">{len(component.pins)} pins · {escape(status)}</span></td>'
+            f'<span class="sub">{len(component.pins)} pins · {escape(status)}</span>'
+            f"{_row_trust(item)}</td>"
             f'<td><span class="status {status_class}">{escape(_row_label(status))}</span>'
             f"{_row_reason(row)}</td>"
             "</tr>"
@@ -186,6 +188,10 @@ def _row_reason(row: ProjectValidationRow | None) -> str:
     if row is None or not row.reason:
         return ""
     return f'<span class="sub">{escape(row.reason)}</span>'
+
+
+def _row_trust(item: ValidatorUiResult | None) -> str:
+    return trust_label_html("l1") if item is not None else trust_label_html("l3")
 
 
 def _row_label(status: str) -> str:
@@ -233,8 +239,10 @@ def _coverage_summary(index: ProjectValidationIndex) -> str:
 
 
 def _coverage_card(label: str, count: int) -> str:
+    tier = "l1" if label == "matched" else "l3"
     return (
-        f'<div class="gap-card"><strong>{escape(label)}</strong><p>{count} component rows</p></div>'
+        f'<div class="gap-card"><strong>{escape(label)}</strong>{trust_label_html(tier)}'
+        f"<p>{count} component rows</p></div>"
     )
 
 
@@ -244,6 +252,7 @@ def _gap_group_cards(groups: list[ProjectValidationGapGroup]) -> str:
         rendered.append(
             '<div class="gap-card">'
             f"<strong>{group.refdes_count} · {escape(group.identity)}</strong>"
+            f'{trust_label_html("l3")}'
             f"<p>{escape(group.match_status)} / {escape(group.identity_kind)}</p>"
             f"<p>{escape(', '.join(group.refdes_sample))}</p>"
             f"<p>{escape(group.reason)}</p>"
@@ -276,7 +285,8 @@ def _coverage_detail(index: ProjectValidationIndex, generated_at: str) -> str:
     return (
         "<article>"
         '<div class="detail-head"><div class="detail-title">'
-        '<h2>Profile coverage gap <span class="pending status">validated 0</span></h2>'
+        '<h2>Profile coverage gap <span class="pending status">validated 0</span> '
+        f"{trust_label_html('l3')}</h2>"
         "<p>No component received deterministic PASS/WARN/ERROR because no BOM identity matched a local structured profile.</p>"
         "</div></div>"
         '<div class="kpis">'
@@ -289,11 +299,11 @@ def _coverage_detail(index: ProjectValidationIndex, generated_at: str) -> str:
         '<div class="kpi"><span>ERROR</span><strong>0</strong></div>'
         "</div>"
         '<section class="section table-section"><div class="section-head"><h3>Component Group Coverage</h3></div>'
-        "<table><thead><tr><th>Count</th><th>Refdes sample</th><th>Identity</th><th>Kind</th><th>Family</th><th>Profile</th><th>Docs</th></tr></thead><tbody>"
+        "<table><thead><tr><th>Count</th><th>Refdes sample</th><th>Identity</th><th>Kind</th><th>Family</th><th>Profile</th><th>Docs</th><th>Trust</th></tr></thead><tbody>"
         f"{component_group_table_rows(index.component_groups, limit=GAP_ROW_LIMIT)}"
         "</tbody></table></section>"
         '<section class="section table-section"><div class="section-head"><h3>Profile Gap Groups</h3></div>'
-        "<table><thead><tr><th>Count</th><th>Status</th><th>Identity</th><th>Kind</th><th>Refdes sample</th><th>Reason</th></tr></thead><tbody>"
+        "<table><thead><tr><th>Count</th><th>Status</th><th>Trust</th><th>Identity</th><th>Kind</th><th>Refdes sample</th><th>Reason</th></tr></thead><tbody>"
         f"{_gap_group_table_rows(profile_gap_groups(index))}"
         "</tbody></table></section>"
         '<section class="section"><div class="section-head"><h3>Scope Boundary</h3></div>'
@@ -315,6 +325,7 @@ def _gap_group_table_rows(groups: list[ProjectValidationGapGroup]) -> str:
             "<tr>"
             f"<td>{group.refdes_count}</td>"
             f"<td>{escape(group.match_status)}</td>"
+            f"<td>{trust_label_html('l3')}</td>"
             f"<td>{escape(group.identity)}</td>"
             f"<td>{escape(group.identity_kind)}</td>"
             f"<td>{escape(', '.join(group.refdes_sample))}</td>"
@@ -322,5 +333,7 @@ def _gap_group_table_rows(groups: list[ProjectValidationGapGroup]) -> str:
             "</tr>"
         )
     if not rendered:
-        rendered.append("<tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>")
+        rendered.append(
+            "<tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>"
+        )
     return "".join(rendered)

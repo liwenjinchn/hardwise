@@ -10,6 +10,7 @@ from hardwise.report.component_validation_details import (
     build_pin_consistency,
     profile_has_thermal_or_package_evidence,
     schematic_connection_path,
+    trust_label_text,
 )
 from hardwise.report.markdown import _escape_pipe
 from hardwise.validation.types import PinValidation, ValidationReport
@@ -33,6 +34,7 @@ def render(
     lines.append(f"| Component value | {_escape_pipe(report.component_value or '-')} |")
     lines.append(f"| Component MPN | {_escape_pipe(report.part_number or '-')} |")
     lines.append(f"| Profile part | {_escape_pipe(report.profile_part_number)} |")
+    lines.append(f"| Trust tier | {trust_label_text('l1')} |")
     if profile_path is not None:
         lines.append(f"| Profile source | `{profile_path}` |")
     lines.append(f"| Overall status | {report.status} |")

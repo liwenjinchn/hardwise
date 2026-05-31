@@ -10,6 +10,7 @@ from urllib.parse import quote
 from hardwise.bom.types import BomMatchReport, sort_refdes_key
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
+from hardwise.report.component_validation_details import evidence_chips_html, trust_label_html
 from hardwise.report.component_validation_markdown import render as render_validation_markdown
 from hardwise.validation.types import ValidationReport
 
@@ -63,7 +64,10 @@ tr.selected{background:#eef4ef}
 .tab-panel{display:none;padding:22px 26px}
 #tab-report:checked~.panels .report,#tab-topology:checked~.panels .topology,#tab-boundary:checked~.panels .boundary{display:block}
 .pin-table th,.pin-table td{font-size:13px}
-.evidence code,.net code{display:inline-block;margin:0 4px 4px 0;padding:3px 5px;background:#edf3f0;font-family:var(--mono);font-size:12px}
+.evidence code,.net code,.evidence-chip{display:inline-block;margin:0 4px 4px 0;padding:3px 5px;background:#edf3f0;font-family:var(--mono);font-size:12px}
+.evidence-chip{border:1px solid #cad8d1;color:#27483d}
+.trust{display:inline-flex;align-items:center;min-height:24px;padding:3px 7px;border:1px solid currentColor;font-family:var(--mono);font-size:11px;font-weight:800;white-space:nowrap}
+.trust-l1{color:var(--pass)}.trust-l2{color:var(--blue)}.trust-l3{color:var(--blue)}
 .scope{margin:0 0 16px;padding:14px 16px;border-left:5px solid var(--rail);background:#f7f5ee;color:#3d4742}
 .net-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .net{padding:13px 14px;border:1px solid var(--line);background:#fffaf0}
@@ -212,7 +216,7 @@ def _component_table(
 def _pin_table(validation: ValidationReport) -> str:
     rows = [
         '<p class="scope">This pane shows deterministic single-component schematic pin validation. Each row is produced from parsed pins, net names, structured profile limits, and profile evidence tokens.</p>',
-        '<table class="pin-table"><thead><tr><th>Pin</th><th>Name</th><th>Category</th><th>Net</th><th>Status</th><th>Summary</th><th>Evidence</th></tr></thead><tbody>',
+        '<table class="pin-table"><thead><tr><th>Pin</th><th>Name</th><th>Category</th><th>Net</th><th>Status</th><th>Trust</th><th>Summary</th><th>Evidence</th></tr></thead><tbody>',
     ]
     for pin in validation.pin_results:
         rows.append(
@@ -222,6 +226,7 @@ def _pin_table(validation: ValidationReport) -> str:
             f"<td>{escape(pin.category)}</td>"
             f"<td>{escape(pin.net or '-')}</td>"
             f'<td><span class="status {_status_class(pin.status)}">{escape(pin.status)}</span></td>'
+            f"<td>{trust_label_html('l1')}</td>"
             f"<td>{escape(pin.summary)}</td>"
             f'<td class="evidence">{_evidence(pin.evidence)}</td>'
             "</tr>"
@@ -232,7 +237,7 @@ def _pin_table(validation: ValidationReport) -> str:
             '<p class="scope">Component checks cover deterministic schematic-side peripheral/topology facts for this selected part only.</p>'
         )
         rows.append(
-            '<table class="pin-table"><thead><tr><th>Check</th><th>Refdes</th><th>Status</th><th>Summary</th><th>Evidence</th></tr></thead><tbody>'
+            '<table class="pin-table"><thead><tr><th>Check</th><th>Refdes</th><th>Status</th><th>Trust</th><th>Summary</th><th>Evidence</th></tr></thead><tbody>'
         )
         for check in validation.component_checks:
             rows.append(
@@ -240,6 +245,7 @@ def _pin_table(validation: ValidationReport) -> str:
                 f"<td>{escape(check.check)}</td>"
                 f'<td class="ref">{escape(check.refdes or "-")}</td>'
                 f'<td><span class="status {_status_class(check.status)}">{escape(check.status)}</span></td>'
+                f"<td>{trust_label_html('l1')}</td>"
                 f"<td>{escape(check.summary)}</td>"
                 f'<td class="evidence">{_evidence(check.evidence)}</td>'
                 "</tr>"
@@ -281,9 +287,7 @@ def _scope_panel(generated_at: str, profile_path: Path) -> str:
 
 
 def _evidence(tokens: list[str]) -> str:
-    if not tokens:
-        return '<span class="muted">-</span>'
-    return " ".join(f"<code>{escape(token)}</code>" for token in tokens)
+    return evidence_chips_html(tokens)
 
 
 def _status_class(status: str) -> str:

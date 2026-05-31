@@ -3,10 +3,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from html import escape
+from typing import Literal
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.types import ValidationReport
+
+TrustTier = Literal["l1", "l2", "l3"]
+
+TRUST_LABELS: dict[TrustTier, str] = {
+    "l1": "L1 deterministic",
+    "l2": "L2 grounded",
+    "l3": "L3 manual",
+}
 
 
 @dataclass(frozen=True)
@@ -98,6 +108,34 @@ def profile_has_thermal_or_package_evidence(profile: DatasheetProfile | None) ->
         return False
     markers = ("thermal", "theta", "rth", "tj", "junction", "package", "power_dissipation")
     return any(any(marker in key.lower() for marker in markers) for key in profile.evidence)
+
+
+def trust_label_text(tier: TrustTier) -> str:
+    """Return the stable UI trust label for a presentation-only tier."""
+
+    return TRUST_LABELS[tier]
+
+
+def trust_label_html(tier: TrustTier) -> str:
+    """Render a short trust-tier label without changing validation status."""
+
+    label = trust_label_text(tier)
+    return f'<span class="trust trust-{tier}">{escape(label)}</span>'
+
+
+def evidence_chips_html(tokens: list[str]) -> str:
+    """Render copyable/searchable source tokens as compact HTML chips."""
+
+    if not tokens:
+        return '<span class="muted">-</span>'
+    chips = []
+    for token in tokens:
+        source = token.split(":", 1)[0] if ":" in token else "source"
+        chips.append(
+            '<span class="evidence-chip" '
+            f'data-source="{escape(source)}">{escape(token)}</span>'
+        )
+    return " ".join(chips)
 
 
 def _pin_sort_key(value: str) -> tuple[int, int | str]:

@@ -74,7 +74,10 @@ th{position:sticky;top:0;z-index:1;background:#121716;color:var(--muted);font-fa
 .check-card{border:1px solid var(--line);background:#14100f;padding:12px}
 .check-card p{margin:6px 0 0}
 .table-section{overflow:auto}
-.evidence code,.net code{display:inline-block;margin:0 4px 4px 0;padding:3px 5px;background:#17211f;font-family:var(--mono);font-size:12px}
+.evidence code,.net code,.evidence-chip{display:inline-block;margin:0 4px 4px 0;padding:3px 5px;background:#17211f;font-family:var(--mono);font-size:12px}
+.evidence-chip{border:1px solid #263f39;color:#b7e8d7}
+.trust{display:inline-flex;align-items:center;min-height:24px;padding:3px 7px;border:1px solid currentColor;font-family:var(--mono);font-size:11px;font-weight:800;white-space:nowrap}
+.trust-l1{color:var(--pass)}.trust-l2{color:var(--info)}.trust-l3{color:var(--warn)}
 .scope{margin:0;padding:13px 15px;border-left:5px solid var(--rail);background:#101918;color:#c4d0cc}
 .net-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .net{padding:12px;border:1px solid var(--line);background:#0d1211}

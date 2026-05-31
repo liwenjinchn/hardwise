@@ -11,6 +11,7 @@ from hardwise.report.component_validation_details import (
     build_pin_consistency,
     profile_has_thermal_or_package_evidence,
     schematic_connection_path,
+    trust_label_html,
 )
 from hardwise.report.validator_ui import _evidence, _status_class
 from hardwise.validation.types import ValidationReport
@@ -18,14 +19,16 @@ from hardwise.validation.types import ValidationReport
 
 def pin_summary(validation: ValidationReport) -> str:
     notes = [
-        '<section class="section"><div class="section-head"><h3>引脚检查汇总</h3><span class="pill">验证报告</span></div><div class="pin-feed">'
+        '<section class="section"><div class="section-head"><h3>引脚检查汇总</h3>'
+        f"{trust_label_html('l1')}</div><div class=\"pin-feed\">"
     ]
     for pin in validation.pin_results:
         notes.append(
             '<div class="pin-note">'
             f'<span class="ref">Pin {escape(pin.pin_number)}<span class="sub">{escape(pin.pin_name)}</span></span>'
             f"<p>{escape(pin.summary)}</p>"
-            f'<span class="status {_status_class(pin.status)}">{escape(pin.status)}</span>'
+            f'<span><span class="status {_status_class(pin.status)}">{escape(pin.status)}</span>'
+            f"{trust_label_html('l1')}</span>"
             "</div>"
         )
     notes.append("</div></section>")
@@ -53,7 +56,8 @@ def model_check(validation: ValidationReport) -> str:
         else "BOM/component identity should be manually confirmed against the profile."
     )
     return (
-        '<section class="section table-section"><div class="section-head"><h3>型号核对</h3></div>'
+        '<section class="section table-section"><div class="section-head"><h3>型号核对</h3>'
+        f"{trust_label_html('l1')}</div>"
         "<table><thead><tr><th>项目</th><th>匹配型号</th><th>Profile 型号</th><th>结论</th><th>说明</th></tr></thead><tbody>"
         "<tr>"
         "<td>Part number</td>"
@@ -72,8 +76,9 @@ def connectivity_table(
     design: Design,
 ) -> str:
     rows = [
-        '<section class="section table-section"><div class="section-head"><h3>引脚功能与连接关系</h3><span class="pill">原理图</span></div>',
-        "<table><thead><tr><th>Pin</th><th>Name</th><th>Category</th><th>Net</th><th>Topology Path</th><th>Evidence</th></tr></thead><tbody>",
+        '<section class="section table-section"><div class="section-head"><h3>引脚功能与连接关系</h3>'
+        f"{trust_label_html('l1')}</div>",
+        "<table><thead><tr><th>Pin</th><th>Name</th><th>Category</th><th>Net</th><th>Topology Path</th><th>Trust</th><th>Evidence</th></tr></thead><tbody>",
     ]
     for pin in validation.pin_results:
         path = schematic_connection_path(component, design, pin.pin_number, pin.net)
@@ -84,6 +89,7 @@ def connectivity_table(
             f"<td>{escape(pin.category)}</td>"
             f"<td>{escape(pin.net or '-')}</td>"
             f"<td>{escape(path)}</td>"
+            f"<td>{trust_label_html('l1')}</td>"
             f'<td class="evidence">{_evidence(pin.evidence)}</td>'
             "</tr>"
         )
@@ -98,7 +104,8 @@ def pin_consistency(
 ) -> str:
     consistency = build_pin_consistency(component, validation, profile)
     return (
-        '<section class="section table-section"><div class="section-head"><h3>引脚一致性检查</h3><span class="pill">report-only</span></div>'
+        '<section class="section table-section"><div class="section-head"><h3>引脚一致性检查</h3>'
+        f"{trust_label_html('l1')}</div>"
         "<table><thead><tr><th>项目</th><th>Profile</th><th>原理图</th><th>Status</th><th>说明</th></tr></thead><tbody>"
         "<tr>"
         "<td>Pin count</td>"
@@ -115,8 +122,9 @@ def pin_consistency(
 
 def compliance_checks(validation: ValidationReport) -> str:
     rows = [
-        '<section class="section table-section"><div class="section-head"><h3>综合合规性检查</h3></div>',
-        "<table><thead><tr><th>Check</th><th>Refdes</th><th>Status</th><th>说明</th><th>Evidence</th></tr></thead><tbody>",
+        '<section class="section table-section"><div class="section-head"><h3>综合合规性检查</h3>'
+        f"{trust_label_html('l1')}</div>",
+        "<table><thead><tr><th>Check</th><th>Refdes</th><th>Status</th><th>Trust</th><th>说明</th><th>Evidence</th></tr></thead><tbody>",
     ]
     for pin in validation.pin_results:
         rows.append(
@@ -124,6 +132,7 @@ def compliance_checks(validation: ValidationReport) -> str:
             f"<td>pin:{escape(pin.pin_number)} {escape(pin.pin_name)}</td>"
             f'<td class="ref">{escape(validation.refdes)}</td>'
             f'<td><span class="status {_status_class(pin.status)}">{escape(pin.status)}</span></td>'
+            f"<td>{trust_label_html('l1')}</td>"
             f"<td>{escape(pin.summary)}</td>"
             f'<td class="evidence">{_evidence(pin.evidence)}</td>'
             "</tr>"
@@ -134,6 +143,7 @@ def compliance_checks(validation: ValidationReport) -> str:
             f"<td>{escape(check.check)}</td>"
             f'<td class="ref">{escape(check.refdes or "-")}</td>'
             f'<td><span class="status {_status_class(check.status)}">{escape(check.status)}</span></td>'
+            f"<td>{trust_label_html('l1')}</td>"
             f"<td>{escape(check.summary)}</td>"
             f'<td class="evidence">{_evidence(check.evidence)}</td>'
             "</tr>"
@@ -148,6 +158,7 @@ def compliance_checks(validation: ValidationReport) -> str:
             rows.append(
                 '<div class="check-card">'
                 f'<span class="status {_status_class(check.status)}">{escape(check.status)}</span>'
+                f"{trust_label_html('l1')}"
                 f"<p><strong>{escape(check.refdes or check.check)}</strong> {escape(check.summary)}</p>"
                 "</div>"
             )
@@ -158,7 +169,8 @@ def compliance_checks(validation: ValidationReport) -> str:
 
 def evidence_details(validation: ValidationReport, profile: DatasheetProfile | None) -> str:
     rows = [
-        '<section class="section table-section"><div class="section-head"><h3>证据 / Datasheet 详情</h3><span class="pill">Path A</span></div>',
+        '<section class="section table-section"><div class="section-head"><h3>证据 / Datasheet 详情</h3>'
+        f"{trust_label_html('l1')}</div>",
         _profile_meta(validation, profile),
         _profile_fact_table(profile),
         _profile_pin_detail_table(profile),
