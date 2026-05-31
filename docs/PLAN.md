@@ -204,6 +204,70 @@ Continuing to add device families (BJT, P-channel MOSFET) is **lower** leverage 
 **Scope boundary**: The FastAPI server is isolated under `workbench/`; the static no-AI `design-validator-ui` path is unchanged. No token streaming, no backend chat persistence, no browser-direct model calls, no `.brd`/boardview/PCB scope.
 **When to revisit**: If multi-user concurrency is needed, move from one shared read-only session to a session-per-request pattern (the in-memory store is already `StaticPool` + `check_same_thread=False` for the threadpool; see `learning_log.md` 2026-05-30).
 
+### DR-013 — Constrained LLM validation is the coverage path
+**Date**: 2026-05-30
+**Context**: The product-like validator target combines two capabilities that
+look similar in the UI but have different trust properties. Hardwise already
+catches high-value deterministic errors on `mixed_controller_power_stage`
+(`U12` XL1509 freewheel diode / inductor, `U8` STM32 SWD swap, `U3` EG2132
+bootstrap diode) with structured profile evidence. The remaining gap is long-tail
+coverage: parts without ready profiles, such as LED polarity or small-transistor
+voltage-margin checks, still fall back to manual/no-profile rows. A purely
+deterministic validator would preserve trust but cap productivity at the profiled
+families; a free-form LLM reviewer would increase coverage but weaken the
+anti-hallucination claim.
+**Decision**: Hardwise should evolve from "pure deterministic validation" to a
+**constrained LLM validator** while keeping deterministic checks as the highest
+trust tier. The agent may help cover long-tail components only when its claims
+are grounded in board facts and datasheet evidence.
+
+Trust tiers:
+
+| Tier | Name | Allowed output | Required evidence |
+|---|---|---|---|
+| L1 | Deterministic | `PASS` / `WARN` / `ERROR` verdicts suitable for reports | `ValidationReport` from a structured profile and validator, with source tokens |
+| L2 | Grounded LLM | Bounded review suggestions or provisional findings | Registry-verified board objects plus retrieved datasheet/page evidence; no unsupported spec claims |
+| L3 | Manual / ungrounded | Coverage gap or reviewer-to-confirm prompt only | Board object may be known, but datasheet/profile evidence is absent or insufficient |
+
+Enforcement rules:
+
+1. Refdes Guard remains non-negotiable. LLM-generated text cannot introduce
+   unverified refdes, nets, or board objects.
+2. Specification claims must point to datasheet evidence. A claim such as a
+   voltage limit, recovery-time requirement, thermal rating, or recommended
+   inductor range cannot be promoted to L2 without a retrieved page/token.
+3. Evidence Ledger becomes the release gate for L2 claims: no source token means
+   downgrade to L3, not a weaker-looking factual statement.
+4. L2 cannot overwrite L1. If a deterministic validator has a verdict, the LLM
+   may explain, translate, or ask follow-up questions, but it must not replace
+   the structured result.
+5. Every user-visible conclusion should carry a trust label so interviews and
+   reports distinguish deterministic findings from grounded suggestions.
+
+**Why**: The project goal is hardware-review productivity, not only formal rule
+coverage. Deterministic validators are the best way to prove the anti-hallucination
+backbone, but they do not scale to every commodity part quickly enough. A
+constrained LLM tier preserves the project's differentiator: the model can help
+review more of the board, but only inside registry, tool, and evidence contracts.
+
+**Sequence**: First polish the workbench/report presentation so the existing L1
+findings look like a real review artifact. Then extend the coverage loop
+(`document-index candidates -> draft profile -> human review -> ready profile ->
+validation target`), add high-value deterministic families selected from that
+coverage data, and only then add L2 grounded-LLM review for the long tail. Hosted
+upload/login/product shell remains after the local trust story is solid.
+
+**Scope boundary**: This does not authorize browser-direct model calls, internal
+hardware data, PCB layout/boardview scope, PLM/supplier/lifecycle claims, or
+reverse-engineering an external product UI. The comparison target can inform
+product shape, but Hardwise must keep its own code, evidence contracts, and public
+demo data.
+
+**When to revisit**: After the first L2 grounded-LLM prototype exists, audit
+whether the evidence gate catches unsupported spec claims. If unsupported claims
+can reach user-visible report text as facts, demote L2 back to an experimental
+chat-only feature until the guard/ledger contract is stronger.
+
 ---
 
 ## Post-migration roadmap (toward Gate B submission)
