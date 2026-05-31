@@ -1,15 +1,33 @@
-# Hardwise Phase 4 + C5 Demo — 90 秒阅读版
+# Hardwise Phase 4 + C5 Demo — 五机制 / 三层 trust / 90 秒阅读版
 
-Hardwise 是一个面向硬件研发 pre-Layout 设计验证节点的本地工作台。当前 Phase 4 demo 不假装“一块板跑完所有命令”：仓库里没有同时具备 KiCad 工程和 Allegro netlist+BOM 的同一块公开板。诚实口径是：
+Hardwise 是一个面向硬件研发 pre-Layout 设计验证节点的本地工作台。当前 Phase 4 + C5 的头条不是“又补了几个 validator”，而是：
 
-> 同一条信任主干，两个公开输入轨。
+> 五大 trust 机制，把 Agent 输出压进 L1/L2/L3 分层；两个公开输入轨负责展示这条主干的不同侧面。
 
-信任主干是 `Refdes Guard + Evidence Ledger + L1 deterministic validators + structured tools`。两个输入轨分别展示这条主干的两面：
+五大机制：
+
+| 机制 | 它限制了什么 |
+|---|---|
+| Refdes Guard | 模型不能自由编 `U1/C3/J1`；用户可见位号必须来自 parsed EDA registry。 |
+| Evidence Ledger | finding 没有 source token 就不能进入报告。 |
+| Sleep Consolidator | 重复问题只能进入人工审核候选规则，不会自动变成新 rule。 |
+| Tiered Model Routing | 运行时按 `fast` / `normal` / `deep` slot 选模型，代码不写死 vendor model。 |
+| Prompt Caching | 静态 agent prompt 可缓存，并有一次实测 cache-read 证明。 |
+
+Trust 分层：
+
+| Tier | 含义 | C5 后的可见证据 |
+|---|---|---|
+| **L1 deterministic** | Python rule / validator 决定 PASS/WARN/ERROR。模型只能解释结构化结果。 | `run_component_validation`、workbench validated rows。 |
+| **L2 grounded** | 本轮 datasheet search 返回了带 `source_pdf + page` 的检索证据，供 reviewer 核对。 | L78 snapshot trace：`datasheet:l78.pdf#p4`。 |
+| **L3 manual** | 没有 ready profile 或没有检索证据，保持人工确认。 | no-profile/manual rows、无 vector hit 的 datasheet 问答。 |
+
+当前 demo 不假装“一块板跑完所有命令”：仓库里没有同时具备 KiCad 工程和 Allegro netlist+BOM 的同一块公开板。诚实口径是同一条 trust architecture，两个公开输入轨：
 
 - **KiCad hero track**：`pic_programmer` 展示 registry-verified refdes、DS001/L78 evidence token、真实 L78 ingest/retrieve smoke、Refdes Guard 和 agent 工具 discipline。
 - **Allegro workbench track**：`mixed_controller_power_stage` 展示项目级 `design-validator-ui`，一次显示 4 个已验证器件和 21 个 no-profile/manual 行。
 
-Coverage loop 是支撑材料：C3/C4 已证明 ranking 可以驱动多个 family 从 L3/manual 进入 L1 deterministic，但主叙事不是“覆盖率又涨了”，而是“模型被工程事实和证据链约束住”。
+Coverage loop 是支撑材料：C3/C4 已证明 ranking 可以驱动多个 family 从 L3/manual 进入 L1 deterministic，但主叙事不是“覆盖率又涨了”，而是“模型被工程事实、证据链和 tier 边界约束住”。
 
 C5 在这条主线上补了一个很薄的 L2 slice：`search_datasheet` trace 如果真的带回 `source_pdf + page`，Copilot trace 显示 `L2 grounded` 和 `datasheet:<pdf>#p<N>`；如果没有向量检索证据，就保持 `L3 manual` / 人工确认，不把回答包装成事实结论。
 
@@ -108,7 +126,7 @@ Evidence: datasheet:l78.pdf#p4
 
 1. **不是聊天机器人套壳**：模型不能自由编 `U1/C3/J1`；用户可见 refdes 必须来自 EDA registry。
 2. **不是一块板假装全能**：KiCad track 证明 agent/review/evidence guard；Allegro track 证明 project workbench 和多 family validation。
-3. **证据有分层**：L78 同时有 reviewed profile token 和 live ingest/retrieve/agent-citation smoke；C5 把有检索证据的问答 trace 标成 `L2 grounded`，无检索证据保持 `L3 manual`。
+3. **证据有分层**：L1 是确定性规则，L2 是本轮带页码检索证据，L3 是人工确认；C5 把有检索证据的 L78 问答 trace 标成 `L2 grounded`，无检索证据保持 `L3 manual`。
 4. **验证逻辑是 deterministic 的**：`run_component_validation` 调用 Python validator，输出 PASS/WARN/ERROR；模型只解释结构化结果。
 5. **边界清楚**：只做 schematic-side pre-Layout validation，不碰 PCB/boardview、仿真、PLM、supplier/lifecycle/pricing，也不使用公司内部硬件数据。
 
@@ -116,7 +134,7 @@ Evidence: datasheet:l78.pdf#p4
 
 | File | Phase 4 handling |
 |---|---|
-| `docs/demo.md`, `docs/demo.html` | 当前 Phase 4 技术快照，已重写为“两轨一主干”。 |
+| `docs/demo.md`, `docs/demo.html` | 当前 Phase 4 + C5 技术快照：五大机制 + L1/L2/L3 trust 分层；两条公开输入轨作为支撑证据。 |
 | `docs/evidence_chain_audit.md` | L78 live retrieval smoke 与 C4 reviewed profile token 的边界说明。 |
 | `docs/index.html` | 作为当前阅读入口刷新，优先指向 Phase 4 demo。 |
 | `docs/hardware-demo.html` | 保留为 Allegro workbench 互补视图；不是 KiCad agent track。 |
@@ -125,4 +143,4 @@ Evidence: datasheet:l78.pdf#p4
 
 ## 面试时可以这样讲
 
-> Hardwise 的重点不是让模型“独立评审一块板”，而是把模型放进硬件事实边界里。KiCad 轨证明 refdes guard、L78 检索证据链和 agent tool discipline；Allegro 轨证明同一套 deterministic validation truth 可以渲染成项目级工作台。C3/C4 coverage loop 证明这套主干能持续吃掉 manual rows，但它是支撑材料，不是主角。
+> Hardwise 的重点不是让模型“独立评审一块板”，而是把模型放进硬件事实边界里：五大 trust 机制先固定输出边界，L1/L2/L3 再区分 deterministic truth、retrieval-grounded trace 和 manual review。KiCad 轨证明 refdes guard、L78 检索证据链和 agent tool discipline；Allegro 轨证明同一套 deterministic validation truth 可以渲染成项目级工作台。C3/C4 coverage loop 证明这套主干能持续吃掉 manual rows，但它是支撑材料，不是主角。

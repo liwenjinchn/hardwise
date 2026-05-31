@@ -261,18 +261,18 @@
         <div class="nav-links">
           <a href="#value">能力</a>
           <a href="#demo">问答</a>
-          <a href="./hardware-demo.html">详细 Demo</a>
+          <a href="./demo.html">技术 Demo</a>
         </div>
       </nav>
 
       <div class="hero-inner">
         <div class="copy">
-          <span class="eyebrow">本地静态设计验证器</span>
-          <h1>打开项目，先看到可验证的问题。</h1>
-          <p class="lead">读取公开 EDA netlist 和 schematic BOM，自动匹配本地 structured profiles，生成顶部摘要和三段式工作区：器件列表、验证区、报告详情。LLM 只负责解释，判断来自可审计的 deterministic checks。</p>
+          <span class="eyebrow">五机制 / 三层 trust / 本地设计验证器</span>
+          <h1>先分层信任，再让 Agent 说话。</h1>
+          <p class="lead">Hardwise 把硬件 Agent 输出压进五大 trust 机制和 L1/L2/L3 分层：L1 是确定性验证，L2 是页码级检索证据，L3 保持人工确认。模型只解释结构化结果，不自由编位号或证据。</p>
           <div class="actions">
-            <a class="button primary" href="./hardware-demo.html">打开真实工作台</a>
-            <a class="button" href="#demo">看可信机制</a>
+            <a class="button primary" href="./demo.html">看五机制 Demo</a>
+            <a class="button" href="./hardware-demo.html">打开真实工作台</a>
           </div>
         </div>
 
@@ -307,32 +307,32 @@
             </div>
           </div>
           <div class="metrics" aria-label="样例工程结果">
-            <div class="metric"><strong>25</strong><span>个器件</span></div>
-            <div class="metric"><strong>4</strong><span>个自动验证</span></div>
-            <div class="metric"><strong>1/0/3</strong><span>PASS/WARN/ERROR</span></div>
-            <div class="metric"><strong>21</strong><span>个待 profile</span></div>
+            <div class="metric"><strong>5</strong><span>个 trust 机制</span></div>
+            <div class="metric"><strong>L1/L2/L3</strong><span>信任分层</span></div>
+            <div class="metric"><strong>29</strong><span>KiCad findings</span></div>
+            <div class="metric"><strong>4</strong><span>L1 validated targets</span></div>
           </div>
         </div>
       </div>
     </section>
 
     <section id="value" class="section" aria-label="核心能力">
-      <h2 class="section-title">不是泛泛聊天，而是把设计事实接成可审计验证。</h2>
+      <h2 class="section-title">不是泛泛聊天，而是把输出压进五个机制和三层信任。</h2>
       <div class="cards">
         <article class="card">
           <div class="icon">01</div>
-          <h2>先建项目索引</h2>
-          <p>从 schematic netlist 和 BOM 里拿到真实位号、器件值、MPN 和连接关系，未匹配 profile 的器件不会被隐藏。</p>
+          <h2>五个机制锁边界</h2>
+          <p>Refdes Guard、Evidence Ledger、Sleep Consolidator、Tiered Routing 和 Prompt Caching 分别约束位号、证据、规则演化、模型选择和长上下文成本。</p>
         </article>
         <article class="card">
           <div class="icon">02</div>
-          <h2>跑确定性验证</h2>
-          <p>当前覆盖 L78、XL1509、EG2132、STM32G030 basic；问题来自 profile + topology，不是模型自由发挥。</p>
+          <h2>三层 trust 标证据</h2>
+          <p>L1 deterministic 才能给 PASS/WARN/ERROR；L2 grounded 只表示本轮有页码级 retrieval；L3 manual 明确留给 reviewer。</p>
         </article>
         <article class="card">
           <div class="icon">03</div>
-          <h2>保留边界和证据</h2>
-          <p>报告保留 datasheet/profile token 和 scope boundary，明确不做 PCB、PLM、供应链或固件判断。</p>
+          <h2>两条公开轨支撑</h2>
+          <p>KiCad 轨证明 agent/review/evidence guard；Allegro 轨证明项目级 workbench 和多 family validator，全程不用公司内部硬件数据。</p>
         </article>
       </div>
     </section>
@@ -340,7 +340,7 @@
     <section id="demo" class="section demo" aria-label="问答示例">
       <aside class="panel">
         <h2>面试时可以这样讲</h2>
-        <p>直接展示输入、输出和边界：哪些判断已经 deterministic，哪些器件仍然是 manual/no-profile。</p>
+        <p>先讲五大机制和 L1/L2/L3，再展示输入、输出和边界：哪些判断已经 deterministic，哪些问题仍然是 manual/no-profile。</p>
       </aside>
       <div class="panel chat">
         <div class="bubble"><b>面试官</b>它怎么发现 U12 的问题？</div>
@@ -351,8 +351,8 @@
     </section>
 
     <div class="footer-note">
-      <strong>从项目索引到可追溯验证报告</strong>
-      <span>硬件展示页直接打开当前生成的静态工作台，默认展示 U12/U3/U8 等问题器件。</span>
+      <strong>从 trust 分层到可追溯验证报告</strong>
+      <span>技术 demo 展示五大机制和证据 tier；硬件展示页直接打开当前生成的静态工作台。</span>
     </div>
   </main>
 </body>

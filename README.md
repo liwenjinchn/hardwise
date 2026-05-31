@@ -2,7 +2,7 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-> A guardrailed design-validator workbench for public hardware projects: registry-verified refdes, evidence-gated findings, and a static project index / report workflow.
+> A guardrailed design-validator workbench for public hardware projects: five trust mechanisms, L1/L2/L3 evidence tiers, registry-verified refdes, and deterministic validation.
 
 Hardwise is a two-week portfolio MVP for the **pre-layout design-validation** node in hardware R&D. It does not claim that an LLM can independently judge a complete hardware design. It proves a narrower and more important engineering loop: parse a public EDA project, build a component index, run deterministic validation rules, force every surfaced refdes through the parsed registry, attach evidence tokens to every finding, and let the agent answer schematic questions only through structured tools.
 
@@ -16,9 +16,7 @@ Built with AI assistance. All design decisions and final code are reviewed and o
 
 If you only have 90 seconds, start here:
 
-[![Hardwise product intro page screenshot](docs/assets/hardwise-product-intro-screenshot.png)](https://liwenjinchn.github.io/hardwise/product-intro.html)
-
-GitHub shows HTML files as source. Use the screenshot above for a quick scan, or open the rendered GitHub Pages demos:
+GitHub shows HTML files as source. Open the rendered GitHub Pages demos for the intended reading view:
 
 - **Product intro:** [https://liwenjinchn.github.io/hardwise/product-intro.html](https://liwenjinchn.github.io/hardwise/product-intro.html)
 - **Hardware demo:** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
@@ -28,13 +26,23 @@ GitHub shows HTML files as source. Use the screenshot above for a quick scan, or
 
 ## What the MVP proves
 
-Phase 4 is framed as one trust architecture across two public input tracks, not one board pretending to cover every command surface. The backbone is:
+Phase 4 is framed around **five trust mechanisms** and visible **L1/L2/L3 trust tiers**. The two demo tracks are public and complementary; they are not one board pretending to cover every command surface.
 
-```text
-Refdes Guard + Evidence Ledger + L1 deterministic validators + structured tools
-```
+| Mechanism | What it proves in the demo |
+|---|---|
+| Refdes Guard | User-visible refdes-like tokens must come from the parsed EDA registry, or they are wrapped before display. |
+| Evidence Ledger | Report findings need source tokens such as `sch:<file>#<refdes>`, `datasheet:<pdf>#p<N>`, or `rule:<id>`. |
+| Sleep Consolidator | Repeated findings become human-gated candidate rules, not auto-enabled model output. |
+| Tiered Model Routing | Runtime model slots are selected by env tier (`fast` / `normal` / `deep`), not hard-coded model names. |
+| Prompt Caching | The static agent prompt is cacheable and has a measured cache-read hit on the configured Anthropic-format proxy. |
 
-The C3/C4 coverage loop is supporting evidence: C3 ranks profile gaps, and C4 moves selected groups from L3/manual rows into L1 deterministic rows. That proves the loop is repeatable, but the headline remains trust: the model is bounded by registry objects, evidence tokens, and tool returns.
+| Trust tier | Meaning | Where it appears |
+|---|---|---|
+| **L1 deterministic** | Python rules / validators produce the PASS/WARN/ERROR truth. The model may explain it, but does not decide it. | Component validation rows, `run_component_validation`, static workbench. |
+| **L2 grounded** | A datasheet search turn surfaced page-level retrieval evidence for reviewer inspection. This is not sentence-level entailment. | C5 L78 Copilot trace: `datasheet:l78.pdf#p4`. |
+| **L3 manual** | No ready profile or no retrieval evidence is present; the system keeps the row/question in human-review territory. | No-profile workbench rows, no-hit datasheet questions. |
+
+The C3/C4 coverage loop is supporting evidence: C3 ranks profile gaps, and C4 moves selected groups from L3/manual rows into L1 deterministic rows. That proves the loop is repeatable, but the headline remains trust: the model is bounded by registry objects, evidence tokens, deterministic validators, and structured tool returns.
 
 The KiCad track proves the agent/review/evidence path:
 
@@ -105,15 +113,17 @@ All demo inputs are public. No company-internal hardware data is used.
 
 ## Core Proof
 
-Hardwise's main claim is narrow: **the model is not allowed to invent board objects**. The MVP proves that claim with three live mechanisms:
+Hardwise's main claim is narrow: **the model is not allowed to invent board objects or silently upgrade weak evidence into hard findings**. The MVP proves that claim with five implemented mechanisms:
 
 | # | Mechanism | What it does | Status |
 |---|-----------|--------------|--------|
 | 1 | **Refdes Guard** | User-visible refdes-like tokens (`U1`, `R10`, `J5`) must hit the parsed EDA registry; unknowns are wrapped before output. | Live: `src/hardwise/guards/refdes.py` |
 | 2 | **Evidence Ledger** | Findings without evidence tokens are dropped. No token, no claim. | Live: `src/hardwise/guards/evidence.py` |
-| 3 | **Structured Tool Loop** | Agent answers through `list_components`, `get_component`, `get_nc_pins`, `search_datasheet`, and `run_component_validation`; unknown refdes/profile/design states return structured misses instead of fabricated facts. | Live: `src/hardwise/agent/runner.py`, `src/hardwise/agent/tools.py` |
+| 3 | **Sleep Consolidator** | Repeated findings are recorded as human-gated candidate rules before they can become new deterministic checks. | Live: `src/hardwise/memory/consolidator.py` |
+| 4 | **Tiered Model Routing** | The agent chooses `fast` / `normal` / `deep` slots from env config; code does not hard-code a vendor model. | Live: `src/hardwise/agent/router.py` |
+| 5 | **Prompt Caching** | The cacheable static prompt has measured cache-read hits on the configured Anthropic-format endpoint. | Live: `src/hardwise/agent/prompts.py`, `src/hardwise/agent/runner.py` |
 
-Supporting mechanisms are present but secondary to the demo story: Sleep Consolidator records human-gated candidate rules, Tiered Model Routing keeps model IDs in env slots, and Prompt Caching has measured cache-read hits on the configured MiMo proxy. They are engineering completeness, not the core product claim.
+The agent surface is tiered in the same vocabulary used by validation details: `L1 deterministic`, `L2 grounded`, and `L3 manual`. `run_component_validation` is L1 and can affect PASS/WARN/ERROR. `search_datasheet` becomes L2 only when a turn returns page-level retrieval evidence such as `datasheet:l78.pdf#p4`. No profile, no retrieval, or no configured vector store stays L3 and requires reviewer confirmation.
 
 ## Quickstart
 
