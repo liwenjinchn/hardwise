@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.profile import DatasheetProfile
@@ -108,10 +110,113 @@ def _stm32_design() -> Design:
     return apply_bom_to_design(design, match_bom_to_design(bom, design))
 
 
+def _motor_sensor_controller_design() -> Design:
+    design = build_design_from_netlist(
+        parse_allegro_netlist(Path("tests/fixtures/allegro/motor_sensor_controller.net"))
+    )
+    bom = parse_bom(Path("tests/fixtures/allegro/motor_sensor_controller_bom.csv"))
+    return apply_bom_to_design(design, match_bom_to_design(bom, design))
+
+
 def _with_component(design: Design, component: Component) -> Design:
     components = dict(design.components)
     components[component.refdes] = component
     return design.model_copy(update={"components": components})
+
+
+@pytest.mark.parametrize(
+    ("profile_path", "pinout"),
+    [
+        (
+            "data/datasheet_profiles/lmv358.json",
+            {
+                "1": "OUT A",
+                "2": "IN- A",
+                "3": "IN+ A",
+                "4": "V-",
+                "5": "IN+ B",
+                "6": "IN- B",
+                "7": "OUT B",
+                "8": "V+",
+            },
+        ),
+        (
+            "data/datasheet_profiles/lm393.json",
+            {
+                "1": "OUT 1",
+                "2": "IN- 1",
+                "3": "IN+ 1",
+                "4": "GND",
+                "5": "IN+ 2",
+                "6": "IN- 2",
+                "7": "OUT 2",
+                "8": "VCC",
+            },
+        ),
+        (
+            "data/datasheet_profiles/ina180a1.json",
+            {
+                "1": "OUT",
+                "2": "GND",
+                "3": "IN+",
+                "4": "IN-",
+                "5": "VS",
+            },
+        ),
+        (
+            "data/datasheet_profiles/tlv9062.json",
+            {
+                "1": "OUT A",
+                "2": "IN- A",
+                "3": "IN+ A",
+                "4": "V-",
+                "5": "IN+ B",
+                "6": "IN- B",
+                "7": "OUT B",
+                "8": "V+",
+            },
+        ),
+    ],
+)
+def test_analog_ic_profiles_match_public_pinouts(profile_path: str, pinout: dict[str, str]) -> None:
+    profile = DatasheetProfile.load(Path(profile_path))
+
+    assert profile.review_status == "ready"
+    assert profile.pin_function == pinout
+    assert [(pin.number, pin.name) for pin in profile.pins] == list(pinout.items())
+
+
+def test_motor_sensor_analog_ic_profiles_pass_basic_pin_validation() -> None:
+    design = _motor_sensor_controller_design()
+    targets = {
+        "U20": "data/datasheet_profiles/lmv358.json",
+        "U21": "data/datasheet_profiles/lm393.json",
+        "U22": "data/datasheet_profiles/ina180a1.json",
+        "U23": "data/datasheet_profiles/tlv9062.json",
+    }
+
+    for refdes, profile_path in targets.items():
+        profile = DatasheetProfile.load(Path(profile_path))
+        report = validate_component_against_profile(design.components[refdes], profile, design)
+        categories = {result.category for result in report.pin_results}
+
+        assert report.status == "PASS"
+        assert report.counts_by_status == {"PASS": len(profile.pins), "WARN": 0, "ERROR": 0}
+        assert report.component_checks == []
+        assert {"analog_input", "analog_output", "power_input"} & categories
+
+
+def test_lm393_open_collector_outputs_are_connection_checked() -> None:
+    design = _motor_sensor_controller_design()
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/lm393.json"))
+
+    report = validate_component_against_profile(design.components["U21"], profile, design)
+
+    outputs = [pin for pin in report.pin_results if pin.category == "open_collector_output"]
+    assert [(pin.pin_number, pin.status, pin.net) for pin in outputs] == [
+        ("1", "PASS", "CMP_A"),
+        ("7", "PASS", "CMP_B"),
+    ]
 
 
 def test_validate_component_against_profile_passes_nominal_l78() -> None:
@@ -166,9 +271,7 @@ def test_validate_component_errors_when_profiled_pin_missing() -> None:
 
 def test_validate_xl1509_fixture_reports_dcdc_peripheral_errors() -> None:
     design = _xl1509_design()
-    report = validate_component_against_profile(
-        design.components["U12"], _xl1509_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
     assert report.status == "ERROR"
     assert report.counts_by_status == {"PASS": 8, "WARN": 0, "ERROR": 0}
@@ -184,14 +287,10 @@ def test_validate_xl1509_fixture_reports_dcdc_peripheral_errors() -> None:
 def test_validate_xl1509_nominal_buck_topology_has_no_error() -> None:
     design = _xl1509_design()
     l1 = design.components["L1"].model_copy(update={"value": "100uH"})
-    d5 = design.components["D5"].model_copy(
-        update={"value": "SS34", "part_number": "SS34"}
-    )
+    d5 = design.components["D5"].model_copy(update={"value": "SS34", "part_number": "SS34"})
     design = _with_component(_with_component(design, l1), d5)
 
-    report = validate_component_against_profile(
-        design.components["U12"], _xl1509_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
     assert report.status == "PASS"
     assert report.component_counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
@@ -204,9 +303,7 @@ def test_validate_xl1509_missing_output_inductor_errors() -> None:
     )
     design = design.model_copy(update={"nets": {**design.nets, "SW": sw}})
 
-    report = validate_component_against_profile(
-        design.components["U12"], _xl1509_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
     inductor = next(check for check in report.component_checks if check.check == "buck_inductor")
     assert report.status == "ERROR"
@@ -222,9 +319,7 @@ def test_validate_xl1509_unknown_diode_type_warns_without_fabricating() -> None:
     )
     design = _with_component(_with_component(design, l1), d5)
 
-    report = validate_component_against_profile(
-        design.components["U12"], _xl1509_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
     diode = next(
         check for check in report.component_checks if check.check == "buck_freewheel_diode"
@@ -237,10 +332,7 @@ def test_validate_xl1509_unknown_diode_type_warns_without_fabricating() -> None:
 def test_validate_xl1509_feedback_wrong_voltage_errors() -> None:
     design = _xl1509_design()
     u12 = design.components["U12"]
-    pins = [
-        pin.model_copy(update={"net": "+5V"}) if pin.number == "3" else pin
-        for pin in u12.pins
-    ]
+    pins = [pin.model_copy(update={"net": "+5V"}) if pin.number == "3" else pin for pin in u12.pins]
     u12 = u12.model_copy(update={"pins": pins})
     design = _with_component(design, u12)
     design = design.model_copy(
@@ -297,7 +389,9 @@ def test_validate_pca9548a_mismatched_channel_pair_errors() -> None:
 
     report = validate_component_against_profile(u8, _pca9548a_profile(), design)
 
-    channels = next(check for check in report.component_checks if check.check == "i2c_mux_channel_pairs")
+    channels = next(
+        check for check in report.component_checks if check.check == "i2c_mux_channel_pairs"
+    )
     assert report.status == "ERROR"
     assert channels.status == "ERROR"
     assert "channel(s): 1" in channels.summary
@@ -306,9 +400,7 @@ def test_validate_pca9548a_mismatched_channel_pair_errors() -> None:
 def test_validate_eg2132_fixture_reports_bootstrap_diode_error() -> None:
     design = _eg2132_design()
 
-    report = validate_component_against_profile(
-        design.components["U3"], _eg2132_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
 
     bootstrap = next(
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
@@ -325,9 +417,7 @@ def test_validate_eg2132_nominal_topology_has_no_component_error() -> None:
     d1 = design.components["D1"].model_copy(update={"value": "SS34", "part_number": "SS34"})
     design = _with_component(design, d1)
 
-    report = validate_component_against_profile(
-        design.components["U3"], _eg2132_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
 
     assert report.component_counts_by_status == {"PASS": 7, "WARN": 0, "ERROR": 0}
     assert all(check.status != "ERROR" for check in report.component_checks)
@@ -345,9 +435,7 @@ def test_validate_eg2132_missing_bootstrap_capacitor_errors() -> None:
     )
     design = _with_component(design, cboot)
 
-    report = validate_component_against_profile(
-        design.components["U3"], _eg2132_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
 
     bootstrap = next(
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
@@ -361,9 +449,7 @@ def test_validate_eg2132_missing_gate_load_errors() -> None:
     ho_gate_q = design.nets["HO_GATE_Q"].model_copy(update={"nodes": [("R1", "2")]})
     design = design.model_copy(update={"nets": {**design.nets, "HO_GATE_Q": ho_gate_q}})
 
-    report = validate_component_against_profile(
-        design.components["U3"], _eg2132_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
 
     ho = next(
         check for check in report.component_checks if check.check == "gate_driver_ho_gate_load"
@@ -379,9 +465,7 @@ def test_validate_eg2132_unknown_bootstrap_diode_warns_without_fabricating() -> 
     )
     design = _with_component(design, d1)
 
-    report = validate_component_against_profile(
-        design.components["U3"], _eg2132_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
 
     bootstrap = next(
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
@@ -393,10 +477,7 @@ def test_validate_eg2132_unknown_bootstrap_diode_warns_without_fabricating() -> 
 def test_validate_eg2132_vcc_outside_profile_range_errors() -> None:
     design = _eg2132_design()
     u3 = design.components["U3"]
-    pins = [
-        pin.model_copy(update={"net": "+24V"}) if pin.number == "1" else pin
-        for pin in u3.pins
-    ]
+    pins = [pin.model_copy(update={"net": "+24V"}) if pin.number == "1" else pin for pin in u3.pins]
     u3 = u3.model_copy(update={"pins": pins})
     design = _with_component(design, u3)
     design = design.model_copy(
@@ -413,10 +494,7 @@ def test_validate_eg2132_vcc_outside_profile_range_errors() -> None:
 def test_validate_eg2132_missing_logic_input_errors() -> None:
     design = _eg2132_design()
     u3 = design.components["U3"]
-    pins = [
-        pin.model_copy(update={"net": None}) if pin.number == "2" else pin
-        for pin in u3.pins
-    ]
+    pins = [pin.model_copy(update={"net": None}) if pin.number == "2" else pin for pin in u3.pins]
     u3 = u3.model_copy(update={"pins": pins})
     design = _with_component(design, u3)
 
@@ -430,9 +508,7 @@ def test_validate_eg2132_missing_logic_input_errors() -> None:
 def test_validate_stm32_fixture_reports_swd_swap_error() -> None:
     design = _stm32_design()
 
-    report = validate_component_against_profile(
-        design.components["U8"], _stm32_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U8"], _stm32_profile(), design)
 
     swdio = next(check for check in report.component_checks if check.check == "mcu_swdio")
     swclk = next(check for check in report.component_checks if check.check == "mcu_swclk")
@@ -447,13 +523,9 @@ def test_validate_stm32_nominal_debug_topology_has_no_component_error() -> None:
     design = _stm32_design()
     u8 = design.components["U8"]
     pins = [
-        pin.model_copy(update={"net": "SWDIO"}) if pin.number == "35" else pin
-        for pin in u8.pins
+        pin.model_copy(update={"net": "SWDIO"}) if pin.number == "35" else pin for pin in u8.pins
     ]
-    pins = [
-        pin.model_copy(update={"net": "SWCLK"}) if pin.number == "36" else pin
-        for pin in pins
-    ]
+    pins = [pin.model_copy(update={"net": "SWCLK"}) if pin.number == "36" else pin for pin in pins]
     u8 = u8.model_copy(update={"pins": pins})
     nets = {
         **design.nets,
@@ -462,9 +534,7 @@ def test_validate_stm32_nominal_debug_topology_has_no_component_error() -> None:
     }
     design = _with_component(design.model_copy(update={"nets": nets}), u8)
 
-    report = validate_component_against_profile(
-        design.components["U8"], _stm32_profile(), design
-    )
+    report = validate_component_against_profile(design.components["U8"], _stm32_profile(), design)
 
     assert report.component_counts_by_status == {"PASS": 8, "WARN": 0, "ERROR": 0}
     assert report.status == "PASS"
@@ -473,10 +543,7 @@ def test_validate_stm32_nominal_debug_topology_has_no_component_error() -> None:
 def test_validate_stm32_wrong_vdd_voltage_errors() -> None:
     design = _stm32_design()
     u8 = design.components["U8"]
-    pins = [
-        pin.model_copy(update={"net": "+5V"}) if pin.number == "6" else pin
-        for pin in u8.pins
-    ]
+    pins = [pin.model_copy(update={"net": "+5V"}) if pin.number == "6" else pin for pin in u8.pins]
     u8 = u8.model_copy(update={"pins": pins})
     design = _with_component(design, u8)
     design = design.model_copy(
@@ -493,10 +560,7 @@ def test_validate_stm32_wrong_vdd_voltage_errors() -> None:
 def test_validate_stm32_floating_nrst_errors() -> None:
     design = _stm32_design()
     u8 = design.components["U8"]
-    pins = [
-        pin.model_copy(update={"net": None}) if pin.number == "10" else pin
-        for pin in u8.pins
-    ]
+    pins = [pin.model_copy(update={"net": None}) if pin.number == "10" else pin for pin in u8.pins]
     u8 = u8.model_copy(update={"pins": pins})
     design = _with_component(design, u8)
 
@@ -510,10 +574,7 @@ def test_validate_stm32_floating_nrst_errors() -> None:
 def test_validate_stm32_floating_boot0_errors() -> None:
     design = _stm32_design()
     u8 = design.components["U8"]
-    pins = [
-        pin.model_copy(update={"net": None}) if pin.number == "44" else pin
-        for pin in u8.pins
-    ]
+    pins = [pin.model_copy(update={"net": None}) if pin.number == "44" else pin for pin in u8.pins]
     u8 = u8.model_copy(update={"pins": pins})
     design = _with_component(design, u8)
 

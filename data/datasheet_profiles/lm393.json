@@ -1,0 +1,100 @@
+{
+  "part_number": "LM393",
+  "part_number_aliases": ["LM393B", "LM293", "LM2903"],
+  "review_status": "ready",
+  "description": "Dual differential comparator, 8-pin package",
+  "abs_max": {},
+  "recommended": {
+    "validation_scope": "basic_pin_profile",
+    "device_role": "dual_comparator",
+    "vcc_min": 2.0,
+    "vcc_max": 36.0
+  },
+  "pin_function": {
+    "1": "OUT 1",
+    "2": "IN- 1",
+    "3": "IN+ 1",
+    "4": "GND",
+    "5": "IN+ 2",
+    "6": "IN- 2",
+    "7": "OUT 2",
+    "8": "VCC"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "OUT 1",
+      "category": "open_collector_output",
+      "function": "Comparator 1 output.",
+      "evidence": ["datasheet:lm393.pdf#p4"]
+    },
+    {
+      "number": "2",
+      "name": "IN- 1",
+      "category": "analog_input",
+      "function": "Comparator 1 inverting input.",
+      "evidence": ["datasheet:lm393.pdf#p4"]
+    },
+    {
+      "number": "3",
+      "name": "IN+ 1",
+      "category": "analog_input",
+      "function": "Comparator 1 non-inverting input.",
+      "evidence": ["datasheet:lm393.pdf#p4"]
+    },
+    {
+      "number": "4",
+      "name": "GND",
+      "category": "ground",
+      "function": "Ground reference.",
+      "evidence": ["datasheet:lm393.pdf#p4"]
+    },
+    {
+      "number": "5",
+      "name": "IN+ 2",
+      "category": "analog_input",
+      "function": "Comparator 2 non-inverting input.",
+      "evidence": ["datasheet:lm393.pdf#p4"]
+    },
+    {
+      "number": "6",
+      "name": "IN- 2",
+      "category": "analog_input",
+      "function": "Comparator 2 inverting input.",
+      "evidence": ["datasheet:lm393.pdf#p4"]
+    },
+    {
+      "number": "7",
+      "name": "OUT 2",
+      "category": "open_collector_output",
+      "function": "Comparator 2 output.",
+      "evidence": ["datasheet:lm393.pdf#p4"]
+    },
+    {
+      "number": "8",
+      "name": "VCC",
+      "category": "power_input",
+      "function": "Positive supply rail.",
+      "limits": {
+        "recommended_voltage_min": 2.0,
+        "recommended_voltage_max": 36.0
+      },
+      "evidence": ["datasheet:lm393.pdf#p6"]
+    }
+  ],
+  "evidence": {
+    "recommended.vcc_min": "datasheet:lm393.pdf#p6",
+    "recommended.vcc_max": "datasheet:lm393.pdf#p6",
+    "pin_function.1": "datasheet:lm393.pdf#p4",
+    "pin_function.2": "datasheet:lm393.pdf#p4",
+    "pin_function.3": "datasheet:lm393.pdf#p4",
+    "pin_function.4": "datasheet:lm393.pdf#p4",
+    "pin_function.5": "datasheet:lm393.pdf#p4",
+    "pin_function.6": "datasheet:lm393.pdf#p4",
+    "pin_function.7": "datasheet:lm393.pdf#p4",
+    "pin_function.8": "datasheet:lm393.pdf#p4"
+  },
+  "extracted_at": "2026-05-31T00:00:00+08:00",
+  "extracted_model": "manual-profile-c4c-analog-ic",
+  "schema_version": "v2"
+}

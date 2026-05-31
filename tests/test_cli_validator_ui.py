@@ -558,13 +558,15 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert "66 components" in result.output
-    assert "validated=22" in result.output
-    assert "manual=44" in result.output
+    assert "validated=26" in result.output
+    assert "manual=40" in result.output
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"refdes": "D10"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/ltst-c190kgkt.json"' in index_payload
     assert '"refdes": "Q10"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/mmbt3904.json"' in index_payload
+    assert '"refdes": "U20"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/lmv358.json"' in index_payload
 
     output = tmp_path / "next-family.md"
     result = CliRunner().invoke(
@@ -574,14 +576,18 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert "next-family:" in result.output
-    assert "families=5" in result.output
-    assert "try_existing=2" in result.output
+    assert "families=4" in result.output
+    assert "try_existing=1" in result.output
     assert "triage_new=3" in result.output
     text = output.read_text(encoding="utf-8")
-    assert "| ic | 4 | 4 | 4.0 | buck, half_bridge_gate_driver" in text
+    assert "| inductor | 5 | 2 | 2.5 | - | 6.8uH, 10uH" in text
     assert "| diode | 3 | 3 | 2.4 | diode | SMBJ24CA, BAS316, BAV99" in text
     assert "LTST-C190KGKT" not in text
     assert "MMBT3904" not in text
+    assert "LMV358" not in text
+    assert "LM393" not in text
+    assert "INA180A1" not in text
+    assert "TLV9062" not in text
     assert "triage_for_new_validator" in text
     assert "try_existing_validator_profile" in text
     assert "PASS" not in text

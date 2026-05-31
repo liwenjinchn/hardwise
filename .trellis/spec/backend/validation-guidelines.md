@@ -170,6 +170,22 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
 {"name": "DATA", "number": "2", "category": "gpio"}
 ```
 
+**Basic analog IC profiles**:
+- Use these only for deterministic pin-level coverage when the slice is not
+  adding a behavior-level op-amp, comparator, or current-sense validator.
+- Do not invent a `topology_family` value for basic pin-profile-only coverage;
+  use a non-dispatch metadata key such as
+  `recommended.validation_scope="basic_pin_profile"`.
+- Inputs: `analog_input`.
+- Push-pull or amplifier outputs: `analog_output`.
+- Open-collector comparator outputs: `open_collector_output`.
+- Supply pins: `power_input`; add voltage limits only where a single-ended rail
+  comparison is meaningful. Do not model dual-supply behavior in generic pin
+  rules.
+- These categories only prove that profiled pins are present and connected.
+  They must not infer gain, comparator threshold, output swing, stability,
+  shunt sizing, bandwidth, load current, or PCB/layout behavior.
+
 ### ComponentValidation output
 
 - Each check returns exactly one `ComponentValidation` with `check`, `status`, `summary`, optional `evidence`
@@ -194,7 +210,7 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
 
 ## 5. Good / Base / Bad Cases
 
-**Good** (nominal LM358, VCC=12V, both channels with feedback resistors): 10 PASS, 0 WARN, 0 ERROR.
+**Good** (nominal op-amp profile, VCC within profile limits, both channels connected): all pin checks PASS.
 
 **Base** (one channel unused, inputs tied to output as voltage follower): connectivity PASS, feedback PASS.
 

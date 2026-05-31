@@ -66,6 +66,8 @@ def validate_pin(
         "debug",
         "gpio",
         "analog_input",
+        "analog_output",
+        "open_collector_output",
         "i2c_channel_clock",
         "i2c_channel_data",
         "i2c_upstream_clock",

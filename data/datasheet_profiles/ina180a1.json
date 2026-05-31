@@ -1,0 +1,73 @@
+{
+  "part_number": "INA180A1",
+  "part_number_aliases": ["INA180A1IDBVR", "INA180A1DBV"],
+  "review_status": "ready",
+  "description": "Current-sense amplifier, gain option A1, SOT-23-5",
+  "abs_max": {},
+  "recommended": {
+    "validation_scope": "basic_pin_profile",
+    "device_role": "current_sense_amplifier",
+    "vs_min": 2.7,
+    "vs_max": 5.5
+  },
+  "pin_function": {
+    "1": "OUT",
+    "2": "GND",
+    "3": "IN+",
+    "4": "IN-",
+    "5": "VS"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "OUT",
+      "category": "analog_output",
+      "function": "Current-sense amplifier output.",
+      "evidence": ["datasheet:ina180.pdf#p4"]
+    },
+    {
+      "number": "2",
+      "name": "GND",
+      "category": "ground",
+      "function": "Ground reference.",
+      "evidence": ["datasheet:ina180.pdf#p4"]
+    },
+    {
+      "number": "3",
+      "name": "IN+",
+      "category": "analog_input",
+      "function": "Positive current-sense input.",
+      "evidence": ["datasheet:ina180.pdf#p4"]
+    },
+    {
+      "number": "4",
+      "name": "IN-",
+      "category": "analog_input",
+      "function": "Negative current-sense input.",
+      "evidence": ["datasheet:ina180.pdf#p4"]
+    },
+    {
+      "number": "5",
+      "name": "VS",
+      "category": "power_input",
+      "function": "Supply input.",
+      "limits": {
+        "recommended_voltage_min": 2.7,
+        "recommended_voltage_max": 5.5
+      },
+      "evidence": ["datasheet:ina180.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "recommended.vs_min": "datasheet:ina180.pdf#p1",
+    "recommended.vs_max": "datasheet:ina180.pdf#p1",
+    "pin_function.1": "datasheet:ina180.pdf#p4",
+    "pin_function.2": "datasheet:ina180.pdf#p4",
+    "pin_function.3": "datasheet:ina180.pdf#p4",
+    "pin_function.4": "datasheet:ina180.pdf#p4",
+    "pin_function.5": "datasheet:ina180.pdf#p4"
+  },
+  "extracted_at": "2026-05-31T00:00:00+08:00",
+  "extracted_model": "manual-profile-c4c-analog-ic",
+  "schema_version": "v2"
+}

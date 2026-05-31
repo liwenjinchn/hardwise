@@ -2260,3 +2260,43 @@ collectors on `OUT10`-`OUT15`. The existing BJT validator was reused unchanged.
 For package-sensitive components, the profile identity is not just the silicon
 family. Package pinout must be checked independently before a no-profile group
 is promoted into deterministic validation.
+
+## 2026-05-31 — Basic analog IC profiles should not become fake topology families
+
+**Symptom**
+
+C4c selected the post-C4b ranked IC group: `LMV358`, `LM393`, `INA180A1`, and
+`TLV9062` in the public-safe synthetic Allegro fixture. The work needed
+deterministic rows, but adding a generic IC / op-amp / comparator validator would
+turn a profile backfill into a behavior-modeling milestone.
+
+**Root cause**
+
+Profile matching and component dispatch serve different purposes. A ready
+profile can safely make a component deterministic at the pin-connectivity level,
+but `recommended.topology_family` is a dispatch key for behavior/topology
+validators. Inventing `topology_family="basic_pin_profile"` would look like a
+validator family even though no component-level analog behavior exists.
+
+**Fix**
+
+Added four reviewed public TI profiles using
+`recommended.validation_scope="basic_pin_profile"` instead of a new dispatch
+family. Extended generic pin validation only for connected output-style
+categories: `analog_output` and `open_collector_output`. The synthetic fixture
+was completed for U20/U21/U23 second-channel pins so the C4c proof stays nominal
+instead of accidentally becoming a missing-pin finding.
+
+**Verification**
+
+- Focused tests assert all four public pinout maps and validate U20-U23 through
+  generic pin checks.
+- C4c smoke reports 66 components / validated=26 / manual=40 /
+  PASS-WARN-ERROR=16-7-3.
+- `recommend-next-family` drops the IC group; next highest family is `inductor`.
+
+**Takeaway**
+
+Use profile metadata that names the validation scope when there is no dispatcher
+behind it. Reserve `topology_family` for real component-level validators, and
+keep analog behavior out of basic pin-profile closures.
