@@ -171,3 +171,38 @@ Added six-section deterministic validator detail rendering with schematic topolo
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: Archive Allegro Copilot workbench
+
+**Date**: 2026-05-31
+**Task**: Archive Allegro Copilot workbench
+**Branch**: `codex/migrate-codex-mainline`
+
+### Summary
+
+Archived the completed Allegro-first Copilot workbench parent after the workbench implementation, fail-closed snapshot fix, and six-section validator report polish were committed and verified.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `58cf87f` | (see git log) |
+| `c12fea3` | (see git log) |
+| `9c41cd7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
