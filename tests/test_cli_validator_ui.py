@@ -530,11 +530,56 @@ def test_build_document_index_candidates_writes_review_csv(tmp_path: Path) -> No
     assert "document-index-candidates:" in result.output
     text = candidates.read_text(encoding="utf-8")
     assert text.startswith("MPN,Manufacturer,Title,URL,Path,Description")
+    assert text.splitlines()[0].endswith(",Notes,Priority")
     assert "STM32G030C8T6" in text
     assert "EG2132" in text
+    assert ",high" in text
+    assert ",medium" in text
     assert "PCA9548APW" not in text
     assert "MPQ8626GD" not in text
     assert "100R" not in text
+
+
+def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
+    index_json = tmp_path / "motor-index.json"
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/motor_sensor_controller.net",
+            "tests/fixtures/allegro/motor_sensor_controller_bom.csv",
+            "--document-index",
+            "data/document_indexes/family_v1_3_docs.csv",
+            "--output",
+            str(tmp_path / "motor-workbench.html"),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "65 components" in result.output
+    assert "validated=8" in result.output
+
+    output = tmp_path / "next-family.md"
+    result = CliRunner().invoke(
+        app,
+        ["recommend-next-family", str(index_json), "--output", str(output)],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "next-family:" in result.output
+    assert "families=6" in result.output
+    assert "try_existing=3" in result.output
+    assert "triage_new=3" in result.output
+    text = output.read_text(encoding="utf-8")
+    assert "| diode | 11 | 4 | 8.8 | diode | LTST-C190KGKT" in text
+    assert "| transistor | 6 | 1 | 5.4 | mosfet, bjt | MMBT3904" in text
+    assert "| ic | 4 | 4 | 4.0 | buck, half_bridge_gate_driver" in text
+    assert "triage_for_new_validator" in text
+    assert "try_existing_validator_profile" in text
+    assert "PASS" not in text
+    assert "WARN" not in text
+    assert "ERROR" not in text
 
 
 def test_draft_datasheet_profile_writes_needs_review_json(tmp_path: Path) -> None:
