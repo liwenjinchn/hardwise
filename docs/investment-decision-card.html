@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>决策卡 · The Investment Covenant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&family=Italianno&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2EBDC;
+    --bg-deep: #E8DFC8;
+    --bg-warm: #EAE0C7;
+    --ink: #1A1410;
+    --ink-soft: #3D332A;
+    --ink-mute: #6B5D4E;
+    --ink-faint: #A89A86;
+    --seal: #9B2C23;
+    --seal-deep: #6B1F18;
+    --seal-faint: rgba(155, 44, 35, 0.08);
+    --gold: #8B7355;
+    --tech: #1E3A5F;
+    --green: #2D5F3F;
+    --warn: #B5740E;
+    --line: rgba(26, 20, 16, 0.15);
+    --line-strong: rgba(26, 20, 16, 0.35);
+    --paper-grain: rgba(26, 20, 16, 0.025);
+    --serif-cn: "Noto Serif SC", "Songti SC", "STSong", serif;
+    --serif-en: "EB Garamond", "Times New Roman", serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+    --script: "Italianno", cursive;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 10% 20%, var(--paper-grain) 1px, transparent 1px),
+      radial-gradient(circle at 80% 70%, var(--paper-grain) 1px, transparent 1px),
+      radial-gradient(circle at 40% 90%, var(--paper-grain) 1px, transparent 1px);
+    background-size: 80px 80px, 60px 60px, 100px 100px;
+    color: var(--ink);
+    font-family: var(--serif-cn);
+    font-weight: 400;
+    line-height: 1.7;
+    min-height: 100vh;
+    padding: 40px 20px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .paper {
+    max-width: 920px;
+    margin: 0 auto;
+    background: var(--bg);
+    position: relative;
+    box-shadow:
+      0 1px 0 var(--line),
+      0 30px 80px -20px rgba(26, 20, 16, 0.15),
+      0 60px 120px -40px rgba(26, 20, 16, 0.1);
+    padding: 80px 90px 100px;
+    border: 1px solid var(--line);
+  }
+
+  .paper::before {
+    content: "";
+    position: absolute;
+    top: 12px; left: 12px; right: 12px; bottom: 12px;
+    border: 1px solid var(--line);
+    pointer-events: none;
+  }
+
+  /* ============ MASTHEAD ============ */
+  .masthead {
+    text-align: center;
+    border-bottom: 3px double var(--ink);
+    padding-bottom: 32px;
+    margin-bottom: 28px;
+    position: relative;
+  }
+
+  .top-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 24px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 6px 0;
+  }
+
+  .title-cn {
+    font-family: var(--serif-cn);
+    font-weight: 900;
+    font-size: clamp(64px, 12vw, 128px);
+    letter-spacing: 0.5em;
+    line-height: 1;
+    margin-left: 0.5em;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+
+  .title-en {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(16px, 2vw, 22px);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+
+  .title-sub {
+    font-family: var(--serif-cn);
+    font-weight: 400;
+    font-size: 14px;
+    letter-spacing: 0.4em;
+    color: var(--ink-mute);
+    padding-left: 0.4em;
+  }
+
+  .issue-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--serif-en);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-top: 28px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  .issue-bar span { display: inline-block; }
+  .issue-bar .center { font-style: italic; }
+
+  /* ============ MANIFESTO ============ */
+  .manifesto {
+    text-align: center;
+    margin: 60px 0 80px;
+    padding: 40px 20px;
+    position: relative;
+  }
+
+  .manifesto::before, .manifesto::after {
+    content: "§";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--serif-en);
+    color: var(--seal);
+    font-size: 24px;
+  }
+  .manifesto::before { top: 0; }
+  .manifesto::after { bottom: 0; }
+
+  .manifesto .en {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1.2;
+    color: var(--ink);
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+  }
+
+  .manifesto .en .em {
+    color: var(--seal);
+    font-weight: 500;
+  }
+
+  .manifesto .cn {
+    font-family: var(--serif-cn);
+    font-weight: 400;
+    font-size: clamp(16px, 1.6vw, 19px);
+    letter-spacing: 0.3em;
+    color: var(--ink-soft);
+    padding-left: 0.3em;
+  }
+
+  /* ============ CHAPTER ============ */
+  .chapter {
+    margin: 60px 0 50px;
+    position: relative;
+    page-break-inside: avoid;
+  }
+
+  .chapter-head {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    align-items: end;
+    gap: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ink);
+    margin-bottom: 28px;
+  }
+
+  .chap-num {
+    font-family: var(--serif-en);
+    font-weight: 400;
+    font-style: italic;
+    font-size: 56px;
+    line-height: 0.9;
+    color: var(--seal);
+    border-right: 1px solid var(--line);
+    padding-right: 24px;
+  }
+
+  .chap-title-block .cn {
+    font-family: var(--serif-cn);
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: 0.15em;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .chap-title-block .en {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-top: 4px;
+  }
+
+  .chap-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    padding-bottom: 6px;
+  }
+
+  /* ============ FOUR STEPS ============ */
+  .steps {
+    display: grid;
+    gap: 20px;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 28px;
+    padding: 20px 0;
+    border-bottom: 1px dashed var(--line);
+    align-items: start;
+  }
+  .step:last-child { border-bottom: none; }
+
+  .step-num {
+    text-align: right;
+    border-right: 2px solid var(--ink);
+    padding-right: 24px;
+  }
+  .step-num .roman {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--ink-mute);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .step-num .arabic {
+    font-family: var(--serif-en);
+    font-weight: 600;
+    font-size: 48px;
+    line-height: 1;
+    color: var(--seal);
+  }
+
+  .step-body .label {
+    font-family: var(--serif-cn);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: 0.15em;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .step-body .label .en {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 13px;
+    color: var(--ink-mute);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-left: 8px;
+  }
+  .step-body .ask {
+    font-family: var(--serif-cn);
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+    font-style: normal;
+  }
+
+  .step-body .ask::before {
+    content: "Q ";
+    font-family: var(--serif-en);
+    font-style: italic;
+    color: var(--seal);
+    font-weight: 500;
+  }
+
+  .branches {
+    list-style: none;
+    display: grid;
+    gap: 6px;
+  }
+  .branches li {
+    font-family: var(--serif-cn);
+    font-size: 14px;
+    color: var(--ink);
+    padding-left: 22px;
+    position: relative;
+    line-height: 1.6;
+  }
+  .branches li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--ink-mute);
+    font-family: var(--mono);
+  }
+  .branches li strong {
+    font-weight: 600;
+    color: var(--seal);
+  }
+  .branches li .action {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 1px 8px;
+    margin-left: 6px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    vertical-align: 1px;
+  }
+  .branches li .action.go {
+    background: var(--seal);
+  }
+
+  /* ============ HIERARCHY INTRO ============ */
+  .hierarchy-intro {
+    font-family: var(--serif-cn);
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-bottom: 24px;
+    padding: 18px 24px;
+    background: var(--seal-faint);
+    border-left: 3px solid var(--seal);
+    line-height: 1.85;
+  }
+  .hierarchy-intro .lead {
+    font-family: var(--serif-en);
+    font-style: italic;
+    color: var(--seal);
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .hierarchy-intro strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* ============ RULES TABLE ============ */
+  .rules-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--serif-cn);
+  }
+  .rules-table th {
+    text-align: left;
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    padding: 10px 12px;
+    border-bottom: 1.5px solid var(--ink);
+    border-top: 1px solid var(--line);
+  }
+  .rules-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+    vertical-align: middle;
+  }
+  .rules-table td.rule-name {
+    font-weight: 600;
+    color: var(--ink);
+    width: 36%;
+  }
+  .rules-table td.rule-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--tech);
+    font-weight: 500;
+    width: 24%;
+  }
+  .rules-table td.rule-action {
+    color: var(--ink-soft);
+    font-style: italic;
+    font-family: var(--serif-en);
+    font-size: 14px;
+  }
+  .rules-table tr.heart td {
+    background: var(--seal-faint);
+  }
+  .rules-table tr.heart td.rule-name::before {
+    content: "♥ ";
+    color: var(--seal);
+  }
+
+  /* ============ HOLDINGS ============ */
+  .holdings-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    border-top: 1.5px solid var(--ink);
+    border-bottom: 1.5px solid var(--ink);
+  }
+
+  .holdings-head, .holding-row {
+    display: grid;
+    grid-template-columns: 1.6fr 0.7fr 0.7fr 1fr 1fr 0.5fr;
+    gap: 8px;
+    padding: 12px 4px;
+    align-items: center;
+  }
+
+  .holdings-head {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .holding-row {
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .holding-row:last-child { border-bottom: none; }
+
+  .h-name {
+    font-family: var(--serif-cn);
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .h-name .code {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+    margin-left: 6px;
+    letter-spacing: 0.1em;
+  }
+  .h-num {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .h-num.cur { color: var(--ink-soft); }
+  .h-num.tgt { color: var(--tech); font-weight: 500; }
+  .h-trig {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    line-height: 1.3;
+  }
+  .h-trig .lbl {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 9px;
+    color: var(--ink-faint);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+  .h-trig .add { color: var(--green); }
+  .h-trig .cut { color: var(--seal); }
+
+  .h-state {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-align: center;
+    letter-spacing: 0.1em;
+    padding: 2px 6px;
+    border: 1px solid var(--line-strong);
+  }
+  .h-state.hold { color: var(--ink-mute); }
+  .h-state.cut { color: var(--seal); border-color: var(--seal); }
+  .h-state.add { color: var(--green); border-color: var(--green); }
+  .h-state.watch { color: var(--warn); border-color: var(--warn); }
+
+  /* ============ MONITORS ============ */
+  .monitors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0;
+    border: 1px solid var(--line-strong);
+  }
+
+  .monitor {
+    padding: 18px 16px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+    position: relative;
+  }
+  .monitor:last-child { border-right: none; }
+
+  .mon-id {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.15em;
+    margin-bottom: 8px;
+  }
+  .mon-name {
+    font-family: var(--serif-cn);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
+  }
+  .mon-now {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--tech);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .mon-meta {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 11px;
+    color: var(--ink-mute);
+    margin-bottom: 10px;
+  }
+  .mon-status {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    padding: 2px 8px;
+    text-transform: uppercase;
+  }
+  .mon-status.ok { background: var(--green); color: var(--bg); }
+  .mon-status.warn { background: var(--warn); color: var(--bg); }
+  .mon-status.alert { background: var(--seal); color: var(--bg); }
+  .mon-status.neutral { background: var(--ink-mute); color: var(--bg); }
+
+  /* ============ CHECKLIST ============ */
+  .checklist {
+    display: grid;
+    gap: 2px;
+    counter-reset: ck;
+  }
+  .check-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+    align-items: start;
+    padding: 14px 4px;
+    border-bottom: 1px dotted var(--line);
+    cursor: pointer;
+    transition: background 0.2s;
+    counter-increment: ck;
+  }
+  .check-item:hover { background: var(--seal-faint); }
+  .check-item input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--ink);
+    background: var(--bg);
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .check-item input[type="checkbox"]:checked {
+    background: var(--seal);
+    border-color: var(--seal);
+  }
+  .check-item input[type="checkbox"]:checked::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+    color: var(--bg);
+    font-family: var(--serif-en);
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .check-item label {
+    font-family: var(--serif-cn);
+    font-size: 15px;
+    color: var(--ink);
+    cursor: pointer;
+    line-height: 1.5;
+  }
+  .check-item label::before {
+    content: counter(ck, decimal-leading-zero) " · ";
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--seal);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+  }
+  .check-item input:checked ~ label {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--seal);
+  }
+
+  /* ============ LOG TEMPLATE ============ */
+  .log-form {
+    background: var(--bg);
+    border: 1px solid var(--ink);
+    padding: 28px;
+    position: relative;
+  }
+  .log-form::before {
+    content: "TEMPLATE";
+    position: absolute;
+    top: -10px;
+    left: 24px;
+    background: var(--bg);
+    padding: 0 10px;
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--ink-mute);
+  }
+
+  .log-row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: start;
+  }
+  .log-row:last-of-type { border-bottom: none; }
+
+  .log-label {
+    font-family: var(--serif-cn);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink-soft);
+    letter-spacing: 0.1em;
+    padding-top: 6px;
+  }
+  .log-label .en {
+    display: block;
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  .log-input, .log-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--line-strong);
+    font-family: var(--serif-cn);
+    font-size: 14px;
+    color: var(--ink);
+    padding: 6px 0;
+    outline: none;
+    resize: vertical;
+  }
+  .log-textarea { min-height: 60px; border-bottom: 1px dashed var(--line-strong); }
+  .log-input:focus, .log-textarea:focus {
+    border-bottom-color: var(--seal);
+  }
+
+  .log-note {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 11px;
+    color: var(--ink-mute);
+    margin-top: 4px;
+  }
+
+  .log-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px double var(--ink);
+  }
+  .log-btn {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .log-btn:hover { background: var(--seal); }
+  .log-btn.ghost {
+    background: transparent;
+    color: var(--ink-mute);
+    border: 1px solid var(--line-strong);
+  }
+  .log-btn.ghost:hover { color: var(--seal); border-color: var(--seal); background: transparent; }
+
+  .log-history {
+    margin-top: 30px;
+  }
+  .log-history-title {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .log-entry {
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 13px;
+    font-family: var(--serif-cn);
+  }
+  .log-entry .date {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--seal);
+    margin-bottom: 4px;
+    letter-spacing: 0.1em;
+  }
+  .log-entry .field {
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .log-entry .field strong {
+    font-family: var(--serif-en);
+    font-style: italic;
+    color: var(--ink-mute);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-right: 6px;
+  }
+  .log-empty {
+    text-align: center;
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 13px;
+    padding: 20px;
+  }
+
+  /* ============ MAXIMS ============ */
+  .maxims {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0;
+    border: 2px solid var(--ink);
+    background: var(--bg);
+    margin-top: 10px;
+  }
+
+  .maxim {
+    padding: 28px 24px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+    position: relative;
+    text-align: center;
+  }
+  .maxim:nth-child(2n) { border-right: none; }
+
+  .maxim-num {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--seal);
+    margin-bottom: 14px;
+  }
+  .maxim-text {
+    font-family: var(--serif-cn);
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--ink);
+    letter-spacing: 0.05em;
+  }
+  .maxim-text .em {
+    color: var(--seal);
+    font-weight: 700;
+  }
+
+  /* ============ SEAL ============ */
+  .seal {
+    width: 110px;
+    height: 110px;
+    border: 3px solid var(--seal);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--seal);
+    font-family: var(--serif-cn);
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-align: center;
+    position: relative;
+    opacity: 0.92;
+    background: var(--seal-faint);
+    transform: rotate(-7deg);
+    flex-shrink: 0;
+  }
+  .seal::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 1px solid var(--seal);
+    border-radius: 50%;
+  }
+  .seal .top {
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    margin-bottom: 4px;
+  }
+  .seal .mid {
+    font-size: 18px;
+    line-height: 1;
+    margin: 2px 0;
+  }
+  .seal .bot {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    margin-top: 4px;
+  }
+
+  /* ============ FOOTER ============ */
+  .colophon {
+    margin-top: 80px;
+    padding-top: 28px;
+    border-top: 3px double var(--ink);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 30px;
+    align-items: center;
+  }
+
+  .colophon-text {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink-mute);
+    letter-spacing: 0.05em;
+  }
+  .colophon-text.right { text-align: right; }
+  .colophon-text .cn {
+    display: block;
+    font-family: var(--serif-cn);
+    font-style: normal;
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.2em;
+    margin-top: 4px;
+  }
+
+  .signature {
+    font-family: var(--script);
+    font-size: 42px;
+    color: var(--seal);
+    line-height: 1;
+    margin-top: 10px;
+  }
+
+  /* ============ TOC FLOATING ============ */
+  .toc {
+    position: fixed;
+    top: 50%;
+    right: 30px;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    padding: 14px 18px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    box-shadow: 0 10px 30px -10px rgba(26, 20, 16, 0.2);
+  }
+  .toc.visible { opacity: 0.95; pointer-events: auto; }
+  .toc-title {
+    font-family: var(--serif-en);
+    font-style: italic;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .toc-list {
+    list-style: none;
+    display: grid;
+    gap: 6px;
+  }
+  .toc-list a {
+    font-family: var(--serif-cn);
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.15s;
+  }
+  .toc-list a:hover { color: var(--seal); }
+  .toc-list a .num {
+    font-family: var(--serif-en);
+    font-style: italic;
+    color: var(--seal);
+    font-size: 10px;
+    width: 18px;
+  }
+
+  /* ============ PRINT ============ */
+  @media print {
+    body { background: white; padding: 0; }
+    .paper { box-shadow: none; padding: 30px 40px; max-width: none; border: none; }
+    .paper::before { display: none; }
+    .toc { display: none; }
+    .log-actions { display: none; }
+    .chapter { page-break-inside: avoid; }
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 720px) {
+    body { padding: 20px 8px; }
+    .paper { padding: 36px 22px 60px; }
+    .paper::before { top: 8px; left: 8px; right: 8px; bottom: 8px; }
+    .toc { display: none; }
+
+    .top-meta { flex-direction: column; gap: 4px; text-align: center; }
+    .title-cn { font-size: 60px; letter-spacing: 0.3em; margin-left: 0.3em;}
+    .issue-bar { flex-direction: column; gap: 6px; text-align: center; }
+
+    .chapter-head { grid-template-columns: 60px 1fr; gap: 16px; }
+    .chap-num { font-size: 38px; padding-right: 16px; }
+    .chap-title-block .cn { font-size: 20px; }
+    .chap-tag { display: none; }
+
+    .step { grid-template-columns: 60px 1fr; gap: 16px; }
+    .step-num { padding-right: 14px; }
+    .step-num .arabic { font-size: 32px; }
+
+    .holdings-head, .holding-row {
+      grid-template-columns: 1fr;
+      gap: 4px;
+      padding: 10px 4px;
+    }
+    .holdings-head { display: none; }
+    .holding-row { border: 1px solid var(--line); margin-bottom: 8px; padding: 12px; }
+    .h-num::before, .h-trig::before, .h-state::before {
+      font-family: var(--serif-en);
+      font-style: italic;
+      font-size: 10px;
+      color: var(--ink-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-right: 6px;
+    }
+    .h-num.cur::before { content: "Current "; }
+    .h-num.tgt::before { content: "Target "; }
+    .h-trig::before { content: "Trigger "; }
+
+    .colophon { grid-template-columns: 1fr; text-align: center; gap: 20px; }
+    .colophon-text.right { text-align: center; }
+    .seal { margin: 0 auto; }
+    .maxim:nth-child(n) { border-right: none; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="toc" id="toc">
+  <div class="toc-title">Contents</div>
+  <ul class="toc-list">
+    <li><a href="#ch1"><span class="num">I</span>四步决策</a></li>
+    <li><a href="#ch2"><span class="num">II</span>决策层级</a></li>
+    <li><a href="#ch3"><span class="num">III</span>预设规则</a></li>
+    <li><a href="#ch4"><span class="num">IV</span>持仓档案</a></li>
+    <li><a href="#ch5"><span class="num">V</span>监控雷达</a></li>
+    <li><a href="#ch6"><span class="num">VI</span>季度体检</a></li>
+    <li><a href="#ch7"><span class="num">VII</span>决策日志</a></li>
+    <li><a href="#ch8"><span class="num">VIII</span>铭文</a></li>
+  </ul>
+</aside>
+
+<article class="paper">
+
+  <!-- ==================== MASTHEAD ==================== -->
+  <header class="masthead">
+    <div class="top-meta">
+      <span>Sine Disciplina Nihil · 无律则废</span>
+      <span>Volume I · Issue 002 · revised</span>
+      <span>Private Circulation</span>
+    </div>
+
+    <h1 class="title-cn">决&nbsp;策&nbsp;卡</h1>
+    <div class="title-en">The Investment Covenant</div>
+    <div class="title-sub">— 与&nbsp;自&nbsp;己&nbsp;签&nbsp;订&nbsp;的&nbsp;投&nbsp;资&nbsp;契&nbsp;约 —</div>
+
+    <div class="issue-bar">
+      <span>Established A.D. 2026.05.24</span>
+      <span class="center">For The Sole Use Of The Bearer</span>
+      <span>To Be Reviewed Quarterly</span>
+    </div>
+  </header>
+
+  <!-- ==================== MANIFESTO ==================== -->
+  <section class="manifesto">
+    <p class="en">
+      <em>Sleep matters more</em><br>
+      than <span class="em">timing the market.</span>
+    </p>
+    <p class="cn">晚&nbsp;上&nbsp;睡&nbsp;得&nbsp;着，比&nbsp;择&nbsp;时&nbsp;正&nbsp;确，重&nbsp;要&nbsp;得&nbsp;多。</p>
+  </section>
+
+  <!-- ==================== CHAPTER I ==================== -->
+  <section class="chapter" id="ch1">
+    <div class="chapter-head">
+      <div class="chap-num">I.</div>
+      <div class="chap-title-block">
+        <div class="cn">四 步 决 策 法</div>
+        <div class="en">The Four-Step Protocol</div>
+      </div>
+      <div class="chap-tag">on event</div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">
+          <span class="roman">FIRST</span>
+          <span class="arabic">01</span>
+        </div>
+        <div class="step-body">
+          <div class="label">信号过滤<span class="en">Filter</span></div>
+          <div class="ask">这条信息有没有改变市场预期？有没有边际加速恶化？</div>
+          <ul class="branches">
+            <li>旧议题且预期未变 ── 已 price in <span class="action">不动</span></li>
+            <li>旧议题但<strong>边际加速恶化 / 扩散</strong> ── 仍是新信号 <span class="action go">前进</span></li>
+            <li><strong>真正的新事件</strong> ── 进入第二步 <span class="action go">前进</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">
+          <span class="roman">SECOND</span>
+          <span class="arabic">02</span>
+        </div>
+        <div class="step-body">
+          <div class="label">影响诊断<span class="en">Diagnose</span></div>
+          <div class="ask">它直接影响我哪只持仓？怎么影响？</div>
+          <ul class="branches">
+            <li>不影响我的持仓 ── 噪声 <span class="action">不动</span></li>
+            <li>影响估值（市场情绪）── 观察一至两日</li>
+            <li><strong>影响盈利（基本面）</strong> ── 进入第三步 <span class="action go">前进</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">
+          <span class="roman">THIRD</span>
+          <span class="arabic">03</span>
+        </div>
+        <div class="step-body">
+          <div class="label">规则触发<span class="en">Trigger</span></div>
+          <div class="ask">达到我事先约定的触发条件了吗？且符合"决策层级"？</div>
+          <ul class="branches">
+            <li>未达到任何预设条件 ── <em>不基于感觉</em> <span class="action">不动</span></li>
+            <li>价格触发但未到加仓三条件 ── <em>先复盘再决定</em> <span class="action">复盘</span></li>
+            <li><strong>已达到预设条件且层级匹配</strong> ── 分批执行 <span class="action go">执行</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">
+          <span class="roman">FOURTH</span>
+          <span class="arabic">04</span>
+        </div>
+        <div class="step-body">
+          <div class="label">落笔为据<span class="en">Record</span></div>
+          <div class="ask">写下：日期 / 事件 / 决策 / 理由 / 待复盘</div>
+          <ul class="branches">
+            <li><strong>不写下来不算决策。</strong>纸笔之约，挽救事后悔意。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== CHAPTER II - HIERARCHY ==================== -->
+  <section class="chapter" id="ch2">
+    <div class="chapter-head">
+      <div class="chap-num">II.</div>
+      <div class="chap-title-block">
+        <div class="cn">决 策 层 级</div>
+        <div class="en">The Hierarchy of Decisions</div>
+      </div>
+      <div class="chap-tag">always first</div>
+    </div>
+
+    <div class="hierarchy-intro">
+      <span class="lead">First Principle · 头一问</span>
+      不同问题用不同层级的工具。看到衰退数据不能直接卖个股；股价跌破支撑不能立即砍仓。每个决策先问：<strong>这是哪一层的问题？</strong>用错层级就是机械交易。
+    </div>
+
+    <table class="rules-table">
+      <thead>
+        <tr>
+          <th>层级 Layer</th>
+          <th>触发情境 Trigger</th>
+          <th>动作 Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="rule-name">宏观 · Macro</td>
+          <td class="rule-value">经济数据 / 政策</td>
+          <td class="rule-action">只调"总股票仓位"，不决定卖哪只</td>
+        </tr>
+        <tr>
+          <td class="rule-name">组合 · Portfolio</td>
+          <td class="rule-value">重叠 / 单只超限</td>
+          <td class="rule-action">先处理重复暴露与集中度</td>
+        </tr>
+        <tr>
+          <td class="rule-name">个股 · Single Name</td>
+          <td class="rule-value">估值 / 基本面 / 触发线</td>
+          <td class="rule-action">规则触发后 48h 复盘再动</td>
+        </tr>
+        <tr class="heart">
+          <td class="rule-name">情绪 · Sleep Test</td>
+          <td class="rule-value">晚上睡不着</td>
+          <td class="rule-action">立即把现金提到 20% 安心位</td>
+        </tr>
+        <tr>
+          <td class="rule-name">执行 · Execution</td>
+          <td class="rule-value">开盘前 30 分钟</td>
+          <td class="rule-action">不冲动 · 分批完成</td>
+        </tr>
+        <tr>
+          <td class="rule-name">追涨防线 · Buyback Guard</td>
+          <td class="rule-value">已卖出某只</td>
+          <td class="rule-action">至少隔一夜 + 写下新理由 方可买回</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ==================== CHAPTER III - RULES ==================== -->
+  <section class="chapter" id="ch3">
+    <div class="chapter-head">
+      <div class="chap-num">III.</div>
+      <div class="chap-title-block">
+        <div class="cn">预 设 规 则</div>
+        <div class="en">Pre-committed Rules</div>
+      </div>
+      <div class="chap-tag">on covenant</div>
+    </div>
+
+    <table class="rules-table">
+      <thead>
+        <tr>
+          <th>规则 Rule</th>
+          <th>数值 Threshold</th>
+          <th>触发动作 Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="rule-name">单只仓位上限</td>
+          <td class="rule-value">≤ 20%</td>
+          <td class="rule-action">超出时减仓至上限</td>
+        </tr>
+        <tr>
+          <td class="rule-name">现金仓位下限</td>
+          <td class="rule-value">≥ 15–20%</td>
+          <td class="rule-action">不足时全面降仓补现金</td>
+        </tr>
+        <tr>
+          <td class="rule-name">价格触发线</td>
+          <td class="rule-value">跌破关键价位</td>
+          <td class="rule-action">48h 内重跑基本面 · 逻辑未变只减不卖 · 逻辑变坏才清</td>
+        </tr>
+        <tr>
+          <td class="rule-name">加仓三条件 <em style="font-family:var(--serif-en);color:var(--ink-faint);font-size:10px;letter-spacing:0.15em;">(all three)</em></td>
+          <td class="rule-value">便宜 + 没坏 + 未超</td>
+          <td class="rule-action">估值更便宜 ∧ 基本面逻辑未坏 ∧ 仓位未超上限</td>
+        </tr>
+        <tr>
+          <td class="rule-name">卖出触发</td>
+          <td class="rule-value">估值回到中位 +30%</td>
+          <td class="rule-action">分批减不一次清</td>
+        </tr>
+        <tr>
+          <td class="rule-name">禁令 · 杠杆</td>
+          <td class="rule-value">PERMANENT BAN</td>
+          <td class="rule-action">永远不上杠杆</td>
+        </tr>
+        <tr class="heart">
+          <td class="rule-name">心态校准</td>
+          <td class="rule-value">晚上睡不着</td>
+          <td class="rule-action">全面降仓至安心位</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ==================== CHAPTER IV - HOLDINGS ==================== -->
+  <section class="chapter" id="ch4">
+    <div class="chapter-head">
+      <div class="chap-num">IV.</div>
+      <div class="chap-title-block">
+        <div class="cn">持 仓 档 案</div>
+        <div class="en">Position Ledger · As of 2026.05.23</div>
+      </div>
+      <div class="chap-tag">live</div>
+    </div>
+
+    <div class="holdings-grid">
+      <div class="holdings-head">
+        <div>标的 Holding</div>
+        <div>现仓位</div>
+        <div>目标</div>
+        <div>加仓触发</div>
+        <div>止损 / 减仓</div>
+        <div>状态</div>
+      </div>
+
+      <div class="holding-row">
+        <div class="h-name">腾讯控股<span class="code">0700.HK</span></div>
+        <div class="h-num cur">25.1%</div>
+        <div class="h-num tgt">28%</div>
+        <div class="h-trig"><span class="lbl">add</span><span class="add">≤ 430 ∧ 基本面未变</span></div>
+        <div class="h-trig"><span class="lbl">cut</span>—</div>
+        <div class="h-state hold">HOLD</div>
+      </div>
+
+      <div class="holding-row">
+        <div class="h-name">恒指科技 ETF<span class="code">HSTECH</span></div>
+        <div class="h-num cur">24.5%</div>
+        <div class="h-num tgt">12%</div>
+        <div class="h-trig"><span class="lbl">add</span>—</div>
+        <div class="h-trig"><span class="lbl">cut</span><span class="cut">减半 / 与腾讯重叠</span></div>
+        <div class="h-state cut">CUT</div>
+      </div>
+
+      <div class="holding-row">
+        <div class="h-name">泡泡玛特<span class="code">9992.HK</span></div>
+        <div class="h-num cur">25.7%</div>
+        <div class="h-num tgt">18%</div>
+        <div class="h-trig"><span class="lbl">add</span><span class="add">≤ 135 ∧ 仓位未超</span></div>
+        <div class="h-trig"><span class="lbl">cut</span>高仓位 + 情绪定价资产 → 控集中度</div>
+        <div class="h-state cut">TRIM</div>
+      </div>
+
+      <div class="holding-row">
+        <div class="h-name">美团-W<span class="code">3690.HK</span></div>
+        <div class="h-num cur">6.9%</div>
+        <div class="h-num tgt">7%</div>
+        <div class="h-trig"><span class="lbl">add</span>不加仓</div>
+        <div class="h-trig"><span class="lbl">cut</span><span class="cut">≤ 73.6 → 48h 复盘 → 视基本面分批</span></div>
+        <div class="h-state watch">WATCH</div>
+      </div>
+
+      <div class="holding-row">
+        <div class="h-name">立讯精密<span class="code">002475.SZ</span></div>
+        <div class="h-num cur">7.1%</div>
+        <div class="h-num tgt">7%</div>
+        <div class="h-trig"><span class="lbl">add</span>—</div>
+        <div class="h-trig"><span class="lbl">cut</span>—</div>
+        <div class="h-state hold">HOLD</div>
+      </div>
+
+      <div class="holding-row">
+        <div class="h-name">山金国际<span class="code">000975.SZ</span></div>
+        <div class="h-num cur">5.5%</div>
+        <div class="h-num tgt">5.5%</div>
+        <div class="h-trig"><span class="lbl">add</span>—</div>
+        <div class="h-trig"><span class="lbl">cut</span>—</div>
+        <div class="h-state hold">HOLD</div>
+      </div>
+
+      <div class="holding-row">
+        <div class="h-name">藏格矿业<span class="code">000408.SZ</span></div>
+        <div class="h-num cur">5.3%</div>
+        <div class="h-num tgt">5.3%</div>
+        <div class="h-trig"><span class="lbl">add</span>—</div>
+        <div class="h-trig"><span class="lbl">cut</span>—</div>
+        <div class="h-state hold">HOLD</div>
+      </div>
+
+      <div class="holding-row">
+        <div class="h-name">现金 Cash<span class="code">RMB</span></div>
+        <div class="h-num cur">9.5%</div>
+        <div class="h-num tgt">≥ 20%</div>
+        <div class="h-trig"><span class="lbl">add</span>由减仓释放</div>
+        <div class="h-trig"><span class="lbl">cut</span>跌深时分批入</div>
+        <div class="h-state add">BUILD</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== CHAPTER V - MONITORS ==================== -->
+  <section class="chapter" id="ch5">
+    <div class="chapter-head">
+      <div class="chap-num">V.</div>
+      <div class="chap-title-block">
+        <div class="cn">日 常 监 控 雷 达</div>
+        <div class="en">The Daily Five-Minute Radar</div>
+      </div>
+      <div class="chap-tag">daily 5min</div>
+    </div>
+
+    <div class="monitors">
+      <div class="monitor">
+        <div class="mon-id">M·01</div>
+        <div class="mon-name">现金比例</div>
+        <div class="mon-now">9.5%</div>
+        <div class="mon-meta">target ≥ 20%</div>
+        <div class="mon-status alert">UNDER</div>
+      </div>
+      <div class="monitor">
+        <div class="mon-id">M·02</div>
+        <div class="mon-name">单只最大</div>
+        <div class="mon-now">26%</div>
+        <div class="mon-meta">limit ≤ 20%</div>
+        <div class="mon-status alert">OVER</div>
+      </div>
+      <div class="monitor">
+        <div class="mon-id">M·03</div>
+        <div class="mon-name">腾讯 FW P/E</div>
+        <div class="mon-now">11.5×</div>
+        <div class="mon-meta">add ≤ 10.5×</div>
+        <div class="mon-status ok">CHEAP</div>
+      </div>
+      <div class="monitor">
+        <div class="mon-id">M·04</div>
+        <div class="mon-name">美团股价</div>
+        <div class="mon-now">81.35</div>
+        <div class="mon-meta">review @ 73.6</div>
+        <div class="mon-status warn">REVIEW</div>
+      </div>
+      <div class="monitor">
+        <div class="mon-id">M·05</div>
+        <div class="mon-name">泡泡玛特</div>
+        <div class="mon-now">150.5</div>
+        <div class="mon-meta">add ≤ 135 ∧ 仓位</div>
+        <div class="mon-status neutral">WAIT</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== CHAPTER VI - QUARTERLY ==================== -->
+  <section class="chapter" id="ch6">
+    <div class="chapter-head">
+      <div class="chap-num">VI.</div>
+      <div class="chap-title-block">
+        <div class="cn">季 度 大 体 检</div>
+        <div class="en">Quarterly Full Examination</div>
+      </div>
+      <div class="chap-tag">every Q</div>
+    </div>
+
+    <div class="checklist" id="checklist">
+      <div class="check-item">
+        <input type="checkbox" id="c1" data-key="ck1">
+        <label for="c1">每只标的跑一遍 PE / PEG / ROIC / 自由现金流</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="c2" data-key="ck2">
+        <label for="c2">检查资产负债表与现金流是否恶化</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="c3" data-key="ck3">
+        <label for="c3">验证护城河是否仍在（变厚 / 变薄 / 被颠覆）</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="c4" data-key="ck4">
+        <label for="c4">评估管理层资本配置纪律（回购 / 分红 / 再投资 / 并购）</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="c5" data-key="ck5">
+        <label for="c5">估值陷阱六项体检（杠杆 / 治理 / 同质化 / 一次性收益 / 财务复杂 / 关联交易）</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="c6" data-key="ck6">
+        <label for="c6">全球同业对比 — 特别针对出海主线的标的</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="c7" data-key="ck7">
+        <label for="c7">检查"反面假设"是否已触发（每只标的的卖出条件）</label>
+      </div>
+      <div class="check-item">
+        <input type="checkbox" id="c8" data-key="ck8">
+        <label for="c8">仓位再平衡至目标 — 包括现金仓位</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== CHAPTER VII - LOG ==================== -->
+  <section class="chapter" id="ch7">
+    <div class="chapter-head">
+      <div class="chap-num">VII.</div>
+      <div class="chap-title-block">
+        <div class="cn">决 策 日 志</div>
+        <div class="en">The Decision Log</div>
+      </div>
+      <div class="chap-tag">on action</div>
+    </div>
+
+    <div class="log-form">
+      <div class="log-row">
+        <div class="log-label">日期<span class="en">Date</span></div>
+        <input type="date" class="log-input" id="logDate">
+      </div>
+      <div class="log-row">
+        <div class="log-label">事件<span class="en">Event</span></div>
+        <input type="text" class="log-input" id="logEvent" placeholder="例：4月消费数据降至 0.2%; 富途监管">
+      </div>
+      <div class="log-row">
+        <div class="log-label">决策<span class="en">Decision</span></div>
+        <input type="text" class="log-input" id="logAction" placeholder="例：减恒指 ETF 释放4万现金 / 不动">
+      </div>
+      <div class="log-row">
+        <div class="log-label">理由<span class="en">Rule cited</span></div>
+        <textarea class="log-textarea" id="logReason" placeholder="必须基于具体规则与估值锚，不基于感觉"></textarea>
+      </div>
+      <div class="log-row">
+        <div class="log-label">复盘<span class="en">Postmortem</span></div>
+        <textarea class="log-textarea" id="logReview" placeholder="留白 — 事后回看时填入"></textarea>
+      </div>
+
+      <div class="log-actions">
+        <button class="log-btn" onclick="saveLog()">Seal &amp; Record</button>
+        <button class="log-btn ghost" onclick="clearLogForm()">Clear</button>
+      </div>
+    </div>
+
+    <div class="log-history">
+      <div class="log-history-title">Ledger · 历 史 决 策</div>
+      <div id="logEntries"></div>
+    </div>
+  </section>
+
+  <!-- ==================== CHAPTER VIII - MAXIMS ==================== -->
+  <section class="chapter" id="ch8">
+    <div class="chapter-head">
+      <div class="chap-num">VIII.</div>
+      <div class="chap-title-block">
+        <div class="cn">铭 文</div>
+        <div class="en">Maxims to Live By</div>
+      </div>
+      <div class="chap-tag">read aloud</div>
+    </div>
+
+    <div class="maxims">
+      <div class="maxim">
+        <div class="maxim-num">— I —</div>
+        <div class="maxim-text">已价格化的不再是利空。<br><span class="em">未发生的不是事实。</span></div>
+      </div>
+      <div class="maxim">
+        <div class="maxim-num">— II —</div>
+        <div class="maxim-text">感觉到顶想卖，<br><span class="em">证明仓位本就过大。</span></div>
+      </div>
+      <div class="maxim">
+        <div class="maxim-num">— III —</div>
+        <div class="maxim-text">判断估值前，先拉数据。<br><span class="em">不拉数据，不作判断。</span></div>
+      </div>
+      <div class="maxim">
+        <div class="maxim-num">— IV —</div>
+        <div class="maxim-text">市场最怕莫名其妙，<br><span class="em">有了原因反而不可怕。</span></div>
+      </div>
+      <div class="maxim">
+        <div class="maxim-num">— V —</div>
+        <div class="maxim-text">在估值高时已减仓，<br><span class="em">而非感觉到顶才卖。</span></div>
+      </div>
+      <div class="maxim">
+        <div class="maxim-num">— VI —</div>
+        <div class="maxim-text">卖出之后至少隔夜，<br><span class="em">须有新理由方可买回。</span></div>
+      </div>
+      <div class="maxim">
+        <div class="maxim-num">— VII —</div>
+        <div class="maxim-text">规则要智能，<br><span class="em">不要变成机器。</span></div>
+      </div>
+      <div class="maxim">
+        <div class="maxim-num">— VIII —</div>
+        <div class="maxim-text">时间站在理性一边，<br><span class="em">慢，但终能到达。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== COLOPHON ==================== -->
+  <footer class="colophon">
+    <div class="colophon-text">
+      <em>This covenant is binding upon the Bearer alone.<br>
+      Reviewed and re-sealed at the close of each quarter.</em>
+      <span class="cn">本契约仅约束持有人本人 · 每季度复审重签</span>
+    </div>
+
+    <div class="seal">
+      <div class="top">理 性 自 约</div>
+      <div class="mid">·  印  ·</div>
+      <div class="bot">A.D. 2026</div>
+    </div>
+
+    <div class="colophon-text right">
+      <em>Signed by the Bearer<br>against future impulses.</em>
+      <div class="signature">— Bearer</div>
+    </div>
+  </footer>
+
+</article>
+
+<script>
+  // ========== Checklist persistence ==========
+  document.querySelectorAll('#checklist input[type="checkbox"]').forEach(cb => {
+    const key = 'cov_' + cb.dataset.key;
+    if (localStorage.getItem(key) === '1') cb.checked = true;
+    cb.addEventListener('change', () => {
+      localStorage.setItem(key, cb.checked ? '1' : '0');
+    });
+  });
+
+  // ========== TOC visibility ==========
+  const toc = document.getElementById('toc');
+  let lastScroll = 0;
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    if (y > 400) toc.classList.add('visible');
+    else toc.classList.remove('visible');
+    lastScroll = y;
+  });
+
+  // ========== Decision Log persistence ==========
+  const LOG_KEY = 'cov_decision_log';
+  function getLogs() {
+    try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); }
+    catch { return []; }
+  }
+  function renderLogs() {
+    const entries = document.getElementById('logEntries');
+    const logs = getLogs();
+    if (logs.length === 0) {
+      entries.innerHTML = '<div class="log-empty">尚无决策记录 · The Ledger is empty.</div>';
+      return;
+    }
+    entries.innerHTML = logs.slice().reverse().map((l, i) => `
+      <div class="log-entry">
+        <div class="date">${l.date || '—'}  ·  Entry №${logs.length - i}</div>
+        <div class="field"><strong>event</strong>${escapeHtml(l.event || '')}</div>
+        <div class="field"><strong>action</strong>${escapeHtml(l.action || '')}</div>
+        <div class="field"><strong>rule</strong>${escapeHtml(l.reason || '')}</div>
+        ${l.review ? `<div class="field"><strong>postmortem</strong>${escapeHtml(l.review)}</div>` : ''}
+      </div>
+    `).join('');
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  function saveLog() {
+    const date = document.getElementById('logDate').value;
+    const event = document.getElementById('logEvent').value.trim();
+    const action = document.getElementById('logAction').value.trim();
+    const reason = document.getElementById('logReason').value.trim();
+    const review = document.getElementById('logReview').value.trim();
+    if (!event && !action) {
+      alert('事件或决策不能同时为空。');
+      return;
+    }
+    const logs = getLogs();
+    logs.push({ date: date || new Date().toISOString().slice(0, 10), event, action, reason, review });
+    localStorage.setItem(LOG_KEY, JSON.stringify(logs));
+    clearLogForm();
+    renderLogs();
+  }
+  function clearLogForm() {
+    document.getElementById('logDate').value = '';
+    document.getElementById('logEvent').value = '';
+    document.getElementById('logAction').value = '';
+    document.getElementById('logReason').value = '';
+    document.getElementById('logReview').value = '';
+  }
+  // initial render
+  document.getElementById('logDate').value = new Date().toISOString().slice(0, 10);
+  renderLogs();
+</script>
+
+</body>
+</html>
