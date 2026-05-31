@@ -557,8 +557,12 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
         ],
     )
     assert result.exit_code == 0, result.output
-    assert "65 components" in result.output
-    assert "validated=8" in result.output
+    assert "66 components" in result.output
+    assert "validated=16" in result.output
+    assert "manual=50" in result.output
+    index_payload = index_json.read_text(encoding="utf-8")
+    assert '"refdes": "D10"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/ltst-c190kgkt.json"' in index_payload
 
     output = tmp_path / "next-family.md"
     result = CliRunner().invoke(
@@ -572,9 +576,10 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
     assert "try_existing=3" in result.output
     assert "triage_new=3" in result.output
     text = output.read_text(encoding="utf-8")
-    assert "| diode | 11 | 4 | 8.8 | diode | LTST-C190KGKT" in text
     assert "| transistor | 6 | 1 | 5.4 | mosfet, bjt | MMBT3904" in text
     assert "| ic | 4 | 4 | 4.0 | buck, half_bridge_gate_driver" in text
+    assert "| diode | 3 | 3 | 2.4 | diode | SMBJ24CA, BAS316, BAV99" in text
+    assert "LTST-C190KGKT" not in text
     assert "triage_for_new_validator" in text
     assert "try_existing_validator_profile" in text
     assert "PASS" not in text
