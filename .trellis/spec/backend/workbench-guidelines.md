@@ -28,6 +28,10 @@ Applies when changing `src/hardwise/workbench/*`,
   stale and must be normalized against the registry.
 - `ChatResponse.answer` and `trace` are user-visible and must already be safe to
   render.
+- `EvidenceTrace` already separates `tool`, `input`, `summary`, `status`,
+  `evidence`, and `wrapped`. The Copilot panel should render these as separate
+  fields; do not collapse them into a raw `input=... evidence=... wrapped=...`
+  string.
 - Runner-sourced text and traces are already sanitized by the Refdes Guard.
   Chat-layer fallback/suggestion/snapshot copy must be sanitized before embed or
   return.
@@ -46,15 +50,21 @@ Applies when changing `src/hardwise/workbench/*`,
 | `U999` snapshot question variant | Return the audited unknown-refdes response |
 | Datasheet question without vector store | Call `search_datasheet`, report unavailable, then fall back to validation/profile evidence |
 | Unknown refdes in any answer/trace | Show the guard-wrapped token |
+| Trace has evidence tokens | Render tokens as visible text chips near the trace row |
+| Trace has wrapped refdes count | Render the `wrapped` count explicitly as guard evidence |
 
 ### 5. Good/Base/Bad Cases
 
 - Good: `datasheet 里 U12 的关键限制是什么?` in fake mode produces
   `search_datasheet` plus `run_component_validation` traces and states that
   vector search is not configured.
+- Good: A trace row separately shows tool/status, summary, evidence tokens,
+  guard wraps, and JSON input.
 - Base: `这个 U12 为什么是 ERROR/WARN?` produces a validation trace only.
 - Bad: A random offline snapshot question returns the first component-validation
   transcript.
+- Bad: The trace UI hides evidence inside one raw code string that users cannot
+  scan field-by-field.
 
 ### 6. Tests Required
 
@@ -64,6 +74,8 @@ Applies when changing `src/hardwise/workbench/*`,
   rather than selecting a non-matching transcript.
 - CLI snapshot test asserting the generated HTML contains both
   `search_datasheet` and the unavailable-vector wording.
+- Copilot asset/CLI tests assert the structured trace labels such as
+  `Guard wraps` remain embedded and the old raw trace string does not return.
 
 ### 7. Wrong vs Correct
 
@@ -97,4 +109,18 @@ if _needs_datasheet_search(question):
         _FakeToolUseBlock(name="search_datasheet", input={"query": question}),
         _FakeToolUseBlock(name="run_component_validation", input={"refdes": refdes}),
     ]
+```
+
+#### Wrong
+
+```javascript
+body.textContent = `input=${JSON.stringify(item.input)} evidence=${evidence}`;
+```
+
+#### Correct
+
+```javascript
+row.appendChild(traceField('Evidence', evidenceChips(item.evidence)));
+row.appendChild(traceField('Guard wraps', String(item.wrapped || 0)));
+row.appendChild(traceField('Input', inputBlock));
 ```

@@ -59,6 +59,16 @@ def schematic_connection_path(
 ) -> str: ...
 ```
 
+Evidence/trust display helpers:
+
+```python
+TrustTier = Literal["l1", "l2", "l3"]
+
+def trust_label_html(tier: TrustTier) -> str: ...
+def trust_label_text(tier: TrustTier) -> str: ...
+def evidence_chips_html(tokens: list[str]) -> str: ...
+```
+
 ### 3. Contracts
 
 - `ValidationReport` is still the verdict source of truth. Report renderers may
@@ -74,6 +84,13 @@ def schematic_connection_path(
   them into electrical judgements.
 - Markdown downloads and HTML detail panels should stay in parity for major
   report sections, especially evidence and pin-consistency sections.
+- Trust labels are presentation provenance, not validator states:
+  `L1 deterministic` maps to existing `ValidationReport` rows/checks,
+  `L3 manual` maps to no-profile/manual coverage rows, and `L2 grounded` is
+  reserved until a grounded-LLM claim schema exists.
+- HTML evidence chips must keep the raw source token as visible text so browser
+  search/copy and tests can still see tokens such as `datasheet:xl1509.pdf#p9`.
+  CSS classes alone are not evidence.
 
 ### 4. Validation & Error Matrix
 
@@ -86,21 +103,31 @@ def schematic_connection_path(
 | Net has many neighbors | Cap neighbor display and show `+N more` |
 | Pin consistency mismatch | Render report-only WARN; do not change `ValidationReport.status` |
 | No-profile project row | Keep coverage/no-profile messaging; do not emit electrical PASS/WARN/ERROR |
+| Deterministic validation row/check | Render `L1 deterministic` without changing PASS/WARN/ERROR |
+| Manual/no-profile coverage row | Render `L3 manual` and keep coverage wording |
+| Evidence token present | Render a copyable/searchable chip whose text is the token |
+| Evidence token missing | Render a muted `-`; do not create placeholder page facts |
 
 ### 5. Good / Base / Bad Cases
 
 - Good: `U12` XL1509 detail shows `Topology Path`, pin consistency, profile
   evidence ledger, and `datasheet:xl1509.pdf#p9` without changing its ERROR
   verdict.
+- Good: The same row shows `L1 deterministic` plus
+  `<span class="evidence-chip">datasheet:xl1509.pdf#p9</span>`.
 - Base: A report rendered without `profile` still shows pin/check evidence from
   `ValidationReport` and an explicit profile-detail unavailable note.
 - Bad: A no-profile LED row gets an LLM-like polarity judgement in the static
   project workbench.
+- Bad: A renderer shows only an icon or CSS class for evidence and hides the raw
+  token text from browser search/copy.
 - Bad: A topology path is worded as current flow or PCB placement evidence.
 
 ### 6. Tests Required
 
 - Renderer tests assert new sections in HTML and markdown.
+- Renderer tests assert `L1 deterministic`, `L3 manual`, evidence chip classes,
+  and the raw evidence token text.
 - CLI component-validation tests assert evidence tokens remain visible in
   downloaded markdown.
 - Project workbench tests assert PASS/WARN/ERROR counts are unchanged.
@@ -124,6 +151,18 @@ validation.component_checks.append(
 ```python
 # Rendering layer surfaces only existing profile evidence.
 evidence_details(validation, profile)
+```
+
+#### Wrong
+
+```html
+<span class="evidence-chip" data-source="datasheet"></span>
+```
+
+#### Correct
+
+```html
+<span class="evidence-chip" data-source="datasheet">datasheet:xl1509.pdf#p9</span>
 ```
 
 #### Wrong
