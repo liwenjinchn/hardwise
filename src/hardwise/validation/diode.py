@@ -5,6 +5,7 @@ from __future__ import annotations
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.pins import voltage_for_net
+from hardwise.validation.topology import components_on_net
 from hardwise.validation.types import ComponentValidation
 
 
@@ -15,11 +16,19 @@ def validate_diode(
 ) -> list[ComponentValidation]:
     """Validate a two-terminal diode against its structured pin profile."""
 
-    return [
+    checks = [
         _validate_pin_connected(component, profile, "Cathode", "diode_cathode_connectivity"),
         _validate_pin_connected(component, profile, "Anode", "diode_anode_connectivity"),
         _validate_reverse_voltage(component, profile, design),
     ]
+    if _is_led_indicator(profile):
+        checks.extend(
+            [
+                _validate_led_indicator_polarity(component, profile, design),
+                _validate_led_current_limit(component, profile, design),
+            ]
+        )
+    return checks
 
 
 def _validate_pin_connected(
@@ -105,6 +114,112 @@ def _validate_reverse_voltage(
     )
 
 
+def _validate_led_indicator_polarity(
+    component: Component,
+    profile: DatasheetProfile,
+    design: Design,
+) -> ComponentValidation:
+    evidence = _profile_evidence(profile, "recommended.diode_role")
+    anode = _pin_by_profile_name(component, profile, "Anode")
+    cathode = _pin_by_profile_name(component, profile, "Cathode")
+    if anode is None or not anode.net:
+        return ComponentValidation(
+            check="led_indicator_polarity",
+            status="ERROR",
+            summary="LED anode pin is not connected; cannot check indicator polarity.",
+            evidence=evidence,
+        )
+    if cathode is None or not cathode.net:
+        return ComponentValidation(
+            check="led_indicator_polarity",
+            status="ERROR",
+            summary="LED cathode pin is not connected; cannot check indicator polarity.",
+            evidence=evidence,
+        )
+
+    anode_voltage = voltage_for_net(anode.net, design)
+    cathode_voltage = voltage_for_net(cathode.net, design)
+    if anode_voltage is None or cathode_voltage is None:
+        return ComponentValidation(
+            check="led_indicator_polarity",
+            status="WARN",
+            refdes=component.refdes,
+            summary="LED indicator polarity cannot be inferred from anode/cathode net names.",
+            evidence=evidence,
+        )
+    if anode_voltage <= cathode_voltage:
+        return ComponentValidation(
+            check="led_indicator_polarity",
+            status="ERROR",
+            refdes=component.refdes,
+            summary=(
+                f"LED anode is at {anode_voltage:g} V and cathode is at "
+                f"{cathode_voltage:g} V; expected anode above cathode."
+            ),
+            evidence=evidence,
+        )
+    return ComponentValidation(
+        check="led_indicator_polarity",
+        status="PASS",
+        refdes=component.refdes,
+        summary=(
+            f"LED anode is at {anode_voltage:g} V and cathode is at "
+            f"{cathode_voltage:g} V."
+        ),
+        evidence=evidence,
+    )
+
+
+def _validate_led_current_limit(
+    component: Component,
+    profile: DatasheetProfile,
+    design: Design,
+) -> ComponentValidation:
+    evidence = _profile_evidence(profile, "recommended.requires_current_limit")
+    if not _bool_recommended(profile, "requires_current_limit"):
+        return ComponentValidation(
+            check="led_current_limit",
+            status="PASS",
+            refdes=component.refdes,
+            summary="LED indicator profile does not require a deterministic current-limit check.",
+            evidence=evidence,
+        )
+
+    anode = _pin_by_profile_name(component, profile, "Anode")
+    cathode = _pin_by_profile_name(component, profile, "Cathode")
+    if anode is None or not anode.net:
+        return ComponentValidation(
+            check="led_current_limit",
+            status="ERROR",
+            summary="LED anode pin is not connected; cannot check current limiting.",
+            evidence=evidence,
+        )
+    if cathode is None or not cathode.net:
+        return ComponentValidation(
+            check="led_current_limit",
+            status="ERROR",
+            summary="LED cathode pin is not connected; cannot check current limiting.",
+            evidence=evidence,
+        )
+
+    limiting_net = _current_limit_net(component, design, (anode.net, cathode.net))
+    if limiting_net is None:
+        return ComponentValidation(
+            check="led_current_limit",
+            status="ERROR",
+            refdes=component.refdes,
+            summary="LED indicator has no resistor neighbor on its anode or cathode net.",
+            evidence=evidence,
+        )
+    return ComponentValidation(
+        check="led_current_limit",
+        status="PASS",
+        refdes=component.refdes,
+        summary=f"LED indicator has a resistor neighbor on {limiting_net}.",
+        evidence=evidence,
+    )
+
+
 def _pin_by_profile_name(component: Component, profile: DatasheetProfile, name: str):
     number = _pin_number(profile, name)
     if number is None:
@@ -124,6 +239,28 @@ def _float_abs_max(profile: DatasheetProfile, key: str) -> float | None:
     value = profile.abs_max.get(key)
     if isinstance(value, (int, float)):
         return float(value)
+    return None
+
+
+def _is_led_indicator(profile: DatasheetProfile) -> bool:
+    return str(profile.recommended.get("diode_role", "")).lower() == "led_indicator"
+
+
+def _bool_recommended(profile: DatasheetProfile, key: str) -> bool:
+    return profile.recommended.get(key) is True
+
+
+def _current_limit_net(
+    component: Component,
+    design: Design,
+    net_names: tuple[str, str],
+) -> str | None:
+    for net_name in net_names:
+        if any(
+            neighbor.refdes.startswith("R")
+            for neighbor in components_on_net(design, net_name, exclude_refdes=component.refdes)
+        ):
+            return net_name
     return None
 
 
