@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 4
-- **Last Active**: 2026-05-30
+- **Total Sessions**: 5
+- **Last Active**: 2026-05-31
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~139 | Active |
+| `journal-1.md` | ~173 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 5 | 2026-05-31 | Six-section validator report polish | `c12fea3`, `9c41cd7` | `codex/migrate-codex-mainline` |
 | 4 | 2026-05-30 | Phase 4 demo closeout | `2503cc5` | `codex/migrate-codex-mainline` |
 | 3 | 2026-05-30 | BJT family validation | `bfcca24` | `codex/migrate-codex-mainline` |
 | 2 | 2026-05-30 | Real datasheet evidence chain | `530cdf4` | `codex/migrate-codex-mainline` |

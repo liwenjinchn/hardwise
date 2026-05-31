@@ -137,3 +137,37 @@ Closed DR-011 Phase 4 as reproducible artifacts: rewrote demo docs around one tr
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: Six-section validator report polish
+
+**Date**: 2026-05-31
+**Task**: Six-section validator report polish
+**Branch**: `codex/migrate-codex-mainline`
+
+### Summary
+
+Added six-section deterministic validator detail rendering with schematic topology paths, pin consistency, profile evidence details, markdown parity, report-rendering spec guidance, and tests.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c12fea3` | (see git log) |
+| `9c41cd7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
