@@ -311,3 +311,41 @@ Implemented the C4 diode-to-LED slice: added the LTST-C190KGKT ready profile, ex
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: C4b MMBT3904 transistor validation
+
+**Date**: 2026-05-31
+**Task**: C4b MMBT3904 transistor validation
+**Branch**: `codex/migrate-codex-mainline`
+
+### Summary
+
+Closed the C4b MMBT3904 transistor coverage gap by adding a reviewed SOT-23 profile and proving Q10-Q15 deterministic BJT rows.
+
+### Main Changes
+
+- Added reviewed `data/datasheet_profiles/mmbt3904.json` with public onsemi SOT-23 pinout evidence: pin 1 Base, pin 2 Emitter, pin 3 Collector.
+- Updated the public-safe synthetic Allegro fixture so Q10-Q15 match the MMBT3904 SOT-23 pinout while reusing the existing BJT validator dispatch.
+- Added focused BJT regression coverage and CLI/ranking assertions showing validated rows rise to 22 and the transistor group drops out of `recommend-next-family`.
+- Updated interview narrative, learning log, and backend validation spec with the package-variant pinout lesson.
+- Verification: `uv run pytest -q` -> 414 passed, 7 deselected; `uv run ruff check .` -> pass; C4b smoke -> 66 components, validated=22, manual=44, PASS/WARN/ERROR=12/7/3.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `60574f7f36e872c3a741fb28dd15afb9d8926a69` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
