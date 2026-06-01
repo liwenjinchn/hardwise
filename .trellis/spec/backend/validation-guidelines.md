@@ -84,6 +84,24 @@ out_components = {node[0] for node in out_net.nodes}   # ✅
 out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .pins
 ```
 
+### Topology PASS requires path evidence
+
+Component-level topology checks may use refdes prefixes and BOM identity as
+candidate filters, but a PASS must validate the relevant electrical path. If
+the path cannot be proven from `Design.nets`, return WARN instead of PASS.
+
+Examples:
+
+- Buck output inductor: verify one terminal is on the switch node and the other
+  terminal reaches the intended output/load/feedback rail.
+- Buck freewheel diode: verify one terminal is on the switch node and the other
+  terminal reaches the expected return/clamp rail before classifying it as a
+  valid freewheel path.
+- Gate-driver output: "reaches Q-prefixed device" is not the same as "reaches
+  gate pin" unless a MOSFET profile or package pin map proves the reached pin.
+- Diode identity families: a small-signal switching diode prefix must not pass
+  a power freewheel role unless profile data explicitly marks that role.
+
 ---
 
 ## 3. Contracts
@@ -167,7 +185,9 @@ out_components = {p.component_refdes for p in out_net.pins}  # ❌ Net has no .p
   is the *only* one where gate-to-ground coincides with Vgs; do not generalise
   it. When the gate or source net has no statically known voltage (PWM drive,
   floating switch node), return WARN — never assume the source is at ground.
-  Same rule for `Vds = voltage(drain) - voltage(source)`.
+  Same rule for `Vds = voltage(drain) - voltage(source)`. If the validator does
+  not encode MOSFET channel/polarity, compare the safe magnitude or return WARN;
+  do not let large negative Vds pass merely because `vds > limit` is false.
 - **BJT base-emitter overstress is directional, not `abs(Vbe)`.** Positive
   `Vbe ~= 0.6-0.7 V` is normal junction operation. For the first NPN validator,
   compute `Vbe = voltage(base) - voltage(emitter)` for reporting, but check

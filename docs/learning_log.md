@@ -2505,3 +2505,53 @@ uv run pytest tests/agent/test_runner.py tests/workbench/test_chat.py \
 C5's L2 means "this turn surfaced retrievable page evidence for reviewer
 inspection." It is not sentence-level NLP entailment and it does not promote or
 override deterministic L1 validator truth.
+
+## 2026-06-01 — Electrical validators need path-level checks before PASS
+
+**Symptom**
+
+The electrical-domain review found several validators whose project framing is
+sound but whose family-specific heuristics can still produce professional false
+PASS results: buck validation recognizes an L/D on the switch net without
+checking the other terminals, BAS-series diodes are treated as Schottky-style
+freewheel candidates, MOSFET Vds ignores negative overstress, and gate-driver
+checks call any reachable Q-prefixed component a gate load.
+
+**Root cause**
+
+Early family templates intentionally used simple schematic-topology signals:
+refdes prefixes, obvious net names, and BOM identity strings. Those are useful
+for MVP triage, but PASS needs stronger path evidence than "component with this
+prefix exists on this net." A few checks also lack profile fields for direction
+or role, such as MOSFET polarity/channel type and diode application role.
+
+**Fix**
+
+No production code was changed in this audit. The follow-up fix should tighten
+PASS criteria: validate both terminals of buck inductors/diodes, remove BAS from
+Schottky-positive buck classification, add negative-Vds handling or explicit
+MOSFET polarity scope, soften gate-driver wording unless the reached Q pin is
+known to be a gate, and prevent `needs_review` profiles from surfacing as fully
+deterministic PASS.
+
+**Verification**
+
+Baseline tests passed before any remediation:
+
+```text
+uv run pytest tests/validation -q
+87 passed
+
+uv run pytest tests/report/test_component_validation_markdown.py tests/report/test_validator_ui.py -q
+6 passed
+
+uv run ruff check src/hardwise/validation src/hardwise/report
+All checks passed
+```
+
+**Takeaway**
+
+For hardware review, a PASS should mean the relevant electrical path was
+validated, not merely that a plausible part or prefix was found nearby. When
+the topology cannot be proven from schematic data, WARN is safer than a
+confident PASS.
