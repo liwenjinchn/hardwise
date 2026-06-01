@@ -462,3 +462,36 @@ Closed the BAS316 diode coverage gap with a public Nexperia profile and existing
 ### Next Steps
 
 - None - task complete
+
+
+## Session 14: Electrical validator domain audit
+
+**Date**: 2026-06-01
+**Task**: Electrical validator domain audit
+**Branch**: `main`
+
+### Summary
+
+Reviewed Hardwise electrical validation algorithms against hardware-engineering expectations, recorded findings on buck topology, diode family classification, MOSFET Vds, gate-driver wording, and needs-review profile trust handling.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2027fa0` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
