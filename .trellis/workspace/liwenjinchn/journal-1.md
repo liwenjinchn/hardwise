@@ -495,3 +495,36 @@ Reviewed Hardwise electrical validation algorithms against hardware-engineering 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 15: Electrical validator assumption fixes
+
+**Date**: 2026-06-01
+**Task**: Electrical validator assumption fixes
+**Branch**: `main`
+
+### Summary
+
+Tightened deterministic electrical validation for buck topology paths, diode family classification, MOSFET Vds magnitude, gate-driver wording, and needs-review profile warnings.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5009086` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
