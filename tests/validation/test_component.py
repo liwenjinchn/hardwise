@@ -124,6 +124,10 @@ def _with_component(design: Design, component: Component) -> Design:
     return design.model_copy(update={"components": components})
 
 
+def _with_net(design: Design, net: Net) -> Design:
+    return design.model_copy(update={"nets": {**design.nets, net.name: net}})
+
+
 @pytest.mark.parametrize(
     ("profile_path", "pinout"),
     [
@@ -230,6 +234,19 @@ def test_validate_component_against_profile_passes_nominal_l78() -> None:
     assert "within the structured profile limits" in report.pin_results[0].summary
 
 
+def test_needs_review_profile_adds_component_warning() -> None:
+    component = _component()
+    profile = _profile().model_copy(update={"review_status": "needs_review"})
+
+    report = validate_component_against_profile(component, profile, _design(component))
+
+    review = next(check for check in report.component_checks if check.check == "profile_review_status")
+    assert report.status == "WARN"
+    assert report.component_counts_by_status == {"PASS": 0, "WARN": 1, "ERROR": 0}
+    assert review.status == "WARN"
+    assert "needs_review" in review.summary
+
+
 def test_validate_component_reports_error_for_wrong_ground_net() -> None:
     component = _component(gnd_net="+5V")
     report = validate_component_against_profile(component, _profile(), _design(component))
@@ -294,6 +311,78 @@ def test_validate_xl1509_nominal_buck_topology_has_no_error() -> None:
 
     assert report.status == "PASS"
     assert report.component_counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
+
+
+def test_validate_xl1509_inductor_must_return_to_fixed_output_rail() -> None:
+    design = _xl1509_design()
+    l1 = design.components["L1"].model_copy(
+        update={
+            "value": "100uH",
+            "pins": [
+                pin.model_copy(update={"net": "+24V"}) if pin.number == "2" else pin
+                for pin in design.components["L1"].pins
+            ],
+        }
+    )
+    d5 = design.components["D5"].model_copy(update={"value": "SS34", "part_number": "SS34"})
+    sw = design.nets["SW"].model_copy(update={"nodes": [("U12", "2"), ("D5", "1"), ("L1", "1")]})
+    out = design.nets["+12V"].model_copy(update={"nodes": [("U12", "3"), ("C2", "1")]})
+    vin = design.nets["+24V"].model_copy(
+        update={"nodes": [*design.nets["+24V"].nodes, ("L1", "2")]}
+    )
+    design = _with_component(_with_component(design, l1), d5)
+    design = _with_net(_with_net(_with_net(design, sw), out), vin)
+
+    report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
+
+    inductor = next(check for check in report.component_checks if check.check == "buck_inductor")
+    assert report.status == "ERROR"
+    assert inductor.status == "ERROR"
+    assert "does not return to the fixed output rail" in inductor.summary
+
+
+def test_validate_xl1509_freewheel_diode_must_return_to_ground() -> None:
+    design = _xl1509_design()
+    l1 = design.components["L1"].model_copy(update={"value": "100uH"})
+    d5 = design.components["D5"].model_copy(
+        update={
+            "value": "SS34",
+            "part_number": "SS34",
+            "pins": [
+                pin.model_copy(update={"net": "+24V"}) if pin.number == "2" else pin
+                for pin in design.components["D5"].pins
+            ],
+        }
+    )
+    gnd = design.nets["GND"].model_copy(
+        update={"nodes": [node for node in design.nets["GND"].nodes if node != ("D5", "2")]}
+    )
+    vin = design.nets["+24V"].model_copy(
+        update={"nodes": [*design.nets["+24V"].nodes, ("D5", "2")]}
+    )
+    design = _with_component(_with_component(design, l1), d5)
+    design = _with_net(_with_net(design, gnd), vin)
+
+    report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
+
+    diode = next(check for check in report.component_checks if check.check == "buck_freewheel_diode")
+    assert report.status == "ERROR"
+    assert diode.status == "ERROR"
+    assert "recognized ground return" in diode.summary
+
+
+def test_validate_xl1509_bas_small_signal_diode_warns_not_schottky_pass() -> None:
+    design = _xl1509_design()
+    l1 = design.components["L1"].model_copy(update={"value": "100uH"})
+    d5 = design.components["D5"].model_copy(update={"value": "BAS316", "part_number": "BAS316"})
+    design = _with_component(_with_component(design, l1), d5)
+
+    report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
+
+    diode = next(check for check in report.component_checks if check.check == "buck_freewheel_diode")
+    assert report.status == "WARN"
+    assert diode.status == "WARN"
+    assert "cannot be classified deterministically" in diode.summary
 
 
 def test_validate_xl1509_missing_output_inductor_errors() -> None:
@@ -419,8 +508,10 @@ def test_validate_eg2132_nominal_topology_has_no_component_error() -> None:
 
     report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
 
+    vs = next(check for check in report.component_checks if check.check == "gate_driver_vs_switch_node")
     assert report.component_counts_by_status == {"PASS": 7, "WARN": 0, "ERROR": 0}
     assert all(check.status != "ERROR" for check in report.component_checks)
+    assert "pin role is not proven" in vs.summary
 
 
 def test_validate_eg2132_missing_bootstrap_capacitor_errors() -> None:
@@ -455,7 +546,7 @@ def test_validate_eg2132_missing_gate_load_errors() -> None:
         check for check in report.component_checks if check.check == "gate_driver_ho_gate_load"
     )
     assert ho.status == "ERROR"
-    assert "does not reach a Q-prefixed gate load" in ho.summary
+    assert "does not reach a Q-prefixed drive target" in ho.summary
 
 
 def test_validate_eg2132_unknown_bootstrap_diode_warns_without_fabricating() -> None:

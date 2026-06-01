@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Pin
+from hardwise.validation.dcdc_paths import (
+    buck_diode_path_result,
+    buck_inductor_path_result,
+    worst_status,
+)
 from hardwise.validation.topology import (
     components_on_net,
     first_by_prefix,
@@ -34,9 +39,9 @@ def validate_buck_topology(
 
     neighbors = components_on_net(design, output_pin.net, exclude_refdes=component.refdes)
     inductor = first_by_prefixes(neighbors, ("L", "PL"))
-    checks = [_validate_buck_inductor(inductor, profile)]
+    checks = [_validate_buck_inductor(inductor, component, profile, design, output_pin.net)]
     if _external_freewheel_diode_required(profile):
-        checks.append(_validate_buck_diode(first_by_prefix(neighbors, "D"), profile))
+        checks.append(_validate_buck_diode(first_by_prefix(neighbors, "D"), profile, output_pin.net))
     else:
         checks.append(_validate_synchronous_buck_freewheel(profile))
     return checks
@@ -44,7 +49,10 @@ def validate_buck_topology(
 
 def _validate_buck_inductor(
     inductor: Component | None,
+    component: Component,
     profile: DatasheetProfile,
+    design: Design,
+    switch_net: str,
 ) -> ComponentValidation:
     evidence = _profile_evidence(profile, "recommended.inductor")
     if inductor is None:
@@ -56,54 +64,67 @@ def _validate_buck_inductor(
         )
 
     inductance = parse_inductance_uh(inductor.value)
+    path_status, path_summary = buck_inductor_path_result(
+        inductor, component, profile, design, switch_net
+    )
     min_uh = _float_recommended(profile, "inductor_min_uh")
     max_uh = _float_recommended(profile, "inductor_max_uh")
     if inductance is None:
+        summary = (
+            f"Inductor {inductor.refdes} value cannot be parsed deterministically. "
+            f"{path_summary}"
+        )
         return ComponentValidation(
             check="buck_inductor",
-            status="WARN",
+            status=worst_status("WARN", path_status),
             refdes=inductor.refdes,
-            summary=f"Inductor {inductor.refdes} value cannot be parsed deterministically.",
+            summary=summary,
             evidence=evidence,
         )
     if min_uh is not None and inductance < min_uh:
+        summary = (
+            f"Inductor {inductor.refdes} is {inductance:g} uH, below the "
+            f"profile minimum {min_uh:g} uH. {path_summary}"
+        )
         return ComponentValidation(
             check="buck_inductor",
             status="ERROR",
             refdes=inductor.refdes,
-            summary=(
-                f"Inductor {inductor.refdes} is {inductance:g} uH, below the "
-                f"profile minimum {min_uh:g} uH."
-            ),
+            summary=summary,
             evidence=evidence,
         )
     if max_uh is not None and inductance > max_uh:
+        summary = (
+            f"Inductor {inductor.refdes} is {inductance:g} uH, above the "
+            f"profile maximum {max_uh:g} uH. {path_summary}"
+        )
         return ComponentValidation(
             check="buck_inductor",
-            status="WARN",
+            status=worst_status("WARN", path_status),
             refdes=inductor.refdes,
-            summary=(
-                f"Inductor {inductor.refdes} is {inductance:g} uH, above the "
-                f"profile maximum {max_uh:g} uH."
-            ),
+            summary=summary,
             evidence=evidence,
         )
     if min_uh is None and max_uh is None:
+        summary = (
+            f"Inductor {inductor.refdes} value {inductance:g} uH is present; "
+            f"this profile does not specify a numeric inductor range. {path_summary}"
+        )
         return ComponentValidation(
             check="buck_inductor",
-            status="PASS",
+            status=path_status,
             refdes=inductor.refdes,
-            summary=(
-                f"Inductor {inductor.refdes} value {inductance:g} uH is present; "
-                "this profile does not specify a numeric inductor range."
-            ),
+            summary=summary,
             evidence=evidence,
         )
     return ComponentValidation(
         check="buck_inductor",
-        status="PASS",
+        status=path_status,
         refdes=inductor.refdes,
-        summary=f"Inductor {inductor.refdes} value {inductance:g} uH is within profile range.",
+        summary=(
+            f"Inductor {inductor.refdes} value {inductance:g} uH is within profile range. "
+            f"{path_summary}"
+        ),
         evidence=evidence,
     )
 
@@ -111,6 +132,7 @@ def _validate_buck_inductor(
 def _validate_buck_diode(
     diode: Component | None,
     profile: DatasheetProfile,
+    switch_net: str,
 ) -> ComponentValidation:
     evidence = _profile_evidence(profile, "recommended.freewheel_diode")
     if diode is None:
@@ -121,6 +143,7 @@ def _validate_buck_diode(
             evidence=evidence,
         )
 
+    path_status, path_summary = buck_diode_path_result(diode, switch_net)
     identity = " ".join(
         value
         for value in [
@@ -132,32 +155,37 @@ def _validate_buck_diode(
     )
     schottky = is_likely_schottky_diode(identity)
     if schottky is False:
+        summary = (
+            f"Freewheel diode {diode.refdes} ({diode.part_number or diode.value}) "
+            f"is not a Schottky-style diode family. {path_summary}"
+        )
         return ComponentValidation(
             check="buck_freewheel_diode",
-            status="ERROR",
+            status=worst_status("ERROR", path_status),
             refdes=diode.refdes,
-            summary=(
-                f"Freewheel diode {diode.refdes} ({diode.part_number or diode.value}) "
-                "is not a Schottky-style diode family."
-            ),
+            summary=summary,
             evidence=evidence,
         )
     if schottky is None:
+        summary = (
+            f"Freewheel diode {diode.refdes} ({diode.part_number or diode.value}) "
+            f"type cannot be classified deterministically. {path_summary}"
+        )
         return ComponentValidation(
             check="buck_freewheel_diode",
-            status="WARN",
+            status=worst_status("WARN", path_status),
             refdes=diode.refdes,
-            summary=(
-                f"Freewheel diode {diode.refdes} ({diode.part_number or diode.value}) "
-                "type cannot be classified deterministically."
-            ),
+            summary=summary,
             evidence=evidence,
         )
     return ComponentValidation(
         check="buck_freewheel_diode",
-        status="PASS",
+        status=path_status,
         refdes=diode.refdes,
-        summary=f"Freewheel diode {diode.refdes} is in a recognized Schottky-style family.",
+        summary=(
+            f"Freewheel diode {diode.refdes} is in a recognized Schottky-style family. "
+            f"{path_summary}"
+        ),
         evidence=evidence,
     )
 

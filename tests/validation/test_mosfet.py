@@ -107,6 +107,23 @@ def test_vgs_overvoltage_errors(mosfet_profile, highside_design):
     assert "Vgs is 30 V" in vgs.summary
 
 
+def test_negative_vds_magnitude_over_abs_max_errors(mosfet_profile, highside_design):
+    """A reverse static drain-source stress must still compare by magnitude."""
+    highside_design.nets["+48V"].voltage_hint = 0.0
+    highside_design.nets["SW"].voltage_hint = 150.0
+    highside_design.nets["BST_GATE"].voltage_hint = 160.0
+    component = highside_design.components["Q1"]
+    results = validate_component_against_profile(component, mosfet_profile, highside_design)
+
+    vgs = next(c for c in results.component_checks if c.check == "mosfet_vgs_rating")
+    vds = next(c for c in results.component_checks if c.check == "mosfet_vds_rating")
+    assert results.status == "ERROR"
+    assert vgs.status == "PASS"
+    assert vds.status == "ERROR"
+    assert "Vds is -150 V" in vds.summary
+    assert "magnitude above abs max" in vds.summary
+
+
 def test_routes_by_family_without_mpn_fallback(mosfet_profile, lowside_design):
     """Family dispatch must not depend on the profile part number."""
     component = lowside_design.components["Q1"]

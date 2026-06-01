@@ -16,7 +16,10 @@ def validate_component_against_profile(
     """Validate one component's schematic pins against a structured pin profile."""
 
     results = [validate_pin(component, pin_profile, design) for pin_profile in profile.pins]
-    component_checks = _validate_component_topology(component, profile, design)
+    component_checks = [
+        *_validate_profile_review_status(component, profile),
+        *_validate_component_topology(component, profile, design),
+    ]
     return ValidationReport(
         refdes=component.refdes,
         component_value=component.value,
@@ -25,6 +28,26 @@ def validate_component_against_profile(
         pin_results=results,
         component_checks=component_checks,
     )
+
+
+def _validate_profile_review_status(
+    component: Component,
+    profile: DatasheetProfile,
+) -> list[ComponentValidation]:
+    if profile.review_status == "ready":
+        return []
+    return [
+        ComponentValidation(
+            check="profile_review_status",
+            status="WARN",
+            refdes=component.refdes,
+            summary=(
+                f"Datasheet profile {profile.part_number} is marked {profile.review_status}; "
+                "treat deterministic checks as reviewer-confirmed only after profile review."
+            ),
+            evidence=[],
+        )
+    ]
 
 
 def _validate_component_topology(

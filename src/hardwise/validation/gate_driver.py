@@ -157,14 +157,17 @@ def _validate_gate_output(
             check=f"gate_driver_{name.lower()}_gate_load",
             status="PASS",
             refdes=loads,
-            summary=f"Gate-driver {name} output reaches gate-load component(s): {loads}.",
+            summary=(
+                f"Gate-driver {name} output reaches Q-prefixed drive target(s): {loads}; "
+                "exact MOSFET gate pin role is not proven by this schematic-only check."
+            ),
             evidence=evidence,
         )
     return ComponentValidation(
         check=f"gate_driver_{name.lower()}_gate_load",
         status="ERROR",
         refdes=component.refdes,
-        summary=f"Gate-driver {name} output net {pin.net} does not reach a Q-prefixed gate load.",
+        summary=f"Gate-driver {name} output net {pin.net} does not reach a Q-prefixed drive target.",
         evidence=evidence,
     )
 
@@ -191,7 +194,10 @@ def _validate_switch_node(
             check="gate_driver_vs_switch_node",
             status="PASS",
             refdes=component.refdes,
-            summary=f"Gate-driver VS net {pin.net} connects to a half-bridge switch node.",
+            summary=(
+                f"Gate-driver VS net {pin.net} reaches two Q-prefixed devices; "
+                "exact switch-node pin role is not proven by this schematic-only check."
+            ),
             evidence=evidence,
         )
     if q_count == 1:
@@ -199,14 +205,17 @@ def _validate_switch_node(
             check="gate_driver_vs_switch_node",
             status="WARN",
             refdes=component.refdes,
-            summary=f"Gate-driver VS net {pin.net} reaches one Q-prefixed device only.",
+            summary=(
+                f"Gate-driver VS net {pin.net} reaches one Q-prefixed device only; "
+                "exact switch-node pin role is not proven by this schematic-only check."
+            ),
             evidence=evidence,
         )
     return ComponentValidation(
         check="gate_driver_vs_switch_node",
         status="ERROR",
         refdes=component.refdes,
-        summary=f"Gate-driver VS net {pin.net} does not reach a Q-prefixed switch node.",
+        summary=f"Gate-driver VS net {pin.net} does not reach a Q-prefixed switch target.",
         evidence=evidence,
     )
 

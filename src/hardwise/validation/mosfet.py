@@ -157,14 +157,14 @@ def _validate_vds(
 
     vds = drain_voltage - source_voltage
     vds_limit = _float_abs_max(profile, "vds")
-    if vds_limit is not None and vds > vds_limit:
+    if vds_limit is not None and abs(vds) > vds_limit:
         return ComponentValidation(
             check="mosfet_vds_rating",
             status="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Vds is {vds:g} V (drain {drain_voltage:g} V - source {source_voltage:g} V), "
-                f"above abs max {vds_limit:g} V."
+                f"magnitude above abs max {vds_limit:g} V."
             ),
             evidence=evidence,
         )
@@ -174,7 +174,7 @@ def _validate_vds(
         refdes=component.refdes,
         summary=(
             f"Vds is {vds:g} V (drain {drain_voltage:g} V - source {source_voltage:g} V)"
-            + (f", within abs max {vds_limit:g} V." if vds_limit else ".")
+            + (f", magnitude within abs max {vds_limit:g} V." if vds_limit else ".")
         ),
         evidence=evidence,
     )

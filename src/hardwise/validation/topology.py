@@ -83,7 +83,7 @@ def is_likely_schottky_diode(value: str) -> bool | None:
     part = re.sub(r"[^A-Z0-9]", "", value.upper())
     if not part:
         return None
-    if part.startswith(("SS", "SK", "MBR", "MBRA", "BAS", "BAT", "1N58")):
+    if part.startswith(("SS", "SK", "MBR", "MBRA", "BAT", "1N58")):
         return True
     if part.startswith(("1N400", "1N539", "FR", "UF")):
         return False
