@@ -39,6 +39,27 @@ if family == "connector":
     return validate_connector(component, profile, design)
 ```
 
+### Family validators plus source-backed profiles
+
+Deep validators should generalize by electrical family, while profiles carry
+part-specific facts. A new repeated MPN should normally add or reuse:
+
+- one `topology_family` validator such as `mosfet`, `diode`,
+  `shift_register_piso`, or `i2c_level_shift_repeater`; and
+- one ready datasheet profile that supplies pin numbers, pin roles, limits,
+  aliases, and evidence tokens.
+
+Do not copy a validator just because the part number changed. Do not promote a
+profile to `review_status="ready"` unless public pinout/polarity/limit evidence
+matches the local symbol. If the public source conflicts with the local symbol,
+leave the row manual instead of improving coverage with a speculative PASS.
+
+Generic passives are the exception: capacitors and resistors may run a
+profile-free generic path because their light checks come from BOM value,
+schematic package, and deterministic net voltage. This coverage must be labeled
+as generic/light validation (`GENERIC_CAPACITOR` or `GENERIC_RESISTOR`), not as
+datasheet-backed deep review.
+
 ### Pin lookup
 
 ```python
