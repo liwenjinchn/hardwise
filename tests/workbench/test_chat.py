@@ -65,7 +65,7 @@ def test_fake_chat_reports_datasheet_search_unavailable_and_uses_validation() ->
             )
         )
 
-        assert "没有配置向量 datasheet search" in response.answer
+        assert "没有配置向量数据手册搜索" in response.answer
         assert "U12" in response.answer
         assert [trace.tool for trace in response.trace] == [
             "search_datasheet",
@@ -87,10 +87,10 @@ def test_snapshot_responses_include_datasheet_boundary_answer() -> None:
     try:
         responses = build_snapshot_responses(context)
 
-        datasheet_questions = [key for key in responses if key.startswith("datasheet")]
+        datasheet_questions = [key for key in responses if key.startswith("数据手册")]
         assert datasheet_questions
         response = responses[datasheet_questions[0]]
-        assert "没有配置向量 datasheet search" in response.answer
+        assert "没有配置向量数据手册搜索" in response.answer
         assert [trace.tool for trace in response.trace] == [
             "search_datasheet",
             "run_component_validation",

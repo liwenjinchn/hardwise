@@ -1,0 +1,57 @@
+{
+  "part_number": "SD103AWS-7-F",
+  "part_number_aliases": [
+    "SD103AWS",
+    "SD103AWS-7"
+  ],
+  "review_status": "ready",
+  "description": "40 V, 350 mA surface-mount Schottky barrier diode, SOD-323",
+  "abs_max": {
+    "reverse_voltage": 40.0,
+    "forward_continuous_current": 0.35,
+    "peak_forward_surge_current": 1.5,
+    "power_dissipation": 0.2
+  },
+  "recommended": {
+    "topology_family": "diode",
+    "diode_role": "schottky_barrier_switching",
+    "reverse_recovery_time_ns": 6.0
+  },
+  "pin_function": {
+    "1": "Anode",
+    "2": "Cathode"
+  },
+  "pins": [
+    {
+      "name": "Anode",
+      "number": "1",
+      "category": "switch_node",
+      "function": "Anode terminal for the SOD-323 diode symbol used by the real public Allegro design.",
+      "evidence": [
+        "datasheet:sd103aws-sd103cws.pdf#p1"
+      ]
+    },
+    {
+      "name": "Cathode",
+      "number": "2",
+      "category": "switch_node",
+      "function": "Cathode terminal; the datasheet marks cathode polarity with the package cathode band.",
+      "evidence": [
+        "datasheet:sd103aws-sd103cws.pdf#p1"
+      ]
+    }
+  ],
+  "evidence": {
+    "abs_max.reverse_voltage": "datasheet:sd103aws-sd103cws.pdf#p2",
+    "abs_max.forward_continuous_current": "datasheet:sd103aws-sd103cws.pdf#p2",
+    "abs_max.peak_forward_surge_current": "datasheet:sd103aws-sd103cws.pdf#p2",
+    "abs_max.power_dissipation": "datasheet:sd103aws-sd103cws.pdf#p2",
+    "recommended.diode_role": "datasheet:sd103aws-sd103cws.pdf#p1",
+    "recommended.reverse_recovery_time_ns": "datasheet:sd103aws-sd103cws.pdf#p2",
+    "pin_function.1": "datasheet:sd103aws-sd103cws.pdf#p1",
+    "pin_function.2": "datasheet:sd103aws-sd103cws.pdf#p1"
+  },
+  "extracted_at": "2026-06-01T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-real-allegro-diode-pack",
+  "schema_version": "v2"
+}

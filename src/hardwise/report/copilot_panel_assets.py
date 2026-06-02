@@ -3,6 +3,7 @@
 COPILOT_STYLE = """
 .ai-fab{position:fixed;right:22px;bottom:22px;z-index:40;width:54px;height:54px;border:1px solid rgba(0,184,212,.65);background:#00b8d4;color:#001013;font-weight:900;font-family:var(--mono);box-shadow:0 16px 50px rgba(0,0,0,.45);cursor:pointer}
 .ai-fab:hover{filter:brightness(1.08)}
+.ai-root.ai-open .ai-fab{display:none}
 .ai-panel{position:fixed;right:0;top:0;bottom:0;z-index:39;width:min(430px,100vw);display:grid;grid-template-rows:auto 1fr auto;border-left:1px solid var(--line);background:#0c100f;box-shadow:-22px 0 70px rgba(0,0,0,.48);transform:translateX(100%);transition:transform .18s ease}
 .ai-panel.open{transform:translateX(0)}
 .ai-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 16px 14px;border-bottom:1px solid var(--line);background:#111716}
@@ -55,8 +56,14 @@ COPILOT_SCRIPT = """
   let selectedRefdes = config.selectedRefdes || '';
   const history = [];
 
-  const open = () => panel.classList.add('open');
-  const close = () => panel.classList.remove('open');
+  const open = () => {
+    panel.classList.add('open');
+    root.classList.add('ai-open');
+  };
+  const close = () => {
+    panel.classList.remove('open');
+    root.classList.remove('ai-open');
+  };
   openBtn.addEventListener('click', open);
   closeBtn.addEventListener('click', close);
   window.addEventListener('hardwise:refdes-selected', (event) => {
@@ -91,14 +98,15 @@ COPILOT_SCRIPT = """
     const details = document.createElement('details');
     details.className = 'ai-trace';
     const summary = document.createElement('summary');
-    summary.textContent = 'Evidence / Tool trace';
+    summary.textContent = '证据 / 工具调用';
     details.appendChild(summary);
-    const traceField = (label, valueNode) => {
+    const traceField = (label, valueNode, sourceLabel = '') => {
       const field = document.createElement('div');
       field.className = 'ai-trace-field';
       const key = document.createElement('span');
       key.className = 'ai-trace-label';
       key.textContent = label;
+      if (sourceLabel) key.title = sourceLabel;
       const value = document.createElement('div');
       value.className = 'ai-trace-value';
       if (typeof valueNode === 'string') {
@@ -145,13 +153,13 @@ COPILOT_SCRIPT = """
         traceSummary.textContent = item.summary;
         row.appendChild(traceSummary);
       }
-      row.appendChild(traceField('Trust', item.trust_label || item.trust_tier || '-'));
-      row.appendChild(traceField('Evidence', evidenceChips(item.evidence)));
-      row.appendChild(traceField('Guard wraps', String(item.wrapped || 0)));
+      row.appendChild(traceField('可信度', item.trust_label || item.trust_tier || '-', 'Trust'));
+      row.appendChild(traceField('证据', evidenceChips(item.evidence), 'Evidence'));
+      row.appendChild(traceField('位号防护', String(item.wrapped || 0), 'Guard wraps'));
       const inputBlock = document.createElement('pre');
       inputBlock.className = 'ai-trace-input';
       inputBlock.textContent = JSON.stringify(item.input || {}, null, 2);
-      row.appendChild(traceField('Input', inputBlock));
+      row.appendChild(traceField('工具入参', inputBlock, 'Input'));
       details.appendChild(row);
     });
     node.appendChild(details);
@@ -164,7 +172,7 @@ COPILOT_SCRIPT = """
       if (key) return snapshots[key];
     }
     return snapshots.__fallback__ || {
-      answer: 'This static snapshot only contains audited demo answers.',
+      answer: '这个静态快照只包含已审计的演示回答。',
       trace: [],
       suggestions: config.suggestions || []
     };
@@ -174,7 +182,7 @@ COPILOT_SCRIPT = """
     open();
     addMessage('user', question);
     history.push({role: 'user', content: question});
-    const pending = addMessage('assistant', 'Hardwise is checking evidence...');
+    const pending = addMessage('assistant', 'Hardwise 正在核验证据...');
     let response;
     try {
       if (config.mode === 'live') {
@@ -188,7 +196,7 @@ COPILOT_SCRIPT = """
         response = fallbackResponse(question);
       }
     } catch (error) {
-      response = {answer: `Workbench chat failed: ${error}`, trace: []};
+      response = {answer: `原理图检验工具对话失败：${error}`, trace: []};
     }
     pending.remove();
     const answer = response.answer || '';

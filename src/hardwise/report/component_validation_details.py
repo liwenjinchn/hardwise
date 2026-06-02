@@ -35,13 +35,13 @@ class PinConsistency:
     @property
     def note(self) -> str:
         if self.status == "PASS":
-            return "Profiled pins and schematic pins match for the rendered review scope."
+            return "器件档案引脚与原理图引脚在当前检验范围内一致。"
         details: list[str] = []
         if self.missing_schematic:
-            details.append(f"missing schematic pins: {', '.join(self.missing_schematic)}")
+            details.append(f"原理图缺少引脚：{', '.join(self.missing_schematic)}")
         if self.extra_schematic:
-            details.append(f"extra schematic pins: {', '.join(self.extra_schematic)}")
-        return "; ".join(details) or "pin count differs between profile and schematic."
+            details.append(f"原理图多出引脚：{', '.join(self.extra_schematic)}")
+        return "；".join(details) or "器件档案与原理图的引脚数量不同。"
 
 
 def build_pin_consistency(
@@ -117,7 +117,12 @@ def trust_label_html(tier: TrustTier) -> str:
     """Render a short trust-tier label without changing validation status."""
 
     label = trust_label_text(tier)
-    return f'<span class="trust trust-{tier}">{escape(label)}</span>'
+    display = {
+        "l1": "L1 确定性",
+        "l2": "L2 有出处",
+        "l3": "L3 人工确认",
+    }[tier]
+    return f'<span class="trust trust-{tier}" title="{escape(label)}">{escape(display)}</span>'
 
 
 def evidence_chips_html(tokens: list[str]) -> str:

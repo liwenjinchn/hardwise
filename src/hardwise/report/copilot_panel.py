@@ -33,9 +33,9 @@ def render_copilot_panel(
     }
     config_json = json.dumps(config, ensure_ascii=False).replace("</", "<\\/")
     label = (
-        "Live local Runner"
+        "本地实时检验引擎"
         if mode == "live"
-        else "Offline audited snapshot"
+        else "离线审计快照"
     )
     return f"""
   <style>{COPILOT_STYLE}</style>
@@ -45,18 +45,18 @@ def render_copilot_panel(
       <header class="ai-panel-head">
         <div>
           <h2>Hardwise AI</h2>
-          <p>{escape(label)} · Refdes Guard / Evidence trace</p>
+          <p>{escape(label)} · 位号防护 / 证据链</p>
         </div>
         <button class="ai-close" type="button" data-ai-close aria-label="Close">x</button>
       </header>
       <div class="ai-suggest" data-ai-suggest></div>
       <section class="ai-stream" data-ai-stream aria-live="polite">
-        <div class="ai-msg assistant"><p>Ask about the selected component, validation evidence, or a refdes lookup.</p></div>
+        <div class="ai-msg assistant"><p>可以询问选中器件、验证证据，或查询某个位号是否在网表/BOM 中存在。</p></div>
       </section>
       <div class="ai-compose">
         <form data-ai-form>
-          <input class="ai-input" data-ai-input type="text" placeholder="Ask Hardwise AI..." autocomplete="off">
-          <button class="ai-send" type="submit" aria-label="Send">&gt;</button>
+          <input class="ai-input" data-ai-input type="text" placeholder="问 Hardwise AI..." autocomplete="off">
+          <button class="ai-send" type="submit" aria-label="发送">&gt;</button>
         </form>
         <div class="ai-mode">{escape(label)}</div>
       </div>

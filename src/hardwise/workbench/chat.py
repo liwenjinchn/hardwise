@@ -156,7 +156,7 @@ class _FakeWorkbenchMessages:
             return _localized(
                 self._last_question,
                 "The tool returned a result, but this fake workbench mode cannot summarize it yet.",
-                "工具已经返回结果，但 fake workbench 模式暂时不能总结这个结果。",
+                "工具已经返回结果，但 fake 模式暂时不能总结这个结果。",
             )
         return self._answer_from_validation_result(validation_payload)
 
@@ -174,15 +174,15 @@ class _FakeWorkbenchMessages:
                 )
             else:
                 prefix = (
-                    "这次 workbench 没有配置向量 datasheet search。"
-                    "先回退到结构化 profile/validation 证据: "
+                    "这次原理图检验工具没有配置向量数据手册搜索。"
+                    "先回退到结构化器件档案/验证证据："
                 )
             if validation_payload is not None:
                 return prefix + self._answer_from_validation_result(validation_payload)
             return prefix + _localized(
                 self._last_question,
                 "no validation evidence was available for the selected component.",
-                "当前选中器件没有可用的 validation 证据。",
+                "当前选中器件没有可用的验证证据。",
             )
 
         if hits:
@@ -193,12 +193,12 @@ class _FakeWorkbenchMessages:
             snippet = text[:220]
             if _wants_english(self._last_question):
                 return f"Datasheet search found {source} p{page}: {snippet}"
-            return f"datasheet search 找到 {source} 第 {page} 页: {snippet}"
+            return f"数据手册搜索找到 {source} 第 {page} 页：{snippet}"
 
         return _localized(
             self._last_question,
             "Datasheet search returned no matching chunks for this question.",
-            "datasheet search 没有找到匹配片段。",
+            "数据手册搜索没有找到匹配片段。",
         )
 
     def _answer_from_validation_result(self, payload: dict[str, Any]) -> str:
@@ -226,7 +226,7 @@ class _FakeWorkbenchMessages:
                 return " ".join(lines)
 
             lines = [
-                f"{refdes} 的确定性 family validator 结果是 {overall}。",
+                f"{refdes} 的确定性器件族检查结果是 {overall}。",
                 (
                     "计数: "
                     f"PASS={counts.get('PASS', 0)}, WARN={counts.get('WARN', 0)}, "
@@ -251,11 +251,11 @@ class _FakeWorkbenchMessages:
         if status == "no_profile":
             if _wants_english(self._last_question):
                 return f"{refdes} exists, but it has no assigned validation profile yet."
-            return f"{refdes} 在板上，但还没有分配结构化 validation profile。"
+            return f"{refdes} 在板上，但还没有分配结构化器件档案。"
 
         if _wants_english(self._last_question):
             return "The tool returned a result, but this fake workbench mode cannot summarize it yet."
-        return "工具已经返回结果，但 fake workbench 模式暂时不能总结这个结果。"
+        return "工具已经返回结果，但 fake 模式暂时不能总结这个结果。"
 
 
 class FakeWorkbenchAnthropic:
@@ -343,8 +343,8 @@ class WorkbenchChatService:
     def fallback_response(self, question: str, selected_refdes: str | None = None) -> ChatResponse:
         selected = self._selected_refdes(selected_refdes)
         answer = (
-            "这个离线演示只包含已审计的 validation 快照。"
-            "请选择建议问题，或在 serve-workbench 模式下连接本地模型。"
+            "这个离线演示只包含已审计的验证快照。"
+            "请选择建议问题，或在本地服务模式下连接模型。"
         )
         clean_answer, wrapped = sanitize_text(answer, self.context.registry)
         return ChatResponse(
@@ -403,8 +403,8 @@ class WorkbenchChatService:
         refdes = selected_refdes or default_refdes(self.context) or "U1"
         raw = [
             f"这个 {refdes} 为什么是 ERROR/WARN?",
-            f"Show evidence for {refdes}",
-            f"datasheet 里 {refdes} 的关键限制是什么?",
+            f"查看 {refdes} 的证据链",
+            f"数据手册里 {refdes} 的关键限制是什么?",
             "板上有没有 U999?",
         ]
         return [_sanitize_chat_copy(item, self.context) for item in raw]
@@ -449,8 +449,8 @@ def build_snapshot_responses(context: WorkbenchContext) -> dict[str, ChatRespons
     selected = default_refdes(context)
     questions = [
         f"这个 {selected or '器件'} 为什么是 ERROR/WARN?",
-        f"Show evidence for {selected or 'this component'}",
-        f"datasheet 里 {selected or '这个器件'} 的关键限制是什么?",
+        f"查看 {selected or '这个器件'} 的证据链",
+        f"数据手册里 {selected or '这个器件'} 的关键限制是什么?",
         "板上有没有 U999?",
     ]
     responses: dict[str, ChatResponse] = {}

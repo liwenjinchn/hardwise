@@ -1,0 +1,64 @@
+{
+  "part_number": "PCA9617A",
+  "part_number_aliases": [
+    "PCA9617ADP",
+    "PCA9617ADPJ"
+  ],
+  "review_status": "ready",
+  "description": "Level translating Fast-mode Plus I2C-bus repeater, TSSOP8",
+  "abs_max": {
+    "vcca": 5.5,
+    "vccb": 5.5,
+    "input_output_voltage": 5.5
+  },
+  "recommended": {
+    "topology_family": "i2c_level_shift_repeater",
+    "vcca_min": 0.8,
+    "vcca_max": 5.5,
+    "vccb_min": 2.2,
+    "vccb_max": 5.5,
+    "port_a_clock_pin": "2",
+    "port_a_data_pin": "3",
+    "port_b_data_pin": "6",
+    "port_b_clock_pin": "7",
+    "enable_pin": "5"
+  },
+  "pin_function": {
+    "1": "VCC(A) port A supply voltage",
+    "2": "SCLA serial clock port A bus",
+    "3": "SDAA serial data port A bus",
+    "4": "GND supply ground",
+    "5": "EN active HIGH repeater enable input",
+    "6": "SDAB serial data port B bus",
+    "7": "SCLB serial clock port B bus",
+    "8": "VCC(B) port B supply voltage"
+  },
+  "pins": [
+    {"number": "1", "name": "VCCA", "category": "power_input", "function": "Port A supply voltage.", "limits": {"recommended_voltage_min": 0.8, "recommended_voltage_max": 5.5}, "recommended_topology": ["Connect to the low-voltage I2C side supply."], "evidence": ["datasheet:pca9617a.pdf#p5"]},
+    {"number": "2", "name": "SCLA", "category": "i2c_upstream_clock", "function": "Serial clock port A bus.", "limits": {}, "recommended_topology": ["Pair with SDAA on the same bus side."], "evidence": ["datasheet:pca9617a.pdf#p5"]},
+    {"number": "3", "name": "SDAA", "category": "i2c_upstream_data", "function": "Serial data port A bus.", "limits": {}, "recommended_topology": ["Pair with SCLA on the same bus side."], "evidence": ["datasheet:pca9617a.pdf#p5"]},
+    {"number": "4", "name": "GND", "category": "ground", "function": "Supply ground.", "limits": {}, "recommended_topology": ["Connect to supply ground."], "evidence": ["datasheet:pca9617a.pdf#p5"]},
+    {"number": "5", "name": "EN", "category": "logic_input", "function": "Active-high repeater enable input referenced to VCCB.", "limits": {}, "recommended_topology": ["Tie high or drive from a defined control net."], "evidence": ["datasheet:pca9617a.pdf#p5"]},
+    {"number": "6", "name": "SDAB", "category": "i2c_channel_data", "function": "Serial data port B bus.", "limits": {}, "recommended_topology": ["Pair with SCLB on the higher-voltage bus side."], "evidence": ["datasheet:pca9617a.pdf#p5"]},
+    {"number": "7", "name": "SCLB", "category": "i2c_channel_clock", "function": "Serial clock port B bus.", "limits": {}, "recommended_topology": ["Pair with SDAB on the higher-voltage bus side."], "evidence": ["datasheet:pca9617a.pdf#p5"]},
+    {"number": "8", "name": "VCCB", "category": "power_input", "function": "Port B supply voltage.", "limits": {"recommended_voltage_min": 2.2, "recommended_voltage_max": 5.5}, "recommended_topology": ["Connect to the higher-voltage I2C side supply."], "evidence": ["datasheet:pca9617a.pdf#p5"]}
+  ],
+  "evidence": {
+    "recommended.vcca": "datasheet:pca9617a.pdf#p1",
+    "recommended.vccb": "datasheet:pca9617a.pdf#p1",
+    "recommended.enable_pin": "datasheet:pca9617a.pdf#p5",
+    "recommended.port_a_bus": "datasheet:pca9617a.pdf#p5",
+    "recommended.port_b_bus": "datasheet:pca9617a.pdf#p5",
+    "pin_function.1": "datasheet:pca9617a.pdf#p5",
+    "pin_function.2": "datasheet:pca9617a.pdf#p5",
+    "pin_function.3": "datasheet:pca9617a.pdf#p5",
+    "pin_function.4": "datasheet:pca9617a.pdf#p5",
+    "pin_function.5": "datasheet:pca9617a.pdf#p5",
+    "pin_function.6": "datasheet:pca9617a.pdf#p5",
+    "pin_function.7": "datasheet:pca9617a.pdf#p5",
+    "pin_function.8": "datasheet:pca9617a.pdf#p5"
+  },
+  "extracted_at": "2026-06-01T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-pca9617a",
+  "schema_version": "v2"
+}

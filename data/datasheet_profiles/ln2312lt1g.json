@@ -1,0 +1,70 @@
+{
+  "part_number": "LN2312LT1G",
+  "part_number_aliases": [
+    "S-LN2312LT1G",
+    "LN2312LT3G",
+    "S-LN2312LT3G"
+  ],
+  "review_status": "ready",
+  "description": "20V N-channel enhancement-mode MOSFET, SOT-23",
+  "abs_max": {
+    "vds": 20.0,
+    "vgs": 8.0,
+    "id": 4.9,
+    "power_dissipation": 1.25
+  },
+  "recommended": {
+    "topology_family": "mosfet",
+    "polarity": "n_channel",
+    "rds_on_max_4v5": 0.041,
+    "rds_on_max_2v5": 0.052
+  },
+  "pin_function": {
+    "1": "Gate",
+    "2": "Source",
+    "3": "Drain"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "Gate",
+      "category": "analog_input",
+      "function": "Gate control input; Vgs is measured to the source terminal.",
+      "limits": {},
+      "recommended_topology": ["Drive within the +/-8 V gate-source absolute maximum rating."],
+      "evidence": ["datasheet:s-ln2312lt1g.pdf#p1"]
+    },
+    {
+      "number": "2",
+      "name": "Source",
+      "category": "switch_node",
+      "function": "Source terminal and Vgs/Vds reference node.",
+      "limits": {},
+      "recommended_topology": ["Use as the MOSFET source reference, not implicitly as ground."],
+      "evidence": ["datasheet:s-ln2312lt1g.pdf#p1"]
+    },
+    {
+      "number": "3",
+      "name": "Drain",
+      "category": "switch_output",
+      "function": "Drain terminal of the N-channel MOSFET.",
+      "limits": {},
+      "recommended_topology": ["Keep drain-source stress within the 20 V maximum rating."],
+      "evidence": ["datasheet:s-ln2312lt1g.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "abs_max.vds": "datasheet:s-ln2312lt1g.pdf#p1",
+    "abs_max.vgs": "datasheet:s-ln2312lt1g.pdf#p1",
+    "abs_max.id": "datasheet:s-ln2312lt1g.pdf#p1",
+    "abs_max.power_dissipation": "datasheet:s-ln2312lt1g.pdf#p1",
+    "recommended.rds_on_max_4v5": "datasheet:s-ln2312lt1g.pdf#p1",
+    "recommended.rds_on_max_2v5": "datasheet:s-ln2312lt1g.pdf#p1",
+    "pin_function.1": "datasheet:s-ln2312lt1g.pdf#p1",
+    "pin_function.2": "datasheet:s-ln2312lt1g.pdf#p1",
+    "pin_function.3": "datasheet:s-ln2312lt1g.pdf#p1"
+  },
+  "extracted_at": "2026-06-01T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-ln2312lt1g-public-pdf",
+  "schema_version": "v2"
+}

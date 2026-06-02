@@ -1,0 +1,77 @@
+{
+  "part_number": "74LV165",
+  "part_number_aliases": [
+    "74LV165PW",
+    "74LV165PW,118"
+  ],
+  "review_status": "ready",
+  "description": "8-bit parallel-in/serial-out shift register, TSSOP16/SO16",
+  "abs_max": {
+    "vcc": 7.0,
+    "input_voltage": 7.0,
+    "output_current": 25.0
+  },
+  "recommended": {
+    "topology_family": "shift_register_piso",
+    "vcc_min": 1.0,
+    "vcc_max": 5.5,
+    "load_pin": "1",
+    "clock_pin": "2",
+    "serial_output_pin": "9",
+    "serial_input_pin": "10",
+    "clock_enable_pin": "15"
+  },
+  "pin_function": {
+    "1": "PL parallel enable input, active LOW",
+    "2": "CP clock input",
+    "3": "D4 parallel data input",
+    "4": "D5 parallel data input",
+    "5": "D6 parallel data input",
+    "6": "D7 parallel data input",
+    "7": "Q7 complementary serial output",
+    "8": "GND ground",
+    "9": "Q7 serial output",
+    "10": "DS serial data input",
+    "11": "D0 parallel data input",
+    "12": "D1 parallel data input",
+    "13": "D2 parallel data input",
+    "14": "D3 parallel data input",
+    "15": "CE clock enable input, active LOW",
+    "16": "VCC positive supply"
+  },
+  "pins": [
+    {"number": "1", "name": "PL", "category": "logic_input", "function": "Parallel load enable input, active low.", "limits": {}, "recommended_topology": ["Fan out to all devices in the shift-register chain."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "2", "name": "CP", "category": "logic_input", "function": "Clock input, low-to-high edge triggered.", "limits": {}, "recommended_topology": ["Fan out from the chain clock, optionally through series damping resistors."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "3", "name": "D4", "category": "logic_input", "function": "Parallel data input D4.", "limits": {}, "recommended_topology": ["Connect to the sampled logic signal."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "4", "name": "D5", "category": "logic_input", "function": "Parallel data input D5.", "limits": {}, "recommended_topology": ["Connect to the sampled logic signal."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "5", "name": "D6", "category": "logic_input", "function": "Parallel data input D6.", "limits": {}, "recommended_topology": ["Connect to the sampled logic signal."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "6", "name": "D7", "category": "logic_input", "function": "Parallel data input D7.", "limits": {}, "recommended_topology": ["Connect to the sampled logic signal."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "7", "name": "Q7_N", "category": "gpio", "function": "Complementary serial output from the last stage.", "limits": {}, "recommended_topology": ["Connect if the inverted serial output is used, otherwise mark intentional NC in the schematic."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "8", "name": "GND", "category": "ground", "function": "Ground reference.", "limits": {}, "recommended_topology": ["Connect to system ground."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "9", "name": "Q7", "category": "gpio", "function": "Serial output from the last stage.", "limits": {}, "recommended_topology": ["Cascade to the next DS input or leave the terminal stage toward the controller."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "10", "name": "DS", "category": "logic_input", "function": "Serial data input.", "limits": {}, "recommended_topology": ["Receive the previous stage Q7 output when devices are cascaded."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "11", "name": "D0", "category": "logic_input", "function": "Parallel data input D0.", "limits": {}, "recommended_topology": ["Connect to the sampled logic signal."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "12", "name": "D1", "category": "logic_input", "function": "Parallel data input D1.", "limits": {}, "recommended_topology": ["Connect to the sampled logic signal."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "13", "name": "D2", "category": "logic_input", "function": "Parallel data input D2.", "limits": {}, "recommended_topology": ["Connect to the sampled logic signal."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "14", "name": "D3", "category": "logic_input", "function": "Parallel data input D3.", "limits": {}, "recommended_topology": ["Connect to the sampled logic signal."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "15", "name": "CE", "category": "logic_input", "function": "Clock enable input, active low.", "limits": {}, "recommended_topology": ["Tie low or drive to a defined logic level."], "evidence": ["datasheet:74lv165.pdf#p3"]},
+    {"number": "16", "name": "VCC", "category": "power_input", "function": "Positive supply voltage.", "limits": {"abs_max_voltage": 7.0, "recommended_voltage_min": 1.0, "recommended_voltage_max": 5.5}, "recommended_topology": ["Connect to the logic supply rail."], "evidence": ["datasheet:74lv165.pdf#p5"]}
+  ],
+  "evidence": {
+    "abs_max.vcc": "datasheet:74lv165.pdf#p5",
+    "recommended.vcc": "datasheet:74lv165.pdf#p5",
+    "recommended.load_pin": "datasheet:74lv165.pdf#p3",
+    "recommended.clock_pin": "datasheet:74lv165.pdf#p3",
+    "recommended.clock_enable_pin": "datasheet:74lv165.pdf#p3",
+    "recommended.serial_chain": "datasheet:74lv165.pdf#p1",
+    "pin_function.1": "datasheet:74lv165.pdf#p3",
+    "pin_function.2": "datasheet:74lv165.pdf#p3",
+    "pin_function.9": "datasheet:74lv165.pdf#p3",
+    "pin_function.10": "datasheet:74lv165.pdf#p3",
+    "pin_function.15": "datasheet:74lv165.pdf#p3",
+    "pin_function.16": "datasheet:74lv165.pdf#p5"
+  },
+  "extracted_at": "2026-06-01T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-74lv165",
+  "schema_version": "v2"
+}

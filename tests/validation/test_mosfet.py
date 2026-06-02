@@ -163,3 +163,45 @@ R_LOAD,100R,0805,Load resistor
     gate = next(c for c in results.component_checks if c.check == "mosfet_gate_connectivity")
     assert gate.status == "ERROR"
     assert "not connected" in gate.summary
+
+
+def test_ln2312lt1g_profile_matches_public_sot23_pinout() -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/ln2312lt1g.json"))
+
+    assert profile.recommended["topology_family"] == "mosfet"
+    assert profile.abs_max["vds"] == 20.0
+    assert profile.abs_max["vgs"] == 8.0
+    assert profile.pin_function == {"1": "Gate", "2": "Source", "3": "Drain"}
+
+
+def test_ln2312lt1g_lowside_validation_uses_existing_mosfet_rules(tmp_path) -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/ln2312lt1g.json"))
+    netlist_content = """$PACKAGES
+  ! 'SOT23' ! LN2312LT1G ; Q1
+$NETS
+  'P3V3' ; Q1.1
+  'GND' ; Q1.2
+  'P12V' ; Q1.3
+$END
+"""
+    (tmp_path / "ln.net").write_text(netlist_content)
+    bom_content = """Reference,Quantity,Value,Manufacturer,MPN
+Q1,1,LN2312LT1G,LRC,LN2312LT1G
+"""
+    (tmp_path / "ln_bom.csv").write_text(bom_content)
+
+    netlist = parse_allegro_netlist(tmp_path / "ln.net")
+    bom = parse_bom(tmp_path / "ln_bom.csv")
+    design = build_design_from_netlist(netlist)
+    design = apply_bom_to_design(design, match_bom_to_design(bom, design))
+
+    results = validate_component_against_profile(design.components["Q1"], profile, design)
+
+    assert results.status == "PASS"
+    assert {check.check for check in results.component_checks} == {
+        "mosfet_gate_connectivity",
+        "mosfet_drain_connectivity",
+        "mosfet_source_connectivity",
+        "mosfet_vgs_rating",
+        "mosfet_vds_rating",
+    }

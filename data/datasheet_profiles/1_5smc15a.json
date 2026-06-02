@@ -1,0 +1,61 @@
+{
+  "part_number": "1.5SMC15A",
+  "part_number_aliases": [
+    "1.5SMC15A-E3/57T",
+    "1.5SMC15A-E3/9AT"
+  ],
+  "review_status": "ready",
+  "description": "Unidirectional 12.8 V working-standoff TVS diode, DO-214AB",
+  "abs_max": {
+    "reverse_voltage": 12.8,
+    "working_standoff_voltage": 12.8,
+    "breakdown_voltage_min": 14.3,
+    "breakdown_voltage_max": 15.8,
+    "clamping_voltage_max": 21.2,
+    "peak_pulse_power_w": 1500.0
+  },
+  "recommended": {
+    "topology_family": "diode",
+    "diode_role": "unidirectional_tvs",
+    "working_standoff_voltage": 12.8
+  },
+  "pin_function": {
+    "K": "Cathode",
+    "A": "Anode"
+  },
+  "pins": [
+    {
+      "name": "Cathode",
+      "number": "K",
+      "category": "switch_node",
+      "function": "Unidirectional TVS cathode; normally connected to the protected positive rail.",
+      "evidence": [
+        "datasheet:littelfuse_1.5smc15a_product_page#unidirectional"
+      ]
+    },
+    {
+      "name": "Anode",
+      "number": "A",
+      "category": "switch_node",
+      "function": "Unidirectional TVS anode; normally connected to the return/reference side.",
+      "evidence": [
+        "datasheet:littelfuse_1.5smc15a_product_page#unidirectional"
+      ]
+    }
+  ],
+  "evidence": {
+    "abs_max.reverse_voltage": "datasheet:littelfuse_1.5smc15a_product_page#vr-12v8",
+    "abs_max.working_standoff_voltage": "datasheet:littelfuse_1.5smc15a_product_page#vr-12v8",
+    "abs_max.breakdown_voltage_min": "datasheet:littelfuse_1.5smc15a_product_page#vbr-14v3",
+    "abs_max.breakdown_voltage_max": "datasheet:littelfuse_1.5smc15a_product_page#vbr-15v8",
+    "abs_max.clamping_voltage_max": "datasheet:littelfuse_1.5smc15a_product_page#vc-21v2",
+    "abs_max.peak_pulse_power_w": "datasheet:littelfuse_1.5smc15a_product_page#1500w",
+    "recommended.diode_role": "datasheet:littelfuse_1.5smc15a_product_page#unidirectional",
+    "recommended.working_standoff_voltage": "datasheet:littelfuse_1.5smc15a_product_page#vr-12v8",
+    "pin_function.K": "datasheet:littelfuse_1.5smc15a_product_page#unidirectional",
+    "pin_function.A": "datasheet:littelfuse_1.5smc15a_product_page#unidirectional"
+  },
+  "extracted_at": "2026-06-01T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-real-allegro-diode-pack",
+  "schema_version": "v2"
+}

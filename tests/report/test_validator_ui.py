@@ -89,7 +89,7 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
         generated_at="2026-05-27T00:00:00+00:00",
     )
 
-    assert "Hardwise / 设计验证器" in html
+    assert "Hardwise / 原理图检验工具" in html
     assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
@@ -101,7 +101,7 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert "器件基本信息" in html
     assert "型号核对" in html
     assert "引脚功能与连接关系" in html
-    assert "Topology Path" in html
+    assert "连接路径" in html
     assert "L1 deterministic" in html
     assert "evidence-chip" in html
     assert 'data-source="datasheet">datasheet:xl1509.pdf#p9' in html
@@ -109,15 +109,15 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert "U12-1" in html
     assert "引脚一致性检查" in html
     assert "综合合规性检查" in html
-    assert "证据 / Datasheet 详情" in html
+    assert "证据 / 数据手册详情" in html
     assert "recommended.inductor" in html
     assert "datasheet:xl1509.pdf#p9" in html
-    assert "No profile-level thermal/package source token is present" in html
+    assert "没有档案级热/封装来源 token" in html
     assert "综合总结" in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
-    assert "V3.7 is a local static multi-validation UI" in html
-    assert ".brd, boardview, placement, routing, PCB geometry" in html
+    assert "本地原理图检验工具" in html
+    assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
 def test_render_project_workbench_includes_zero_profile_gap(tmp_path: Path) -> None:
@@ -154,16 +154,15 @@ def test_render_project_workbench_includes_zero_profile_gap(tmp_path: Path) -> N
         generated_at="2026-05-28T00:00:00+00:00",
     )
 
-    assert "Profile coverage gap" in html
-    assert "validated 0" in html
+    assert "<span>已验证</span><strong>3</strong>" in html
     assert "L3 manual" in html
-    assert "no_result" in html
-    assert "待 profile" in html
-    assert "Component Group Coverage" in html
-    assert '<td class="ref">U8<span class="sub">1 refs</span></td>' in html
-    assert "Scope Boundary" in html
-    assert "Profile Gap Groups" in html
-    assert "does not convert no-profile rows into electrical judgements" in html
+    assert "L1 deterministic" in html
+    assert "通用被动件检查" in html
+    assert "GENERIC_CAPACITOR" in html
+    assert "无本地档案" in html
+    assert "待器件档案" in html
+    assert '<td class="ref">U8<span class="sub">1 个位号</span></td>' in html
+    assert "范围边界" in html
 
 
 def test_render_project_workbench_accepts_optional_copilot_panel(tmp_path: Path) -> None:
@@ -214,11 +213,14 @@ def test_render_project_workbench_accepts_optional_copilot_panel(tmp_path: Path)
 
 
 def test_copilot_snapshot_fallback_uses_boundary_answer_only() -> None:
-    from hardwise.report.copilot_panel_assets import COPILOT_SCRIPT
+    from hardwise.report.copilot_panel_assets import COPILOT_SCRIPT, COPILOT_STYLE
 
     assert "return snapshots.__fallback__" in COPILOT_SCRIPT
     assert "item !== '__fallback__' && !/U999/i.test(item)" not in COPILOT_SCRIPT
     assert "ai-trace-field" in COPILOT_SCRIPT
     assert "Guard wraps" in COPILOT_SCRIPT
     assert "Trust" in COPILOT_SCRIPT
+    assert "root.classList.add('ai-open')" in COPILOT_SCRIPT
+    assert "root.classList.remove('ai-open')" in COPILOT_SCRIPT
+    assert ".ai-root.ai-open .ai-fab{display:none}" in COPILOT_STYLE
     assert "input=${JSON.stringify" not in COPILOT_SCRIPT

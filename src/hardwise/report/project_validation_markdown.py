@@ -46,7 +46,8 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
         counts = report.counts_by_status  # type: ignore[union-attr]
         lines.append(
             f"| {row.refdes} | {_escape_pipe(row.bom_value or '-')} | "
-            f"{_escape_pipe(row.part_number or '-')} | `{row.profile_path}` | "
+            f"{_escape_pipe(row.part_number or '-')} | "
+            f"`{row.profile_path or report.profile_part_number}` | "
             f"{report.status} | {counts['PASS']} / {counts['WARN']} / {counts['ERROR']} |"  # type: ignore[union-attr]
         )
     if not index.validated_rows:

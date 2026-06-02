@@ -91,7 +91,7 @@ def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: 
     assert "PASS/WARN/ERROR=1/0/1" in result.output
 
     html = output.read_text(encoding="utf-8")
-    assert "Hardwise / 设计验证器" in html
+    assert "Hardwise / 原理图检验工具" in html
     assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
@@ -102,8 +102,8 @@ def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: 
     assert "外围/拓扑检查" in html or "综合合规性检查" in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
-    assert "V3.7 is a local static multi-validation UI" in html
-    assert ".brd, boardview, placement, routing, PCB geometry" in html
+    assert "本地原理图检验工具" in html
+    assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
 def test_report_validator_ui_batch_accepts_targets_manifest(tmp_path: Path) -> None:
@@ -128,7 +128,7 @@ def test_report_validator_ui_batch_accepts_targets_manifest(tmp_path: Path) -> N
     assert "PASS/WARN/ERROR=1/0/1" in result.output
 
     html = output.read_text(encoding="utf-8")
-    assert "Hardwise / 设计验证器" in html
+    assert "Hardwise / 原理图检验工具" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert '<article class="panel active" data-panel="U12">' in html
@@ -136,7 +136,7 @@ def test_report_validator_ui_batch_accepts_targets_manifest(tmp_path: Path) -> N
     assert 'status error">ERROR' in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
-    assert ".brd, boardview, placement, routing, PCB geometry" in html
+    assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
 def test_report_validator_ui_batch_writes_eg2132_gate_driver_checks(
@@ -162,14 +162,14 @@ def test_report_validator_ui_batch_writes_eg2132_gate_driver_checks(
     assert "PASS/WARN/ERROR=0/0/1" in result.output
 
     html = output.read_text(encoding="utf-8")
-    assert "Hardwise / 设计验证器" in html
+    assert "Hardwise / 原理图检验工具" in html
     assert 'data-select-ref="U3"' in html
     assert '<article class="panel active" data-panel="U3">' in html
     assert "外围/拓扑检查" in html
     assert "gate_driver_bootstrap" in html
     assert "MBRA210LT3G" in html
     assert "below required 24 V" in html
-    assert ".brd, boardview, placement, routing, PCB geometry" in html
+    assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
 def test_report_validator_ui_batch_writes_stm32_mcu_checks(
@@ -195,7 +195,7 @@ def test_report_validator_ui_batch_writes_stm32_mcu_checks(
     assert "PASS/WARN/ERROR=0/0/1" in result.output
 
     html = output.read_text(encoding="utf-8")
-    assert "Hardwise / 设计验证器" in html
+    assert "Hardwise / 原理图检验工具" in html
     assert 'data-select-ref="U8"' in html
     assert '<article class="panel active" data-panel="U8">' in html
     assert "外围/拓扑检查" in html
@@ -203,7 +203,7 @@ def test_report_validator_ui_batch_writes_stm32_mcu_checks(
     assert "mcu_swclk" in html
     assert "SWDIO is connected to SWCLK" in html
     assert "SWCLK is connected to SWDIO" in html
-    assert ".brd, boardview, placement, routing, PCB geometry" in html
+    assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
 def test_report_validator_ui_batch_writes_mixed_power_stage_manifest(
@@ -296,12 +296,12 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
 
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
-    assert "validated=3" in result.output
-    assert "PASS/WARN/ERROR=1/0/2" in result.output
-    assert "manual=15" in result.output
+    assert "validated=12" in result.output
+    assert "PASS/WARN/ERROR=4/6/2" in result.output
+    assert "manual=6" in result.output
 
     html = html_output.read_text(encoding="utf-8")
-    assert "Hardwise / 设计验证器" in html
+    assert "Hardwise / 原理图检验工具" in html
     assert "mixed_power_stage" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
@@ -309,12 +309,16 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     assert '<article class="panel active" data-panel="U12">' in html
     assert "1N4007W" in html
     assert "MBRA210LT3G" in html
+    assert "GENERIC_CAPACITOR" in html
+    assert "GENERIC_RESISTOR" in html
 
     index_text = index_output.read_text(encoding="utf-8")
     assert "# Hardwise Design Validator - mixed_power_stage" in index_text
-    assert "| Validated components | 3 |" in index_text
-    assert "| PASS / WARN / ERROR | 1 / 0 / 2 |" in index_text
+    assert "| Validated components | 12 |" in index_text
+    assert "| PASS / WARN / ERROR | 4 / 6 / 2 |" in index_text
     assert "Static schematic-side design validator" in index_text
+    assert "`GENERIC_CAPACITOR`" in index_text
+    assert "`GENERIC_RESISTOR`" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"components_in_design": 18' in index_payload
@@ -346,17 +350,17 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
 
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
-    assert "validated=4" in result.output
-    assert "PASS/WARN/ERROR=1/0/3" in result.output
-    assert "manual=21" in result.output
+    assert "validated=16" in result.output
+    assert "PASS/WARN/ERROR=4/9/3" in result.output
+    assert "manual=9" in result.output
 
     html = html_output.read_text(encoding="utf-8")
-    assert "Hardwise / 设计验证器" in html
+    assert "Hardwise / 原理图检验工具" in html
     assert 'data-select-ref="U8"' in html
     assert "SWDIO is connected to SWCLK" in html
     assert "SWCLK is connected to SWDIO" in html
     assert "引脚一致性检查" in html
-    assert "证据 / Datasheet 详情" in html
+    assert "证据 / 数据手册详情" in html
     assert "L1 deterministic" in html
     assert "evidence-chip" in html
     assert "recommended.swd" in html
@@ -364,9 +368,10 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert "外围/拓扑检查" in html
 
     index_text = index_output.read_text(encoding="utf-8")
-    assert "| Validated components | 4 |" in index_text
-    assert "| PASS / WARN / ERROR | 1 / 0 / 3 |" in index_text
+    assert "| Validated components | 16 |" in index_text
+    assert "| PASS / WARN / ERROR | 4 / 9 / 3 |" in index_text
     assert "STM32G030C8T6" in index_text
+    assert "`GENERIC_CAPACITOR`" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"components_in_design": 25' in index_payload
@@ -394,7 +399,7 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     html = html_output.read_text(encoding="utf-8")
     assert "data-ai-root" in html
     assert "hardwise-copilot-config" in html
-    assert "Offline audited snapshot" in html
+    assert "离线审计快照" in html
     assert "run_component_validation" in html
     assert "search_datasheet" in html
     assert "Guard wraps" in html
@@ -402,7 +407,7 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     assert "L2 grounded" in html
     assert "datasheet:l78.pdf#p4" in html
     assert "Show regulator datasheet evidence-chain smoke" in html
-    assert "没有配置向量 datasheet search" in html
+    assert "没有配置向量数据手册搜索" in html
     assert "⟨?U999⟩" in html
 
 
@@ -421,7 +426,7 @@ def test_serve_workbench_fake_ai_dry_run_does_not_require_api_key() -> None:
     assert result.exit_code == 0, result.output
     assert "serve-workbench:" in result.output
     assert "mode=fake" in result.output
-    assert "validated=4" in result.output
+    assert "validated=16" in result.output
 
 
 def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
@@ -562,8 +567,8 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert "66 components" in result.output
-    assert "validated=28" in result.output
-    assert "manual=38" in result.output
+    assert "validated=47" in result.output
+    assert "manual=19" in result.output
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"refdes": "D10"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/ltst-c190kgkt.json"' in index_payload
@@ -681,26 +686,28 @@ def test_design_validator_ui_writes_gap_workbench_when_no_profiles_match(
 
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
-    assert "validated=0" in result.output
-    assert "PASS/WARN/ERROR=0/0/0" in result.output
-    assert "manual=7" in result.output
+    assert "validated=3" in result.output
+    assert "PASS/WARN/ERROR=0/3/0" in result.output
+    assert "manual=4" in result.output
 
     html = html_output.read_text(encoding="utf-8")
-    assert "Profile coverage gap" in html
-    assert "validated 0" in html
-    assert "no_result" in html
-    assert "待 profile" in html
-    assert '<td class="ref">U8<span class="sub">1 refs</span></td>' in html
-    assert "does not convert no-profile rows into electrical judgements" in html
+    assert "<span>已验证</span><strong>3</strong>" in html
+    assert "通用被动件检查" in html
+    assert "GENERIC_CAPACITOR" in html
+    assert "无本地档案" in html
+    assert "待器件档案" in html
+    assert '<td class="ref">U8<span class="sub">1 个位号</span></td>' in html
 
     index_text = index_output.read_text(encoding="utf-8")
-    assert "| Validated components | 0 |" in index_text
-    assert "| PASS / WARN / ERROR | 0 / 0 / 0 |" in index_text
+    assert "| Validated components | 3 |" in index_text
+    assert "| PASS / WARN / ERROR | 0 / 3 / 0 |" in index_text
     assert "## Profile Gap Summary" in index_text
     assert "| U8 | no_result |" in index_text
+    assert "`GENERIC_CAPACITOR`" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"components_in_design": 7' in index_payload
+    assert '"profile_part_number": "GENERIC_CAPACITOR"' in index_payload
     assert '"validation": null' in index_payload
     assert '"match_status": "no_result"' in index_payload
     assert '"profile_gap_groups"' in index_payload
@@ -755,13 +762,15 @@ def test_design_validator_ui_auto_selects_bom_from_pst_project_dir(
     assert "bom-candidates: 3" in result.output
     assert "design-validator-ui:" in result.output
     assert "BOM matched=3" in result.output
-    assert "validated=0" in result.output
+    assert "validated=2" in result.output
 
     html = html_output.read_text(encoding="utf-8")
-    assert "Hardwise Validator UI - switch_clean" in html
+    assert "Hardwise 原理图检验工具 - switch_clean" in html
     assert "FOO-IC datasheet" in html
-    assert "Profile Gap Groups" in html
-    assert "Component Group Coverage" in html
+    assert "通用被动件检查" in html
+    assert "GENERIC_CAPACITOR" in html
+    assert "GENERIC_RESISTOR" in html
+    assert "无本地档案" in html
     assert "FOO-IC" in html
 
     index_text = index_output.read_text(encoding="utf-8")

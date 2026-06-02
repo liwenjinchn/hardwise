@@ -12,6 +12,12 @@ from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Design
 from hardwise.validation.component import validate_component_against_profile
 from hardwise.validation.component_groups import ProjectComponentGroup, build_component_groups
+from hardwise.validation.component_groups import normalize_bom_item_identity
+from hardwise.validation.generic_passive import (
+    GENERIC_PASSIVE_REASON,
+    PassiveFamily,
+    validate_generic_passive,
+)
 from hardwise.validation.profile_candidates import ProfileCandidateReport
 from hardwise.validation.types import ValidationReport
 
@@ -104,6 +110,7 @@ def build_project_validation_index(
 
     candidates = {candidate.refdes: candidate for candidate in candidate_report.candidates}
     validation_targets = validation_targets_from_candidates(candidate_report)
+    passive_families = _generic_passive_families(bom)
     rows: list[ProjectValidationRow] = []
     for component in sorted(design.components.values(), key=lambda c: sort_refdes_key(c.refdes)):
         bom_row = bom_report.rows_by_refdes.get(component.refdes)
@@ -120,6 +127,13 @@ def build_project_validation_index(
             profile = validation_targets.get(component.refdes)
             if profile is not None:
                 validation = validate_component_against_profile(component, profile, design)
+
+        passive_family = passive_families.get(component.refdes)
+        if validation is None and passive_family is not None:
+            validation = validate_generic_passive(component, bom_row, design, passive_family)
+            match_status = "generic_passive"
+            reason = GENERIC_PASSIVE_REASON
+            profile_path = None
 
         rows.append(
             ProjectValidationRow(
@@ -179,6 +193,16 @@ def validation_targets_from_candidates(
         if candidate.match_status == "matched" and candidate.profile is not None:
             targets[candidate.refdes] = DatasheetProfile.load(candidate.profile)
     return targets
+
+
+def _generic_passive_families(bom: Bom) -> dict[str, PassiveFamily]:
+    families: dict[str, PassiveFamily] = {}
+    for item in bom.items:
+        family = normalize_bom_item_identity(item).suggested_family
+        if family in {"capacitor", "resistor"}:
+            for refdes in item.refdes_list:
+                families[refdes] = family
+    return families
 
 
 def profile_gap_groups(

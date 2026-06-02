@@ -36,11 +36,15 @@ def test_build_workbench_context_populates_relational_store_from_registry() -> N
     try:
         rows = query_components(context.session)
         assert len(rows) == context.index.components_in_design
-        assert {row.refdes for row in context.index.validated_rows} == {
+        profile_backed = {row.refdes for row in context.index.validated_rows if row.profile_path}
+        assert profile_backed == {
             "U1",
             "U12",
             "U3",
             "U8",
+        }
+        assert {"C1", "C2", "R1", "R2"} <= {
+            row.refdes for row in context.index.validated_rows
         }
         assert set(context.validation_targets) == {"U1", "U12", "U3", "U8"}
     finally:

@@ -62,15 +62,15 @@ def render(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hardwise Validator UI - {escape(project_name)}</title>
+  <title>Hardwise 原理图检验工具 - {escape(project_name)}</title>
   <style>{MULTI_UI_STYLE}</style>
 </head>
 <body>
   <main>
-    <section class="app" aria-label="Hardwise local validator UI">
+    <section class="app" aria-label="Hardwise 本地原理图检验工具">
       <header class="topbar">
         <div class="brand">
-          <p class="eyebrow">Hardwise / 设计验证器</p>
+          <p class="eyebrow">Hardwise / 原理图检验工具</p>
           <h1>{escape(project_name)}</h1>
           <p class="source">{escape(str(netlist_source))}</p>
         </div>
@@ -228,7 +228,7 @@ def _detail_panel(
       <div class="detail-head">
         <div class="detail-title">
           <h2>{escape(validation.refdes)} <span class="{_status_class(validation.status)} status">综合判定 {escape(validation.status)}</span></h2>
-          <p>{escape(component.value or "-")} / MPN {escape(component.part_number or "-")} / profile {escape(validation.profile_part_number)}</p>
+          <p>{escape(component.value or "-")} / MPN {escape(component.part_number or "-")} / 器件档案 {escape(validation.profile_part_number)}</p>
         </div>
         <div class="actions">
           <a class="button" download="{escape(validation.refdes)}-component-validation.md" href="{download_href}">下载报告</a>
@@ -236,12 +236,12 @@ def _detail_panel(
         </div>
       </div>
       <div class="kpis">
-        <div class="kpi"><span>PASS pins</span><strong>{counts["PASS"]}</strong></div>
-        <div class="kpi"><span>WARN pins</span><strong>{counts["WARN"]}</strong></div>
-        <div class="kpi"><span>ERROR pins</span><strong>{counts["ERROR"]}</strong></div>
-        <div class="kpi"><span>PASS checks</span><strong>{component_counts["PASS"]}</strong></div>
-        <div class="kpi"><span>WARN checks</span><strong>{component_counts["WARN"]}</strong></div>
-        <div class="kpi"><span>ERROR checks</span><strong>{component_counts["ERROR"]}</strong></div>
+        <div class="kpi"><span>PASS 引脚</span><strong>{counts["PASS"]}</strong></div>
+        <div class="kpi"><span>WARN 引脚</span><strong>{counts["WARN"]}</strong></div>
+        <div class="kpi"><span>ERROR 引脚</span><strong>{counts["ERROR"]}</strong></div>
+        <div class="kpi"><span>PASS 检查</span><strong>{component_counts["PASS"]}</strong></div>
+        <div class="kpi"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
+        <div class="kpi"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
       </div>
       {pin_summary(validation)}
       {basic_info(component, validation)}

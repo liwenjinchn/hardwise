@@ -8,6 +8,36 @@
 
 ---
 
+## 2026-06-01 · Live Copilot fab must not cover submit
+
+**Symptom**
+
+真实 Allegro workbench 的 `serve-workbench --fake-ai` 后端 API 可正常回答 `U10` 和未知 `U999`，
+建议问题按钮也能触发 chat；但自由输入框点 Send 后没有新增消息，服务端也没有收到
+`POST /api/workbench/chat`。
+
+**Root cause**
+
+Copilot panel 打开后右下角 `AI` floating action button 仍然可见，而且 `z-index` 高于 panel。
+它正好盖住 panel 底部的 Send 按钮，所以点击命中了浮动按钮覆盖层而不是 form submit。
+
+**Fix**
+
+打开 panel 时给 Copilot root 加 `ai-open` class，并用 CSS 隐藏 `.ai-fab`；关闭 panel 时移除
+`ai-open`。这个修复只改变 Copilot 控件可点击性，不改变 Runner、工具调用、Refdes Guard 或验证 truth。
+
+**Verification**
+
+真实公开 Allegro/PST 项目重启 `serve-workbench --fake-ai` 后，自由输入 `请检查 U999 的验证结果`
+成功发出 `POST /api/workbench/chat`，页面渲染 `⟨?U999⟩`、closest matches 和 Evidence / Tool trace。
+Focused tests `tests/report/test_validator_ui.py tests/test_cli_validator_ui.py tests/workbench/test_chat.py`
+通过，focused ruff clean。
+
+**Takeaway**
+
+Floating controls 要在打开抽屉后让出 hit-test 区域。后端 API smoke 只能证明 chat service 可用；
+真实 UI smoke 还必须验证“用户实际点击的控件”没有被更高层级元素挡住。
+
 ## 2026-05-29 · V3.13 · V1 should validate one real power family, not all devices
 
 **Symptom**
@@ -2555,3 +2585,51 @@ For hardware review, a PASS should mean the relevant electrical path was
 validated, not merely that a plausible part or prefix was found nearby. When
 the topology cannot be proven from schematic data, WARN is safer than a
 confident PASS.
+
+## 2026-06-01 — Real Allegro coverage needs breadth before deep-profile polish
+
+**Symptom**
+
+The public Allegro workbench could ingest 4010 design/BOM-matched components,
+but the demo story was still dominated by a tiny set of profile-backed rows.
+That made the project look like it had inspected only a handful of ICs while
+leaving the passive majority untouched.
+
+**Root cause**
+
+The early validator path only ran when a ready per-MPN datasheet profile
+matched the BOM identity. That is correct for deep checks, but it is the wrong
+shape for resistors and capacitors: thousands of passives need light generic
+rules from BOM value/package and deterministic net voltage, not one JSON
+profile per value. The same pass also showed why coverage should not be gamed:
+the RF-GTB191TS-BC LED group has plausible board topology, but public polarity
+drawings conflict with the local symbol naming.
+
+**Fix**
+
+Added a generic passive validation path and four real-board deep/check profile
+families: 74LV165 PISO shift register topology, LN2312LT1G MOSFET, PCA9617A I2C
+level-shift repeater, and a conservative diode pack for 1.5SMC15A, SM340AF, and
+SD103AWS-7-F. The RF-GTB191TS-BC LED group remains manual until the pinout
+evidence is unambiguous.
+
+**Verification**
+
+The real public Allegro smoke command generated
+`/tmp/hardwise-real-allegro-index.json` with 4010 rows, 4010 BOM matches,
+3738 deterministically validated rows, 272 manual rows, and
+PASS/WARN/ERROR = 3653/79/6. Top row counts were 2018 generic capacitors,
+1624 generic resistors, 56 LN2312LT1G, 10 74LV165, 8 PCA9617A, and 13 new diode
+pack rows. Focused validation tests passed:
+
+```text
+uv run pytest tests/validation/test_generic_passive.py tests/validation/test_shift_register.py tests/validation/test_mosfet.py tests/validation/test_i2c_repeater.py tests/validation/test_diode.py -q
+44 passed
+```
+
+**Takeaway**
+
+The honest demo claim is "full-board light coverage plus focused deep topology
+checks." Generic passive coverage solves the 90%-of-the-board narrative gap,
+while profile-backed validators prove deeper reasoning only where the source
+facts and schematic topology are deterministic.

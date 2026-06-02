@@ -36,6 +36,24 @@ def bas316_profile() -> DatasheetProfile:
 
 
 @pytest.fixture
+def smc15a_profile() -> DatasheetProfile:
+    """Load 1.5SMC15A unidirectional TVS profile."""
+    return DatasheetProfile.load(Path("data/datasheet_profiles/1_5smc15a.json"))
+
+
+@pytest.fixture
+def sm340af_profile() -> DatasheetProfile:
+    """Load SM340AF Schottky rectifier profile."""
+    return DatasheetProfile.load(Path("data/datasheet_profiles/sm340af.json"))
+
+
+@pytest.fixture
+def sd103aws_profile() -> DatasheetProfile:
+    """Load SD103AWS-7-F Schottky diode profile."""
+    return DatasheetProfile.load(Path("data/datasheet_profiles/sd103aws_7_f.json"))
+
+
+@pytest.fixture
 def diode_design():
     """Load diode fixture."""
     netlist = parse_allegro_netlist(Path("tests/fixtures/allegro/ss34_diode.net"))
@@ -148,6 +166,115 @@ D21,1,BAS316,Nexperia,BAS316
     assert results.status == "ERROR"
     assert reverse.status == "ERROR"
     assert "above profile maximum 100 V" in reverse.summary
+
+
+def test_1_5smc15a_profile_matches_public_unidirectional_tvs(smc15a_profile):
+    assert smc15a_profile.recommended["topology_family"] == "diode"
+    assert smc15a_profile.recommended["diode_role"] == "unidirectional_tvs"
+    assert smc15a_profile.recommended["working_standoff_voltage"] == 12.8
+    assert smc15a_profile.abs_max["reverse_voltage"] == 12.8
+    assert smc15a_profile.pin_function == {"K": "Cathode", "A": "Anode"}
+    assert [(pin.number, pin.name) for pin in smc15a_profile.pins] == [
+        ("K", "Cathode"),
+        ("A", "Anode"),
+    ]
+
+
+def test_1_5smc15a_12v_rail_clamp_passes(smc15a_profile, tmp_path):
+    design = _design_from_text(
+        tmp_path,
+        """$PACKAGES
+  ! 'DO214AB' ! 1.5SMC15A ; D26
+$NETS
+  '+12V' ; D26.K
+  'GND' ; D26.A
+$END
+""",
+        """Reference,Quantity,Value,Manufacturer,MPN
+D26,1,1.5SMC15A,Littelfuse,1.5SMC15A
+""",
+    )
+
+    results = validate_component_against_profile(design.components["D26"], smc15a_profile, design)
+
+    assert results.status == "PASS"
+    reverse = next(
+        check for check in results.component_checks if check.check == "diode_reverse_voltage"
+    )
+    assert reverse.status == "PASS"
+    assert "within profile maximum 12.8 V" in reverse.summary
+
+
+def test_sm340af_profile_matches_public_sma_fl_pinout(sm340af_profile):
+    assert sm340af_profile.recommended["topology_family"] == "diode"
+    assert sm340af_profile.recommended["diode_role"] == "schottky_rectifier"
+    assert sm340af_profile.abs_max["reverse_voltage"] == 40.0
+    assert sm340af_profile.pin_function == {"1": "Cathode", "2": "Anode"}
+    assert [(pin.number, pin.name) for pin in sm340af_profile.pins] == [
+        ("1", "Cathode"),
+        ("2", "Anode"),
+    ]
+
+
+def test_sm340af_12v_reverse_voltage_passes(sm340af_profile, tmp_path):
+    design = _design_from_text(
+        tmp_path,
+        """$PACKAGES
+  ! 'SMA-FL' ! SM340AF ; D27
+$NETS
+  '+12V' ; D27.1
+  'GND' ; D27.2
+$END
+""",
+        """Reference,Quantity,Value,Manufacturer,MPN
+D27,1,SM340AF SMA-FL,LRC,SM340AF SMA-FL
+""",
+    )
+
+    results = validate_component_against_profile(design.components["D27"], sm340af_profile, design)
+
+    assert results.status == "PASS"
+    reverse = next(
+        check for check in results.component_checks if check.check == "diode_reverse_voltage"
+    )
+    assert reverse.status == "PASS"
+    assert "within profile maximum 40 V" in reverse.summary
+
+
+def test_sd103aws_profile_matches_public_schottky_limits(sd103aws_profile):
+    assert sd103aws_profile.recommended["topology_family"] == "diode"
+    assert sd103aws_profile.recommended["diode_role"] == "schottky_barrier_switching"
+    assert sd103aws_profile.abs_max["reverse_voltage"] == 40.0
+    assert sd103aws_profile.pin_function == {"1": "Anode", "2": "Cathode"}
+    assert [(pin.number, pin.name) for pin in sd103aws_profile.pins] == [
+        ("1", "Anode"),
+        ("2", "Cathode"),
+    ]
+
+
+def test_sd103aws_12v_reverse_voltage_passes(sd103aws_profile, tmp_path):
+    design = _design_from_text(
+        tmp_path,
+        """$PACKAGES
+  ! 'SOD323' ! SD103AWS-7-F ; D36
+$NETS
+  'GND' ; D36.1
+  '+12V' ; D36.2
+$END
+""",
+        """Reference,Quantity,Value,Manufacturer,MPN
+D36,1,SD103AWS-7-F,Diodes Inc,SD103AWS-7-F
+""",
+    )
+
+    results = validate_component_against_profile(design.components["D36"], sd103aws_profile, design)
+
+    assert results.status == "PASS"
+    reverse = next(
+        check for check in results.component_checks if check.check == "diode_reverse_voltage"
+    )
+    assert reverse.status == "PASS"
+    assert "within profile maximum 40 V" in reverse.summary
 
 
 def test_bidirectional_tvs_nominal_rail_clamp_passes(tvs_profile, tmp_path):

@@ -88,4 +88,12 @@ def _validate_component_topology(
         from hardwise.validation.bjt import validate_bjt
 
         return validate_bjt(component, profile, design)
+    if family == "shift_register_piso":
+        from hardwise.validation.shift_register import validate_shift_register_piso
+
+        return validate_shift_register_piso(component, profile, design)
+    if family == "i2c_level_shift_repeater":
+        from hardwise.validation.i2c_repeater import validate_i2c_level_shift_repeater
+
+        return validate_i2c_level_shift_repeater(component, profile, design)
     return []
