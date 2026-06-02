@@ -528,3 +528,37 @@ Tightened deterministic electrical validation for buck topology paths, diode fam
 ### Next Steps
 
 - None - task complete
+
+
+## Session 16: Real Allegro coverage expansion
+
+**Date**: 2026-06-02
+**Task**: Real Allegro coverage expansion
+**Branch**: `codex/real-allegro-validator-coverage`
+
+### Summary
+
+Expanded the public Allegro validator from profile-only rows to full-board generic passive coverage plus source-backed MOSFET, shift-register, I2C repeater, and diode validators; recorded the family-validator/profile architecture rule.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5320935` | (see git log) |
+| `3ddcaac` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

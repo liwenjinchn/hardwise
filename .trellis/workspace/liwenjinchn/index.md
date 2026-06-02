@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 15
-- **Last Active**: 2026-06-01
+- **Total Sessions**: 16
+- **Last Active**: 2026-06-02
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~530 | Active |
+| `journal-1.md` | ~564 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 16 | 2026-06-02 | Real Allegro coverage expansion | `5320935`, `3ddcaac` | `codex/real-allegro-validator-coverage` |
 | 15 | 2026-06-01 | Electrical validator assumption fixes | `5009086` | `main` |
 | 14 | 2026-06-01 | Electrical validator domain audit | `2027fa0` | `main` |
 | 13 | 2026-05-31 | C4e BAS316 small-signal diode profile | `8e73c2ec77ea0999adc9801b9f3d7c79644ade53` | `codex/migrate-codex-mainline` |
