@@ -9,6 +9,10 @@ from pydantic import ValidationError
 
 from hardwise.documents import match_documents_to_bom, parse_document_index
 from hardwise.ir.profile import DatasheetProfile
+from hardwise.ir.profile_archetypes import (
+    ProfileArchetypeError,
+    apply_profile_archetype,
+)
 from hardwise.validation.component_groups import ProjectComponentGroup
 from hardwise.validation.project_index import ProjectValidationIndex
 
@@ -22,6 +26,7 @@ def draft_profile_from_project_index(
     *,
     identity: str,
     document_index_path: Path | None = None,
+    archetype_id: str | None = None,
 ) -> DatasheetProfile:
     """Build a needs-review profile draft for one component group identity."""
 
@@ -45,7 +50,7 @@ def draft_profile_from_project_index(
     part_number = group.part_number or group.identity
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     evidence_token = document_source or f"doc:{Path(document_url or document_title or identity).name}"
-    return DatasheetProfile(
+    profile = DatasheetProfile(
         part_number=part_number,
         part_number_aliases=_aliases(group, part_number),
         review_status="needs_review",
@@ -62,6 +67,12 @@ def draft_profile_from_project_index(
         extracted_model="manual-review-draft-v1.2",
         schema_version="v2",
     )
+    if archetype_id is None:
+        return profile
+    try:
+        return apply_profile_archetype(profile, archetype_id)
+    except ProfileArchetypeError as exc:
+        raise ProfileDraftError(str(exc)) from exc
 
 
 def _load_project_index(path: Path) -> ProjectValidationIndex:

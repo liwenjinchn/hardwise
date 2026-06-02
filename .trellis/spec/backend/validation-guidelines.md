@@ -60,6 +60,96 @@ schematic package, and deterministic net voltage. This coverage must be labeled
 as generic/light validation (`GENERIC_CAPACITOR` or `GENERIC_RESISTOR`), not as
 datasheet-backed deep review.
 
+### Profile archetype draft workflow
+
+Profile archetypes reduce repetitive profile drafting work; they do not change
+validation truth.
+
+#### 1. Scope / Trigger
+
+Use this contract when adding or modifying a reusable profile archetype or the
+`draft-datasheet-profile --archetype` workflow.
+
+#### 2. Signatures
+
+```bash
+uv run hardwise draft-datasheet-profile PROJECT_INDEX.json \
+  --identity 74LV165PW \
+  --archetype 74x165_piso_16pin \
+  --output drafts/74lv165pw.json
+```
+
+```python
+def draft_profile_from_project_index(
+    index_path: Path,
+    *,
+    identity: str,
+    document_index_path: Path | None = None,
+    archetype_id: str | None = None,
+) -> DatasheetProfile:
+    ...
+```
+
+#### 3. Contracts
+
+- Generated archetype profiles MUST set `review_status="needs_review"`.
+- Archetypes may fill reusable family shape: aliases, pin-role placeholders,
+  `recommended.topology_family`, and recommended metadata keys.
+- Archetype evidence MUST remain reviewer placeholders such as
+  `reviewer_to_confirm:<archetype>.<field>` until public datasheet evidence is
+  reviewed.
+- `suggest_profile_candidates()` and `design-validator-ui` MUST ignore
+  generated drafts until a human promotes them to `ready`.
+- `validation/component.py` dispatch still MUST use only
+  `recommended.topology_family`; do not add part-number branches for archetype
+  outputs.
+
+#### 4. Validation & Error Matrix
+
+| Condition | Expected behavior |
+|---|---|
+| Unknown archetype id | CLI exits with a profile draft error listing available ids. |
+| Archetype draft generated | Output JSON is schema-valid and `needs_review`. |
+| Archetype draft placed in profile dir | Profile candidate matching reports `no_result`, not `matched`. |
+| Human promotes profile to `ready` | Existing family validator may run through `topology_family`. |
+
+#### 5. Good / Base / Bad Cases
+
+- Good: `74x165_piso_16pin` drafts a 16-pin PISO shift-register profile with
+  load/clock/Q7/DS/CE metadata and reviewer-confirm placeholders.
+- Base: no `--archetype` keeps the older empty `needs_review` profile draft.
+- Bad: changing a generated draft to `ready` without checking public pinout,
+  package mapping, voltage/current limits, aliases, and evidence tokens.
+
+#### 6. Tests Required
+
+- Assert generated drafts contain topology family, aliases, pin placeholders,
+  and `reviewer_to_confirm` evidence placeholders.
+- Assert generated `needs_review` drafts are ignored by
+  `suggest_profile_candidates()`.
+- Assert existing ready profiles still validate through family validators.
+
+#### 7. Wrong vs Correct
+
+Wrong:
+
+```json
+{"part_number": "NEW74X165", "review_status": "ready"}
+```
+
+Correct:
+
+```json
+{
+  "part_number": "NEW74X165",
+  "review_status": "needs_review",
+  "recommended": {"topology_family": "shift_register_piso"},
+  "evidence": {
+    "archetype.review_required": "reviewer_to_confirm: public datasheet pinout..."
+  }
+}
+```
+
 ### Pin lookup
 
 ```python

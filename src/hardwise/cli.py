@@ -1406,6 +1406,11 @@ def draft_datasheet_profile(
         "--document-index",
         help="Optional reviewed document index CSV/TSV used to select the public document.",
     ),
+    archetype: str | None = typer.Option(
+        None,
+        "--archetype",
+        help="Optional needs-review profile archetype id, e.g. 74x165_piso_16pin.",
+    ),
     output: Path = typer.Option(
         ...,
         "--output",
@@ -1422,6 +1427,7 @@ def draft_datasheet_profile(
             validation_index,
             identity=identity,
             document_index_path=document_index,
+            archetype_id=archetype,
         )
         profile.save(output)
     except ProfileDraftError as e:
@@ -1433,7 +1439,8 @@ def draft_datasheet_profile(
 
     typer.echo(
         f"profile-draft: {output} "
-        f"(part_number={profile.part_number}, review_status={profile.review_status})"
+        f"(part_number={profile.part_number}, review_status={profile.review_status}"
+        f"{', archetype=' + archetype if archetype else ''})"
     )
 
 

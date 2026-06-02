@@ -78,6 +78,11 @@ That path auto-matches public datasheet profiles by BOM identity and writes a si
 
 The same Allegro workbench can render an optional Copilot panel. `design-validator-ui --ai-snapshot` bakes audited offline chat transcripts into the single HTML file (no server, no API key); `serve-workbench` runs a local FastAPI server whose `--fake-ai` mode drives the real agent loop with a deterministic fake client, and whose real mode talks to any Anthropic-format endpoint configured in `.env`. Every panel answer runs the same five-tool Runner and the same Refdes Guard, so an unknown refdes such as `U999` is wrapped as `⟨?U999⟩` rather than fabricated.
 
+For repeated component families, Hardwise can draft `needs_review` profile
+skeletons from reusable archetypes such as `74x165_piso_16pin`. See
+[`docs/profile_archetypes.md`](docs/profile_archetypes.md). Drafts are ignored
+by automatic validation until a reviewer promotes them to `ready`.
+
 The public eval pack adds a wider smoke path:
 
 ```text
@@ -135,6 +140,11 @@ cp .env.example .env  # fill in ANTHROPIC_API_KEY for API-backed commands
 ```
 
 The repository ships with a public KiCad sample under `data/projects/pic_programmer/`. Local inspect/review commands work after `uv sync`; API commands require `.env`.
+
+On Windows, use the PowerShell commands in [`docs/windows.md`](docs/windows.md).
+Native Windows is expected to work for the main CLI and local workbench paths,
+but treat it as CI-verified only after the `windows-latest` workflow passes for
+the commit you are using.
 
 ### Review a schematic
 
@@ -251,7 +261,7 @@ Current MVP status:
 | 5 — Submission Closeout | Done | Phase 4 two-track demo narrative, README/demo/JD/interview closeout, final artifacts |
 | Workbench — Allegro Copilot | Done | `serve-workbench` live agent loop + `design-validator-ui --ai-snapshot` offline; reuses the five-tool Runner + Refdes Guard |
 
-The MVP intentionally stops here. R004/R005-style net-aware checks, a schematic-side net parser, a human-labeled calibration set, GitHub Action packaging, and Cadence/Allegro adapters are explicitly post-MVP. The current submission story is not "more rules"; it is a constrained design-validation workbench with registry-verified objects and evidence-gated findings.
+The MVP intentionally stops here. R004/R005-style net-aware checks, a schematic-side net parser, a human-labeled calibration set, Windows CI result follow-up, and Cadence/Allegro runtime integration are explicitly post-MVP. The current submission story is not "more rules"; it is a constrained design-validation workbench with registry-verified objects and evidence-gated findings.
 
 ## Interview Q&A
 

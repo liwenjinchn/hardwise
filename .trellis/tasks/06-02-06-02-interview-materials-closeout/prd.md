@@ -37,21 +37,27 @@ The story should be easy to say out loud:
    - profile archetype/template work determines the exact scalability wording.
 7. Keep claims inside the schematic-review node. Do not claim PCB/layout,
    supplier/PLM, lifecycle, price, simulation, or automated expert judgement.
+8. Draft wording may use explicit placeholders for Windows and profile-template
+   conclusions, but final materials must remove placeholders before closeout.
+9. Final materials must be visible in the public repository/branch used by the
+   resume or interview link, or the remaining publish step must be recorded in
+   the parent task.
 
 ## Acceptance Criteria
 
-- [ ] `docs/interview_qa.md` contains a concise, current answer for the real
+- [x] `docs/interview_qa.md` contains a concise, current answer for the real
       Allegro demo and architecture story.
-- [ ] README or a demo-facing doc contains the command and result summary for
+- [x] README or a demo-facing doc contains the command and result summary for
       the public Allegro workbench, without overclaiming generic passive depth.
-- [ ] At least one screenshot or artifact path is documented for the workbench
+- [x] At least one screenshot or artifact path is documented for the workbench
       result.
-- [ ] The wording includes Windows support status accurately after the Windows
+- [x] The wording includes Windows support status accurately after the Windows
       audit: likely-compatible, WSL-recommended, or CI-verified depending on the
       actual result.
-- [ ] The wording includes the profile-template scalability story after that
+- [x] The wording includes the profile-template scalability story after that
       task lands.
-- [ ] `uv run pytest -q` and `uv run ruff check .` pass if code or rendered doc
+- [x] No placeholder wording remains in final interview-facing docs.
+- [x] `uv run pytest -q` and `uv run ruff check .` pass if code or rendered doc
       generation changes are made.
 
 ## Notes

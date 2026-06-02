@@ -3,7 +3,7 @@
   "name": "06-02-profile-archetype-template-workflow",
   "title": "Profile archetype template workflow",
   "description": "Add a reusable profile archetype/template path so repeated component families can generate needs_review profiles instead of hand-writing every MPN.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,

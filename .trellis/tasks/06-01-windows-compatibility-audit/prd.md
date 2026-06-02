@@ -41,8 +41,10 @@ Windows, PowerShell, or WSL, and which commands are expected to work.
 - Distinguish required tools (`uv`, Python resolved by `uv`, `git` for eval
   download) from optional tools (PostgreSQL, live API key, Chroma vector store).
 - Avoid claiming full Windows support until at least one Windows test run passes.
-- Future implementation should add Windows-specific README snippets and a
-  GitHub Actions Windows job for `uv sync`, `ruff`, and fast tests.
+- Close this track as a focused documentation + CI change. Do not redo the
+  broad audit unless CI reports a concrete Windows blocker.
+- Add Windows-specific README/docs snippets and a GitHub Actions Windows job
+  for `uv sync`, `uv run ruff check .`, and `uv run pytest -q`.
 
 ## Acceptance Criteria
 
@@ -50,8 +52,9 @@ Windows, PowerShell, or WSL, and which commands are expected to work.
   shell assumptions.
 - [x] Identify blockers versus documentation gaps.
 - [x] Provide a concrete Windows setup and usage recipe.
-- [ ] Add Windows README/docs snippets.
-- [ ] Add CI validation on `windows-latest`.
+- [x] Add Windows README/docs snippets.
+- [x] Add CI validation on `windows-latest` for dependency sync, lint, and fast
+      tests.
 - [ ] Run `uv run pytest -q` and `uv run ruff check .` on Windows or CI before
   declaring Windows support officially verified.
 
@@ -60,6 +63,10 @@ Windows, PowerShell, or WSL, and which commands are expected to work.
 Native Windows should be usable for the main CLI and workbench paths, but the
 project should document it as "Windows likely compatible, not yet CI-verified".
 WSL remains the lowest-friction recommendation until Windows CI is added.
+
+The next implementation should be intentionally small: add PowerShell/WSL usage
+snippets and a `windows-latest` CI job, then use the GitHub Actions result as
+the first Windows verification signal.
 
 ## Out of Scope
 

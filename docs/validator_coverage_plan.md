@@ -119,6 +119,12 @@ Top validated families:
 | `MPQ8626` | 4 |
 | `SD103AWS-7-F` | 3 |
 
+Artifact paths used for the measured smoke:
+
+- Workbench HTML: `/tmp/hardwise-real-allegro-workbench.html`
+- Markdown index: `/tmp/hardwise-real-allegro-index.md`
+- JSON index: `/tmp/hardwise-real-allegro-index.json`
+
 ## Demo Claim
 
 The intended claim is:
@@ -129,3 +135,12 @@ The intended claim is:
 
 It should not claim that every covered passive received datasheet-backed or
 layout-aware validation.
+
+## Scale Mechanism
+
+The next scale mechanism is profile archetypes, not validator copy-paste.
+`draft-datasheet-profile --archetype 74x165_piso_16pin` can generate a
+`needs_review` skeleton for 74x165-style PISO shift registers with pin-role and
+topology placeholders. That skeleton is intentionally ignored by automatic
+validation until a reviewer confirms public datasheet evidence and promotes it
+to `ready`.

@@ -2633,3 +2633,65 @@ The honest demo claim is "full-board light coverage plus focused deep topology
 checks." Generic passive coverage solves the 90%-of-the-board narrative gap,
 while profile-backed validators prove deeper reasoning only where the source
 facts and schematic topology are deterministic.
+
+## 2026-06-02 — Profile archetypes scale drafts, not validation truth
+
+**Symptom**
+
+After the real Allegro coverage slice, adding more parts one by one would have
+made Hardwise look like a growing pile of MPN-specific profiles. The user asked
+the right architecture question: if 74LV165PW, LN2312LT1G, and PCA9617A were
+added by reading individual datasheets, what happens to every other same-type
+device?
+
+**Root cause**
+
+The validator architecture was already mostly correct: `validation/component.py`
+dispatches by `recommended.topology_family`, and profile candidate matching
+loads only `review_status="ready"` profiles. The missing piece was a reusable
+drafting workflow between "no profile" and "ready profile". Without that
+middle state, scaling pressure pushes either toward unsafe auto-validation or
+toward repetitive hand-written JSON.
+
+**Fix**
+
+Added a typed profile archetype registry and extended
+`draft-datasheet-profile` with `--archetype`. The first archetype is
+`74x165_piso_16pin`, which generates a 16-pin PISO shift-register
+`needs_review` skeleton with aliases, `topology_family=shift_register_piso`,
+load/clock/Q7/DS/CE metadata, pin-role placeholders, and
+`reviewer_to_confirm:*` evidence placeholders. The generated profile remains
+ignored by `suggest-validation-targets` and `design-validator-ui` until a human
+reviews public datasheet pinout, package mapping, limits, aliases, and source
+tokens, then promotes it to `ready`.
+
+Windows reproducibility was also tightened with `docs/windows.md` and a
+`macos-latest` / `windows-latest` GitHub Actions matrix. The wording stays
+conservative: native Windows is likely compatible for the main CLI and local
+workbench paths, but only a passing Windows CI run makes it verified.
+
+**Verification**
+
+Focused checks:
+
+```text
+uv run pytest tests/ir/test_profile_archetypes.py tests/validation/test_shift_register.py tests/validation/test_mosfet.py tests/validation/test_i2c_repeater.py tests/validation/test_profile_candidates.py -q
+28 passed
+```
+
+Full gate:
+
+```text
+uv run pytest -q
+459 passed, 7 deselected
+
+uv run ruff check .
+All checks passed
+```
+
+**Takeaway**
+
+The scalable story is not "Hardwise auto-generates trusted profiles." It is
+"family validators generalize rules; archetypes generate reviewable drafts;
+ready profiles still require public source evidence." This keeps coverage
+growth fast enough to demo while preserving the anti-hallucination boundary.

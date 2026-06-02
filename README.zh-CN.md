@@ -79,6 +79,11 @@ uv run hardwise design-validator-ui \
 
 同一个 Allegro 工作台可以渲染一个可选的 Copilot 面板。`design-validator-ui --ai-snapshot` 把已审计的离线问答烘焙进单文件 HTML（无服务、无 key）；`serve-workbench` 起一个本地 FastAPI 服务，`--fake-ai` 模式用确定性的假 client 驱动真实 agent loop，真模型模式则连接 `.env` 里配置的任意 Anthropic-format endpoint。每条面板回答都跑同一套五工具 Runner 和同一个 Refdes Guard，所以像 `U999` 这种不存在的位号会被包成 `⟨?U999⟩` 而不是被编造出来。
 
+对于同类型重复器件，Hardwise 可以用可复用的器件档案模板（profile archetype）生成
+`needs_review` 骨架，例如 `74x165_piso_16pin`。详见
+[`docs/profile_archetypes.md`](docs/profile_archetypes.md)。这类草稿不会自动进入验证，
+必须人工用公开 datasheet 确认后改成 `ready`。
+
 公开 eval pack 覆盖更宽的 smoke path：
 
 ```text
@@ -134,6 +139,8 @@ cp .env.example .env  # API 命令需要填写 ANTHROPIC_API_KEY
 ```
 
 仓库自带公开 KiCad 样例：`data/projects/pic_programmer/`。`inspect` / `review` 类本地命令在 `uv sync` 后即可运行；API-backed 命令需要 `.env`。
+
+Windows 用户看 [`docs/windows.md`](docs/windows.md) 里的 PowerShell 命令。当前判断是：主 CLI 和本地原理图检验工具路径应当能在原生 Windows 上跑，但只有 `windows-latest` CI 对目标 commit 通过后，才把它说成已验证支持。
 
 ### 检视原理图
 
@@ -249,7 +256,7 @@ uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
 | 5 — Submission Closeout | 已完成 | Phase 4 两轨 demo narrative、README/demo/JD/interview closeout、最终 artifacts |
 | Workbench — Allegro Copilot | 已完成 | `serve-workbench` 实时 agent loop + `design-validator-ui --ai-snapshot` 离线；复用五工具 Runner + Refdes Guard |
 
-MVP 到这里停止。R004/R005 式 net-aware checks、schematic-side net parser、人工标注 calibration set、GitHub Action packaging、Cadence/Allegro adapter 都明确属于 post-MVP。
+MVP 到这里停止。R004/R005 式 net-aware checks、schematic-side net parser、人工标注 calibration set、Windows CI 结果回填、Cadence/Allegro 运行时集成都明确属于 post-MVP。
 
 ## 面试问答
 

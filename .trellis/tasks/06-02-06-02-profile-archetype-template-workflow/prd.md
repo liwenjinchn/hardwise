@@ -19,8 +19,10 @@ The outcome should reinforce the current architecture:
    - a generated profile remains `review_status="needs_review"` until a human
      checks public datasheet pinout, polarity, limits, aliases, and evidence.
 2. Support at least one high-value archetype from the current real-board
-   coverage story. Good candidates:
-   - `74x165_piso_16pin` for PISO shift registers;
+   coverage story. First priority:
+   - `74x165_piso_16pin` for PISO shift registers, because it demonstrates
+     signal-chain topology coverage beyond voltage checks.
+   Follow-up candidates:
    - `common_sot23_nmos` for SOT-23 N-channel MOSFETs; or
    - `i2c_level_shift_repeater_like` for PCA9617/PCA9517-like devices.
 3. Make the workflow useful for batch candidate generation from BOM/component
@@ -35,19 +37,19 @@ The outcome should reinforce the current architecture:
 
 ## Acceptance Criteria
 
-- [ ] A profile archetype/template format is documented and, if implemented,
+- [x] A profile archetype/template format is documented and, if implemented,
       covered by tests.
-- [ ] At least one archetype can generate a `needs_review` profile skeleton
+- [x] At least one archetype can generate a `needs_review` profile skeleton
       with aliases, pin-role placeholders, topology family, and evidence
       placeholders.
-- [ ] Generated `needs_review` profiles are ignored by automatic validation
+- [x] Generated `needs_review` profiles are ignored by automatic validation
       until promoted to `ready`.
-- [ ] The workflow makes clear which fields require public datasheet evidence:
+- [x] The workflow makes clear which fields require public datasheet evidence:
       pin number/name/function, package/pinout, voltage/current limits, polarity
       for diodes/LEDs, and recommended topology metadata.
-- [ ] Existing real profiles such as `74lv165`, `ln2312lt1g`, and `pca9617a`
+- [x] Existing real profiles such as `74lv165`, `ln2312lt1g`, and `pca9617a`
       continue to validate through family validators, not MPN-specific code.
-- [ ] `uv run pytest -q` and `uv run ruff check .` pass before completion is
+- [x] `uv run pytest -q` and `uv run ruff check .` pass before completion is
       claimed.
 
 ## Notes
@@ -56,3 +58,5 @@ The outcome should reinforce the current architecture:
   not validator copy-paste.
 - Keep the first implementation small. A skeleton generator plus strong safety
   gates is better than a broad but unsafe auto-profile system.
+- Prefer extending the existing `draft-datasheet-profile` workflow with an
+  archetype option over adding a separate profile-generation surface.
