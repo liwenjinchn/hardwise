@@ -8,6 +8,34 @@
 
 ---
 
+## 2026-06-03 · Ready profile still needs local-symbol pin-id fit
+
+**Symptom**
+
+D2a found `LN2312LT1G` already has a ready MOSFET profile, but the mainboard
+representative `PQ9` uses local pin ids `D/G/S` while the reviewed profile uses
+datasheet package numbers `1/2/3`.
+
+**Root cause**
+
+The component validator intentionally looks up schematic pins by profile pin
+number. A public datasheet profile can be correct and still not apply to a
+specific board symbol if the exported netlist uses symbolic pin ids instead of
+package pin numbers.
+
+**Fix**
+
+D2a selected the transistor family but chose `L2N7002KLT1G` as the first D2c
+target because representative `PQ10` uses `1=GATE`, `2=SOURCE`, `3=DRAIN`,
+matching the existing MOSFET validator/profile contract. `LN2312LT1G` remains a
+follow-up until the local-symbol pin-id mapping is handled deliberately.
+
+**Takeaway**
+
+Profile coverage is a two-part contract: public datasheet evidence plus local
+EDA symbol pin ids. Do not promote a ready profile onto a real board just
+because the part number looks familiar.
+
 ## 2026-06-03 · Combined implementation commits still need task-state closeout
 
 **Symptom**
