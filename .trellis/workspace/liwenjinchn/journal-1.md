@@ -562,3 +562,36 @@ Expanded the public Allegro validator from profile-only rows to full-board gener
 ### Next Steps
 
 - None - task complete
+
+
+## Session 17: Demo readiness closeout
+
+**Date**: 2026-06-03
+**Task**: Demo readiness closeout
+**Branch**: `main`
+
+### Summary
+
+Added Windows docs/CI, profile archetype needs_review generation, and updated interview materials around the real Allegro demo story.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a6acb57` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
