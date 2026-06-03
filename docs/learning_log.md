@@ -2746,3 +2746,131 @@ All checks passed
 For review artifacts, "path" has two meanings. Filesystem I/O should keep real
 `Path` semantics; human/machine-readable reports should render portable POSIX
 path text. Generated Unicode artifacts should always be read as UTF-8 in tests.
+
+## 2026-06-03 — D1 mainboard gap analysis needed Chinese XLSX BOM intake
+
+**Symptom**
+
+The public mainboard Allegro folder could parse as Capture/Allegro PST topology:
+8180 components, 6918 nets, and 24563 properties. But D1 profile-gap analysis
+could not start because the BOM was `RFMS5H2TABom(13).xlsx` with Chinese
+headers (`序号`, `名称`, `编号`, `数量`, `位号`). `design-validator-ui <folder>`
+found no BOM candidates, and explicit `inspect-bom-match <folder> <xlsx>` failed
+with the old `Item/Quantity/Reference` header expectation.
+
+**Root cause**
+
+Hardwise had correctly separated PST topology from schematic BOM identity, but
+the BOM parser only supported Cadence text reports plus CSV/TSV. The project
+directory auto-selector also excluded `.xlsx`, so even a parseable workbook
+would not have been considered. Treating `编号` as a public MPN would also have
+overclaimed; in this workbook it is safer as a source item number.
+
+**Fix**
+
+Added a narrow standard-library `.xlsx` reader for BOM intake. It reads the
+first worksheet from the workbook ZIP/XML, supports shared strings / inline
+strings, maps `位号` to refdes and `数量` to quantity, maps `名称` to display
+value/description, and keeps `编号` as `BomItem.item_number` rather than
+`part_number`. Project-folder BOM discovery now includes `.xlsx`. The parser
+still emits the existing `BomItem` shape, so matcher, project index, document
+candidates, and next-family ranking reuse the old contracts.
+
+**Verification**
+
+Focused checks:
+
+```text
+uv run pytest tests/bom/test_parser.py tests/test_cli_bom_match.py \
+  tests/test_cli_validator_ui.py::test_design_validator_ui_auto_selects_chinese_xlsx_bom_from_pst_project_dir \
+  tests/test_cli_validator_ui.py::test_design_validator_ui_auto_selects_bom_from_pst_project_dir -q
+8 passed
+
+uv run ruff check src/hardwise/bom/parser.py src/hardwise/project_inputs.py \
+  tests/bom/test_parser.py tests/test_cli_validator_ui.py tests/xlsx_fixture.py
+All checks passed
+```
+
+Real public mainboard smoke:
+
+```text
+inspect-bom-match <folder> RFMS5H2TABom(13).xlsx
+design refdes: 8180
+bom refdes rows: 7257
+matched refdes: 7248
+bom-only refdes: 0
+design-only refdes: 932
+duplicate bom refdes: 9
+
+design-validator-ui <folder> --index-json /tmp/hardwise-mainboard-d1-auto-index.json
+8180 components
+BOM matched=7248
+validated=6573
+PASS/WARN/ERROR=3867/2706/0
+manual=1607
+component groups=195
+
+build-document-index-candidates /tmp/hardwise-mainboard-d1-index.json
+groups=195, candidates=75
+
+recommend-next-family /tmp/hardwise-mainboard-d1-index.json
+families=6, try_existing=3, triage_new=3
+```
+
+**Takeaway**
+
+For real Allegro projects, "topology imports" and "BOM identity imports" fail
+independently. D1's honest path is not to hide the imperfect BOM join; it is to
+surface it as intake evidence, then run grouped profile/document gap analysis
+over the matched identity layer without turning manual rows into verdicts.
+
+## 2026-06-03 — Workbench AI topology answers must stay at netlist fact level
+
+**Symptom**
+
+The right-bottom Workbench AI could explain deterministic validation rows, but
+questions like `U8 接了哪些关键网络?`, `RESET 相关网络有哪些?`, or `这张板大概有哪些已验证风险和待补 profile?`
+would force the model to reason from prompt context instead of querying the
+parsed Allegro/PST component-pin-net graph.
+
+**Root cause**
+
+`Design` already contained components, pins, and nets from Allegro/Telesis or
+Capture/Allegro PST input, but the Runner tool surface only exposed registry
+lookup, NC pins, datasheet search, and component validation. The model had no
+first-class way to ask "what pins are on this net?" or "what nets touch this
+component?".
+
+**Fix**
+
+Added bounded topology tools: `get_component_context`, `get_net_context`,
+`search_nets`, and `summarize_project_topology`. Workbench fake mode now routes
+topology-looking questions through the real Runner/tool dispatch, and the system
+prompt states the boundary explicitly: these are schematic/netlist facts, not
+visual sheet layout, inferred modules, PCB layout, PLM, lifecycle, price, or
+datasheet web-search claims. `search_nets("RESET")` deterministically expands to
+common reset aliases so it can find the real parsed net name `NRST` without the
+model inventing a net.
+
+**Verification**
+
+```text
+uv run pytest tests/agent/test_tools.py tests/workbench/test_chat.py \
+  tests/agent/test_validation_bridge.py \
+  tests/test_cli_validator_ui.py::test_design_validator_ui_ai_snapshot_embeds_copilot_panel -q
+30 passed
+
+uv run ruff check .
+All checks passed!
+
+uv run pytest -q
+474 passed, 7 deselected
+```
+
+**Takeaway**
+
+For newcomer-style schematic questions, the honest answer is: Hardwise can now
+explain parsed Allegro/PST topology down to component, pin, net, neighbor, and
+coverage/profile-gap facts. It still cannot infer visual schematic modules or
+layout-side conclusions without an explicit deterministic source for those
+boundaries.

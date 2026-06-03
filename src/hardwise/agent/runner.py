@@ -33,6 +33,13 @@ from anthropic import Anthropic
 from sqlalchemy.orm import Session
 
 from hardwise.adapters.base import BoardRegistry
+from hardwise.agent.document_tools import (
+    GetComponentDocumentsInput,
+    SummarizeDocumentCoverageInput,
+    document_evidence_tokens,
+    get_component_documents,
+    summarize_document_coverage,
+)
 from hardwise.agent.grounding import (
     evidence_tokens_from_datasheet_hits,
     trust_tier_for_datasheet_search,
@@ -51,6 +58,16 @@ from hardwise.agent.tools import (
     list_components,
     run_component_validation,
     search_datasheet,
+)
+from hardwise.agent.topology_tools import (
+    GetComponentContextInput,
+    GetNetContextInput,
+    SearchNetsInput,
+    SummarizeProjectTopologyInput,
+    get_component_context,
+    get_net_context,
+    search_nets,
+    summarize_project_topology,
 )
 from hardwise.guards.refdes import sanitize_args, sanitize_text
 from hardwise.trust import TrustTier
@@ -119,6 +136,8 @@ class Runner:
         system_prompt: str | None = None,
         design: Any | None = None,
         validation_targets: dict[str, Any] | None = None,
+        project_index: Any | None = None,
+        document_report: Any | None = None,
     ) -> None:
         self.client = client
         self.router = router
@@ -135,6 +154,8 @@ class Runner:
         # no_profile instead of fabricating a verdict.
         self.design = design
         self.validation_targets = validation_targets or {}
+        self.project_index = project_index
+        self.document_report = document_report
 
     def run(self, user_message: str) -> RunResult:
         result = RunResult(text="")
@@ -237,6 +258,71 @@ class Runner:
                     evidence = _validation_evidence(out)
                     trust_tier = "l1" if out.status == "validated" else "l3"
                     payload = out.model_dump_json()
+            elif name == "get_component_context":
+                out = get_component_context(
+                    self.design,
+                    self.project_index,
+                    GetComponentContextInput(**args),
+                )
+                summary = f"status={out.status}"
+                evidence = list(getattr(out, "evidence", []) or [])
+                trust_tier = "l3" if out.status == "not_configured" else "l1"
+                payload = out.model_dump_json()
+            elif name == "get_net_context":
+                out = get_net_context(self.design, GetNetContextInput(**args))
+                summary = (
+                    f"members={out.member_count}"
+                    if out.status == "found"
+                    else f"status={out.status}"
+                )
+                trust_tier = "l3" if out.status == "not_configured" else "l1"
+                payload = out.model_dump_json()
+            elif name == "search_nets":
+                out = search_nets(self.design, SearchNetsInput(**args))
+                summary = (
+                    f"hits={len(out.hits)}"
+                    if getattr(out, "found", False)
+                    else f"status={getattr(out, 'status', 'not_found')}"
+                )
+                trust_tier = "l3" if getattr(out, "status", "") == "not_configured" else "l1"
+                payload = out.model_dump_json()
+            elif name == "summarize_project_topology":
+                out = summarize_project_topology(
+                    self.design,
+                    self.project_index,
+                    SummarizeProjectTopologyInput(**args),
+                )
+                summary = (
+                    f"components={out.component_count}, nets={out.net_count}"
+                    if out.status == "summarized"
+                    else f"status={out.status}"
+                )
+                trust_tier = "l3" if out.status == "not_configured" else "l1"
+                payload = out.model_dump_json()
+            elif name == "get_component_documents":
+                out = get_component_documents(
+                    self.project_index,
+                    self.document_report,
+                    GetComponentDocumentsInput(**args),
+                )
+                summary = f"status={out.status}"
+                evidence = document_evidence_tokens(out)
+                trust_tier = "l3" if out.status == "not_configured" else "l1"
+                payload = out.model_dump_json()
+            elif name == "summarize_document_coverage":
+                out = summarize_document_coverage(
+                    self.project_index,
+                    self.document_report,
+                    SummarizeDocumentCoverageInput(**args),
+                )
+                summary = (
+                    f"groups={len(out.groups)}"
+                    if out.status == "configured"
+                    else f"status={out.status}"
+                )
+                evidence = document_evidence_tokens(out)
+                trust_tier = "l3" if out.status == "not_configured" else "l1"
+                payload = out.model_dump_json()
             else:
                 summary = f"unknown tool: {name}"
                 return (

@@ -22,7 +22,18 @@ from hardwise.agent.tools import (
     list_components,
     search_datasheet,
 )
+from hardwise.agent.topology_tools import (
+    GetComponentContextInput,
+    GetNetContextInput,
+    SearchNetsInput,
+    SummarizeProjectTopologyInput,
+    get_component_context,
+    get_net_context,
+    search_nets,
+    summarize_project_topology,
+)
 from hardwise.store.relational import create_store, populate_from_registry
+from hardwise.workbench.context import build_workbench_context
 
 
 def _mock_registry() -> BoardRegistry:
@@ -78,6 +89,15 @@ def _mock_registry() -> BoardRegistry:
                 source_file=Path("mock.kicad_sch"),
             ),
         ],
+    )
+
+
+def _workbench_context():
+    return build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
     )
 
 
@@ -179,14 +199,125 @@ def test_search_datasheet_empty_collection_returns_not_found() -> None:
     assert result.query == "absolute maximum input voltage"
 
 
+def test_get_component_context_returns_parsed_topology_and_validation() -> None:
+    context = _workbench_context()
+    try:
+        result = get_component_context(
+            context.design,
+            context.index,
+            GetComponentContextInput(refdes="U8", neighbor_limit=8),
+        )
+
+        assert result.status == "found"
+        assert result.component.refdes == "U8"
+        assert result.component.part_number == "STM32G030C8T6"
+        assert result.profile_status == "matched"
+        assert result.validation_status == "ERROR"
+        assert {pin.net for pin in result.pins} >= {"+3V3", "GND", "NRST", "SWCLK", "SWDIO"}
+        assert any(item.net_name == "+3V3" and item.member_count == 6 for item in result.neighbors)
+        assert result.evidence == ["datasheet:stm32g030.pdf#p33"]
+        assert {issue.check for issue in result.issues} >= {"mcu_swdio", "mcu_swclk"}
+    finally:
+        context.session.close()
+
+
+def test_get_component_context_unknown_refdes_returns_closest_matches() -> None:
+    context = _workbench_context()
+    try:
+        result = get_component_context(
+            context.design,
+            context.index,
+            GetComponentContextInput(refdes="U88"),
+        )
+
+        assert result.status == "not_found"
+        assert result.refdes == "U88"
+        assert "U8" in result.closest_matches
+    finally:
+        context.session.close()
+
+
+def test_get_net_context_returns_exact_membership() -> None:
+    context = _workbench_context()
+    try:
+        result = get_net_context(context.design, GetNetContextInput(net_name="+3V3"))
+
+        assert result.status == "found"
+        assert result.net_name == "+3V3"
+        assert result.member_count == 6
+        assert any(member.refdes == "U8" and member.pin_number == "4" for member in result.members)
+    finally:
+        context.session.close()
+
+
+def test_get_net_context_unknown_net_returns_closest_matches() -> None:
+    context = _workbench_context()
+    try:
+        result = get_net_context(context.design, GetNetContextInput(net_name="NRSTX"))
+
+        assert result.status == "not_found"
+        assert result.net_name == "NRSTX"
+        assert "NRST" in result.closest_matches
+    finally:
+        context.session.close()
+
+
+def test_search_nets_uses_reset_alias_without_inventing_net_names() -> None:
+    context = _workbench_context()
+    try:
+        result = search_nets(context.design, SearchNetsInput(query="RESET", limit=5))
+
+        assert result.found is True
+        assert [hit.net_name for hit in result.hits] == ["NRST"]
+        assert {member.refdes for member in result.hits[0].sample_members} >= {"U8", "RNRST"}
+    finally:
+        context.session.close()
+
+
+def test_summarize_project_topology_returns_bounded_fact_inventory() -> None:
+    context = _workbench_context()
+    try:
+        result = summarize_project_topology(
+            context.design,
+            context.index,
+            SummarizeProjectTopologyInput(component_limit=4, net_limit=6, gap_limit=4),
+        )
+
+        assert result.status == "summarized"
+        assert result.component_count == 25
+        assert result.net_count == 21
+        assert result.bom_matched == 25
+        assert result.validated_count == 16
+        assert result.manual_count == 9
+        assert result.validation_totals == {"PASS": 4, "WARN": 9, "ERROR": 3}
+        assert any(hit.net_name == "+3V3" for hit in result.power_like_nets)
+        assert any(hit.net_name == "SWDIO" for hit in result.interface_like_nets)
+        assert any(hit.net_name == "NRST" for hit in result.control_like_nets)
+        assert "modules" not in result.model_dump(mode="json")
+    finally:
+        context.session.close()
+
+
+def test_topology_tools_without_design_return_not_configured() -> None:
+    result = get_component_context(None, None, GetComponentContextInput(refdes="U8"))
+
+    assert result.status == "not_configured"
+    assert "topology" in result.reason.lower()
+
+
 def test_tool_definitions_match_anthropic_format() -> None:
-    assert len(TOOL_DEFINITIONS) == 5
     expected_names = {
         "list_components",
         "get_component",
         "get_nc_pins",
         "search_datasheet",
         "run_component_validation",
+        "get_component_context",
+        "get_net_context",
+        "search_nets",
+        "summarize_project_topology",
+        "get_component_documents",
+        "summarize_document_coverage",
     }
     actual_names = {entry["name"] for entry in TOOL_DEFINITIONS}
     assert actual_names == expected_names

@@ -1,0 +1,30 @@
+{
+  "id": "allegro-ai-topology-document-discovery",
+  "name": "allegro-ai-topology-document-discovery",
+  "title": "Allegro AI topology and document discovery",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "liwenjinchn",
+  "assignee": "liwenjinchn",
+  "createdAt": "2026-06-03",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "06-03-document-discovery-provider",
+    "06-03-mainboard-profile-gap-analysis",
+    "06-03-workbench-ai-topology-tools"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

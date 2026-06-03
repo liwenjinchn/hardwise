@@ -8,6 +8,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from hardwise.cli import app
+from tests.xlsx_fixture import write_minimal_xlsx
 
 
 def test_report_validator_ui_writes_html(tmp_path: Path) -> None:
@@ -429,6 +430,40 @@ def test_serve_workbench_fake_ai_dry_run_does_not_require_api_key() -> None:
     assert "validated=16" in result.output
 
 
+def test_serve_workbench_fake_ai_dry_run_accepts_document_index(tmp_path: Path) -> None:
+    docs = tmp_path / "docs.csv"
+    docs.write_text(
+        "\n".join(
+            [
+                "MPN,Manufacturer,Title,URL,Description",
+                (
+                    "XL1509-12E1,XLSEMI,XL1509 public datasheet,"
+                    "https://example.test/xl1509.pdf,fixture"
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "serve-workbench",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--document-index",
+            str(docs),
+            "--fake-ai",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "serve-workbench:" in result.output
+    assert "document-index=on matched=1" in result.output
+    assert "no_result=14" in result.output
+
+
 def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
     tmp_path: Path,
 ) -> None:
@@ -785,6 +820,46 @@ def test_design_validator_ui_auto_selects_bom_from_pst_project_dir(
     assert '"profile_gap_groups"' in index_payload
     assert '"identity": "FOO-IC"' in index_payload
     assert '"document_status": "matched"' in index_payload
+
+
+def test_design_validator_ui_auto_selects_chinese_xlsx_bom_from_pst_project_dir(
+    tmp_path: Path,
+) -> None:
+    project = tmp_path / "allegro"
+    shutil.copytree(Path("tests/fixtures/allegro/pst"), project)
+    write_minimal_xlsx(
+        project / "switch_clean.xlsx",
+        [
+            ["序号", "名称", "编号", "层级", "标识", "数量", "位号", "状态"],
+            ["1", "IC FOO-IC Fixture", "123456", "1", "", "1.0", "U1", "发行"],
+            ["2", "贴片瓷介 100nF 16V", "CAP100", "1", "", "1.0", "C1", "发行"],
+            ["3", "贴片电阻 10K", "RES10K", "1", "", "1.0", "R1", "发行"],
+        ],
+    )
+    html_output = tmp_path / "project-design-validator.html"
+    index_json = tmp_path / "project-index.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            str(project),
+            "--output",
+            str(html_output),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "selected-bom:" in result.output
+    assert "switch_clean.xlsx" in result.output
+    assert "BOM matched=3" in result.output
+
+    index_payload = index_json.read_text(encoding="utf-8")
+    assert '"bom_source":' in index_payload
+    assert "switch_clean.xlsx" in index_payload
+    assert '"components_in_design": 3' in index_payload
 
 
 def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) -> None:

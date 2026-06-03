@@ -1248,6 +1248,14 @@ def serve_workbench(
         "--vector/--no-vector",
         help="Enable search_datasheet against the local Chroma store.",
     ),
+    document_index: Path | None = typer.Option(
+        None,
+        "--document-index",
+        help=(
+            "Optional CSV/TSV index of public datasheet/document links. "
+            "Enables document-coverage Copilot tools; no live supplier lookup."
+        ),
+    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
@@ -1272,6 +1280,7 @@ def serve_workbench(
             netlist_path=netlist_path,
             bom_path=bom_path,
             profiles=profiles,
+            document_index=document_index,
         )
         collection = None
         if use_vector:
@@ -1292,11 +1301,19 @@ def serve_workbench(
         raise typer.Exit(1) from e
 
     url = f"http://{host}:{port}"
+    document_state = "off"
+    if context.document_report is not None:
+        doc_counts = context.document_report.counts_by_status
+        document_state = (
+            f"on matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
+            f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']}"
+        )
     typer.echo(
         f"serve-workbench: {url} "
         f"({context.index.components_in_design} components, "
         f"validated={len(context.index.validated_rows)}, "
-        f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'})"
+        f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'}, "
+        f"document-index={document_state})"
     )
     if dry_run:
         return

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from hardwise.bom import BomParseError, parse_bom
+from tests.xlsx_fixture import write_minimal_xlsx
 
 
 def test_parse_cadence_report_expands_multiline_refs_and_digitless_refdes(
@@ -58,6 +59,43 @@ def test_parse_csv_bom_maps_identity_columns(tmp_path: Path) -> None:
     assert bom.items[0].manufacturer == "Yageo"
     assert bom.items[0].part_number == "RC0402FR-0710KL"
     assert bom.items[0].description == "resistor"
+
+
+def test_parse_chinese_xlsx_bom_maps_refdes_and_keeps_item_code_as_source_identity(
+    tmp_path: Path,
+) -> None:
+    bom_path = tmp_path / "sample.xlsx"
+    write_minimal_xlsx(
+        bom_path,
+        [
+            ["序号", "名称", "编号", "层级", "标识", "数量", "位号", "状态"],
+            ["1", "SMT套件 RFMS5H2TA", "3212763", "0", "", "0.0", "", "风险"],
+            [
+                "2",
+                "IC 74LVC1G125GW SOT353 Buffer",
+                "1269249",
+                "1",
+                "",
+                "2.0",
+                "U1,U2",
+                "发行",
+            ],
+            ["3", "Connector assembly", "ABC123", "1", "", "1", "VA", "发行"],
+        ],
+    )
+
+    bom = parse_bom(bom_path)
+
+    assert len(bom.items) == 2
+    assert bom.items[0].item_number == "1269249"
+    assert bom.items[0].quantity == 2
+    assert bom.items[0].refdes_list == ["U1", "U2"]
+    assert bom.items[0].value == "IC 74LVC1G125GW SOT353 Buffer"
+    assert bom.items[0].description == "IC 74LVC1G125GW SOT353 Buffer"
+    assert bom.items[0].part_number is None
+    assert bom.items[0].raw_refdes == "U1,U2"
+    assert bom.items[1].refdes_list == ["VA"]
+    assert bom.non_refdes_items == []
 
 
 def test_parse_bom_rejects_invalid_quantity(tmp_path: Path) -> None:

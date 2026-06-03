@@ -13,11 +13,28 @@ from hardwise.workbench.chat import (
 from hardwise.workbench.context import build_workbench_context
 
 
-def _context():
+def _write_docs(path: Path) -> Path:
+    path.write_text(
+        "\n".join(
+            [
+                "MPN,Manufacturer,Title,URL,Description",
+                (
+                    "XL1509-12E1,XLSEMI,XL1509 public datasheet,"
+                    "https://example.test/xl1509.pdf,fixture"
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
+def _context(document_index: Path | None = None):
     return build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
         bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
         profiles=Path("data/datasheet_profiles"),
+        document_index=document_index,
         generated_at="2026-05-30T00:00:00+00:00",
     )
 
@@ -78,6 +95,120 @@ def test_fake_chat_reports_datasheet_search_unavailable_and_uses_validation() ->
         assert response.trace[1].status == "ERROR"
         assert response.trace[1].trust_tier == "l1"
         assert response.trace[1].trust_label == "L1 deterministic"
+    finally:
+        context.session.close()
+
+
+def test_fake_chat_drives_component_topology_tool() -> None:
+    context = _context()
+    try:
+        service = WorkbenchChatService(context, mode="fake")
+
+        response = service.ask(ChatRequest(question="U8 接了哪些关键网络?", selected_refdes="U8"))
+
+        assert "U8" in response.answer
+        assert "+3V3" in response.answer
+        assert "NRST" in response.answer
+        assert response.trace
+        assert response.trace[0].tool == "get_component_context"
+        assert response.trace[0].summary == "status=found"
+        assert response.trace[0].status == "ERROR"
+        assert response.trace[0].trust_tier == "l1"
+        assert response.trace[0].trust_label == "L1 deterministic"
+        assert "datasheet:stm32g030.pdf#p33" in response.trace[0].evidence
+    finally:
+        context.session.close()
+
+
+def test_fake_chat_searches_reset_related_nets() -> None:
+    context = _context()
+    try:
+        service = WorkbenchChatService(context, mode="fake")
+
+        response = service.ask(ChatRequest(question="RESET 相关网络有哪些?", selected_refdes="U8"))
+
+        assert "NRST" in response.answer
+        assert "U8.10" in response.answer
+        assert response.trace
+        assert response.trace[0].tool == "search_nets"
+        assert response.trace[0].input["query"] == "RESET"
+        assert response.trace[0].summary == "hits=1"
+        assert response.trace[0].trust_tier == "l1"
+    finally:
+        context.session.close()
+
+
+def test_fake_chat_summarizes_project_topology() -> None:
+    context = _context()
+    try:
+        service = WorkbenchChatService(context, mode="fake")
+
+        response = service.ask(
+            ChatRequest(question="这张板大概有哪些已验证风险和待补 profile?", selected_refdes="U8")
+        )
+
+        assert "拓扑摘要只基于 schematic/netlist" in response.answer
+        assert "25 个器件" in response.answer
+        assert "21 条网络" in response.answer
+        assert "PASS/WARN/ERROR=4/9/3" in response.answer
+        assert response.trace
+        assert response.trace[0].tool == "summarize_project_topology"
+        assert response.trace[0].summary == "components=25, nets=21"
+        assert response.trace[0].trust_tier == "l1"
+    finally:
+        context.session.close()
+
+
+def test_fake_chat_uses_document_tool_for_component_coverage(tmp_path: Path) -> None:
+    context = _context(_write_docs(tmp_path / "docs.csv"))
+    try:
+        service = WorkbenchChatService(context, mode="fake")
+
+        response = service.ask(
+            ChatRequest(question="这个 U12 有公开资料吗?", selected_refdes="U12")
+        )
+
+        assert "XL1509 public datasheet" in response.answer
+        assert "不是电气规格结论" in response.answer
+        assert [trace.tool for trace in response.trace] == ["get_component_documents"]
+        assert response.trace[0].summary == "status=matched"
+        assert response.trace[0].evidence == ["doc:docs.csv#line2"]
+        assert response.trace[0].trust_tier == "l1"
+        assert response.trace[0].trust_label == "L1 deterministic"
+    finally:
+        context.session.close()
+
+
+def test_fake_chat_document_tool_fails_closed_without_index() -> None:
+    context = _context()
+    try:
+        service = WorkbenchChatService(context, mode="fake")
+
+        response = service.ask(
+            ChatRequest(question="这个 U12 有公开资料吗?", selected_refdes="U12")
+        )
+
+        assert "没有配置公开 document index" in response.answer
+        assert [trace.tool for trace in response.trace] == ["get_component_documents"]
+        assert response.trace[0].summary == "status=not_configured"
+        assert response.trace[0].trust_tier == "l3"
+    finally:
+        context.session.close()
+
+
+def test_fake_chat_uses_document_summary_for_gap_question(tmp_path: Path) -> None:
+    context = _context(_write_docs(tmp_path / "docs.csv"))
+    try:
+        service = WorkbenchChatService(context, mode="fake")
+
+        response = service.ask(ChatRequest(question="还有哪些 datasheet 缺口?"))
+
+        assert "资料覆盖来自已配置的公开 document index" in response.answer
+        assert "no_result=" in response.answer
+        assert [trace.tool for trace in response.trace] == ["summarize_document_coverage"]
+        assert response.trace[0].summary.startswith("groups=")
+        assert response.trace[0].trust_tier == "l1"
+        assert response.trace[0].trust_label == "L1 deterministic"
     finally:
         context.session.close()
 

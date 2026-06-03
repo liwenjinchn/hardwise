@@ -113,6 +113,29 @@ class _FakeWorkbenchMessages:
         self._turn += 1
         self._last_question, self._last_selected = _parse_runner_prompt(str(content or ""))
         refdes = _choose_refdes(self._last_question, self._last_selected)
+        topology_tools = _topology_tool_uses(self._last_question, refdes, self._turn)
+        if topology_tools:
+            return _FakeResponse(topology_tools)
+        if _needs_document_coverage(self._last_question):
+            if _needs_document_summary(self._last_question):
+                return _FakeResponse(
+                    [
+                        _FakeToolUseBlock(
+                            id=f"hw_fake_{self._turn}_document_summary",
+                            name="summarize_document_coverage",
+                            input={"limit": 10, "candidate_limit": 3},
+                        )
+                    ]
+                )
+            return _FakeResponse(
+                [
+                    _FakeToolUseBlock(
+                        id=f"hw_fake_{self._turn}_component_documents",
+                        name="get_component_documents",
+                        input={"refdes": refdes, "candidate_limit": 5},
+                    )
+                ]
+            )
         if _needs_datasheet_search(self._last_question):
             tool_uses: list[Any] = [
                 _FakeToolUseBlock(
@@ -148,10 +171,16 @@ class _FakeWorkbenchMessages:
                 "I could not read the tool result.",
                 "我没有读到工具返回结果。",
             )
+        topology_payload = _topology_payload(payloads)
         search_payload = _search_payload(payloads)
+        document_payload = _document_payload(payloads)
         validation_payload = _validation_payload(payloads)
+        if topology_payload is not None:
+            return self._answer_from_topology_result(topology_payload)
         if search_payload is not None:
             return self._answer_from_datasheet_result(search_payload, validation_payload)
+        if document_payload is not None:
+            return self._answer_from_document_result(document_payload)
         if validation_payload is None:
             return _localized(
                 self._last_question,
@@ -257,6 +286,103 @@ class _FakeWorkbenchMessages:
             return "The tool returned a result, but this fake workbench mode cannot summarize it yet."
         return "工具已经返回结果，但 fake 模式暂时不能总结这个结果。"
 
+    def _answer_from_topology_result(self, payload: dict[str, Any]) -> str:
+        status = str(payload.get("status") or "")
+        if status == "not_configured":
+            return _localized(
+                self._last_question,
+                "No Allegro/PST schematic topology is loaded for this run.",
+                "这次运行没有加载 Allegro/PST 原理图拓扑，所以不能回答连接关系。",
+            )
+        if status == "summarized":
+            return _summarize_topology_payload(self._last_question, payload)
+        if "component" in payload:
+            return _summarize_component_context_payload(self._last_question, payload)
+        if "net_name" in payload:
+            return _summarize_net_context_payload(self._last_question, payload)
+        if "hits" in payload and "query" in payload:
+            return _summarize_net_search_payload(self._last_question, payload)
+        return _localized(
+            self._last_question,
+            "The topology tool returned a result, but this fake workbench mode cannot summarize it yet.",
+            "topology 工具已经返回结果，但 fake 模式暂时不能总结这个结果。",
+        )
+
+    def _answer_from_document_result(self, payload: dict[str, Any]) -> str:
+        status = str(payload.get("status") or "")
+        if status == "not_configured":
+            return _localized(
+                self._last_question,
+                "No public document index is configured for this workbench run.",
+                "这次 workbench 没有配置公开 document index，所以不能给出资料覆盖状态。",
+            )
+
+        if status == "configured":
+            counts = payload.get("counts_by_status") if isinstance(payload.get("counts_by_status"), dict) else {}
+            groups = payload.get("groups") if isinstance(payload.get("groups"), list) else []
+            missing = [
+                group
+                for group in groups
+                if isinstance(group, dict)
+                and group.get("document_status") in {"no_result", "ambiguous", "manual_needed"}
+            ]
+            first = missing[0] if missing else (groups[0] if groups and isinstance(groups[0], dict) else {})
+            identity = str(first.get("identity") or "-")
+            doc_status = str(first.get("document_status") or "-")
+            if _wants_english(self._last_question):
+                return (
+                    "Document coverage is from the configured public index only. "
+                    f"Counts: matched={counts.get('matched', 0)}, no_result={counts.get('no_result', 0)}, "
+                    f"ambiguous={counts.get('ambiguous', 0)}, manual_needed={counts.get('manual_needed', 0)}. "
+                    f"First gap/sample: {identity} ({doc_status})."
+                )
+            return (
+                "资料覆盖来自已配置的公开 document index，不代表电气规格结论。"
+                f"计数: matched={counts.get('matched', 0)}，no_result={counts.get('no_result', 0)}，"
+                f"ambiguous={counts.get('ambiguous', 0)}，manual_needed={counts.get('manual_needed', 0)}。"
+                f"首个缺口/样例: {identity}（{doc_status}）。"
+            )
+
+        refdes = str(payload.get("refdes") or self._last_selected or "")
+        identity = str(payload.get("identity") or "-")
+        selected = payload.get("selected") if isinstance(payload.get("selected"), dict) else None
+        candidates = payload.get("candidates") if isinstance(payload.get("candidates"), list) else []
+        if status == "matched" and selected:
+            title = str(selected.get("title") or "document")
+            source = str(selected.get("source") or "")
+            if _wants_english(self._last_question):
+                return (
+                    f"{refdes} maps to {identity}; the local public document index has "
+                    f"a matched document: {title} ({source}). This is coverage evidence, "
+                    "not an electrical spec claim."
+                )
+            return (
+                f"{refdes} 对应 BOM 身份 {identity}；本地公开 document index 已匹配资料："
+                f"{title}（{source}）。这只是资料覆盖证据，不是电气规格结论。"
+            )
+        if status == "ambiguous":
+            count = len(candidates)
+            if _wants_english(self._last_question):
+                return f"{refdes} maps to {identity}, but the document index has {count} candidates; reviewer selection is needed."
+            return f"{refdes} 对应 BOM 身份 {identity}，但 document index 有 {count} 个候选，需要人工选定。"
+        if status in {"no_result", "manual_needed"}:
+            reason = str(payload.get("reason") or "")
+            if _wants_english(self._last_question):
+                return f"{refdes} maps to {identity}, but document coverage is {status}. Reason: {reason}"
+            return f"{refdes} 对应 BOM 身份 {identity}，资料覆盖状态是 {status}。原因: {reason}"
+        if status == "not_found":
+            matches = payload.get("closest_matches")
+            suggestions = ", ".join(matches[:3]) if isinstance(matches, list) else ""
+            if _wants_english(self._last_question):
+                return f"I could not find {refdes} in document coverage groups. Closest matches: {suggestions}."
+            return f"我没有在资料覆盖分组里找到 {refdes}。最接近的是: {suggestions}。"
+
+        return _localized(
+            self._last_question,
+            "The document tool returned a result, but this fake workbench mode cannot summarize it yet.",
+            "document 工具已经返回结果，但 fake 模式暂时不能总结这个结果。",
+        )
+
 
 class FakeWorkbenchAnthropic:
     """Tiny Anthropic-compatible fake client for tests and demo smoke."""
@@ -336,6 +462,8 @@ class WorkbenchChatService:
             system_prompt=WORKBENCH_SYSTEM_PROMPT,
             design=self.context.design,
             validation_targets=self.context.validation_targets,
+            project_index=self.context.index,
+            document_report=self.context.document_report,
         )
         result = runner.run(_runner_prompt(request.question, selected))
         return self._response_from_result(result, selected)
@@ -519,6 +647,302 @@ def _validation_payload(payloads: list[dict[str, Any]]) -> dict[str, Any] | None
         if isinstance(status, str) and status in validation_statuses:
             return payload
     return None
+
+
+def _document_payload(payloads: list[dict[str, Any]]) -> dict[str, Any] | None:
+    document_statuses = {
+        "matched",
+        "no_result",
+        "ambiguous",
+        "manual_needed",
+        "not_found",
+        "not_configured",
+        "configured",
+    }
+    for payload in payloads:
+        status = payload.get("status")
+        if isinstance(status, str) and status in document_statuses:
+            if "document_index_file" in payload or "identity" in payload or "groups" in payload:
+                return payload
+            reason = str(payload.get("reason") or "")
+            if status == "not_configured" and "document index" in reason.lower():
+                return payload
+    return None
+
+
+def _topology_payload(payloads: list[dict[str, Any]]) -> dict[str, Any] | None:
+    topology_statuses = {"found", "not_found", "not_configured", "summarized"}
+    for payload in payloads:
+        status = payload.get("status")
+        if isinstance(status, str) and status in topology_statuses:
+            if "component" in payload or "net_name" in payload or "component_count" in payload:
+                return payload
+            reason = str(payload.get("reason") or "")
+            if status == "not_configured" and "topology" in reason.lower():
+                return payload
+    for payload in payloads:
+        if "hits" in payload and "query" in payload:
+            if "closest_matches" in payload or "sample_members" in json.dumps(payload):
+                return payload
+    return None
+
+
+def _topology_tool_uses(question: str, refdes: str, turn: int) -> list[Any]:
+    if _needs_project_topology(question):
+        return [
+            _FakeToolUseBlock(
+                id=f"hw_fake_{turn}_topology_summary",
+                name="summarize_project_topology",
+                input={"component_limit": 10, "net_limit": 10, "gap_limit": 8},
+            )
+        ]
+    if _needs_component_topology(question):
+        return [
+            _FakeToolUseBlock(
+                id=f"hw_fake_{turn}_component_context",
+                name="get_component_context",
+                input={"refdes": refdes, "neighbor_limit": 24},
+            )
+        ]
+    if _needs_net_topology_search(question):
+        return [
+            _FakeToolUseBlock(
+                id=f"hw_fake_{turn}_net_search",
+                name="search_nets",
+                input={"query": _net_search_query(question), "limit": 12, "member_sample_limit": 6},
+            )
+        ]
+    return []
+
+
+def _needs_project_topology(question: str) -> bool:
+    text = question.lower()
+    needles = (
+        "project topology",
+        "board topology",
+        "topology summary",
+        "schematic overview",
+        "project overview",
+        "这张板",
+        "整板",
+        "项目概览",
+        "原理图概览",
+        "拓扑概览",
+        "待补 profile",
+        "profile 缺口",
+    )
+    return any(needle in text for needle in needles)
+
+
+def _needs_component_topology(question: str) -> bool:
+    text = question.lower()
+    if not re.search(r"\b[A-Z]{1,3}\d{1,4}\b", question.upper()):
+        return False
+    needles = (
+        "connected",
+        "connects",
+        "connection",
+        "topology",
+        "netlist",
+        "接了哪些",
+        "连接",
+        "相连",
+        "接到",
+        "网络",
+        "拓扑",
+    )
+    return any(needle in text for needle in needles)
+
+
+def _needs_net_topology_search(question: str) -> bool:
+    text = question.lower()
+    if re.search(r"\b[A-Z]{1,3}\d{1,4}\b", question.upper()):
+        return False
+    topology_words = ("net", "network", "网络", "相关", "有哪些", "搜索", "查找")
+    net_tokens = ("reset", "nrst", "rst", "boot", "vin", "3v3", "sda", "scl", "swd", "swclk", "swdio", "pwm")
+    return any(word in text for word in topology_words) and any(token in text for token in net_tokens)
+
+
+def _net_search_query(question: str) -> str:
+    known = ("RESET", "NRST", "RST", "BOOT", "VIN", "3V3", "SDA", "SCL", "SWD", "SWCLK", "SWDIO", "PWM")
+    upper = question.upper()
+    found = [token for token in known if token in upper]
+    return " ".join(found) if found else question
+
+
+def _summarize_component_context_payload(question: str, payload: dict[str, Any]) -> str:
+    status = str(payload.get("status") or "")
+    component = payload.get("component") if isinstance(payload.get("component"), dict) else {}
+    refdes = str(component.get("refdes") or payload.get("refdes") or "")
+    if status == "not_found":
+        matches = payload.get("closest_matches")
+        suggestions = ", ".join(matches[:3]) if isinstance(matches, list) else ""
+        return _localized(
+            question,
+            f"I could not find {refdes}. Closest matches: {suggestions}.",
+            f"我没有在当前设计里找到 {refdes}。最接近的是: {suggestions}。",
+        )
+
+    value = str(component.get("value") or component.get("part_number") or "")
+    validation = str(payload.get("validation_status") or "-")
+    pins = payload.get("pins") if isinstance(payload.get("pins"), list) else []
+    pin_text = _format_pin_nets(pins[:8], english=_wants_english(question))
+    neighbors = payload.get("neighbors") if isinstance(payload.get("neighbors"), list) else []
+    neighbor_text = _format_neighbor_nets(neighbors[:4], english=_wants_english(question))
+    if _wants_english(question):
+        return (
+            f"{refdes} ({value}) is from parsed Allegro/PST topology; validation status is {validation}. "
+            f"Pin nets: {pin_text}. Neighbor nets: {neighbor_text}."
+        )
+    return (
+        f"{refdes}（{value}）来自已解析的 Allegro/PST 原理图拓扑，验证状态是 {validation}。"
+        f"引脚网络: {pin_text}。相邻网络: {neighbor_text}。"
+    )
+
+
+def _summarize_net_context_payload(question: str, payload: dict[str, Any]) -> str:
+    status = str(payload.get("status") or "")
+    net_name = str(payload.get("net_name") or "")
+    if status == "not_found":
+        matches = payload.get("closest_matches")
+        suggestions = ", ".join(matches[:3]) if isinstance(matches, list) else ""
+        return _localized(
+            question,
+            f"I could not find net {net_name}. Closest matches: {suggestions}.",
+            f"我没有在当前 netlist 里找到网络 {net_name}。最接近的是: {suggestions}。",
+        )
+    members = payload.get("members") if isinstance(payload.get("members"), list) else []
+    member_text = _format_members(members[:8])
+    count = int(payload.get("member_count") or len(members))
+    return _localized(
+        question,
+        f"Net {net_name} has {count} parsed member pins. Sample: {member_text}.",
+        f"网络 {net_name} 有 {count} 个已解析成员引脚。样例: {member_text}。",
+    )
+
+
+def _summarize_net_search_payload(question: str, payload: dict[str, Any]) -> str:
+    query = str(payload.get("query") or "")
+    hits = payload.get("hits") if isinstance(payload.get("hits"), list) else []
+    if not hits:
+        matches = payload.get("closest_matches")
+        suggestions = ", ".join(matches[:3]) if isinstance(matches, list) else ""
+        return _localized(
+            question,
+            f"No parsed net names matched {query}. Closest matches: {suggestions}.",
+            f"没有解析到匹配 {query} 的网络名。最接近的是: {suggestions}。",
+        )
+    rendered = []
+    for hit in hits[:5]:
+        if not isinstance(hit, dict):
+            continue
+        sample = _format_members(hit.get("sample_members") if isinstance(hit.get("sample_members"), list) else [])
+        rendered.append(f"{hit.get('net_name')}({hit.get('member_count')}): {sample}")
+    joined = "; ".join(rendered)
+    return _localized(
+        question,
+        f"Parsed net search for {query} returned: {joined}.",
+        f"按已解析 netlist 搜索 {query}，命中: {joined}。",
+    )
+
+
+def _summarize_topology_payload(question: str, payload: dict[str, Any]) -> str:
+    totals = payload.get("validation_totals") if isinstance(payload.get("validation_totals"), dict) else {}
+    power = _format_net_hits(payload.get("power_like_nets") if isinstance(payload.get("power_like_nets"), list) else [])
+    interface = _format_net_hits(
+        payload.get("interface_like_nets") if isinstance(payload.get("interface_like_nets"), list) else []
+    )
+    control = _format_net_hits(
+        payload.get("control_like_nets") if isinstance(payload.get("control_like_nets"), list) else []
+    )
+    gaps = payload.get("profile_gap_groups") if isinstance(payload.get("profile_gap_groups"), list) else []
+    first_gap = gaps[0] if gaps and isinstance(gaps[0], dict) else {}
+    if _wants_english(question):
+        return (
+            "Topology summary is schematic/netlist-only: "
+            f"{payload.get('component_count')} components, {payload.get('net_count')} nets, "
+            f"validated={payload.get('validated_count')}, manual={payload.get('manual_count')}, "
+            f"PASS/WARN/ERROR={totals.get('PASS', 0)}/{totals.get('WARN', 0)}/{totals.get('ERROR', 0)}. "
+            f"Power-like nets: {power}. Interface-like nets: {interface}. Control-like nets: {control}. "
+            f"First profile gap: {first_gap.get('identity', '-')} ({first_gap.get('refdes_count', 0)} refs)."
+        )
+    return (
+        "拓扑摘要只基于 schematic/netlist："
+        f"{payload.get('component_count')} 个器件，{payload.get('net_count')} 条网络，"
+        f"已验证 {payload.get('validated_count')} 个，待人工/profile {payload.get('manual_count')} 个，"
+        f"PASS/WARN/ERROR={totals.get('PASS', 0)}/{totals.get('WARN', 0)}/{totals.get('ERROR', 0)}。"
+        f"电源类网络: {power}。接口类网络: {interface}。控制类网络: {control}。"
+        f"首个 profile 缺口: {first_gap.get('identity', '-')}（{first_gap.get('refdes_count', 0)} 个 refdes）。"
+    )
+
+
+def _format_pin_nets(pins: list[Any], *, english: bool) -> str:
+    rendered = []
+    for pin in pins:
+        if isinstance(pin, dict):
+            rendered.append(f"{pin.get('pin_number')}/{pin.get('pin_name') or '-'}->{pin.get('net') or '-'}")
+    if not rendered:
+        return "none" if english else "无"
+    return ", ".join(rendered)
+
+
+def _format_neighbor_nets(neighbors: list[Any], *, english: bool) -> str:
+    rendered = []
+    for net in neighbors:
+        if not isinstance(net, dict):
+            continue
+        members = net.get("members") if isinstance(net.get("members"), list) else []
+        rendered.append(f"{net.get('net_name')}[{_format_members(members[:4])}]")
+    if not rendered:
+        return "none" if english else "无"
+    return "; ".join(rendered)
+
+
+def _format_members(members: list[Any]) -> str:
+    rendered = []
+    for member in members:
+        if isinstance(member, dict):
+            rendered.append(f"{member.get('refdes')}.{member.get('pin_number')}")
+    return ", ".join(rendered) if rendered else "-"
+
+
+def _format_net_hits(hits: list[Any]) -> str:
+    rendered = []
+    for hit in hits[:5]:
+        if isinstance(hit, dict):
+            rendered.append(f"{hit.get('net_name')}({hit.get('member_count')})")
+    return ", ".join(rendered) if rendered else "-"
+
+
+def _needs_document_coverage(question: str) -> bool:
+    text = question.lower()
+    if any(term in text for term in ("absolute maximum", "abs max", "rating", "rated", "绝对最大", "额定")):
+        return False
+    needles = (
+        "public document",
+        "document coverage",
+        "document gap",
+        "datasheet gap",
+        "has datasheet",
+        "have datasheet",
+        "matched document",
+        "公开资料",
+        "资料覆盖",
+        "资料缺口",
+        "文档缺口",
+        "datasheet 缺口",
+        "缺 datasheet",
+        "有没有 datasheet",
+        "有没有数据手册",
+        "有没有资料",
+        "匹配到公开",
+    )
+    return any(needle in text for needle in needles)
+
+
+def _needs_document_summary(question: str) -> bool:
+    text = question.lower()
+    return any(term in text for term in ("gap", "coverage", "缺口", "哪些", "summary", "summarize"))
 
 
 def _needs_datasheet_search(question: str) -> bool:

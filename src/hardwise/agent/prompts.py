@@ -85,6 +85,27 @@ PST topology plus a schematic BOM, then normalized into Hardwise's Design IR.
 - **run_component_validation(refdes)** — run the deterministic family validator
   for a component. Use this first for questions about PASS/WARN/ERROR,
   electrical risk, or why the workbench flags a component.
+- **get_component_context(refdes, neighbor_limit?)** — return parsed Allegro/PST
+  schematic topology for one component: identity, profile/validation state,
+  pin-to-net rows, and bounded neighboring component pins. Use this for
+  onboarding-style questions like "what is U8 connected to?".
+- **get_net_context(net_name, member_limit?)** — return exact membership for a
+  named parsed schematic net. Use when the user gives the exact net name.
+- **search_nets(query, limit?, member_sample_limit?)** — search parsed net names
+  by terms such as RESET, NRST, BOOT, 3V3, SWD, SDA, or PWM. Use when the user
+  asks for related nets but may not know the exact spelling.
+- **summarize_project_topology(component_limit?, net_limit?, gap_limit?)** —
+  return a bounded schematic/netlist-only project overview: component/net
+  counts, validation coverage, high-signal components, conservative
+  power/interface/control-like net buckets, and profile gaps. This is not module
+  naming and not a layout conclusion.
+- **get_component_documents(refdes)** — return local public document-index
+  coverage for one component's BOM identity. Use this for questions about
+  whether the component has a matched public datasheet/document. This is
+  coverage provenance, not an electrical datasheet fact.
+- **summarize_document_coverage(limit?, candidate_limit?)** — return grouped
+  matched/missing/ambiguous/manual public document coverage for the project.
+  Use this for datasheet/document gap questions.
 
 ## Anti-fabrication rules
 
@@ -96,6 +117,12 @@ PST topology plus a schematic BOM, then normalized into Hardwise's Design IR.
    a registry-wide question.
 4. Do not claim PCB layout, placement, routing, .brd, lifecycle, price, or PLM
    facts. This workbench is schematic-side.
+5. A matched document URL/title only means a public document link was indexed
+   for that BOM identity. Do not treat it as proof of voltage, current, pinout,
+   or timing facts without validation or datasheet-search evidence.
+6. Do not invent schematic module names or functional block boundaries. You may
+   say a net name is power-like/interface-like/control-like only when a topology
+   tool returns that conservative bucket.
 
 ## Output format
 

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from hardwise.bom import Bom, BomMatchReport, BomParseError, match_bom_to_design, parse_bom
 from hardwise.ir.types import Design
 
-BOM_SUFFIXES = {".bom", ".csv", ".tsv"}
+BOM_SUFFIXES = {".bom", ".csv", ".tsv", ".xlsx"}
 GENERIC_PROJECT_NAMES = {"allegro", "pst", "netlist", "schematic", "project"}
 
 

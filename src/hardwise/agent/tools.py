@@ -6,14 +6,18 @@ may not find their target return a discriminated union so the agent reads
 the CLAUDE.md rule "Tools return structured null/unknown, never fabricated"
 on the agent side.
 
-Five tools ship in this module, wired against the Slice 3 stores and the
-deterministic validator boundary:
+Core tools ship in this module, wired against the Slice 3 stores, the
+deterministic validator boundary, and workbench document coverage:
 
   - list_components   → relational store query, optional filters
   - get_component     → relational store + registry; returns closest_matches on miss
   - get_nc_pins       → relational store query, optional refdes filter
   - search_datasheet  → vector store query, optional part_ref filter
   - run_component_validation → IR Design + explicit profile target validation
+  - get_component_context / get_net_context / search_nets /
+    summarize_project_topology → Allegro/PST component-pin-net topology facts
+  - get_component_documents / summarize_document_coverage → local public
+    document-index coverage state
 
 `TOOL_DEFINITIONS` exposes them in Anthropic-SDK `tools=[...]` shape; runner.py
 registers it directly with `messages.create(tools=...)`.
@@ -28,6 +32,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from hardwise.adapters.base import BoardRegistry
+from hardwise.agent.document_tools import DOCUMENT_TOOL_DEFINITIONS
+from hardwise.agent.topology_tools import TOPOLOGY_TOOL_DEFINITIONS
 from hardwise.store.relational import query_components, query_nc_pins
 from hardwise.store.vector import query_chunks
 
@@ -406,4 +412,4 @@ TOOL_DEFINITIONS: list[dict] = [
         ),
         "input_schema": RunComponentValidationInput.model_json_schema(),
     },
-]
+] + TOPOLOGY_TOOL_DEFINITIONS + DOCUMENT_TOOL_DEFINITIONS
