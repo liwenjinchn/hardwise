@@ -1,0 +1,80 @@
+{
+  "part_number": "L2N7002KLT1G",
+  "part_number_aliases": [
+    "L2N7002KLT3G"
+  ],
+  "review_status": "ready",
+  "description": "60V N-channel small-signal MOSFET, SOT-23",
+  "abs_max": {
+    "vds": 60.0,
+    "vgs": 20.0,
+    "id": 0.32,
+    "id_t_lt_5s": 0.38,
+    "idm_pulsed": 1.5,
+    "body_diode_source_current": 0.3
+  },
+  "recommended": {
+    "topology_family": "mosfet",
+    "polarity": "n_channel"
+  },
+  "pin_function": {
+    "1": "Gate",
+    "2": "Source",
+    "3": "Drain"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "Gate",
+      "category": "analog_input",
+      "function": "Gate control input; Vgs is measured to the source terminal.",
+      "limits": {},
+      "recommended_topology": [
+        "Drive within the +/-20 V gate-source absolute maximum rating."
+      ],
+      "evidence": [
+        "datasheet:l2n7002klt1g.pdf#p1"
+      ]
+    },
+    {
+      "number": "2",
+      "name": "Source",
+      "category": "switch_node",
+      "function": "Source terminal and Vgs/Vds reference node.",
+      "limits": {},
+      "recommended_topology": [
+        "Use as the MOSFET source reference, not implicitly as ground."
+      ],
+      "evidence": [
+        "datasheet:l2n7002klt1g.pdf#p1"
+      ]
+    },
+    {
+      "number": "3",
+      "name": "Drain",
+      "category": "switch_output",
+      "function": "Drain terminal of the N-channel MOSFET.",
+      "limits": {},
+      "recommended_topology": [
+        "Keep drain-source stress within the 60 V maximum rating."
+      ],
+      "evidence": [
+        "datasheet:l2n7002klt1g.pdf#p1"
+      ]
+    }
+  ],
+  "evidence": {
+    "abs_max.vds": "datasheet:l2n7002klt1g.pdf#p1",
+    "abs_max.vgs": "datasheet:l2n7002klt1g.pdf#p1",
+    "abs_max.id": "datasheet:l2n7002klt1g.pdf#p1",
+    "abs_max.id_t_lt_5s": "datasheet:l2n7002klt1g.pdf#p1",
+    "abs_max.idm_pulsed": "datasheet:l2n7002klt1g.pdf#p1",
+    "abs_max.body_diode_source_current": "datasheet:l2n7002klt1g.pdf#p1",
+    "pin_function.1": "datasheet:l2n7002klt1g.pdf#p1",
+    "pin_function.2": "datasheet:l2n7002klt1g.pdf#p1",
+    "pin_function.3": "datasheet:l2n7002klt1g.pdf#p1"
+  },
+  "extracted_at": "2026-06-03T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-l2n7002klt1g-public-pdf",
+  "schema_version": "v2"
+}

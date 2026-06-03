@@ -512,6 +512,87 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
     assert '"profile_path": "data/datasheet_profiles/mpq8626.json"' in index_payload
 
 
+def test_design_validator_ui_uses_document_mpn_for_l2n7002klt1g_profile(
+    tmp_path: Path,
+) -> None:
+    l2_value = "N-MOS管 L2N7002KLT1G SOT23 1.5 LRC"
+    ln_value = "N-MOS管 LN2312LT1G 5A SOT-23 LRC"
+    pe_value = "P-MOS管 PE537BA PDFN -33 NIKO-SEM"
+    netlist = tmp_path / "l2.net"
+    netlist.write_text(
+        """$PACKAGES
+  ! 'SOT23' ! LOCAL_VALUE ; PQ10
+  ! 'SOT23' ! LOCAL_VALUE ; PQ9
+  ! 'PDFN' ! LOCAL_VALUE ; Q13
+$NETS
+  'P3V3' ; PQ10.1
+  'GND' ; PQ10.2
+  'P12V' ; PQ10.3
+  'P3V3' ; PQ9.G
+  'GND' ; PQ9.S
+  'P12V' ; PQ9.D
+  'P12V' ; Q13.1
+  'P12V' ; Q13.2
+  'P12V' ; Q13.3
+  'P3V3' ; Q13.4
+  'LOAD' ; Q13.5
+  'LOAD' ; Q13.6
+  'LOAD' ; Q13.7
+  'LOAD' ; Q13.8
+$END
+""",
+        encoding="utf-8",
+    )
+    bom = tmp_path / "bom.csv"
+    bom.write_text(
+        "Reference,Quantity,Value,Manufacturer,MPN\n"
+        f"PQ10,1,{l2_value},LRC,\n"
+        f"PQ9,1,{ln_value},LRC,\n"
+        f"Q13,1,{pe_value},NIKO-SEM,\n",
+        encoding="utf-8",
+    )
+    docs = tmp_path / "docs.csv"
+    docs.write_text(
+        "MPN,Manufacturer,Title,URL,Value\n"
+        f"L2N7002KLT1G,LRC,L2 public datasheet,https://example.test/l2.pdf,{l2_value}\n"
+        f"LN2312LT1G,LRC,LN public datasheet,https://example.test/ln.pdf,{ln_value}\n"
+        f"PE537BA,NIKO-SEM,PE public datasheet,https://example.test/pe.pdf,{pe_value}\n",
+        encoding="utf-8",
+    )
+    index_json = tmp_path / "index.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            str(netlist),
+            str(bom),
+            "--document-index",
+            str(docs),
+            "--output",
+            str(tmp_path / "workbench.html"),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "validated=1" in result.output
+    assert "PASS/WARN/ERROR=1/0/0" in result.output
+
+    index_payload = index_json.read_text(encoding="utf-8")
+    assert '"refdes": "PQ10"' in index_payload
+    assert '"match_status": "matched"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/l2n7002klt1g.json"' in index_payload
+    assert '"document_source": "doc:docs.csv#line2"' in index_payload
+    assert '"refdes": "PQ9"' in index_payload
+    assert '"refdes": "Q13"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/ln2312lt1g.json"' not in index_payload
+    assert "pe537ba.json" not in index_payload
+    assert '"document_source": "doc:docs.csv#line3"' in index_payload
+    assert '"document_source": "doc:docs.csv#line4"' in index_payload
+
+
 def test_design_validator_ui_matches_pca9548a_i2c_mux_family_with_public_docs(
     tmp_path: Path,
 ) -> None:

@@ -130,7 +130,13 @@ def build_workbench_context(
         if document_index is not None
         else None
     )
-    candidate_report = suggest_profile_candidates(bom, profiles, project=bom.source_file.stem)
+    candidate_report = suggest_profile_candidates(
+        bom,
+        profiles,
+        project=bom.source_file.stem,
+        document_report=document_report,
+        design=design,
+    )
     timestamp = generated_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
     project_name = project_name_for_inputs(source, bom)
     index = build_project_validation_index(

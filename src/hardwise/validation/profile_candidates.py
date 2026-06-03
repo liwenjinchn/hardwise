@@ -4,14 +4,19 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Literal
 
-import yaml
 from pydantic import BaseModel, Field
 
 from hardwise.bom.types import Bom, BomItem
+from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile
-from hardwise.path_display import display_path
+from hardwise.validation.profile_candidate_documents import candidates_from_document_identity
+from hardwise.validation.profile_candidate_manifest import render_manifest
+
+if TYPE_CHECKING:
+    from hardwise.ir.types import Design
 
 ProfileCandidateStatus = Literal["matched", "no_result", "ambiguous", "manual_needed"]
 
@@ -62,13 +67,22 @@ def suggest_profile_candidates(
     profiles_dir: Path,
     *,
     project: str | None = None,
+    document_report: DocumentMatchReport | None = None,
+    design: "Design | None" = None,
 ) -> ProfileCandidateReport:
     """Generate profile candidates for each refdes in a schematic BOM."""
 
     profiles = _load_profiles(profiles_dir)
     by_part = _profiles_by_part_number(profiles)
     candidates = [
-        candidate for item in bom.items for candidate in _candidate_for_item(item, by_part)
+        candidate
+        for item in bom.items
+        for candidate in _candidate_for_item(
+            item,
+            by_part,
+            document_report=document_report,
+            design=design,
+        )
     ]
     return ProfileCandidateReport(
         project=project or bom.source_file.stem,
@@ -85,43 +99,15 @@ def render_profile_candidate_manifest(
 ) -> str:
     """Render a YAML candidate manifest for human review."""
 
-    matched = [candidate for candidate in report.candidates if candidate.match_status == "matched"]
-    if matched_only:
-        return yaml.safe_dump(
-            {
-                "project": report.project,
-                "targets": [
-                    {
-                        "refdes": candidate.refdes,
-                        "profile": display_path(candidate.profile),
-                    }
-                    for candidate in matched
-                ],
-            },
-            sort_keys=False,
-            allow_unicode=True,
-        )
-
-    unmatched = [
-        candidate for candidate in report.candidates if candidate.match_status != "matched"
-    ]
-    doc: dict[str, object] = {
-        "project": report.project,
-        "status": report.status,
-        "targets": [_target_row(candidate) for candidate in matched],
-        "unmatched": [_unmatched_row(candidate) for candidate in unmatched],
-    }
-    doc["summary"] = {
-        "bom": display_path(report.bom_file),
-        "profiles": display_path(report.profiles_dir),
-        **report.counts_by_status,
-    }
-    return yaml.safe_dump(doc, sort_keys=False, allow_unicode=True)
+    return render_manifest(report, matched_only=matched_only)
 
 
 def _candidate_for_item(
     item: BomItem,
     profiles_by_part: dict[str, list[Path]],
+    *,
+    document_report: DocumentMatchReport | None,
+    design: "Design | None",
 ) -> list[ProfileCandidate]:
     identity, identity_kind = _item_identity(item)
     if identity is None:
@@ -139,6 +125,26 @@ def _candidate_for_item(
 
     profiles = profiles_by_part.get(_normalize_identity(identity), [])
     if not profiles:
+        document_candidates = candidates_from_document_identity(
+            item,
+            profiles_by_part,
+            document_report=document_report,
+            design=design,
+        )
+        if document_candidates is not None:
+            return [
+                _candidate(
+                    refdes=document_candidate.refdes,
+                    item=item,
+                    status=document_candidate.status,
+                    identity=document_candidate.identity,
+                    identity_kind="document_mpn",
+                    reason=document_candidate.reason,
+                    profile=document_candidate.profile,
+                    candidates=document_candidate.candidates,
+                )
+                for document_candidate in document_candidates
+            ]
         return [
             _candidate(
                 refdes=refdes,
@@ -253,30 +259,6 @@ def _looks_like_part_number(value: str) -> bool:
 
 def _normalize_identity(value: str | None) -> str:
     return re.sub(r"[^a-z0-9]+", "", (value or "").lower())
-
-
-def _target_row(candidate: ProfileCandidate) -> dict[str, object]:
-    row: dict[str, object] = {
-        "refdes": candidate.refdes,
-        "profile": display_path(candidate.profile),
-        "match_status": candidate.match_status,
-        "identity": candidate.identity,
-        "identity_kind": candidate.identity_kind,
-    }
-    return row
-
-
-def _unmatched_row(candidate: ProfileCandidate) -> dict[str, object]:
-    row: dict[str, object] = {
-        "refdes": candidate.refdes,
-        "match_status": candidate.match_status,
-        "identity": candidate.identity,
-        "identity_kind": candidate.identity_kind,
-        "reason": candidate.reason,
-    }
-    if candidate.candidates:
-        row["candidates"] = [display_path(path) for path in candidate.candidates]
-    return row
 
 
 _PASSIVE_VALUE_RE = re.compile(

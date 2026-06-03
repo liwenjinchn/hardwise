@@ -2995,3 +2995,62 @@ Same family is enough to scope a review queue, but not enough to match a
 datasheet. Matching still needs a parsed public MPN or an exact
 reviewer-confirmed BOM value alias, and the rendered output must carry the
 `doc:` source token.
+
+## 2026-06-03 — D2c profile matching needs the reviewed document MPN bridge
+
+**Symptom**
+
+Adding a ready `L2N7002KLT1G` profile by public MPN was not enough to prove the
+D2a/D2b mainboard flow. The target Chinese `.xlsx` BOM keeps the repeated
+transistor identity in `名称`, while D2b deliberately put the public MPN in the
+reviewed document-index row rather than in the BOM parser or profile aliases.
+
+**Root cause**
+
+Profile candidates originally looked only at BOM `part_number` or part-like
+`value`. That was safe for parsed public MPNs, but it meant a reviewed document
+row such as `doc:mainboard_d2_transistor_docs.csv#line2` could prove document
+coverage without giving the validator a safe public profile identity. The
+missing join was: BOM value alias -> reviewed document row -> public MPN ->
+ready profile, with a final check that local schematic pin IDs fit the profile
+pin numbers.
+
+**Fix**
+
+Added `data/datasheet_profiles/l2n7002klt1g.json` from the public LRC PDF and
+kept aliases to public order variants only. `design-validator-ui` now passes the
+matched document report and parsed design into profile candidate generation.
+When direct BOM identity has no ready profile, a matched document row may supply
+its public MPN for profile lookup; the candidate is accepted only if the
+schematic component exposes all profile pin numbers. Synthetic workbench tests
+prove `L2N7002KLT1G` with pins `1/2/3` promotes, while `LN2312LT1G` with local
+`D/G/S` pin IDs and `PE537BA` remain outside D2c.
+
+**Verification**
+
+```text
+uv run pytest tests/test_cli_validator_ui.py::test_design_validator_ui_uses_document_mpn_for_l2n7002klt1g_profile \
+  tests/validation/test_profile_candidates.py tests/validation/test_mosfet.py -q
+22 passed
+
+uv run pytest -q
+491 passed, 7 deselected
+uv run ruff check .
+All checks passed!
+git diff --check
+clean
+```
+
+The D2 target mainboard smoke could not be completed on this machine because
+the recorded public-safe path
+`.../lanxindownload/04_设计文件与EDA/allegro` and `RFMS5H2TABom(13).xlsx`
+were not present. A nearby 4010-component control Allegro sample still ran
+cleanly with the D2b document index and did not contain or promote
+`L2N7002KLT1G` / `PE537BA`.
+
+**Takeaway**
+
+Document coverage can safely help profile matching only after a reviewed row
+selects a public MPN, and only when the local EDA symbol pin IDs match the
+profile contract. That keeps Chinese BOM `名称` out of profile aliases while
+still letting reviewed document evidence unlock deterministic validation.

@@ -59,3 +59,45 @@ git diff --check
 uv run pytest tests/validation/test_mosfet.py tests/validation/test_profile_candidates.py -q
 uv run ruff check data/datasheet_profiles tests/validation/test_mosfet.py tests/validation/test_profile_candidates.py
 ```
+
+## Execution Notes
+
+Implemented:
+
+- Added `data/datasheet_profiles/l2n7002klt1g.json`.
+- Added focused MOSFET profile/validation tests for public pinout, Vds/Vgs
+  limits, and family-based dispatch.
+- Added profile-candidate coverage for direct public MPN matching.
+- Added a reviewed-document-MPN bridge for `design-validator-ui`: when a BOM
+  item has no direct ready profile match, a matched document-index row may
+  supply its reviewed public MPN for profile lookup, but only if the local
+  schematic symbol exposes the profile pin numbers.
+- Added synthetic workbench smoke coverage proving `L2N7002KLT1G` promotes via
+  the D2b document row while `LN2312LT1G` (`D/G/S` local pins) and `PE537BA`
+  remain outside D2c.
+
+Verification:
+
+```text
+uv run pytest tests/test_cli_validator_ui.py::test_design_validator_ui_uses_document_mpn_for_l2n7002klt1g_profile \
+  tests/validation/test_profile_candidates.py tests/validation/test_mosfet.py -q
+22 passed
+
+uv run pytest -q
+491 passed, 7 deselected
+uv run ruff check .
+All checks passed!
+git diff --check
+clean
+```
+
+Target mainboard smoke status:
+
+- Blocked on this machine because the recorded D1/D2 public-safe input path
+  `.../lanxindownload/04_设计文件与EDA/allegro` and `RFMS5H2TABom(13).xlsx`
+  are not present.
+- A nearby 4010-component control Allegro sample at
+  `.../lanxindownload/20240712 1027/allegro` still runs cleanly with the D2b
+  document index and does not contain or promote `L2N7002KLT1G` / `PE537BA`.
+- Keep this task `in_progress` until the 8180-component mainboard smoke is
+  rerun with the intended public-safe input.

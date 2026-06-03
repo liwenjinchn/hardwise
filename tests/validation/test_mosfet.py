@@ -205,3 +205,57 @@ Q1,1,LN2312LT1G,LRC,LN2312LT1G
         "mosfet_vgs_rating",
         "mosfet_vds_rating",
     }
+
+
+def test_l2n7002klt1g_profile_matches_public_sot23_pinout() -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/l2n7002klt1g.json"))
+
+    assert profile.review_status == "ready"
+    assert profile.part_number == "L2N7002KLT1G"
+    assert profile.part_number_aliases == ["L2N7002KLT3G"]
+    assert profile.recommended["topology_family"] == "mosfet"
+    assert profile.recommended["polarity"] == "n_channel"
+    assert profile.abs_max["vds"] == 60.0
+    assert profile.abs_max["vgs"] == 20.0
+    assert profile.abs_max["id"] == 0.32
+    assert profile.pin_function == {"1": "Gate", "2": "Source", "3": "Drain"}
+    assert profile.evidence["pin_function.1"] == "datasheet:l2n7002klt1g.pdf#p1"
+    assert profile.evidence["abs_max.vds"] == "datasheet:l2n7002klt1g.pdf#p1"
+    assert profile.evidence["abs_max.vgs"] == "datasheet:l2n7002klt1g.pdf#p1"
+
+
+def test_l2n7002klt1g_lowside_validation_uses_existing_mosfet_rules(tmp_path) -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/l2n7002klt1g.json"))
+    netlist_content = """$PACKAGES
+  ! 'SOT23' ! L2N7002KLT1G ; Q1
+$NETS
+  'P3V3' ; Q1.1
+  'GND' ; Q1.2
+  'P12V' ; Q1.3
+$END
+"""
+    (tmp_path / "l2.net").write_text(netlist_content)
+    bom_content = """Reference,Quantity,Value,Manufacturer,MPN
+Q1,1,L2N7002KLT1G,LRC,L2N7002KLT1G
+"""
+    (tmp_path / "l2_bom.csv").write_text(bom_content)
+
+    netlist = parse_allegro_netlist(tmp_path / "l2.net")
+    bom = parse_bom(tmp_path / "l2_bom.csv")
+    design = build_design_from_netlist(netlist)
+    design = apply_bom_to_design(design, match_bom_to_design(bom, design))
+
+    results = validate_component_against_profile(design.components["Q1"], profile, design)
+
+    assert results.status == "PASS"
+    assert {check.check for check in results.component_checks} == {
+        "mosfet_gate_connectivity",
+        "mosfet_drain_connectivity",
+        "mosfet_source_connectivity",
+        "mosfet_vgs_rating",
+        "mosfet_vds_rating",
+    }
+    vgs = next(check for check in results.component_checks if check.check == "mosfet_vgs_rating")
+    assert vgs.status == "PASS"
+    assert "gate 3.3 V - source 0 V" in vgs.summary
+    assert vgs.evidence == ["datasheet:l2n7002klt1g.pdf#p1"]

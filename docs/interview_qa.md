@@ -208,6 +208,8 @@ ComponentNotFound(
 
 **v5.29 (D2b reusable public document index)**: D2b 把 document coverage 从“一次性手填链接”推进到可复用工作流。`build-document-index-candidates --family transistor` 可以从 grouped coverage 里只吐 transistor review queue；CSV 里真实 parsed MPN 进 `MPN`，中文 BOM `名称` 这种 part-like identity 进 `Value`，`编号` 仍然只是 source item number，不当 public MPN。reviewed document index 现在是跨项目资产：另一个项目只要 BOM 里有同一个 parsed MPN，或人工确认过的 exact `Value` alias，就能复用同一条 public datasheet coverage。真实 mainboard smoke：D1 的 195 groups 中 transistor family 生成 3 个候选；回灌 `data/document_indexes/mainboard_d2_transistor_docs.csv` 后，`L2N7002KLT1G` / `LN2312LT1G` / `PE537BA` 三组全部 `document_status=matched`，`doc:mainboard_d2_transistor_docs.csv#line2/3/4` 在 Markdown 和 Workbench HTML 可见；PASS/WARN/ERROR 仍是 3867/2706/0，没有因为有规格书而自动变成电气验证结论。
 
+**v5.30 (D2c L2N7002KLT1G MOSFET profile)**: D2c 给 `L2N7002KLT1G` 加了 public-reviewed ready profile：LRC PDF 第 1 页支持 SOT-23 pinout `1=Gate / 2=Source / 3=Drain`、`VDSS=60 V`、`VGS=±20 V`、稳态 `ID=320 mA`，profile alias 只收同页公开 order variant `L2N7002KLT3G`。关键不是把中文 BOM `名称` 加进 alias，而是加了一条安全桥：当 D2b document row 已经 match，并且该 row 里有公开 MPN 时，profile candidate 可以用这个公开 MPN 查 ready profile；最后还要检查本地 EDA symbol pin ids 覆盖 profile pin numbers。Synthetic CLI smoke 证明 `PQ10` 这种 `1/2/3` pin-id 的 L2 组会进入 `l2n7002klt1g.json` 并 PASS，`PQ9` 这种 `D/G/S` pin-id 的 `LN2312LT1G` 不会借 ready profile 硬提升，`PE537BA` 也不在 D2c 范围内。当前本机缺 D1/D2 记录里的 8180-component public-safe mainboard folder，所以真实 D2c mainboard movement 等输入恢复后再重跑，不在这里夸大。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？
