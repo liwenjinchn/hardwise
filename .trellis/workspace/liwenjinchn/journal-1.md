@@ -628,3 +628,36 @@ Stabilized text artifact paths and UTF-8 test reads, verified macOS and Windows 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 19: D2b document index generalization
+
+**Date**: 2026-06-03
+**Task**: D2b document index generalization
+**Branch**: `main`
+
+### Summary
+
+Generalized public document index backfill for reviewed transistor datasheets: family-filtered candidate generation, MPN vs BOM Value semantics, reusable document index rows, visible doc evidence tokens in reports/workbench, and regression coverage. Full pytest, ruff, and diff checks passed before commit.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2c6fdb2` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
