@@ -78,3 +78,55 @@ def test_match_documents_to_bom_reports_no_result_for_unindexed_mpn(tmp_path: Pa
     match = report.matches_by_item_key["1"]
     assert match.status == "no_result"
     assert match.identity == "XL1509-12E1"
+
+
+def test_reviewed_document_row_reuses_mpn_and_value_alias_across_boms(
+    tmp_path: Path,
+) -> None:
+    index_path = tmp_path / "docs.csv"
+    value_alias = "N-MOS管 L2N7002KLT1G SOT23 1.5 LRC"
+    index_path.write_text(
+        "\n".join(
+            [
+                "MPN,Manufacturer,Title,URL,Description,Value",
+                (
+                    "L2N7002KLT1G,LRC,L2N7002KLT1G public datasheet,"
+                    f"https://example.test/l2n7002.pdf,Reviewed public document,{value_alias}"
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    first_bom_path = tmp_path / "first.csv"
+    first_bom_path.write_text(
+        "\n".join(
+            [
+                "Reference,Quantity,Value,Manufacturer,MPN",
+                "Q1,1,N-MOS,LRC,L2N7002KLT1G",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    second_bom_path = tmp_path / "second.csv"
+    second_bom_path.write_text(
+        "\n".join(
+            [
+                "Reference,Quantity,Value,Manufacturer,MPN",
+                f"PQ10,1,{value_alias},LRC,",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    index = parse_document_index(index_path)
+    first_report = match_documents_to_bom(parse_bom(first_bom_path), index)
+    second_report = match_documents_to_bom(parse_bom(second_bom_path), index)
+
+    first_match = first_report.matches_by_item_key["1"]
+    second_match = second_report.matches_by_item_key["1"]
+    assert first_match.status == "matched"
+    assert first_match.identity_kind == "mpn"
+    assert second_match.status == "matched"
+    assert second_match.identity_kind == "value"
+    assert second_match.selected is not None
+    assert second_match.selected.part_number == "L2N7002KLT1G"

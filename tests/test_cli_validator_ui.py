@@ -495,12 +495,14 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
 
     html = html_output.read_text(encoding="utf-8")
     assert "MPQ8626 public MPS product page and datasheet" in html
+    assert "doc:power_v1_docs.csv#line" in html
     assert "buck_inductor" in html
     assert "no external freewheel diode is required" in html
 
     index_text = index_output.read_text(encoding="utf-8")
     assert "## Component Group Coverage" in index_text
     assert "MPQ8626 public MPS product page and datasheet" in index_text
+    assert "`doc:power_v1_docs.csv#line" in index_text
     assert "| Validated components | 1 |" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
@@ -582,6 +584,25 @@ def test_build_document_index_candidates_writes_review_csv(tmp_path: Path) -> No
     assert "PCA9548APW" not in text
     assert "MPQ8626GD" not in text
     assert "100R" not in text
+
+    transistor_candidates = tmp_path / "transistor-document-candidates.csv"
+    result = CliRunner().invoke(
+        app,
+        [
+            "build-document-index-candidates",
+            str(index_json),
+            "--family",
+            "transistor",
+            "--output",
+            str(transistor_candidates),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "families=transistor" in result.output
+    transistor_text = transistor_candidates.read_text(encoding="utf-8")
+    assert transistor_text.startswith("MPN,Manufacturer,Title,URL,Path,Description,Value,")
+    assert "EG2132" not in transistor_text
 
 
 def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:

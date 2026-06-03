@@ -63,7 +63,8 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
             f"| {group.refdes_count} | {_escape_pipe(', '.join(group.refdes_sample))} | "
             f"{_escape_pipe(group.identity or '-')} | {group.identity_kind} | "
             f"{group.suggested_family} | {group.profile_status} | "
-            f"{group.document_status} | {_document_cell(group.document_title, group.document_url)} |"
+            f"{group.document_status} | "
+            f"{_document_cell(group.document_title, group.document_url, group.document_source)} |"
         )
     if not index.component_groups:
         lines.append("| 0 | - | - | - | - | - | - | - |")
@@ -103,10 +104,13 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
     return "\n".join(lines)
 
 
-def _document_cell(title: str | None, url: str | None) -> str:
+def _document_cell(title: str | None, url: str | None, source: str | None) -> str:
     if not title or not url:
         return "-"
-    return _escape_pipe(f"[{title}]({url})")
+    text = f"[{title}]({url})"
+    if source:
+        text = f"{text} `{source}`"
+    return _escape_pipe(text)
 
 
 def write_json(index: ProjectValidationIndex, output: Path) -> None:

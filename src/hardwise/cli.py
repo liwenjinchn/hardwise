@@ -1336,6 +1336,11 @@ def build_document_index_candidates(
         "-o",
         help="Output CSV path (default: reports/<index-stem>-document-candidates.csv).",
     ),
+    families: list[str] | None = typer.Option(
+        None,
+        "--family",
+        help="Only include candidate rows for this suggested family; may be repeated.",
+    ),
 ) -> None:
     """Write reviewable document-index candidate rows from grouped coverage."""
 
@@ -1346,7 +1351,7 @@ def build_document_index_candidates(
     )
 
     try:
-        report = build_document_candidate_report(validation_index)
+        report = build_document_candidate_report(validation_index, families=families)
     except DocumentCandidateError as e:
         typer.echo(f"error: document candidate generation failed: {e}", err=True)
         raise typer.Exit(1) from e
@@ -1358,9 +1363,11 @@ def build_document_index_candidates(
     typer.echo(
         f"document-index-candidates: {output} "
         f"(groups={report.component_group_count}, candidates={len(report.candidates)}, "
+        f"families={','.join(report.family_filter) if report.family_filter else 'all'}, "
         f"skipped_passive={report.skipped_passive}, "
         f"skipped_mechanical={report.skipped_mechanical}, "
-        f"skipped_matched={report.skipped_matched_document})"
+        f"skipped_matched={report.skipped_matched_document}, "
+        f"skipped_family_filter={report.skipped_family_filter})"
     )
 
 

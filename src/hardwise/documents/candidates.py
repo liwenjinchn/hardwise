@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import re
+from collections.abc import Iterable
 from pathlib import Path
 
 from pydantic import BaseModel, Field, ValidationError
@@ -23,6 +24,7 @@ class DocumentCandidateRow(BaseModel):
 
     mpn: str = ""
     manufacturer: str = ""
+    value: str = ""
     title: str = ""
     url: str = ""
     path: str = ""
@@ -45,11 +47,13 @@ class DocumentCandidateReport(BaseModel):
     input_file: Path
     project_name: str
     component_group_count: int
+    family_filter: list[str] = Field(default_factory=list)
     candidates: list[DocumentCandidateRow] = Field(default_factory=list)
     skipped_passive: int = 0
     skipped_mechanical: int = 0
     skipped_matched_document: int = 0
     skipped_missing_identity: int = 0
+    skipped_family_filter: int = 0
     skipped_other: int = 0
 
 
@@ -60,6 +64,7 @@ CSV_COLUMNS = [
     "URL",
     "Path",
     "Description",
+    "Value",
     "IdentityKind",
     "Family",
     "RefdesCount",
@@ -77,7 +82,11 @@ _CANDIDATE_FAMILIES = {"ic", "diode", "transistor", "inductor", "ferrite", "unkn
 _USABLE_IDENTITY_KINDS = {"mpn", "part_like_value"}
 
 
-def build_document_candidate_report(index_path: Path) -> DocumentCandidateReport:
+def build_document_candidate_report(
+    index_path: Path,
+    *,
+    families: Iterable[str] | None = None,
+) -> DocumentCandidateReport:
     """Load a project validation index and return document-index candidate rows."""
 
     try:
@@ -89,12 +98,17 @@ def build_document_candidate_report(index_path: Path) -> DocumentCandidateReport
     if not index.component_groups:
         raise DocumentCandidateError(f"{index_path}: project index has no component_groups")
 
+    family_filter = _normalize_family_filter(families)
     report = DocumentCandidateReport(
         input_file=index_path,
         project_name=index.project_name,
         component_group_count=len(index.component_groups),
+        family_filter=sorted(family_filter) if family_filter else [],
     )
     for group in index.component_groups:
+        if family_filter and group.suggested_family not in family_filter:
+            report.skipped_family_filter += 1
+            continue
         row, skip_reason = _candidate_for_group(group)
         if row is not None:
             report.candidates.append(row)
@@ -128,6 +142,7 @@ def render_document_candidate_csv(report: DocumentCandidateReport) -> str:
                 "URL": row.url,
                 "Path": row.path,
                 "Description": row.description,
+                "Value": row.value,
                 "IdentityKind": row.identity_kind,
                 "Family": row.family,
                 "RefdesCount": row.refdes_count,
@@ -160,10 +175,15 @@ def _candidate_for_group(group: ProjectComponentGroup) -> tuple[DocumentCandidat
     if _looks_like_passive_identity(identity):
         return None, "passive"
     priority_score, priority_band = score_candidate(group.suggested_family, group.refdes_count)
+    mpn = identity if group.identity_kind == "mpn" else ""
+    value = group.value if group.identity_kind == "part_like_value" else ""
+    if group.identity_kind == "part_like_value" and not value:
+        value = identity
     return (
         DocumentCandidateRow(
-            mpn=identity,
+            mpn=mpn,
             manufacturer=group.manufacturer,
+            value=value,
             description=group.document_reason,
             identity_kind=group.identity_kind,
             family=group.suggested_family,
@@ -181,7 +201,13 @@ def _candidate_for_group(group: ProjectComponentGroup) -> tuple[DocumentCandidat
 
 def _candidate_sort_key(row: DocumentCandidateRow) -> tuple[int, float, int, str]:
     profile_gap_first = 0 if row.profile_status != "matched" else 1
-    return (profile_gap_first, -row.priority_score, -row.refdes_count, row.mpn)
+    return (profile_gap_first, -row.priority_score, -row.refdes_count, row.mpn or row.value)
+
+
+def _normalize_family_filter(families: Iterable[str] | None) -> set[str]:
+    if families is None:
+        return set()
+    return {family.strip().lower() for family in families if family.strip()}
 
 
 def _search_query(identity: str, manufacturer: str) -> str:

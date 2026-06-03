@@ -206,6 +206,8 @@ ComponentNotFound(
 
 **v5.28 (Workbench AI topology tools)**: Allegro Copilot 现在不需要单独“新人导览模式”，因为右下角 AI 已经能通过 4 个 structured tools 查询 parsed topology：`get_component_context(refdes)` 返回器件身份、profile/validation 状态、pin-to-net 和邻网成员；`get_net_context(net_name)` 返回精确网络成员；`search_nets(query)` 支持 RESET/NRST、BOOT、3V3、SWD 等常见词查真实 net 名；`summarize_project_topology()` 返回 component/net counts、validation coverage、power/interface/control-like net buckets 和 profile gaps。讲边界要非常明确：这是 Allegro/PST netlist fact level，不是视觉 schematic page 理解，不自动命名模块，不碰 `.brd`、placement/routing、PLM、价格、生命周期或 datasheet web search。公开 mixed controller fixture 的 fake chat 现在可复现三类问题：`U8 接了哪些关键网络?` → `get_component_context`，`RESET 相关网络有哪些?` → `search_nets` 命中真实 `NRST`，`这张板大概有哪些已验证风险和待补 profile?` → `summarize_project_topology` 给出 25 components / 21 nets / PASS-WARN-ERROR 4-9-3。
 
+**v5.29 (D2b reusable public document index)**: D2b 把 document coverage 从“一次性手填链接”推进到可复用工作流。`build-document-index-candidates --family transistor` 可以从 grouped coverage 里只吐 transistor review queue；CSV 里真实 parsed MPN 进 `MPN`，中文 BOM `名称` 这种 part-like identity 进 `Value`，`编号` 仍然只是 source item number，不当 public MPN。reviewed document index 现在是跨项目资产：另一个项目只要 BOM 里有同一个 parsed MPN，或人工确认过的 exact `Value` alias，就能复用同一条 public datasheet coverage。真实 mainboard smoke：D1 的 195 groups 中 transistor family 生成 3 个候选；回灌 `data/document_indexes/mainboard_d2_transistor_docs.csv` 后，`L2N7002KLT1G` / `LN2312LT1G` / `PE537BA` 三组全部 `document_status=matched`，`doc:mainboard_d2_transistor_docs.csv#line2/3/4` 在 Markdown 和 Workbench HTML 可见；PASS/WARN/ERROR 仍是 3867/2706/0，没有因为有规格书而自动变成电气验证结论。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？

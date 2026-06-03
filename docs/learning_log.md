@@ -2931,3 +2931,67 @@ explain parsed Allegro/PST topology down to component, pin, net, neighbor, and
 coverage/profile-gap facts. It still cannot infer visual schematic modules or
 layout-side conclusions without an explicit deterministic source for those
 boundaries.
+
+## 2026-06-03 — Document-index rows are reusable evidence, not family verdicts
+
+**Symptom**
+
+D2b initially looked like "add three transistor datasheet links" for the
+mainboard. That would have moved the demo forward, but it would not have
+answered the bigger product need: if another public project uses the same
+device, the reviewed datasheet row should be reusable without copying
+project-local refdes or source item numbers.
+
+**Root cause**
+
+The existing `build-document-index-candidates` CSV wrote the selected identity
+into `MPN` even when the grouped identity came from a part-like BOM `Value`.
+For Chinese `.xlsx` BOMs, that blurred the line between a public part number and
+the source BOM's `名称` text. It also made the review queue harder to reuse
+honestly across projects.
+
+**Fix**
+
+Generalized the candidate workflow:
+
+- `build-document-index-candidates --family <family>` emits a family-scoped
+  review queue from grouped coverage.
+- Candidate rows preserve identity semantics: parsed MPNs go in `MPN`;
+  part-like BOM values go in `Value`; Chinese `编号` never becomes MPN.
+- Reviewed document rows can be reused across projects by parsed MPN or exact
+  reviewer-confirmed `Value` alias, but never by family alone.
+- Project Markdown and workbench UI now show matched document title, URL, and
+  raw `doc:<file>#line<N>` source token.
+
+**Verification**
+
+```text
+uv run hardwise build-document-index-candidates /tmp/hardwise-mainboard-d1-auto-index.json \
+  --family transistor --output /tmp/hardwise-mainboard-d2b-transistor-candidates.csv
+groups=195, candidates=3, families=transistor, skipped_family_filter=192
+
+uv run hardwise design-validator-ui <mainboard-allegro-folder> \
+  --document-index data/document_indexes/mainboard_d2_transistor_docs.csv \
+  --output /tmp/hardwise-mainboard-d2b-workbench.html \
+  --index-output /tmp/hardwise-mainboard-d2b-index.md \
+  --index-json /tmp/hardwise-mainboard-d2b-index.json
+document-index: matched=3, no_result=189, ambiguous=0, manual_needed=0
+PASS/WARN/ERROR=3867/2706/0
+
+uv run hardwise build-document-index-candidates /tmp/hardwise-mainboard-d2b-index.json \
+  --family transistor --output /tmp/hardwise-mainboard-d2b-transistor-after-docs-candidates.csv
+groups=195, candidates=0, skipped_matched=3, skipped_family_filter=192
+
+uv run pytest -q
+485 passed, 7 deselected
+uv run ruff check .
+All checks passed!
+```
+
+**Takeaway**
+
+A document match is cross-project coverage evidence, not an electrical verdict.
+Same family is enough to scope a review queue, but not enough to match a
+datasheet. Matching still needs a parsed public MPN or an exact
+reviewer-confirmed BOM value alias, and the rendered output must carry the
+`doc:` source token.

@@ -200,6 +200,7 @@ Candidate CSV command:
 
 ```bash
 hardwise build-document-index-candidates <validation-index.json> \
+  [--family <suggested-family>]... \
   --output <document-candidates.csv>
 ```
 
@@ -224,6 +225,20 @@ def render_family_coverage_markdown(report: FamilyCoverageReport) -> str: ...
   --index-json`.
 - Candidate CSV appends `Priority` as the last column; existing prefix columns
   stay stable.
+- Candidate CSV preserves document-index identity semantics. Rows whose
+  `identity_kind` is `mpn` populate `MPN`; rows whose `identity_kind` is
+  `part_like_value` populate `Value` and keep `MPN` empty until a reviewer adds
+  a public part number. Never promote BOM item numbers, Chinese `编号`, source
+  lines, or refdes into `MPN`.
+- `--family` filters the review queue by
+  `ProjectComponentGroup.suggested_family`. Family names are queue scope only;
+  document matching remains identity-based by parsed MPN or reviewer-confirmed
+  exact `Value` alias.
+- A candidate CSV may become a reviewed document index after a reviewer fills
+  `Title`, `URL` or `Path`, and `Description`. Blank `URL`/`Path` rows remain
+  ignored by `parse_document_index()` and must not create coverage.
+- Matched document rows rendered in project Markdown and workbench group UI must
+  show title, URL, and the raw `doc:<file>#line<N>` source token.
 - Candidate rows sort true profile gaps before matched-profile document
   backfill rows.
 - Family recommendations count uncovered refdes per row, not whole groups, so a
@@ -241,6 +256,11 @@ def render_family_coverage_markdown(report: FamilyCoverageReport) -> str: ...
 |---|---|
 | Index JSON cannot load | Raise `CoveragePriorityError`; CLI exits 1 |
 | Index has no `component_groups` | Raise `CoveragePriorityError`; CLI exits 1 |
+| `--family transistor` is set | Include only `suggested_family == "transistor"` candidate rows and count other groups as family-filter skips |
+| Candidate identity kind is `mpn` | Write the identity to `MPN`; do not duplicate it into `Value` |
+| Candidate identity kind is `part_like_value` | Write the exact BOM value to `Value`; leave `MPN` blank unless reviewed later |
+| Reviewed row has `MPN` and exact `Value` alias | Allow reuse by another BOM/project when either parsed MPN or reviewed value alias matches |
+| Reviewed row is matched | Render title, URL, and raw `doc:<file>#line<N>` token in project Markdown/HTML |
 | `profile_status == "matched"` candidate lacks docs | Keep row, but sort after true profile gaps |
 | Group status is `mixed` | Count only rows whose `match_status != "matched"` |
 | Passive/mechanical family | Exclude from next-family recommendations |
@@ -251,11 +271,18 @@ def render_family_coverage_markdown(report: FamilyCoverageReport) -> str: ...
 
 - Good: A 65-component public fixture ranks diode/transistor/IC coverage gaps
   while the project validation counts remain unchanged.
+- Good: A family-scoped transistor review queue emits only transistor rows, and
+  Chinese part-like values appear in `Value`, not `MPN`.
+- Good: A reviewed `L2N7002KLT1G` row can be reused across projects by parsed
+  MPN or by an exact reviewer-confirmed BOM `Value` alias.
 - Base: A matched profile with missing document-index entry remains visible as a
   CSV backfill row.
 - Bad: A recommendation Markdown table emits `PASS`, `WARN`, or `ERROR`.
 - Bad: An advisory family-to-validator map is imported by deterministic
   dispatch.
+- Bad: A document row matches a component only because both are `transistor`.
+- Bad: Chinese BOM `编号` is copied into `MPN` and treated as a public part
+  number.
 
 ### 6. Tests Required
 
@@ -263,6 +290,12 @@ def render_family_coverage_markdown(report: FamilyCoverageReport) -> str: ...
 - Unit tests for mixed-group per-refdes counting.
 - CSV tests asserting `Priority` is appended and gap rows sort before backfill
   rows.
+- CSV tests asserting `MPN` vs `Value` semantics and family filtering.
+- Matcher tests asserting a reviewed document row can be reused across BOMs by
+  parsed MPN or exact reviewed value alias, without refdes or source item
+  number.
+- Project Markdown/HTML tests asserting raw `doc:<file>#line<N>` source tokens
+  remain visible beside matched document title/URL.
 - CLI test that runs `design-validator-ui --index-json`, then
   `recommend-next-family`, and asserts advisory action tokens plus absence of
   verdict tokens.
@@ -283,6 +316,22 @@ if group.profile_status != "matched":
 # Count uncovered rows, then roll up by the group's suggested family.
 if row.match_status != "matched":
     family_counts[refdes_family[row.refdes]] += 1
+```
+
+#### Wrong
+
+```python
+# Turns a source item number into a fake public part number.
+row["MPN"] = bom_item.item_number
+```
+
+#### Correct
+
+```python
+if group.identity_kind == "mpn":
+    row["MPN"] = group.identity
+elif group.identity_kind == "part_like_value":
+    row["Value"] = group.value
 ```
 
 ### Common Mistake: Synthetic Fixture Refdes Prefixes

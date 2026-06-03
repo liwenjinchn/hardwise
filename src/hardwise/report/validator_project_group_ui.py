@@ -81,9 +81,14 @@ def document_status_cell(group: ProjectComponentGroup) -> str:
     status_class = _coverage_status_class(group.document_status)
     status_chip = f'<span class="status {status_class}">{status}</span>'
     if group.document_title and group.document_url:
+        source = (
+            f'<span class="sub">{escape(group.document_source)}</span>'
+            if group.document_source
+            else ""
+        )
         return (
             f'{status_chip}<a class="sub" href="{escape(group.document_url)}">'
-            f"{escape(group.document_title)}</a>"
+            f"{escape(group.document_title)}</a>{source}"
         )
     if group.document_reason:
         return status_chip + f'<span class="sub">{escape(reason_label(group.document_reason))}</span>'
