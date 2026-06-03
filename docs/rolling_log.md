@@ -56,6 +56,21 @@ datasheet claims have page/token evidence.
 4. The loop should help choose the next deterministic family; it should not
    become live supplier lookup, PLM, lifecycle, price, availability, or PCB scope.
 
+**D2 split after mainboard D1**:
+
+1. D2a selects one `try_existing_validator_profile` family from the D1
+   next-family advisory before any profile or validator work starts. Prefer
+   `transistor`, `diode`, or a narrow `ic` power-management slice over the
+   large `unknown` bucket.
+2. D2b backfills public document-index evidence for the selected family only.
+   Missing public evidence keeps the family in planning/manual state.
+3. D2c adds at most one reviewed profile/validator slice, and only when the
+   public datasheet evidence and existing deterministic validator semantics are
+   sufficient.
+4. D2d reruns the mainboard smoke and records whether manual coverage moved.
+   It must not hide unchanged manual rows or change unrelated PASS/WARN/ERROR
+   truth.
+
 **Acceptance details for C5 grounded LLM**:
 
 1. L2 answers must cite retrieved datasheet page/token evidence for every

@@ -13,7 +13,8 @@ live web search, supplier lookup, PLM integration, or PDF fact-extraction task.
 ## Confirmed Facts
 
 - This task is a child of
-  `06-03-allegro-ai-topology-document-discovery` and is still in `planning`.
+  `06-03-allegro-ai-topology-document-discovery` and shipped in commit
+  `9e0df0d feat(workbench): expose document and topology context`.
 - Existing code already supports local CSV/TSV document indexes via
   `parse_document_index(path)`.
 - Existing code already matches a parsed BOM to that local index via
@@ -27,11 +28,11 @@ live web search, supplier lookup, PLM integration, or PDF fact-extraction task.
   when a document report is present.
 - `design-validator-ui` already has a `--document-index` option and prints
   document-match counts.
-- `serve-workbench` does not currently expose `--document-index`, so live chat
-  cannot load document coverage through the CLI path yet.
-- Current agent tools include component lookup, NC pins, datasheet vector
-  search, and deterministic component validation, but no first-class document
-  coverage tool.
+- `serve-workbench` now exposes `--document-index`, so live/fake chat can load
+  the same deterministic public document coverage state as static workbench
+  mode.
+- Current agent tools include first-class document coverage tools:
+  `get_component_documents` and `summarize_document_coverage`.
 - Hardwise project rules require public inputs only. A document provider must
   never read company-internal hardware data or perform hidden supplier/PLM
   lookup.
@@ -70,23 +71,31 @@ live web search, supplier lookup, PLM integration, or PDF fact-extraction task.
 
 ## Acceptance Criteria
 
-- [ ] `prd.md`, `design.md`, and `implement.md` describe option B and are
+- [x] `prd.md`, `design.md`, and `implement.md` describe option B and are
       reviewable before `task.py start`.
-- [ ] A fake or live workbench chat question such as "这个 U8 有公开资料吗?"
+- [x] A fake or live workbench chat question such as "这个 U8 有公开资料吗?"
       calls a document-provider tool when a public `--document-index` is
       configured.
-- [ ] A question such as "还有哪些 datasheet 缺口?" returns grouped document
+- [x] A question such as "还有哪些 datasheet 缺口?" returns grouped document
       coverage from parsed BOM/index state, not free-form model memory.
-- [ ] Running the workbench without a document index returns structured
+- [x] Running the workbench without a document index returns structured
       `not_configured` document-tool results; it does not invent document
       candidates.
-- [ ] Unknown refdes returns structured miss data with closest matches and
+- [x] Unknown refdes returns structured miss data with closest matches and
       preserves existing Refdes Guard behavior.
-- [ ] Existing document parser/matcher tests continue to pass.
-- [ ] New tests cover configured and not-configured document-provider paths,
+- [x] Existing document parser/matcher tests continue to pass.
+- [x] New tests cover configured and not-configured document-provider paths,
       plus at least one Runner-backed fake workbench chat path.
-- [ ] `uv run pytest -q` and `uv run ruff check .` pass before implementation
+- [x] `uv run pytest -q` and `uv run ruff check .` pass before implementation
       is declared complete.
+
+## Completion Evidence
+
+```text
+uv run pytest -q      # 482 passed, 7 deselected
+uv run ruff check .   # passed
+git diff --check      # passed
+```
 
 ## Out Of Scope
 

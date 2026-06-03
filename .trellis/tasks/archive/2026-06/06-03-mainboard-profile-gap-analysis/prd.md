@@ -13,8 +13,9 @@ deterministic / L3 manual trust boundary.
 
 ## Confirmed Facts
 
-- The current task is a child of
-  `06-03-allegro-ai-topology-document-discovery` and is still in `planning`.
+- This task is a child of
+  `06-03-allegro-ai-topology-document-discovery` and shipped in commit
+  `9e0df0d feat(workbench): expose document and topology context`.
 - Existing code already builds `ProjectValidationIndex` objects with
   `rows`, `component_groups`, and grouped `profile_gap_groups`.
 - Existing CLI/reporting paths already include:
@@ -35,12 +36,11 @@ deterministic / L3 manual trust boundary.
   side is ready for D1.
 - The same folder contains `RFMS5H2TABom(13).xlsx`. The workbook has one sheet
   with Chinese BOM headers including `序号`, `名称`, `编号`, `数量`, and `位号`.
-- Existing BOM intake does not yet accept this file shape:
-  - `design-validator-ui <folder> ...` reports `no BOM candidates found`
-    because auto-discovery only considers `.bom`, `.csv`, and `.tsv`.
-  - `inspect-bom-match <folder> RFMS5H2TABom(13).xlsx` reports
-    `missing BOM header row with Item/Quantity/Reference` because `parse_bom`
-    does not parse `.xlsx` or the Chinese header schema.
+- BOM intake now accepts this file shape:
+  - `parse_bom()` reads the `.xlsx` workbook and Chinese header schema.
+  - `design-validator-ui <folder>` auto-discovers `.xlsx` BOM candidates in
+    project folders.
+  - `编号` is preserved as source item number, not public MPN.
 - No-profile/manual rows must remain L3/manual coverage artifacts. They must
   not become PASS/WARN/ERROR without structured profile evidence and an
   existing deterministic validation path.
@@ -94,28 +94,60 @@ deterministic / L3 manual trust boundary.
 
 ## Acceptance Criteria
 
-- [ ] `prd.md` defines D1 scope, non-goals, and acceptance criteria.
-- [ ] Planning records that D1 is not report-only reuse yet: it first needs
+- [x] `prd.md` defines D1 scope, non-goals, and acceptance criteria.
+- [x] Planning records that D1 is not report-only reuse yet: it first needs
   `.xlsx` / Chinese-header BOM intake compatibility for the user-provided
   public folder.
-- [ ] The public folder topology smoke remains reproducible:
+- [x] The public folder topology smoke remains reproducible:
   `inspect-allegro-netlist <folder>` reports 8180 components and 6918 nets.
-- [ ] `inspect-bom-match <folder> RFMS5H2TABom(13).xlsx` can parse the BOM and
+- [x] `inspect-bom-match <folder> RFMS5H2TABom(13).xlsx` can parse the BOM and
   report a high-confidence refdes join instead of a BOM header error.
-- [ ] `design-validator-ui <folder> RFMS5H2TABom(13).xlsx --index-json ...`
+- [x] `design-validator-ui <folder> RFMS5H2TABom(13).xlsx --index-json ...`
   can produce a `ProjectValidationIndex` JSON for D1 analysis.
-- [ ] Running D1 against the public mainboard input can produce:
+- [x] Running D1 against the public mainboard input can produce:
   - a profile-gap Markdown summary;
   - document candidate CSV rows for groups needing public datasheets;
   - no new PASS/WARN/ERROR for previously manual/no-profile rows.
-- [ ] The output groups large projects by identity/family and includes refdes
+- [x] The output groups large projects by identity/family and includes refdes
   samples instead of dumping thousands of individual manual rows.
-- [ ] The output distinguishes generic passive coverage from source-backed
+- [x] The output distinguishes generic passive coverage from source-backed
   profile validation.
-- [ ] The analysis uses only public repo fixtures, public document/profile
+- [x] The analysis uses only public repo fixtures, public document/profile
   artifacts, or user-provided public-safe inputs.
-- [ ] `uv run pytest -q` and `uv run ruff check .` remain the final code-change
+- [x] `uv run pytest -q` and `uv run ruff check .` remain the final code-change
   gate if D1 moves from planning into implementation.
+
+## Completion Evidence
+
+Real public-safe mainboard smoke:
+
+```text
+Topology: 8180 components / 6918 nets / 24563 properties
+BOM match: 7248 matched, 932 design-only, 9 duplicate BOM refdes, 0 BOM-only
+Workbench/index: 8180 components, validated=6573,
+  PASS/WARN/ERROR=3867/2706/0, manual=1607
+Grouped coverage: 195 component groups
+Document candidates: 75
+Next-family advisory: 6 families, try_existing=3, triage_new=3
+```
+
+Generated artifacts:
+
+```text
+/tmp/hardwise-mainboard-d1-auto-workbench.html
+/tmp/hardwise-mainboard-d1-auto-index.md
+/tmp/hardwise-mainboard-d1-auto-index.json
+/tmp/hardwise-mainboard-d1-document-candidates.csv
+/tmp/hardwise-mainboard-d1-next-family.md
+```
+
+Final gates before commit:
+
+```text
+uv run pytest -q      # 482 passed, 7 deselected
+uv run ruff check .   # passed
+git diff --check      # passed
+```
 
 ## Non-Goals
 

@@ -1,7 +1,7 @@
 {
-  "id": "workbench-ai-topology-tools",
-  "name": "workbench-ai-topology-tools",
-  "title": "Workbench AI topology tools",
+  "id": "allegro-ai-topology-document-discovery",
+  "name": "allegro-ai-topology-document-discovery",
+  "title": "Allegro AI topology and document discovery",
   "description": "",
   "status": "completed",
   "dev_type": null,
@@ -15,11 +15,15 @@
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "9e0df0d",
   "pr_url": null,
   "subtasks": [],
-  "children": [],
-  "parent": "06-03-allegro-ai-topology-document-discovery",
+  "children": [
+    "06-03-document-discovery-provider",
+    "06-03-mainboard-profile-gap-analysis",
+    "06-03-workbench-ai-topology-tools"
+  ],
+  "parent": null,
   "relatedFiles": [],
   "notes": "",
   "meta": {}

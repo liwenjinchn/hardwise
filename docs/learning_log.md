@@ -8,6 +8,35 @@
 
 ---
 
+## 2026-06-03 · Combined implementation commits still need task-state closeout
+
+**Symptom**
+
+The topology tools, document provider, and D1 mainboard profile-gap work all
+landed in one verified commit, but `task.py list` still showed the parent task
+in planning and two completed child deliverables as `in_progress`.
+
+**Root cause**
+
+The code path and the Trellis task path are separate state machines. A combined
+implementation commit can correctly contain code, tests, specs, and measured
+facts while still leaving planning metadata stale unless the task tree is
+closed explicitly.
+
+**Fix**
+
+Added a small C closeout task to update child PRDs to completion state, replace
+the parent placeholder PRD with an integration summary, record the D2 split,
+archive the completed tasks with `--no-commit`, and make one explicit closeout
+commit.
+
+**Takeaway**
+
+After parallel implementation lines merge into one commit, run a separate
+task-state closeout pass before starting the next slice. Otherwise the next
+planning conversation inherits stale `planning` / `in_progress` state even
+though the code is already shipped.
+
 ## 2026-06-01 · Live Copilot fab must not cover submit
 
 **Symptom**
