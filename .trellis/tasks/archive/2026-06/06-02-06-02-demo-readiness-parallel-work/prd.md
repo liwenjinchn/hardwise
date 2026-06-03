@@ -41,19 +41,19 @@ remain independently reviewable and committable.
 
 ## Acceptance Criteria
 
-- [ ] Windows child task documents and/or implements the minimum Windows usage
+- [x] Windows child task documents and/or implements the minimum Windows usage
       and CI story.
-- [ ] Profile archetype child task demonstrates a reusable template path for at
+- [x] Profile archetype child task demonstrates a reusable template path for at
       least one high-value family without bypassing `review_status` safety.
-- [ ] Interview child task packages the real Allegro story using measured
+- [x] Interview child task packages the real Allegro story using measured
       facts: 4010 BOM-matched components, 3738 validated/generic-covered rows,
       and the generic-passive plus deep-topology narrative.
-- [ ] Final materials do not overclaim: generic passives are light coverage,
+- [x] Final materials do not overclaim: generic passives are light coverage,
       profile-backed families are deeper deterministic checks, and Windows
       support is only called verified after an actual Windows/CI run.
-- [ ] The final integration check confirms whether these commits are on the
+- [x] The final integration check confirms whether these commits are on the
       interview-facing public `main`, or records the remaining publish step.
-- [ ] Parent task records the final task map and remaining follow-ups.
+- [x] Parent task records the final task map and remaining follow-ups.
 
 ## Notes
 
@@ -61,3 +61,6 @@ remain independently reviewable and committable.
   Windows CI reveals a concrete blocker.
 - The profile archetype track is the main scalability story: family validators
   generalize rules, while source-backed profiles carry part-specific facts.
+- Final integration: pushed to public `origin/main` on
+  `liwenjinchn/hardwise`. CI run `26860596829` passed on June 3, 2026 across
+  `macos-latest / Python 3.11` and `windows-latest / Python 3.11`.
