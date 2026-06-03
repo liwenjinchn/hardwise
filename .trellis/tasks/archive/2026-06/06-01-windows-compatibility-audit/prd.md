@@ -24,9 +24,9 @@ Windows, PowerShell, or WSL, and which commands are expected to work.
 - README and docs currently show bash/POSIX commands only, including `cp`,
   `export`, and `/tmp/...` paths. These are documentation blockers for native
   Windows users, not core runtime blockers.
-- The repository has no Windows CI matrix and this audit did not run on a real
-  Windows host, so the current status should be described as "likely works,
-  not verified" rather than "Windows supported".
+- The repository now has a `windows-latest` CI job. Run
+  `26860596829` passed on June 3, 2026 with dependency sync, lint, and fast
+  tests on both macOS and Windows.
 - Local smoke checks on the current host passed for `hardwise hello`, a KiCad
   `review` run, and `serve-workbench --fake-ai --dry-run`.
 
@@ -55,18 +55,15 @@ Windows, PowerShell, or WSL, and which commands are expected to work.
 - [x] Add Windows README/docs snippets.
 - [x] Add CI validation on `windows-latest` for dependency sync, lint, and fast
       tests.
-- [ ] Run `uv run pytest -q` and `uv run ruff check .` on Windows or CI before
+- [x] Run `uv run pytest -q` and `uv run ruff check .` on Windows or CI before
   declaring Windows support officially verified.
 
 ## Current Recommendation
 
-Native Windows should be usable for the main CLI and workbench paths, but the
-project should document it as "Windows likely compatible, not yet CI-verified".
-WSL remains the lowest-friction recommendation until Windows CI is added.
-
-The next implementation should be intentionally small: add PowerShell/WSL usage
-snippets and a `windows-latest` CI job, then use the GitHub Actions result as
-the first Windows verification signal.
+Native Windows is CI-verified for dependency sync, lint, and the default fast
+pytest suite on `windows-latest`. WSL remains a useful fallback for users who
+prefer a Linux shell, but the main CLI and local workbench paths are no longer
+only "likely compatible."
 
 ## Out of Scope
 
