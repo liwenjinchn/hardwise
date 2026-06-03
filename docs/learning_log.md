@@ -2695,3 +2695,54 @@ The scalable story is not "Hardwise auto-generates trusted profiles." It is
 "family validators generalize rules; archetypes generate reviewable drafts;
 ready profiles still require public source evidence." This keeps coverage
 growth fast enough to demo while preserving the anti-hallucination boundary.
+
+## 2026-06-03 — Windows CI turns text artifacts into explicit contracts
+
+**Symptom**
+
+The first `windows-latest` GitHub Actions run installed dependencies, passed
+lint, and ran most tests, but failed twelve tests around generated report/index
+artifacts. The failures were not product-code crashes: Windows decoded generated
+Chinese/Unicode text with cp1252 when tests called `Path.read_text()` without an
+encoding, and machine-readable artifacts rendered path strings with `\` instead
+of `/`.
+
+**Root cause**
+
+Local macOS tests hid two host assumptions. First, generated Hardwise reports
+are UTF-8, but some tests relied on Python's platform default encoding. Second,
+YAML manifests, JSON sidecars, and CLI status output used `str(Path)`, which is
+filesystem-correct but not stable text for cross-platform artifacts.
+
+**Fix**
+
+Added `hardwise.path_display.display_path()` as a presentation-only helper for
+CLI/report/manifest path strings, then used it in validation target manifests,
+project validation indexes, and `design-validator-ui` status output. Updated
+Slice 3 E2E tests to read generated artifacts with `encoding="utf-8"` and added
+unit coverage for the path display helper.
+
+**Verification**
+
+Focused checks:
+
+```text
+uv run pytest tests/test_e2e_slice3.py tests/test_cli_validator_ui.py tests/validation/test_profile_candidates.py -q
+43 passed
+```
+
+Full local gate:
+
+```text
+uv run pytest -q
+462 passed, 7 deselected
+
+uv run ruff check .
+All checks passed
+```
+
+**Takeaway**
+
+For review artifacts, "path" has two meanings. Filesystem I/O should keep real
+`Path` semantics; human/machine-readable reports should render portable POSIX
+path text. Generated Unicode artifacts should always be read as UTF-8 in tests.

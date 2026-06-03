@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from hardwise.bom.types import Bom, BomItem
 from hardwise.ir.profile import DatasheetProfile
+from hardwise.path_display import display_path
 
 ProfileCandidateStatus = Literal["matched", "no_result", "ambiguous", "manual_needed"]
 
@@ -92,7 +93,7 @@ def render_profile_candidate_manifest(
                 "targets": [
                     {
                         "refdes": candidate.refdes,
-                        "profile": str(candidate.profile),
+                        "profile": display_path(candidate.profile),
                     }
                     for candidate in matched
                 ],
@@ -111,8 +112,8 @@ def render_profile_candidate_manifest(
         "unmatched": [_unmatched_row(candidate) for candidate in unmatched],
     }
     doc["summary"] = {
-        "bom": str(report.bom_file),
-        "profiles": str(report.profiles_dir),
+        "bom": display_path(report.bom_file),
+        "profiles": display_path(report.profiles_dir),
         **report.counts_by_status,
     }
     return yaml.safe_dump(doc, sort_keys=False, allow_unicode=True)
@@ -257,7 +258,7 @@ def _normalize_identity(value: str | None) -> str:
 def _target_row(candidate: ProfileCandidate) -> dict[str, object]:
     row: dict[str, object] = {
         "refdes": candidate.refdes,
-        "profile": str(candidate.profile),
+        "profile": display_path(candidate.profile),
         "match_status": candidate.match_status,
         "identity": candidate.identity,
         "identity_kind": candidate.identity_kind,
@@ -274,7 +275,7 @@ def _unmatched_row(candidate: ProfileCandidate) -> dict[str, object]:
         "reason": candidate.reason,
     }
     if candidate.candidates:
-        row["candidates"] = [str(path) for path in candidate.candidates]
+        row["candidates"] = [display_path(path) for path in candidate.candidates]
     return row
 
 

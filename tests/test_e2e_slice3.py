@@ -28,7 +28,7 @@ def test_slice3_review_r001_r002_r003(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert "findings" in result.output
-    text = report.read_text()
+    text = report.read_text(encoding="utf-8")
     assert "R003" in text
     assert "NC" in text
 
@@ -53,7 +53,7 @@ def test_v2_2_review_snapshot_preserves_v1_rule_refdes_surface(tmp_path: Path) -
 
     assert result.exit_code == 0, result.output
     assert "28 findings" in result.output
-    text = report.read_text()
+    text = report.read_text(encoding="utf-8")
     assert "Findings | 28" in text
     assert "Rules run | R001, R002, R003" in text
     for refdes in ["C1", "C2", "C5", "C6", "C7", "C9"]:
@@ -89,7 +89,7 @@ def test_v2_3_component_report_preserves_finding_baseline(tmp_path: Path) -> Non
 
     assert result.exit_code == 0, result.output
     assert "28 findings" in result.output
-    text = report.read_text()
+    text = report.read_text(encoding="utf-8")
     assert "# Hardwise Component Review - pic_programmer" in text
     assert "Findings | 28" in text
     assert "## Component Summary" in text
@@ -147,7 +147,7 @@ def test_v2_4_ds001_component_report_adds_u3_datasheet_finding(tmp_path: Path) -
 
     assert result.exit_code == 0, result.output
     assert "29 findings" in result.output
-    text = report.read_text()
+    text = report.read_text(encoding="utf-8")
     assert "Rules run | R001, R002, R003, DS001" in text
     assert "Findings | 29" in text
     assert "| U3 | warn | 7805 | Package_TO_SOT_THT:TO-220-3_Horizontal_TabDown | 1 |" in text
@@ -173,7 +173,7 @@ def test_slice3_r003_only(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert "22 findings" in result.output
-    text = report.read_text()
+    text = report.read_text(encoding="utf-8")
     assert "R003" in text
     assert "J1" in text
 
@@ -197,7 +197,7 @@ def test_slice3_review_can_write_html_report(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert "22 findings" in result.output
-    text = report.read_text()
+    text = report.read_text(encoding="utf-8")
     assert "<!doctype html>" in text
     assert "Hardwise 原理图检视报告" in text
     assert "sch:pic_programmer.kicad_sch#J1" in text
@@ -221,6 +221,6 @@ def test_slice3_consolidator_fires_for_r003(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert "candidate rule" in result.output
-    memory_text = memory.read_text()
+    memory_text = memory.read_text(encoding="utf-8")
     assert "R003" in memory_text
     assert "candidate" in memory_text

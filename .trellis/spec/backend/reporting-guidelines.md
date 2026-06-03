@@ -292,3 +292,94 @@ standard component prefixes when the family matters: `C20` instead of `CS1`,
 `R30` instead of `RBOOT`, `D10` for LEDs/TVS/Schottky, `Q10` for transistors,
 and `FB1` for ferrites. Non-standard passive refdes can be classified as
 `unknown` and pollute next-family recommendations.
+
+---
+
+## Scenario: Portable Text Artifact Paths
+
+### 1. Scope / Trigger
+
+Applies when changing:
+
+- CLI status output that prints project input paths
+- YAML manifests such as `suggest-validation-targets`
+- JSON/Markdown sidecars such as `design-validator-ui --index-json`
+- Tests that read generated Markdown/HTML/YAML/JSON artifacts
+
+Trigger: any path value intended for humans or machine-readable review artifacts,
+not paths used for actual filesystem I/O.
+
+### 2. Signatures
+
+Path display helper:
+
+```python
+def display_path(path: Path | str | None) -> str | None: ...
+```
+
+Generated artifact readers in tests:
+
+```python
+text = output.read_text(encoding="utf-8")
+```
+
+### 3. Contracts
+
+- Text artifacts use POSIX separators (`data/datasheet_profiles/l78.json`) even
+  when generated on Windows. This keeps manifests, JSON sidecars, and CLI echoes
+  stable across CI hosts and easy to compare in tests.
+- `display_path()` is presentation-only. It must not be used to open files,
+  resolve paths, or mutate user-provided filesystem inputs before execution.
+- Generated Hardwise reports and indexes are UTF-8. Tests must read generated
+  text with `encoding="utf-8"` instead of relying on the host default encoding.
+- Runtime file access should continue to use `Path` objects and platform-native
+  semantics.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required behavior |
+|---|---|
+| `Path("data") / "profiles" / "x.json"` in a text artifact | Render `data/profiles/x.json` |
+| Windows-style string `data\\profiles\\x.json` in display output | Render `data/profiles/x.json` |
+| `None` optional path | Preserve `None`; do not render `"None"` |
+| Test reads generated UTF-8 HTML/Markdown/YAML/JSON | Use `read_text(encoding="utf-8")` |
+| Runtime opens a user path | Use the original `Path`; do not round-trip through `display_path()` |
+
+### 5. Good / Base / Bad Cases
+
+- Good: `design-validator-ui --index-json` emits
+  `"profile_path": "data/datasheet_profiles/xl1509.json"` on macOS and Windows.
+- Good: `suggest-validation-targets` writes
+  `profile: data/datasheet_profiles/l78.json` on every host.
+- Base: CLI echoes absolute Windows paths with forward slashes for readability;
+  the command still used the original `Path` for execution.
+- Bad: A test calls `report.read_text()` on generated Chinese HTML and passes on
+  macOS but fails on Windows cp1252.
+- Bad: Runtime code converts a filesystem path to POSIX text and then tries to
+  open that converted string on Windows.
+
+### 6. Tests Required
+
+- Unit tests for `display_path()` covering `Path`, Windows-style strings, and
+  `None`.
+- CLI/report tests assert stable `/` separators in YAML manifests, index JSON,
+  and status output.
+- E2E tests that read generated Unicode artifacts use explicit UTF-8 decoding.
+- Full gate remains `uv run pytest -q` and `uv run ruff check .`; Windows
+  support requires a passing `windows-latest` CI job.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```python
+payload["profile_path"] = str(profile_path)
+text = report.read_text()
+```
+
+#### Correct
+
+```python
+payload["profile_path"] = display_path(profile_path)
+text = report.read_text(encoding="utf-8")
+```

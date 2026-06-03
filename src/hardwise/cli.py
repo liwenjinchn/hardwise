@@ -6,6 +6,8 @@ from pathlib import Path
 
 import typer
 
+from hardwise.path_display import display_path
+
 app = typer.Typer(help="Hardwise — hardware R&D review Agent.")
 
 
@@ -1177,12 +1179,12 @@ def design_validator_ui(
         write_json(context.index, index_json)
 
     totals = context.index.totals
-    typer.echo(f"selected-netlist: {context.netlist_source}")
-    typer.echo(f"selected-bom: {context.bom.source_file}")
+    typer.echo(f"selected-netlist: {display_path(context.netlist_source)}")
+    typer.echo(f"selected-bom: {display_path(context.bom.source_file)}")
     if context.document_report is not None:
         doc_counts = context.document_report.counts_by_status
         typer.echo(
-            f"document-index: {context.document_report.document_index_file} "
+            f"document-index: {display_path(context.document_report.document_index_file)} "
             f"(matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
             f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']})"
         )

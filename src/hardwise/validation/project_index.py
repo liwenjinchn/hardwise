@@ -10,6 +10,7 @@ from hardwise.bom.types import Bom, BomMatchReport, sort_refdes_key
 from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Design
+from hardwise.path_display import display_path
 from hardwise.validation.component import validate_component_against_profile
 from hardwise.validation.component_groups import ProjectComponentGroup, build_component_groups
 from hardwise.validation.component_groups import normalize_bom_item_identity
@@ -153,7 +154,7 @@ def build_project_validation_index(
                 or "",
                 match_status=match_status,
                 reason=reason,
-                profile_path=str(profile_path) if profile_path is not None else None,
+                profile_path=display_path(profile_path),
                 validation=validation,
             )
         )
@@ -172,10 +173,10 @@ def build_project_validation_index(
     return ProjectValidationIndex(
         project_name=project_name,
         generated_at=generated_at,
-        netlist_source=netlist_source,
+        netlist_source=display_path(netlist_source) or "",
         netlist_type=netlist_type,
-        bom_source=str(candidate_report.bom_file),
-        profiles_dir=str(candidate_report.profiles_dir),
+        bom_source=display_path(candidate_report.bom_file) or "",
+        profiles_dir=display_path(candidate_report.profiles_dir) or "",
         components_in_design=len(design.components),
         bom_matched=len(bom_report.matched_refdes),
         rows=rows,
