@@ -210,6 +210,8 @@ ComponentNotFound(
 
 **v5.30 (D2c L2N7002KLT1G MOSFET profile)**: D2c 给 `L2N7002KLT1G` 加了 public-reviewed ready profile：LRC PDF 第 1 页支持 SOT-23 pinout `1=Gate / 2=Source / 3=Drain`、`VDSS=60 V`、`VGS=±20 V`、稳态 `ID=320 mA`，profile alias 只收同页公开 order variant `L2N7002KLT3G`。关键不是把中文 BOM `名称` 加进 alias，而是加了一条安全桥：当 D2b document row 已经 match，并且该 row 里有公开 MPN 时，profile candidate 可以用这个公开 MPN 查 ready profile；最后还要检查本地 EDA symbol pin ids 覆盖 profile pin numbers。真实 mainboard smoke 现在是 8180 components / BOM matched 7248 / validated 6679 / manual 1501 / PASS-WARN-ERROR 3868-2811-0，比 D2b 的 validated 6573 / manual 1607 正好移动 106 个 refdes；`L2N7002KLT1G` group 是 106 refdes、`profile_status=matched`、`document_source=doc:mainboard_d2_transistor_docs.csv#line2`，`LN2312LT1G` 因 `D/G/S` 本地 pin-id 仍 `no_result`，`PE537BA` 也不在 D2c 范围内。
 
+**v5.31 (D2d mainboard smoke closeout)**: D2d 没新增 profile/validator，而是复跑真实 public-safe mainboard smoke 证明 D2c 只移动了目标组：D2d 仍是 8180 components / BOM matched 7248 / validated 6679 / manual 1501 / PASS-WARN-ERROR 3868-2811-0；per-row `match_status` 是 `generic_passive=6573`、`matched=106`、`manual_needed=932`、`no_result=569`，其中唯一 matched profile group 是 106 个 `L2N7002KLT1G`，`LN2312LT1G` 26 个和 `PE537BA` 11 个仍只有 document coverage、没有 profile verdict。`recommend-next-family` 从 D2d index 生成 advisory：跳过已覆盖的 106 个 refdes 后，`unknown` 仍最大但需要新 validator triage；可走 existing-validator/profile 路线的队列是 `ic` 141 refdes / 31 groups、`diode` 81 / 10、`transistor` 37 / 2。D2d 还生成了 IC document candidate CSV，最大候选是 `74LVC1G125GW` 24 个、`MP87000-MGMJTH` 22 个、`MP5991GLU` 12 个、`PCA9617ADP` 10 个；这只是下一轮 public-evidence review queue，不是自动验证。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？

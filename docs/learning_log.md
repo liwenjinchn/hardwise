@@ -3067,3 +3067,87 @@ Document coverage can safely help profile matching only after a reviewed row
 selects a public MPN, and only when the local EDA symbol pin IDs match the
 profile contract. That keeps Chinese BOM `名称` out of profile aliases while
 still letting reviewed document evidence unlock deterministic validation.
+
+## 2026-06-03 — D2d closeout proves D2c moved only the intended mainboard group
+
+**Symptom**
+
+D2c had a successful profile implementation, but the D2 loop still needed a
+separate closeout run to prove the real public mainboard coverage moved by the
+intended amount and to choose the next review queue without silently changing
+unrelated verdicts.
+
+**Root cause**
+
+The D2 split deliberately separated evidence collection, profile promotion, and
+post-promotion measurement. Without a D2d rerun, the project would have only the
+D2c implementation facts, not a durable coverage artifact showing which manual
+rows disappeared and which rows stayed manual.
+
+**Fix**
+
+Reran the real public-safe mainboard smoke from
+`.../lanxindownload/allegro` with
+`data/document_indexes/mainboard_d2_transistor_docs.csv` and wrote fresh D2d
+artifacts:
+
+```text
+/tmp/hardwise-mainboard-d2d-workbench.html
+/tmp/hardwise-mainboard-d2d-index.md
+/tmp/hardwise-mainboard-d2d-index.json
+/tmp/hardwise-mainboard-d2d-next-family.md
+/tmp/hardwise-mainboard-d2d-ic-document-candidates.csv
+```
+
+The D2d smoke reproduced D2c exactly:
+
+```text
+document-index: matched=3, no_result=189, ambiguous=0, manual_needed=0
+8180 components, BOM matched=7248
+validated=6679
+PASS/WARN/ERROR=3868/2811/0
+manual=1501
+```
+
+Per-row `match_status` counts were:
+
+```text
+generic_passive=6573
+matched=106
+manual_needed=932
+no_result=569
+```
+
+Against the D2b baseline, this proves `validated 6573 -> 6679` and
+`manual 1607 -> 1501`. The only `matched` profile group is the 106-refdes
+`L2N7002KLT1G` group, still carrying
+`document_source=doc:mainboard_d2_transistor_docs.csv#line2` and
+`validation_status=WARN`. `LN2312LT1G` remains 26 refdes with
+`document_source=doc:mainboard_d2_transistor_docs.csv#line3` but
+`profile_status=no_result`; `PE537BA` remains 11 refdes with
+`document_source=doc:mainboard_d2_transistor_docs.csv#line4` but
+`profile_status=no_result`.
+
+`recommend-next-family` now skips the 106 covered refdes and ranks:
+
+```text
+unknown: 1118 refdes, 957 groups, triage_for_new_validator
+ic: 141 refdes, 31 groups, try_existing_validator_profile
+diode: 81 refdes, 10 groups, try_existing_validator_profile
+transistor: 37 refdes, 2 groups, try_existing_validator_profile
+inductor: 41 refdes, 10 groups, triage_for_new_validator
+ferrite: 43 refdes, 2 groups, triage_for_new_validator
+```
+
+For the next deterministic slice, prefer a fresh IC document-index backfill
+before profile work. The D2d IC candidate CSV has 37 rows; the largest examples
+are `74LVC1G125GW` (24 refdes), `MP87000-MGMJTH` (22), `MP5991GLU` (12), and
+`PCA9617ADP` (10). That does not mean IC validation is implemented; it only
+creates the next public-evidence review queue.
+
+**Takeaway**
+
+A closeout smoke is not busywork: it proves coverage moved by a named public
+profile group and keeps the remaining manual work visible. After a profile
+slice, the next-family advisory should be read as a review queue, not as
+permission to promote the next part without public document evidence.
