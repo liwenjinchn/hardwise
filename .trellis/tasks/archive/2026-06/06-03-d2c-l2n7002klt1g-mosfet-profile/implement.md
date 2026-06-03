@@ -91,13 +91,29 @@ git diff --check
 clean
 ```
 
-Target mainboard smoke status:
+Target mainboard smoke:
 
-- Blocked on this machine because the recorded D1/D2 public-safe input path
-  `.../lanxindownload/04_设计文件与EDA/allegro` and `RFMS5H2TABom(13).xlsx`
-  are not present.
-- A nearby 4010-component control Allegro sample at
-  `.../lanxindownload/20240712 1027/allegro` still runs cleanly with the D2b
-  document index and does not contain or promote `L2N7002KLT1G` / `PE537BA`.
-- Keep this task `in_progress` until the 8180-component mainboard smoke is
-  rerun with the intended public-safe input.
+```text
+uv run hardwise design-validator-ui \
+  "/Users/liwenjin/Library/Containers/com.comisys.lanxin.hgo/Data/Library/Application Support/lanxin_macgoh/custom/files/lanxindownload/allegro" \
+  --document-index data/document_indexes/mainboard_d2_transistor_docs.csv \
+  --output /tmp/hardwise-mainboard-d2c-workbench.html \
+  --index-output /tmp/hardwise-mainboard-d2c-index.md \
+  --index-json /tmp/hardwise-mainboard-d2c-index.json
+
+document-index: matched=3, no_result=189, ambiguous=0, manual_needed=0
+8180 components, validated=6679, BOM matched=7248
+PASS/WARN/ERROR=3868/2811/0, manual=1501
+```
+
+Measured movement vs D2b baseline:
+
+- Validated rows moved `6573 -> 6679` (+106).
+- Manual rows moved `1607 -> 1501` (-106).
+- `L2N7002KLT1G` group: 106 refdes, `profile_status=matched`,
+  `validation_status=WARN`, `document_source=doc:mainboard_d2_transistor_docs.csv#line2`,
+  `profile_path=data/datasheet_profiles/l2n7002klt1g.json`.
+- `LN2312LT1G` group: 26 refdes, `profile_status=no_result`,
+  `document_source=doc:mainboard_d2_transistor_docs.csv#line3`.
+- `PE537BA` group: 11 refdes, `profile_status=no_result`,
+  `document_source=doc:mainboard_d2_transistor_docs.csv#line4`.

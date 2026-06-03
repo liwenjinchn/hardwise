@@ -3042,11 +3042,24 @@ clean
 ```
 
 The D2 target mainboard smoke could not be completed on this machine because
-the recorded public-safe path
-`.../lanxindownload/04_设计文件与EDA/allegro` and `RFMS5H2TABom(13).xlsx`
-were not present. A nearby 4010-component control Allegro sample still ran
-cleanly with the D2b document index and did not contain or promote
-`L2N7002KLT1G` / `PE537BA`.
+the recorded public-safe path had moved. After the input was restored under
+`.../lanxindownload/allegro`, the real smoke completed:
+
+```text
+design-validator-ui <mainboard-allegro-folder> \
+  --document-index data/document_indexes/mainboard_d2_transistor_docs.csv
+document-index: matched=3, no_result=189, ambiguous=0, manual_needed=0
+8180 components, BOM matched=7248
+validated=6679
+PASS/WARN/ERROR=3868/2811/0
+manual=1501
+```
+
+The `L2N7002KLT1G` group moved 106 refdes to
+`profile_status=matched` with `document_source=doc:mainboard_d2_transistor_docs.csv#line2`.
+`LN2312LT1G` stayed `profile_status=no_result` because its local symbol uses
+`D/G/S` pin IDs, and `PE537BA` stayed `no_result` because D2c did not add a
+multi-pin P-MOS profile.
 
 **Takeaway**
 

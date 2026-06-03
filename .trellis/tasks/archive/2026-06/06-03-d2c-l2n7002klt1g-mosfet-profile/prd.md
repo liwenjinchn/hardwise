@@ -51,20 +51,20 @@ distinction between document coverage and electrical validation.
 
 ## Acceptance Criteria
 
-- [ ] `data/datasheet_profiles/l2n7002klt1g.json` loads as a valid
+- [x] `data/datasheet_profiles/l2n7002klt1g.json` loads as a valid
       `DatasheetProfile` with `review_status = "ready"`.
-- [ ] A focused MOSFET profile test verifies the public pinout, abs-max Vds/Vgs,
+- [x] A focused MOSFET profile test verifies the public pinout, abs-max Vds/Vgs,
       and family dispatch for `L2N7002KLT1G`.
-- [ ] A profile-candidate test proves a BOM MPN of `L2N7002KLT1G` matches the
+- [x] A profile-candidate test proves a BOM MPN of `L2N7002KLT1G` matches the
       new profile.
-- [ ] A mainboard smoke with `design-validator-ui <mainboard-folder>
+- [x] A mainboard smoke with `design-validator-ui <mainboard-folder>
       --document-index data/document_indexes/mainboard_d2_transistor_docs.csv`
       shows the selected `L2N7002KLT1G` group matched to the new profile and no
       longer present as a profile gap.
-- [ ] The same smoke does not promote `LN2312LT1G` or `PE537BA` as part of D2c.
-- [ ] Validation artifacts keep raw profile/document evidence visible; document
+- [x] The same smoke does not promote `LN2312LT1G` or `PE537BA` as part of D2c.
+- [x] Validation artifacts keep raw profile/document evidence visible; document
       source remains `doc:mainboard_d2_transistor_docs.csv#line2`.
-- [ ] Focused tests, `uv run pytest -q`, `uv run ruff check .`, and
+- [x] Focused tests, `uv run pytest -q`, `uv run ruff check .`, and
       `git diff --check` pass before completion.
 
 ## Out Of Scope
