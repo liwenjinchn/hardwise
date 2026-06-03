@@ -595,3 +595,36 @@ Added Windows docs/CI, profile archetype needs_review generation, and updated in
 ### Next Steps
 
 - None - task complete
+
+
+## Session 18: Windows CI verification closeout
+
+**Date**: 2026-06-03
+**Task**: Windows CI verification closeout
+**Branch**: `main`
+
+### Summary
+
+Stabilized text artifact paths and UTF-8 test reads, verified macOS and Windows CI, then archived the Windows audit and demo readiness parent tasks.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f05354d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 17
+- **Total Sessions**: 18
 - **Last Active**: 2026-06-03
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~597 | Active |
+| `journal-1.md` | ~630 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 18 | 2026-06-03 | Windows CI verification closeout | `f05354d` | `main` |
 | 17 | 2026-06-03 | Demo readiness closeout | `a6acb57` | `main` |
 | 16 | 2026-06-02 | Real Allegro coverage expansion | `5320935`, `3ddcaac` | `codex/real-allegro-validator-coverage` |
 | 15 | 2026-06-01 | Electrical validator assumption fixes | `5009086` | `main` |
