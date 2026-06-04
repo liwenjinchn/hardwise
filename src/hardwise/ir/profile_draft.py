@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from pydantic import ValidationError
 
@@ -27,6 +29,7 @@ def draft_profile_from_project_index(
     identity: str,
     document_index_path: Path | None = None,
     archetype_id: str | None = None,
+    evidence_chunks_path: Path | None = None,
 ) -> DatasheetProfile:
     """Build a needs-review profile draft for one component group identity."""
 
@@ -67,12 +70,15 @@ def draft_profile_from_project_index(
         extracted_model="manual-review-draft-v1.2",
         schema_version="v2",
     )
-    if archetype_id is None:
-        return profile
-    try:
-        return apply_profile_archetype(profile, archetype_id)
-    except ProfileArchetypeError as exc:
-        raise ProfileDraftError(str(exc)) from exc
+    if archetype_id is not None:
+        try:
+            profile = apply_profile_archetype(profile, archetype_id)
+        except ProfileArchetypeError as exc:
+            raise ProfileDraftError(str(exc)) from exc
+
+    if evidence_chunks_path is not None:
+        profile = _attach_evidence_chunks(profile, evidence_chunks_path)
+    return profile
 
 
 def _load_project_index(path: Path) -> ProjectValidationIndex:
@@ -121,6 +127,72 @@ def _aliases(group: ProjectComponentGroup, part_number: str) -> list[str]:
         if value and _normalize(value) != _normalize(part_number):
             aliases.append(value)
     return aliases
+
+
+def _attach_evidence_chunks(profile: DatasheetProfile, path: Path) -> DatasheetProfile:
+    tokens, sources, chunk_count = _read_evidence_chunk_summary(path)
+    if not tokens:
+        raise ProfileDraftError(f"{path}: no datasheet evidence tokens found")
+    evidence = dict(profile.evidence)
+    evidence.update(
+        {
+            "evidence.chunks.path": str(path),
+            "evidence.chunks.count": str(chunk_count),
+            "evidence.chunks.sources": ", ".join(sources),
+            "evidence.chunks.tokens": ", ".join(tokens),
+        }
+    )
+    return profile.model_copy(update={"evidence": evidence})
+
+
+def _read_evidence_chunk_summary(path: Path) -> tuple[list[str], list[str], int]:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ProfileDraftError(f"{path}: evidence chunk JSONL unreadable") from exc
+
+    tokens: list[str] = []
+    sources: list[str] = []
+    chunk_count = 0
+    for line_no, raw_line in enumerate(lines, start=1):
+        line = raw_line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ProfileDraftError(f"{path}:{line_no}: invalid evidence chunk JSON") from exc
+        if not isinstance(row, dict):
+            raise ProfileDraftError(f"{path}:{line_no}: evidence chunk row must be an object")
+        chunk_count += 1
+        token = _evidence_token_from_chunk(row)
+        if token and token not in tokens:
+            tokens.append(token)
+        source = _source_from_chunk(row)
+        if source and source not in sources:
+            sources.append(source)
+    return tokens, sources, chunk_count
+
+
+def _evidence_token_from_chunk(row: dict[str, Any]) -> str | None:
+    token = row.get("evidence_token")
+    if isinstance(token, str) and token.startswith("datasheet:") and "#p" in token:
+        return token
+
+    source_pdf = _source_from_chunk(row)
+    page = row.get("page")
+    if source_pdf and isinstance(page, int) and page >= 1:
+        return f"datasheet:{source_pdf}#p{page}"
+    return None
+
+
+def _source_from_chunk(row: dict[str, Any]) -> str | None:
+    source_pdf = row.get("source_pdf")
+    if isinstance(source_pdf, str):
+        stripped = source_pdf.strip()
+        if stripped:
+            return stripped
+    return None
 
 
 def _normalize(value: str | None) -> str:

@@ -220,6 +220,8 @@ ComponentNotFound(
 
 **v5.35 (D3c internal-PN value bridge coverage pack)**: D3c 没新增电气规则，而是修了 coverage assignment 的真实卡点：很多 BOM 的 `MPN` 列是公司内部数字 PN，公开 MPN 只藏在 `Value/名称` 里。新增 `profile_candidate_text.py` 作为 `suggest_profile_candidates()` 的第三条 identity 来源：直接 MPN miss、reviewed document MPN miss 后，才在 BOM value/description 里找本地 ready profile 的 exact public part/alias；传入 netlist 时还要检查 profile pin numbers 覆盖 local symbol pin ids。公开 fixture 证明 5 个内部 PN 行可进入 existing validators/profiles：`MPQ8626GD-Z` buck、`PCA9617ADP` I2C repeater、`1.5SMC15A` TVS、`SM340AF` Schottky、`SD103AWS-7-F` Schottky。边界要讲清楚：这不是规格书搜索、不是 PLM，也不是新增 PASS/WARN/ERROR 判断；未来 PLM 接入后，这层可以替换成正式 company-PN -> public-MPN 映射。
 
+**v5.37 (D3a evidence chunks to needs-review contract draft)**: D3a 收口点是把 `MPQ8626GD` 的 public text evidence 接进 profile draft，但不绕过人工审核。新增 `draft-datasheet-profile --evidence-chunks`：从 `extract-datasheet-html` 或 PDF ingest 产出的 chunk JSONL 里读取/派生 `datasheet:mpq8626.html#p1` 这种页级 token，写入 `evidence.chunks.*`；document-index provenance 仍在 `document.source=doc:power_v1_docs.csv#line2`。输出强制保持 `review_status=needs_review`，不会自动填 pin facts、不会自动变 `ready`。smoke 链路现在能串起来：HTML chunk extract -> `design-validator-ui` 生成 MPQ8626 project index -> `draft-datasheet-profile --evidence-chunks` 生成可审阅草稿 -> `store-datasheet-profile` round-trip；真正 PASS 仍来自已有 reviewed ready `mpq8626.json` topology checker。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？

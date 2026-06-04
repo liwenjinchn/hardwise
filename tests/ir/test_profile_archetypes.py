@@ -68,6 +68,66 @@ def test_draft_datasheet_profile_cli_accepts_archetype(tmp_path: Path) -> None:
     assert profile.recommended["topology_family"] == "shift_register_piso"
 
 
+def test_draft_profile_attaches_datasheet_chunk_evidence(tmp_path: Path) -> None:
+    index_path = _write_shift_register_index(tmp_path)
+    chunks = tmp_path / "chunks.jsonl"
+    chunks.write_text(
+        "\n".join(
+            [
+                '{"text":"pin table","source_pdf":"74lv165.html","page":3,'
+                '"chunk_index":0,"evidence_token":"datasheet:74lv165.html#p3"}',
+                '{"text":"application","source_pdf":"74lv165.html","page":8,'
+                '"chunk_index":0}',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    profile = draft_profile_from_project_index(
+        index_path,
+        identity="74LV165PW",
+        evidence_chunks_path=chunks,
+    )
+
+    assert profile.review_status == "needs_review"
+    assert profile.evidence["document.source"] == "doc:74lv165"
+    assert profile.evidence["evidence.chunks.count"] == "2"
+    assert profile.evidence["evidence.chunks.sources"] == "74lv165.html"
+    assert profile.evidence["evidence.chunks.tokens"] == (
+        "datasheet:74lv165.html#p3, datasheet:74lv165.html#p8"
+    )
+
+
+def test_draft_datasheet_profile_cli_accepts_evidence_chunks(tmp_path: Path) -> None:
+    index_path = _write_shift_register_index(tmp_path)
+    chunks = tmp_path / "chunks.jsonl"
+    chunks.write_text(
+        '{"text":"pin table","source_pdf":"74lv165.html","page":3,"chunk_index":0}\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "74lv165pw-draft.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "draft-datasheet-profile",
+            str(index_path),
+            "--identity",
+            "74LV165PW",
+            "--evidence-chunks",
+            str(chunks),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "evidence_chunks=on" in result.output
+    profile = DatasheetProfile.load(output)
+    assert profile.review_status == "needs_review"
+    assert profile.evidence["evidence.chunks.tokens"] == "datasheet:74lv165.html#p3"
+
+
 def test_generated_archetype_profile_is_ignored_by_profile_matching(tmp_path: Path) -> None:
     index_path = _write_shift_register_index(tmp_path)
     profile = draft_profile_from_project_index(

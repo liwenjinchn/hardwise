@@ -512,6 +512,72 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
     assert '"profile_path": "data/datasheet_profiles/mpq8626.json"' in index_payload
 
 
+def test_mpq8626_html_chunks_feed_needs_review_profile_draft(
+    tmp_path: Path,
+) -> None:
+    chunks = tmp_path / "mpq8626-html-chunks.jsonl"
+    index_json = tmp_path / "mpq8626-index.json"
+    draft = tmp_path / "mpq8626-draft.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "extract-datasheet-html",
+            "tests/fixtures/datasheets/mpq8626_fulltext.html",
+            "--source-name",
+            "mpq8626.html",
+            "--output",
+            str(chunks),
+            "--chunk-size",
+            "1000",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "chunks=1" in result.output
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mpq8626_sync_buck.net",
+            "tests/fixtures/allegro/mpq8626_sync_buck_bom.csv",
+            "--document-index",
+            "data/document_indexes/power_v1_docs.csv",
+            "--output",
+            str(tmp_path / "mpq8626-workbench.html"),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "validated=1" in result.output
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "draft-datasheet-profile",
+            str(index_json),
+            "--identity",
+            "MPQ8626GD",
+            "--document-index",
+            "data/document_indexes/power_v1_docs.csv",
+            "--evidence-chunks",
+            str(chunks),
+            "--output",
+            str(draft),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "review_status=needs_review" in result.output
+    assert "evidence_chunks=on" in result.output
+
+    text = draft.read_text(encoding="utf-8")
+    assert '"part_number": "MPQ8626GD"' in text
+    assert '"review_status": "needs_review"' in text
+    assert '"document.source": "doc:power_v1_docs.csv#line2"' in text
+    assert '"evidence.chunks.tokens": "datasheet:mpq8626.html#p1"' in text
+
+
 def test_design_validator_ui_uses_document_mpn_for_l2n7002klt1g_profile(
     tmp_path: Path,
 ) -> None:

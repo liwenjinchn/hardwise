@@ -8,6 +8,38 @@
 
 ---
 
+## 2026-06-04 · Evidence chunks can seed drafts without promoting contracts
+
+**Symptom**
+
+D3a could extract text evidence for `MPQ8626GD` as PDF/HTML chunk JSONL and
+could already validate the reviewed ready profile, but the draft profile path
+still only carried document-index provenance. The page-level
+`datasheet:<source>#p<N>` evidence tokens were not attached to the
+`needs_review` contract draft.
+
+**Root cause**
+
+Datasheet evidence and reviewed pin contracts have different trust levels. Raw
+chunks can prove which public page text was available, but they do not by
+themselves prove pin function, limits, topology, or readiness. Wiring chunks
+directly into a ready profile would collapse the review gate.
+
+**Fix**
+
+Added `draft-datasheet-profile --evidence-chunks`. The command reads
+PDF/HTML chunk JSONL, collects or derives page-level datasheet tokens, and
+stores them under `evidence.chunks.*` on the generated profile. The output still
+uses `review_status=needs_review`; document-index provenance stays in
+`document.source`, and existing ready validation continues to consume the
+reviewed MPQ8626 contract.
+
+**Takeaway**
+
+Evidence attachment is not evidence promotion. A safe golden path can move from
+public text chunks to a reviewable contract draft, but a human-reviewed step is
+still required before any profile becomes `ready`.
+
 ## 2026-06-03 · Internal BOM PNs can hide reviewed public MPNs
 
 **Symptom**
