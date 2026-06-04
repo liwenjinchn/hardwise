@@ -501,6 +501,25 @@ def test_validate_eg2132_fixture_reports_bootstrap_diode_error() -> None:
     assert "below required 24 V" in bootstrap.summary
 
 
+def test_eg2132_profile_uses_official_pdf_limits() -> None:
+    profile = _eg2132_profile()
+
+    assert profile.review_status == "ready"
+    assert profile.abs_max["vcc"] == 25.0
+    assert profile.abs_max["logic_input"] == "VCC+0.3"
+    assert profile.recommended["vcc_min"] == 9.0
+    assert profile.recommended["logic_high_min"] == 2.8
+    assert "bootstrap_diode_min_reverse_voltage" not in profile.recommended
+
+    vcc_pin = profile.pin_by_number("1")
+    hin_pin = profile.pin_by_number("2")
+    assert vcc_pin is not None
+    assert hin_pin is not None
+    assert vcc_pin.limits["abs_max_voltage"] == 25.0
+    assert vcc_pin.limits["recommended_voltage_min"] == 9.0
+    assert hin_pin.limits["logic_high_min"] == 2.8
+
+
 def test_validate_eg2132_nominal_topology_has_no_component_error() -> None:
     design = _eg2132_design()
     d1 = design.components["D1"].model_copy(update={"value": "SS34", "part_number": "SS34"})
@@ -512,6 +531,31 @@ def test_validate_eg2132_nominal_topology_has_no_component_error() -> None:
     assert report.component_counts_by_status == {"PASS": 7, "WARN": 0, "ERROR": 0}
     assert all(check.status != "ERROR" for check in report.component_checks)
     assert "pin role is not proven" in vs.summary
+
+
+def test_validate_eg2132_bootstrap_diode_warns_without_high_side_voltage() -> None:
+    design = _eg2132_design()
+    q1 = design.components["Q1"].model_copy(
+        update={
+            "pins": [
+                pin.model_copy(update={"net": None}) if pin.number == "2" else pin
+                for pin in design.components["Q1"].pins
+            ]
+        }
+    )
+    design = _with_component(design, q1)
+    design = _with_net(
+        design,
+        design.nets["+24V"].model_copy(update={"nodes": []}),
+    )
+
+    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
+
+    bootstrap = next(
+        check for check in report.component_checks if check.check == "gate_driver_bootstrap"
+    )
+    assert bootstrap.status == "WARN"
+    assert "cannot be inferred from a switch-node/high-side rail" in bootstrap.summary
 
 
 def test_validate_eg2132_missing_bootstrap_capacitor_errors() -> None:

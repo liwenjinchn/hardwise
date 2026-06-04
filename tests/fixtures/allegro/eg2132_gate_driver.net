@@ -7,6 +7,7 @@ $PACKAGES
   ! 'C0805' ! 100nF ; CBOOT
   ! 'C0805' ! 100nF ; CVCC
 $NETS
+  '+24V' ; Q1.2
   '+12V' ; U3.1, CVCC.1, D1.1
   'PWM1H' ; U3.2
   'PWM1L' ; U3.3

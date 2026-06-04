@@ -8,6 +8,39 @@
 
 ---
 
+## 2026-06-04 · EG2132 bootstrap diode voltage is board policy, not a datasheet field
+
+**Symptom**
+
+The EG2132 profile was marked `ready`, but it mixed public datasheet facts with
+a board-level bootstrap diode rule. Official EGmicro evidence supports the
+pinout, VCC limits, logic thresholds, and bootstrap topology, while the profile
+also carried `bootstrap_diode_min_reverse_voltage = 24.0` as if that number came
+from the EG2132 datasheet.
+
+**Root cause**
+
+The validator needed a concrete threshold to classify `MBRA210LT3G`, so the
+first implementation stored the fixture-specific 24 V requirement in the
+datasheet profile. That conflated two contracts: the chip datasheet says the
+bootstrap path needs an external diode/capacitor, but the diode reverse voltage
+requirement comes from the schematic's high-side/switch-node rail.
+
+**Fix**
+
+Updated `eg2132.json` to official-PDF-backed limits: VCC abs max 25 V,
+recommended VCC 9-20 V, and HIN/LIN logic-high minimum 2.8 V. Removed the
+profile-level bootstrap diode voltage field. `gate_driver_bootstrap` now infers
+the required reverse voltage from the switch-node/high-side Q path when the
+schematic exposes a voltage rail, and returns WARN when the rail cannot be
+proven.
+
+**Takeaway**
+
+Ready profiles should hold datasheet facts; validators may still apply board
+policy, but only when the schematic provides path evidence for the board-specific
+quantity.
+
 ## 2026-06-04 · Group rows need an explicit validated-refdes target
 
 **Symptom**
