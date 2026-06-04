@@ -11,6 +11,7 @@ from hardwise.bom.types import BomItem
 from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Design
+from hardwise.validation.pin_resolver import profile_pins_fit_component
 
 DocumentProfileStatus = Literal["matched", "no_result", "ambiguous"]
 
@@ -109,13 +110,7 @@ def _profile_pin_numbers_fit_design(
     component = design.components.get(refdes)
     if component is None:
         return False
-    profile_numbers = {pin.number for pin in profile.pins}
-    if not profile_numbers:
-        profile_numbers = set(profile.pin_function)
-    if not profile_numbers:
-        return True
-    schematic_numbers = {pin.number for pin in component.pins}
-    return profile_numbers.issubset(schematic_numbers)
+    return profile_pins_fit_component(component, profile)
 
 
 def _normalize_identity(value: str | None) -> str:

@@ -6,6 +6,7 @@ import re
 
 from hardwise.ir.profile import PinProfile
 from hardwise.ir.types import Component, Design
+from hardwise.validation.pin_resolver import schematic_pin_for_profile_pin
 from hardwise.validation.types import PinValidation
 
 
@@ -16,7 +17,7 @@ def validate_pin(
 ) -> PinValidation:
     """Validate one schematic pin against one structured pin profile."""
 
-    pin = component.pin_by_number(pin_profile.number)
+    pin = schematic_pin_for_profile_pin(component, pin_profile)
     evidence = list(pin_profile.evidence)
     if pin is None:
         return PinValidation(

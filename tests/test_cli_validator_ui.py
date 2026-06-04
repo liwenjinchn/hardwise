@@ -273,6 +273,37 @@ def test_report_validator_ui_batch_writes_mixed_controller_manifest(
     assert "MBRA210LT3G" in html
 
 
+def test_report_validator_ui_batch_writes_ln2312lt1g_alias_manifest(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "ln2312lt1g-validator-ui.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-validator-ui-batch",
+            "tests/fixtures/allegro/ln2312lt1g_symbol_alias.net",
+            "tests/fixtures/allegro/ln2312lt1g_symbol_alias_bom.csv",
+            "--targets-manifest",
+            "tests/fixtures/allegro/ln2312lt1g_symbol_alias_targets.yaml",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "validator-ui-batch:" in result.output
+    assert "validated=Q9" in result.output
+    assert "PASS/WARN/ERROR=1/0/0" in result.output
+
+    html = output.read_text(encoding="utf-8")
+    assert 'data-select-ref="Q9"' in html
+    assert '<article class="panel active" data-panel="Q9">' in html
+    assert "LN2312LT1G" in html
+    assert "gate 3.3 V - source 0 V" in html
+    assert "原理图缺少引脚" not in html
+
+
 def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     tmp_path: Path,
 ) -> None:
@@ -643,8 +674,8 @@ $END
     )
 
     assert result.exit_code == 0, result.output
-    assert "validated=1" in result.output
-    assert "PASS/WARN/ERROR=1/0/0" in result.output
+    assert "validated=2" in result.output
+    assert "PASS/WARN/ERROR=2/0/0" in result.output
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"refdes": "PQ10"' in index_payload
@@ -652,8 +683,8 @@ $END
     assert '"profile_path": "data/datasheet_profiles/l2n7002klt1g.json"' in index_payload
     assert '"document_source": "doc:docs.csv#line2"' in index_payload
     assert '"refdes": "PQ9"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/ln2312lt1g.json"' in index_payload
     assert '"refdes": "Q13"' in index_payload
-    assert '"profile_path": "data/datasheet_profiles/ln2312lt1g.json"' not in index_payload
     assert "pe537ba.json" not in index_payload
     assert '"document_source": "doc:docs.csv#line3"' in index_payload
     assert '"document_source": "doc:docs.csv#line4"' in index_payload

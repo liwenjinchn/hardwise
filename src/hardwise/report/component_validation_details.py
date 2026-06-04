@@ -8,6 +8,7 @@ from html import escape
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.trust import TRUST_LABELS, TrustTier, trust_label_text
+from hardwise.validation.pin_resolver import schematic_pin_for_profile_pin
 from hardwise.validation.types import ValidationReport
 
 __all__ = [
@@ -51,14 +52,31 @@ def build_pin_consistency(
 ) -> PinConsistency:
     """Compare profile/report pins with parsed schematic pins without changing verdicts."""
 
-    profile_numbers = (
-        {pin.number for pin in profile.pins}
-        if profile is not None
-        else {pin.pin_number for pin in report.pin_results}
-    )
+    profile_numbers = {pin.number for pin in profile.pins} if profile is not None else {
+        pin.pin_number for pin in report.pin_results
+    }
     schematic_numbers = {pin.number for pin in component.pins}
-    missing = tuple(sorted(profile_numbers - schematic_numbers, key=_pin_sort_key))
-    extra = tuple(sorted(schematic_numbers - profile_numbers, key=_pin_sort_key))
+    if profile is not None:
+        resolved_schematic = {
+            pin.number
+            for profile_pin in profile.pins
+            for pin in [schematic_pin_for_profile_pin(component, profile_pin)]
+            if pin is not None
+        }
+        missing = tuple(
+            sorted(
+                [
+                    pin.number
+                    for pin in profile.pins
+                    if schematic_pin_for_profile_pin(component, pin) is None
+                ],
+                key=_pin_sort_key,
+            )
+        )
+        extra = tuple(sorted(schematic_numbers - resolved_schematic, key=_pin_sort_key))
+    else:
+        missing = tuple(sorted(profile_numbers - schematic_numbers, key=_pin_sort_key))
+        extra = tuple(sorted(schematic_numbers - profile_numbers, key=_pin_sort_key))
     status = "PASS" if not missing and not extra else "WARN"
     return PinConsistency(
         status=status,

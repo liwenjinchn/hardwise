@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, ForeignKey, Integer, String, Text, inspect, text
 from sqlalchemy.orm import Session
 
 from hardwise.ir.profile import DatasheetProfile, PinProfile
@@ -66,6 +66,7 @@ class DatasheetProfilePinRow(Base):
     ordinal = Column(Integer, nullable=False, default=0)
     number = Column(String, nullable=False, index=True)
     name = Column(String, nullable=False, default="")
+    schematic_pin_aliases_json = Column(Text, nullable=False, default="[]")
     category = Column(String, nullable=False, default="")
     function = Column(Text, nullable=False, default="")
     limits_json = Column(Text, nullable=False, default="{}")
@@ -120,6 +121,7 @@ def upsert_datasheet_profile(
                 ordinal=idx,
                 number=pin.number,
                 name=pin.name,
+                schematic_pin_aliases_json=_json_dump(pin.schematic_pin_aliases),
                 category=pin.category,
                 function=pin.function,
                 limits_json=_json_dump(pin.limits),
@@ -178,6 +180,7 @@ def _row_to_profile(session: Session, row: DatasheetProfileRow) -> DatasheetProf
         PinProfile(
             number=pin.number,
             name=pin.name,
+            schematic_pin_aliases=_json_load(pin.schematic_pin_aliases_json, []),
             category=pin.category,
             function=pin.function,
             limits=_json_load(pin.limits_json, {}),
@@ -273,3 +276,20 @@ def _ensure_tables(session: Session) -> None:
             DatasheetProfilePinRow.__table__,
         ],
     )
+    _ensure_profile_pin_alias_column(session)
+
+
+def _ensure_profile_pin_alias_column(session: Session) -> None:
+    """Add the pin-alias column for profile stores created before D3b."""
+
+    bind = session.get_bind()
+    columns = {column["name"] for column in inspect(bind).get_columns("datasheet_profile_pins")}
+    if "schematic_pin_aliases_json" in columns:
+        return
+    session.execute(
+        text(
+            "ALTER TABLE datasheet_profile_pins "
+            "ADD COLUMN schematic_pin_aliases_json TEXT NOT NULL DEFAULT '[]'"
+        )
+    )
+    session.commit()

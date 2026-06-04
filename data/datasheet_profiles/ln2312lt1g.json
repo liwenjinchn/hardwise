@@ -28,6 +28,7 @@
     {
       "number": "1",
       "name": "Gate",
+      "schematic_pin_aliases": ["G"],
       "category": "analog_input",
       "function": "Gate control input; Vgs is measured to the source terminal.",
       "limits": {},
@@ -37,6 +38,7 @@
     {
       "number": "2",
       "name": "Source",
+      "schematic_pin_aliases": ["S"],
       "category": "switch_node",
       "function": "Source terminal and Vgs/Vds reference node.",
       "limits": {},
@@ -46,6 +48,7 @@
     {
       "number": "3",
       "name": "Drain",
+      "schematic_pin_aliases": ["D"],
       "category": "switch_output",
       "function": "Drain terminal of the N-channel MOSFET.",
       "limits": {},

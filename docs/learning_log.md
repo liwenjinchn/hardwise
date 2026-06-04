@@ -40,6 +40,65 @@ Evidence attachment is not evidence promotion. A safe golden path can move from
 public text chunks to a reviewable contract draft, but a human-reviewed step is
 still required before any profile becomes `ready`.
 
+## 2026-06-04 · Local symbol pin ids need explicit profile aliases
+
+**Symptom**
+
+`LN2312LT1G` had a ready public MOSFET profile, but the real mainboard coverage
+gap stayed `no_result` because the local schematic symbol exported terminal
+labels `D/G/S` while the reviewed datasheet profile used package pin numbers
+`1/2/3`.
+
+**Root cause**
+
+The validator correctly treated profile pin numbers as datasheet/package facts.
+Relaxing that rule globally would have let unrelated local symbols masquerade
+as package pinouts. The missing piece was an explicit reviewed bridge from a
+datasheet pin to a local schematic pin id.
+
+**Fix**
+
+Added `PinProfile.schematic_pin_aliases` and a shared
+`validation/pin_resolver.py` helper. `LN2312LT1G` now records
+`Gate -> G`, `Source -> S`, and `Drain -> D`; candidate matching, pin-level
+validation, MOSFET component checks, and UI pin consistency all use the same
+resolver. The focused `ln2312lt1g_symbol_alias` Allegro fixture validates `Q9`
+as PASS while the report still shows datasheet pins `1/2/3` and
+`datasheet:s-ln2312lt1g.pdf#p1` evidence.
+
+**Takeaway**
+
+Profile coverage is not just public MPN matching. A board-specific symbol can
+use non-package pin ids, and the safe way to unlock deterministic validation is
+an explicit alias in the reviewed profile contract, not a heuristic pin-name
+guess.
+
+## 2026-06-04 · MPN text matching needs token boundaries
+
+**Symptom**
+
+A stricter D3b test for value-text profile matching expected `LN2312LT1G`, but
+the matcher selected alias `S-LN2312LT1G`.
+
+**Root cause**
+
+The previous matcher normalized the whole BOM value string and then searched
+for normalized profile identities as substrings. That let the trailing `S` in
+`MOS` join across whitespace with `LN2312LT1G`, creating a false
+`S-LN2312LT1G` match.
+
+**Fix**
+
+Changed `profile_candidate_text.py` to match identities against raw text with
+non-alphanumeric boundaries, while still allowing punctuation between identity
+characters so orderable MPNs such as `SD103AWS-7-F` remain matchable.
+
+**Takeaway**
+
+Hardware MPN normalization is useful, but substring matching across token
+boundaries is too loose. Preserve punctuation tolerance inside a part number;
+require real boundaries around it.
+
 ## 2026-06-03 · Internal BOM PNs can hide reviewed public MPNs
 
 **Symptom**

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
+from hardwise.validation.pin_resolver import profile_pin_by_name, schematic_pin_for_profile_name
 from hardwise.validation.pins import voltage_for_net
 from hardwise.validation.types import ComponentValidation
 
@@ -181,18 +182,12 @@ def _validate_vds(
 
 
 def _pin_by_profile_name(component: Component, profile: DatasheetProfile, name: str):
-    number = _pin_number(profile, name)
-    if number is None:
-        return None
-    return component.pin_by_number(number)
+    return schematic_pin_for_profile_name(component, profile, name)
 
 
 def _pin_number(profile: DatasheetProfile, name: str) -> str | None:
-    normalized = _normalize(name)
-    for pin in profile.pins:
-        if _normalize(pin.name) == normalized:
-            return pin.number
-    return None
+    pin = profile_pin_by_name(profile, name)
+    return pin.number if pin is not None else None
 
 
 def _float_abs_max(profile: DatasheetProfile, key: str) -> float | None:

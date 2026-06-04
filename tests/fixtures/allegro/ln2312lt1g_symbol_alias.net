@@ -1,0 +1,7 @@
+$PACKAGES
+  ! 'SOT23' ! LN2312LT1G ; Q9
+$NETS
+  'P3V3_GATE' ; Q9.G
+  'GND' ; Q9.S
+  'P12V' ; Q9.D
+$END

@@ -172,6 +172,9 @@ def test_ln2312lt1g_profile_matches_public_sot23_pinout() -> None:
     assert profile.abs_max["vds"] == 20.0
     assert profile.abs_max["vgs"] == 8.0
     assert profile.pin_function == {"1": "Gate", "2": "Source", "3": "Drain"}
+    assert profile.pin_by_number("1").schematic_pin_aliases == ["G"]
+    assert profile.pin_by_number("2").schematic_pin_aliases == ["S"]
+    assert profile.pin_by_number("3").schematic_pin_aliases == ["D"]
 
 
 def test_ln2312lt1g_lowside_validation_uses_existing_mosfet_rules(tmp_path) -> None:
@@ -205,6 +208,27 @@ Q1,1,LN2312LT1G,LRC,LN2312LT1G
         "mosfet_vgs_rating",
         "mosfet_vds_rating",
     }
+
+
+def test_ln2312lt1g_validation_resolves_schematic_pin_aliases() -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/ln2312lt1g.json"))
+    design = _design(
+        "ln2312lt1g_symbol_alias.net",
+        "ln2312lt1g_symbol_alias_bom.csv",
+    )
+
+    results = validate_component_against_profile(design.components["Q9"], profile, design)
+
+    assert results.status == "PASS"
+    assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in results.pin_results] == [
+        ("1", "Gate", "P3V3_GATE", "PASS"),
+        ("2", "Source", "GND", "PASS"),
+        ("3", "Drain", "P12V", "PASS"),
+    ]
+    vgs = next(check for check in results.component_checks if check.check == "mosfet_vgs_rating")
+    assert vgs.status == "PASS"
+    assert "gate 3.3 V - source 0 V" in vgs.summary
+    assert vgs.evidence == ["datasheet:s-ln2312lt1g.pdf#p1"]
 
 
 def test_l2n7002klt1g_profile_matches_public_sot23_pinout() -> None:

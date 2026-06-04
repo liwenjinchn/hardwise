@@ -10,6 +10,7 @@ from typing import Literal
 from hardwise.bom.types import BomItem
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Design
+from hardwise.validation.pin_resolver import profile_pins_fit_component
 
 TextProfileStatus = Literal["matched", "no_result", "ambiguous"]
 
@@ -96,15 +97,14 @@ def _match_profile_identity_from_text(
     profiles_by_part: dict[str, list[Path]],
 ) -> _TextProfileMatch | None:
     text = " ".join(value for value in [item.value, item.description] if value)
-    normalized_text = _normalize_identity(text)
-    if not normalized_text:
+    if not _normalize_identity(text):
         return None
 
     matches_by_profile: dict[Path, tuple[int, str]] = {}
     for normalized_identity, paths in profiles_by_part.items():
         if not _looks_like_public_mpn_key(normalized_identity):
             continue
-        if normalized_identity not in normalized_text:
+        if not _text_contains_identity(text, normalized_identity):
             continue
         label = _profile_identity_label(normalized_identity, paths)
         for path in paths:
@@ -137,17 +137,17 @@ def _profile_pin_numbers_fit_design(
     component = design.components.get(refdes)
     if component is None:
         return False
-    profile_numbers = {pin.number for pin in profile.pins}
-    if not profile_numbers:
-        profile_numbers = set(profile.pin_function)
-    if not profile_numbers:
-        return True
-    schematic_numbers = {pin.number for pin in component.pins}
-    return profile_numbers.issubset(schematic_numbers)
+    return profile_pins_fit_component(component, profile)
 
 
 def _normalize_identity(value: str | None) -> str:
     return re.sub(r"[^a-z0-9]+", "", (value or "").lower())
+
+
+def _text_contains_identity(text: str, normalized_identity: str) -> bool:
+    chars = [re.escape(char) for char in normalized_identity]
+    pattern = r"(?<![A-Za-z0-9])" + r"[^A-Za-z0-9]*".join(chars) + r"(?![A-Za-z0-9])"
+    return re.search(pattern, text, re.IGNORECASE) is not None
 
 
 def _looks_like_public_mpn_key(value: str) -> bool:

@@ -1,0 +1,4 @@
+project: ln2312lt1g_symbol_alias
+targets:
+  - refdes: Q9
+    profile: data/datasheet_profiles/ln2312lt1g.json
