@@ -51,6 +51,68 @@ def test_suggest_profile_candidates_matches_profile_aliases(tmp_path: Path) -> N
     assert matches["U23"].profile == Path("data/datasheet_profiles/mpq8626.json")
 
 
+def test_suggest_profile_candidates_extracts_public_mpn_from_value_after_internal_pn(
+    tmp_path: Path,
+) -> None:
+    bom_path = tmp_path / "bom.csv"
+    bom_path.write_text(
+        "Reference,Quantity,Value,Manufacturer,MPN\n"
+        "U13,1,IC MPQ8626GD-Z QFN-14 power converter MPS,MPS,1273963\n"
+        "D26,1,TVS 1.5SMC15A SMC Littelfuse,Littelfuse,1276307\n"
+        "D27,1,Schottky SM340AF SMA-FL LRC,LRC,1260597\n"
+        "D36,1,Schottky SD103AWS-7-F SOD323 Diodes,Diodes,1179226\n",
+        encoding="utf-8",
+    )
+
+    report = suggest_profile_candidates(parse_bom(bom_path), Path("data/datasheet_profiles"))
+
+    matches = {candidate.refdes: candidate for candidate in report.candidates}
+    assert matches["U13"].match_status == "matched"
+    assert matches["U13"].identity == "MPQ8626GD-Z"
+    assert matches["U13"].identity_kind == "value_mpn"
+    assert matches["U13"].profile == Path("data/datasheet_profiles/mpq8626.json")
+    assert matches["D26"].profile == Path("data/datasheet_profiles/1_5smc15a.json")
+    assert matches["D27"].profile == Path("data/datasheet_profiles/sm340af.json")
+    assert matches["D36"].profile == Path("data/datasheet_profiles/sd103aws_7_f.json")
+
+
+def test_suggest_profile_candidates_rejects_value_mpn_when_pin_ids_do_not_fit(
+    tmp_path: Path,
+) -> None:
+    bom_path = tmp_path / "bom.csv"
+    bom_path.write_text(
+        "Reference,Quantity,Value,Manufacturer,MPN\n"
+        "U13,1,IC MPQ8626GD-Z QFN-14 power converter MPS,MPS,1273963\n",
+        encoding="utf-8",
+    )
+    netlist_path = tmp_path / "mpq_bad_pin_fit.net"
+    netlist_path.write_text(
+        """$PACKAGES
+  ! 'QFN14' ! MPQ8626_LOCAL ; U13
+$NETS
+  'P12V' ; U13.A
+  'GND' ; U13.B
+$END
+""",
+        encoding="utf-8",
+    )
+    design = build_design_from_netlist(parse_allegro_netlist(netlist_path))
+
+    report = suggest_profile_candidates(
+        parse_bom(bom_path),
+        Path("data/datasheet_profiles"),
+        design=design,
+    )
+
+    candidate = report.candidates[0]
+    assert candidate.refdes == "U13"
+    assert candidate.match_status == "no_result"
+    assert candidate.identity == "MPQ8626GD-Z"
+    assert candidate.identity_kind == "value_mpn"
+    assert candidate.profile is None
+    assert "pin IDs do not match" in candidate.reason
+
+
 def test_suggest_profile_candidates_matches_l2n7002klt1g_mpn(tmp_path: Path) -> None:
     bom_path = tmp_path / "bom.csv"
     bom_path.write_text(

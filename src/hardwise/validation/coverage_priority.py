@@ -42,12 +42,21 @@ DETERMINISTIC_VALIDATOR_FAMILIES = frozenset(
         "connector",
         "mosfet",
         "bjt",
+        "shift_register_piso",
+        "i2c_level_shift_repeater",
     }
 )
 
 SUGGESTED_FAMILY_TO_VALIDATOR_FAMILIES: dict[str, tuple[str, ...]] = {
     "transistor": ("mosfet", "bjt"),
-    "ic": ("buck", "half_bridge_gate_driver", "mcu_basic", "i2c_mux"),
+    "ic": (
+        "buck",
+        "half_bridge_gate_driver",
+        "mcu_basic",
+        "i2c_mux",
+        "shift_register_piso",
+        "i2c_level_shift_repeater",
+    ),
     "diode": ("diode",),
     "connector": ("connector",),
 }
@@ -253,4 +262,3 @@ def _validator_likelihood(suggested_family: str) -> float:
 
 def _escape_pipe(text: str) -> str:
     return text.replace("|", "\\|")
-

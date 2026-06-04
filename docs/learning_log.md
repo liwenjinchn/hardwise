@@ -8,6 +8,175 @@
 
 ---
 
+## 2026-06-03 · Internal BOM PNs can hide reviewed public MPNs
+
+**Symptom**
+
+D3c ranked several high-value coverage candidates that already had ready
+profiles and deterministic validators, but target generation still reported
+`no_result` when the BOM `MPN` column contained an internal numeric PN. The
+public orderable MPN was present only inside the BOM value/description text, for
+example `IC MPQ8626GD-Z ...` or `Schottky SM340AF ...`.
+
+**Root cause**
+
+The profile matcher correctly refused to treat internal PN values as public
+MPNs, but it stopped after the MPN-field miss. That made reusable public
+profiles unreachable unless a reviewed document-index row supplied the public
+MPN. In real BOMs this is the same class of problem PLM will solve later:
+company PN and manufacturer/orderable PN are different identities.
+
+**Fix**
+
+Added `validation/profile_candidate_text.py` as a narrow fallback after direct
+BOM identity and reviewed document-index matching. It scans BOM
+value/description text for exact normalized reviewed profile part numbers or
+aliases, emits `identity_kind=value_mpn`, and, when a `Design` is available,
+still requires the profile pin numbers to fit the local schematic symbol. The
+coverage smoke now proves five internal-PN rows can reach existing profiles:
+`MPQ8626GD-Z`, `PCA9617ADP`, `1.5SMC15A`, `SM340AF`, and `SD103AWS-7-F`.
+
+**Takeaway**
+
+Internal PN bridging is a candidate-assignment problem, not a validator problem.
+Until PLM supplies an explicit company-PN to public-MPN map, a BOM-text fallback
+can safely unlock reviewed public profiles only if it keeps exact alias matching
+and local pin-id fit checks.
+
+---
+
+## 2026-06-03 · Datasheet text and pin contracts need separate stores
+
+**Symptom**
+
+After D3a proved the MPQ8626 checker path, the open design question was where
+the extracted datasheet contract should live. Treating the contract as just
+another vector chunk would make pin limits and topology constraints hard to
+query deterministically; treating raw datasheet text as SQL rows would lose the
+semantic retrieval path needed for evidence snippets.
+
+**Root cause**
+
+A datasheet has two different shapes after ingest. Raw page/chunk text is
+unstructured evidence and works best in vector search. A reviewed
+`DatasheetProfile` is a materialized contract: part number aliases, ordered
+pins, limits, recommended topology, and evidence tokens. Those fields need
+relational identity checks and repeatable lookup by MPN/alias.
+
+**Fix**
+
+Added `store/profile_contracts.py` with profile header, alias, and ordered pin
+tables. `upsert_datasheet_profile()` stores a validated `DatasheetProfile`,
+rejects alias collisions, and `get_datasheet_profile()` reads the contract back
+by part number or alias. `store-datasheet-profile` is a CLI smoke command for
+that structure-DB path; raw PDF chunks remain in Chroma.
+
+**Takeaway**
+
+Use the vector DB for "show me the text evidence" and the structure DB for
+"this pin contract is now reviewed and queryable." The validator should consume
+structured contracts, not ad hoc retrieved prose.
+
+---
+
+## 2026-06-03 · HTML fulltext is a separate evidence shape from PDFs
+
+**Symptom**
+
+The MPQ8626 golden path needed text-extractable datasheet evidence. The reviewed
+direct PDF route could prove `%PDF-` bytes and SHA cacheability, but the
+AllDatasheet file was an image/preview PDF with zero text chunks. The same
+source family can expose useful page text through HTML fulltext views.
+
+**Root cause**
+
+PDF bytes and HTML fulltext pages are not interchangeable evidence artifacts.
+A PDF cache proves byte reproducibility; an HTML page can still be useful raw
+text evidence, but it needs its own source name, page inference, and boilerplate
+trimming instead of being silently treated as a PDF.
+
+**Fix**
+
+Added `ingest/html.py` and `extract-datasheet-html`. The extractor reads one
+local or public HTTP(S) HTML datasheet page, strips script/viewer/known mirror
+boilerplate, infers AllDatasheet-style page numbers, and emits normal
+`ChunkRecord` rows with `datasheet:<html-source>#p<N>` evidence tokens. It can
+write chunk JSONL for review or, when `--part-ref` is explicit, ingest those
+chunks into Chroma.
+
+**Takeaway**
+
+The evidence path can support multiple source shapes as long as each shape is
+named honestly. HTML fulltext can feed retrieval, but it is not a PDF cache and
+it still does not promote a profile contract without a separate reviewed
+contract-generation step.
+
+---
+
+## 2026-06-03 · Datasheet cache needs direct PDFs, not product pages
+
+**Symptom**
+
+D3a pivoted toward an `MPN -> datasheet -> contract -> topology check` golden
+path for `MPQ8626GD-Z`, but the likely MPS product/document URLs returned HTML
+or guarded download pages, and a Mouser direct-looking PDF URL returned an HTML
+error page locally. Datasheets.com was configured with a local API key, but the
+live API returned an HTTP 403 Cloudflare managed challenge.
+
+**Root cause**
+
+Distributor/manufacturer "datasheet" links are not all direct document bytes.
+Some are product pages, challenge pages, or routed downloads. A cache step that
+accepts arbitrary HTML would make the evidence ledger look reproducible while
+actually storing a moving web surface instead of a datasheet.
+
+**Fix**
+
+Added a reviewed-document cache boundary: only approved direct PDF rows from a
+local document index are fetched; bytes must start with `%PDF-`; rows with
+candidate/unapproved status are skipped; cached filenames are content SHA-256.
+The parser also accepts `ReviewStatus` / `LicenseNote` camel-style headers, not
+only snake_case headers. The Datasheets.com adapter reports the Cloudflare case
+as `cloudflare_challenge` instead of collapsing it into a generic provider
+error.
+
+**Takeaway**
+
+Datasheet discovery and datasheet caching are different trust steps. APIs or
+search may propose URLs, but the local evidence store should accept only
+reviewed direct PDFs with provenance and hash.
+
+---
+
+## 2026-06-03 · Direct PDF bytes can still be unusable for contract extraction
+
+**Symptom**
+
+AllDatasheet exposed a direct-looking MPQ8626 PDF URL that returned
+`application/pdf` and `%PDF-` bytes, so `fetch-approved-documents` cached it
+successfully. But `extract_chunks()` returned `0` chunks, preventing the
+datasheet-ingest part of the MPQ8626 golden path.
+
+**Root cause**
+
+The downloaded file was a 25KB, 1-page image/preview PDF, while the same site
+advertised a 23-page datasheet and exposed those pages through HTML fulltext
+views. A file can pass the direct-PDF cache boundary and still fail the stricter
+"text evidence for contract extraction" boundary.
+
+**Fix**
+
+Kept the cached PDF as a provenance smoke only and did not tie the MPQ8626
+contract to it. The existing MPQ8626 deterministic validation was still run
+against `data/datasheet_profiles/mpq8626.json` and passed:
+`U13 PASS, pin PASS/WARN/ERROR=14/0/0, component checks=2/0/0`.
+
+**Takeaway**
+
+The golden path has two gates: direct-PDF cacheability and text-extractable
+evidence. An HTML fulltext source may become a future explicit extractor, but it
+should not be silently treated as the same evidence shape as PDF chunks.
+
 ## 2026-06-03 · Ready profile still needs local-symbol pin-id fit
 
 **Symptom**

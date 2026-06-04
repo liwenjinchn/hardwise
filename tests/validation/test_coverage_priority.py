@@ -25,6 +25,8 @@ def test_validator_family_mapping_tracks_dispatch_family_names() -> None:
         "connector",
         "mosfet",
         "bjt",
+        "shift_register_piso",
+        "i2c_level_shift_repeater",
     }
     mapped = {
         validator
@@ -200,4 +202,3 @@ def _group(
         "document_status": "no_result",
         "document_reason": "fixture",
     }
-

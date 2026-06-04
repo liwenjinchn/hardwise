@@ -14,6 +14,7 @@ from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.validation.profile_candidate_documents import candidates_from_document_identity
 from hardwise.validation.profile_candidate_manifest import render_manifest
+from hardwise.validation.profile_candidate_text import candidates_from_text_identity
 
 if TYPE_CHECKING:
     from hardwise.ir.types import Design
@@ -144,6 +145,21 @@ def _candidate_for_item(
                     candidates=document_candidate.candidates,
                 )
                 for document_candidate in document_candidates
+            ]
+        text_candidates = candidates_from_text_identity(item, profiles_by_part, design=design)
+        if text_candidates is not None:
+            return [
+                _candidate(
+                    refdes=text_candidate.refdes,
+                    item=item,
+                    status=text_candidate.status,
+                    identity=text_candidate.identity,
+                    identity_kind="value_mpn",
+                    reason=text_candidate.reason,
+                    profile=text_candidate.profile,
+                    candidates=text_candidate.candidates,
+                )
+                for text_candidate in text_candidates
             ]
         return [
             _candidate(
