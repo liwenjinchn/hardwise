@@ -8,6 +8,34 @@
 
 ---
 
+## 2026-06-04 · Group rows need an explicit validated-refdes target
+
+**Symptom**
+
+The Dia-like workbench slice made the left rail group-oriented, but right-side
+detail panels are refdes-oriented. A grouped row could highlight itself without
+switching the detail panel when its `data-row-ref` was the BOM group id rather
+than a validated refdes.
+
+**Root cause**
+
+`ProjectComponentGroup` is a coverage artifact, while `ValidationReport` detail
+panels are deterministic per-component artifacts. Treating the group id as if
+it were a component id mixed two display grains.
+
+**Fix**
+
+`component_group_table()` now accepts the set of validated refdes. If a group
+contains one, the row targets that refdes so the existing panel can activate.
+Groups without validated refdes keep their group id and remain manual/coverage
+rows.
+
+**Takeaway**
+
+UI navigation may bridge coverage and validation artifacts, but the bridge must
+be explicit. A group can point to an already validated sample; it must not
+create a new electrical detail panel for an unvalidated group.
+
 ## 2026-06-04 · MPQ8626 draft is not ready from the reproduced HTML evidence
 
 **Symptom**

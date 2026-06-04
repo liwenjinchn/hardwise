@@ -226,6 +226,8 @@ ComponentNotFound(
 
 **v5.38 (MPQ8626 contract review gate held)**: 并行 review lane 复跑 `MPQ8626GD` 证据链后，没有把 draft 提升成 `ready`。原因很具体：当前可复现公开 fixture 只产出 `datasheet:mpq8626.html#p1` 一个 HTML 页 token，能支持 `doc:power_v1_docs.csv#line2`、VIN `2.85-16 V`、`PGND1/SW1/VIN/BST` 等少数字段和 SW-to-inductor 片段，但不能证明现有 ready profile 的完整 14-pin map，也不能复现它引用的 `datasheet:mpq8626.pdf#p1/#p3/#p5/#p17`。所以这次的正确结论是保留 `needs_review` draft、不改 `data/datasheet_profiles/mpq8626.json`；要 promotion，必须先拿到公开 text-extractable PDF 或覆盖完整页表的 public HTML page set。
 
+**v5.39 (Dia-like static workbench UI slice)**: UI 线第一片没有改任何 validator truth，而是把静态 workbench 的展示结构往 Dia 截图靠：左侧 `left-stack` 合并器件/器件组列表和验证摘要，右侧详情增加 `报告 / 原理图连接` tabs。`报告` 仍展示 `ValidationReport` / `DatasheetProfile` 已有的引脚、型号、合规、证据、总结；`原理图连接` 只展示 parsed netlist topology 和范围边界，不推断 boardview/走线/PCB。一个细节很重要：project workbench 左侧是 BOM group 粒度，右侧 panel 是 refdes 粒度，所以 `component_group_table()` 只在组内已有 validated refdes 时把 row target 映射到该 refdes；未验证组仍是 L3/manual coverage row，不会凭点击生成电气详情。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？

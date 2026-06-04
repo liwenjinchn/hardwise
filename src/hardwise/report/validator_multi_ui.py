@@ -83,26 +83,28 @@ def render(
         </div>
       </header>
       <section class="workspace">
-        <aside class="rail" aria-label="器件">
-          <div class="rail-head">
-            <div class="section-title">
-              <h2>器件</h2>
-              <span class="count">{len(components)}</span>
+        <div class="left-stack" aria-label="器件与验证摘要">
+          <aside class="rail" aria-label="器件">
+            <div class="rail-head">
+              <div class="section-title">
+                <h2>器件</h2>
+                <span class="count">{len(components)}</span>
+              </div>
+              <input class="filter" data-filter placeholder="按位号过滤..." type="search">
             </div>
-            <input class="filter" data-filter placeholder="按位号过滤..." type="search">
-          </div>
-          <div class="table-wrap">{_component_table(components, validated, active_refdes, bom_report)}</div>
-        </aside>
-        <aside class="verify" aria-label="验证">
-          <div class="verify-head">
-            <div class="section-title">
-              <h2>验证</h2>
-              <span class="pill">验证完成</span>
+            <div class="table-wrap">{_component_table(components, validated, active_refdes, bom_report)}</div>
+          </aside>
+          <aside class="verify" aria-label="验证">
+            <div class="verify-head">
+              <div class="section-title">
+                <h2>验证</h2>
+                <span class="pill">验证完成</span>
+              </div>
+              <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
             </div>
-            <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
-          </div>
-          <div class="verified-list">{_validated_cards(ordered, active_refdes)}</div>
-        </aside>
+            <div class="verified-list">{_validated_cards(ordered, active_refdes)}</div>
+          </aside>
+        </div>
         <section class="detail" aria-label="验证报告">
           {_detail_panels(design, ordered, active_refdes, generated_at)}
         </section>
@@ -223,6 +225,8 @@ def _detail_panel(
     )
     download_href = "data:text/markdown;charset=utf-8," + quote(markdown)
     active = " active" if validation.refdes == active_refdes else ""
+    report_tab = f"{validation.refdes}-report"
+    topology_tab = f"{validation.refdes}-topology"
     return f"""
     <article class="panel{active}" data-panel="{escape(validation.refdes)}">
       <div class="detail-head">
@@ -235,23 +239,31 @@ def _detail_panel(
           <a class="button secondary" href="#component-index">器件</a>
         </div>
       </div>
-      <div class="kpis">
-        <div class="kpi"><span>PASS 引脚</span><strong>{counts["PASS"]}</strong></div>
-        <div class="kpi"><span>WARN 引脚</span><strong>{counts["WARN"]}</strong></div>
-        <div class="kpi"><span>ERROR 引脚</span><strong>{counts["ERROR"]}</strong></div>
-        <div class="kpi"><span>PASS 检查</span><strong>{component_counts["PASS"]}</strong></div>
-        <div class="kpi"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
-        <div class="kpi"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
+      <div class="detail-tabs" role="tablist" aria-label="详情视图">
+        <button class="detail-tab active" data-detail-tab="{escape(report_tab)}" type="button" role="tab" aria-selected="true">报告</button>
+        <button class="detail-tab" data-detail-tab="{escape(topology_tab)}" type="button" role="tab" aria-selected="false">原理图连接</button>
       </div>
-      {pin_summary(validation)}
-      {basic_info(component, validation)}
-      {model_check(validation)}
-      {connectivity_table(validation, component, design)}
-      {pin_consistency(component, validation, item.profile)}
-      {compliance_checks(validation)}
-      {evidence_details(validation, item.profile)}
-      {summary(validation)}
-      {topology_panel(component, design)}
-      {scope_panel(generated_at, item.profile_path)}
+      <div class="detail-tab-panel active" data-detail-tab-panel="{escape(report_tab)}">
+        <div class="kpis">
+          <div class="kpi"><span>PASS 引脚</span><strong>{counts["PASS"]}</strong></div>
+          <div class="kpi"><span>WARN 引脚</span><strong>{counts["WARN"]}</strong></div>
+          <div class="kpi"><span>ERROR 引脚</span><strong>{counts["ERROR"]}</strong></div>
+          <div class="kpi"><span>PASS 检查</span><strong>{component_counts["PASS"]}</strong></div>
+          <div class="kpi"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
+          <div class="kpi"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
+        </div>
+        {pin_summary(validation)}
+        {basic_info(component, validation)}
+        {model_check(validation)}
+        {connectivity_table(validation, component, design)}
+        {pin_consistency(component, validation, item.profile)}
+        {compliance_checks(validation)}
+        {evidence_details(validation, item.profile)}
+        {summary(validation)}
+      </div>
+      <div class="detail-tab-panel" data-detail-tab-panel="{escape(topology_tab)}">
+        {topology_panel(component, design)}
+        {scope_panel(generated_at, item.profile_path)}
+      </div>
     </article>
     """

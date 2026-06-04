@@ -93,10 +93,13 @@ def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: 
 
     html = output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
+    assert 'class="left-stack" aria-label="器件与验证摘要"' in html
     assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert '<article class="panel active" data-panel="U12">' in html
+    assert 'data-detail-tab="U12-report"' in html
+    assert 'data-detail-tab-panel="U12-topology"' in html
     assert 'status pass">PASS' in html
     assert 'status error">ERROR' in html
     assert "下载报告" in html
@@ -335,6 +338,8 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     html = html_output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
     assert "mixed_power_stage" in html
+    assert 'class="left-stack" aria-label="器件与验证摘要"' in html
+    assert 'data-row-ref="U12"' in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert 'data-select-ref="U3"' in html
@@ -526,6 +531,8 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
 
     html = html_output.read_text(encoding="utf-8")
     assert "MPQ8626 public MPS product page and datasheet" in html
+    assert 'data-detail-tab="U13-report"' in html
+    assert 'data-detail-tab-panel="U13-topology"' in html
     assert "doc:power_v1_docs.csv#line" in html
     assert "buck_inductor" in html
     assert "no external freewheel diode is required" in html

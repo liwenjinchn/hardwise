@@ -90,10 +90,15 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     )
 
     assert "Hardwise / 原理图检验工具" in html
+    assert 'class="left-stack" aria-label="器件与验证摘要"' in html
     assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert '<article class="panel active" data-panel="U12">' in html
+    assert 'data-detail-tab="U12-report"' in html
+    assert 'data-detail-tab-panel="U12-topology"' in html
+    assert ">报告</button>" in html
+    assert ">原理图连接</button>" in html
     assert 'status pass">PASS' in html
     assert 'status error">ERROR' in html
     assert "下载报告" in html
@@ -155,6 +160,7 @@ def test_render_project_workbench_includes_zero_profile_gap(tmp_path: Path) -> N
     )
 
     assert "<span>已验证</span><strong>3</strong>" in html
+    assert 'class="left-stack" aria-label="器件与验证摘要"' in html
     assert "L3 manual" in html
     assert "L1 deterministic" in html
     assert "通用被动件检查" in html

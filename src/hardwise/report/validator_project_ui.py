@@ -92,26 +92,28 @@ def render_project_workbench(
         </div>
       </header>
       <section class="workspace">
-        <aside class="rail" aria-label="器件">
-          <div class="rail-head">
-            <div class="section-title">
-              <h2>器件</h2>
-              <span class="count">{rail_count}</span>
+        <div class="left-stack" aria-label="器件与验证摘要">
+          <aside class="rail" aria-label="器件">
+            <div class="rail-head">
+              <div class="section-title">
+                <h2>器件</h2>
+                <span class="count">{rail_count}</span>
+              </div>
+              <input class="filter" data-filter placeholder="按位号过滤..." type="search">
             </div>
-            <input class="filter" data-filter placeholder="按位号过滤..." type="search">
-          </div>
-          <div class="table-wrap">{_rail_table(components, validated, active_refdes, index, bom_report)}</div>
-        </aside>
-        <aside class="verify" aria-label="验证">
-          <div class="verify-head">
-            <div class="section-title">
-              <h2>验证</h2>
-              <span class="pill">{_verify_pill(ordered)}</span>
+            <div class="table-wrap">{_rail_table(components, validated, active_refdes, index, bom_report)}</div>
+          </aside>
+          <aside class="verify" aria-label="验证">
+            <div class="verify-head">
+              <div class="section-title">
+                <h2>验证</h2>
+                <span class="pill">{_verify_pill(ordered)}</span>
+              </div>
+              <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
             </div>
-            <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
-          </div>
-          <div class="verified-list">{_verify_list(ordered, active_refdes, index)}</div>
-        </aside>
+            <div class="verified-list">{_verify_list(ordered, active_refdes, index)}</div>
+          </aside>
+        </div>
         <section class="detail" aria-label="验证报告">
           {_detail_area(design, ordered, active_refdes, generated_at, index)}
         </section>
@@ -132,7 +134,7 @@ def _rail_table(
     bom_report: BomMatchReport | None,
 ) -> str:
     if index.component_groups:
-        return component_group_table(index.component_groups)
+        return component_group_table(index.component_groups, validated_refdes=set(validated))
     return _component_table(components, validated, active_refdes, index, bom_report)
 
 

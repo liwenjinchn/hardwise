@@ -82,6 +82,10 @@ def evidence_chips_html(tokens: list[str]) -> str: ...
   imply current direction, PCB placement, routing, or board geometry.
 - No-profile/project gap rows remain coverage artifacts. Rendering must not turn
   them into electrical judgements.
+- Project workbench group rows may point to an already validated refdes detail
+  panel for navigation, but only when that refdes already has a
+  `ValidationReport`. A group id itself is not a component id and must not
+  create a new electrical detail panel.
 - Markdown downloads and HTML detail panels should stay in parity for major
   report sections, especially evidence and pin-consistency sections.
 - Trust labels are presentation provenance, not validator states:
@@ -103,6 +107,8 @@ def evidence_chips_html(tokens: list[str]) -> str: ...
 | Net has many neighbors | Cap neighbor display and show `+N more` |
 | Pin consistency mismatch | Render report-only WARN; do not change `ValidationReport.status` |
 | No-profile project row | Keep coverage/no-profile messaging; do not emit electrical PASS/WARN/ERROR |
+| Group row has a validated refdes sample | It may navigate to that existing refdes panel |
+| Group row has no validated refdes | Keep group coverage behavior; do not synthesize a refdes detail |
 | Deterministic validation row/check | Render `L1 deterministic` without changing PASS/WARN/ERROR |
 | Manual/no-profile coverage row | Render `L3 manual` and keep coverage wording |
 | Evidence token present | Render a copyable/searchable chip whose text is the token |
@@ -115,10 +121,14 @@ def evidence_chips_html(tokens: list[str]) -> str: ...
   verdict.
 - Good: The same row shows `L1 deterministic` plus
   `<span class="evidence-chip">datasheet:xl1509.pdf#p9</span>`.
+- Good: A project group row containing validated `U12` selects the existing
+  `U12` panel; an unvalidated group remains an `L3 manual` coverage row.
 - Base: A report rendered without `profile` still shows pin/check evidence from
   `ValidationReport` and an explicit profile-detail unavailable note.
 - Bad: A no-profile LED row gets an LLM-like polarity judgement in the static
   project workbench.
+- Bad: A group row uses the BOM group id as if it were a refdes and creates an
+  electrical detail panel for an unvalidated group.
 - Bad: A renderer shows only an icon or CSS class for evidence and hides the raw
   token text from browser search/copy.
 - Bad: A topology path is worded as current flow or PCB placement evidence.
