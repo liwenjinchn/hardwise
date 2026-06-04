@@ -26,6 +26,11 @@ class DocumentIndexEntry(BaseModel):
     title: str
     url: str
     description: str | None = None
+    source: str | None = None
+    review_status: str | None = None
+    license_note: str | None = None
+    local_path: str | None = None
+    sha256: str | None = None
     source_file: Path
     source_line: int
 

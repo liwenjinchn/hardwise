@@ -47,6 +47,20 @@ def _parse_delimited_index(path: Path, text: str, delimiter: str) -> list[Docume
     value_field = _find_field(fields, ["value", "part", "part_name", "device"])
     title_field = _find_field(fields, ["title", "document", "document_title", "datasheet", "name"])
     description_field = _find_field(fields, ["description", "desc"])
+    source_field = _find_field(fields, ["source", "retrieval_method", "provider"])
+    review_status_field = _find_field(
+        fields,
+        ["review_status", "reviewstatus", "status", "approved"],
+    )
+    license_note_field = _find_field(
+        fields,
+        ["license_note", "licensenote", "license", "terms_note", "termsnote"],
+    )
+    local_path_field = _find_field(
+        fields,
+        ["local_path", "localpath", "cached_path", "cachedpath", "cache_path", "cachepath"],
+    )
+    sha256_field = _find_field(fields, ["sha256", "sha_256", "hash"])
 
     entries: list[DocumentIndexEntry] = []
     for line_no, row in enumerate(reader, start=2):
@@ -68,6 +82,15 @@ def _parse_delimited_index(path: Path, text: str, delimiter: str) -> list[Docume
                 description=_blank_to_none(
                     row.get(description_field) if description_field else None
                 ),
+                source=_blank_to_none(row.get(source_field) if source_field else None),
+                review_status=_blank_to_none(
+                    row.get(review_status_field) if review_status_field else None
+                ),
+                license_note=_blank_to_none(
+                    row.get(license_note_field) if license_note_field else None
+                ),
+                local_path=_blank_to_none(row.get(local_path_field) if local_path_field else None),
+                sha256=_blank_to_none(row.get(sha256_field) if sha256_field else None),
                 source_file=path,
                 source_line=line_no,
             )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import typer
@@ -779,6 +780,97 @@ def query_datasheet(
         )
 
 
+@app.command(name="extract-datasheet-html")
+def extract_datasheet_html_cmd(
+    source: str = typer.Argument(..., help="Local path or public HTTP(S) HTML datasheet page."),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output chunk JSONL path (default: reports/<source>-html-chunks.jsonl).",
+    ),
+    source_name: str | None = typer.Option(
+        None,
+        "--source-name",
+        help="Evidence source name used in datasheet:<source>#p<N> tokens.",
+    ),
+    page: int | None = typer.Option(
+        None,
+        "--page",
+        help="Override the 1-indexed datasheet page number.",
+    ),
+    part_ref: str | None = typer.Option(
+        None,
+        "--part-ref",
+        help="Optional part identity/ref used to ingest chunks into Chroma.",
+    ),
+    persist_dir: Path = typer.Option(
+        Path("data/chroma"),
+        "--persist-dir",
+        help="Chroma persistence directory, used only with --part-ref.",
+    ),
+    chunk_size: int = typer.Option(500, "--chunk-size"),
+    overlap: int = typer.Option(100, "--overlap"),
+) -> None:
+    """Extract chunks from a public HTML datasheet fulltext page."""
+
+    import json
+
+    from hardwise.ingest.html import HtmlDatasheetExtractError, extract_html_chunks
+
+    if page is not None and page < 1:
+        typer.echo("error: --page must be >= 1", err=True)
+        raise typer.Exit(1)
+    if chunk_size < 1:
+        typer.echo("error: --chunk-size must be >= 1", err=True)
+        raise typer.Exit(1)
+    if overlap < 0:
+        typer.echo("error: --overlap must be >= 0", err=True)
+        raise typer.Exit(1)
+
+    try:
+        chunks = extract_html_chunks(
+            source,
+            source_name=source_name,
+            page=page,
+            chunk_size=chunk_size,
+            overlap=overlap,
+        )
+    except HtmlDatasheetExtractError as e:
+        typer.echo(f"error: html extract failed: {e}", err=True)
+        raise typer.Exit(1) from e
+    except Exception as e:
+        typer.echo(f"error: html extract failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{_safe_output_stem(source_name or source)}-html-chunks.jsonl"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    with output.open("w", encoding="utf-8") as f:
+        for chunk in chunks:
+            row = chunk.model_dump(mode="json")
+            row["evidence_token"] = chunk.evidence_token
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    ingested = 0
+    if part_ref:
+        from hardwise.store.vector import create_collection, ingest_chunks
+
+        collection = create_collection(persist_dir)
+        ingested = ingest_chunks(collection, chunks, part_ref=part_ref)
+
+    typer.echo(
+        f"html-datasheet-extract: {output} "
+        f"(chunks={len(chunks)}, source={chunks[0].source_pdf if chunks else source_name or source}, "
+        f"page={chunks[0].page if chunks else page or 'unknown'}, "
+        f"ingested={ingested if part_ref else 'off'})"
+    )
+
+
 @app.command(name="report-pin-profile")
 def report_pin_profile(
     profile_path: Path = typer.Argument(..., help="Path to a DatasheetProfile JSON file."),
@@ -809,6 +901,55 @@ def report_pin_profile(
     report_text = render(profile, source_path=profile_path)
     output.write_text(report_text, encoding="utf-8")
     typer.echo(f"pin-profile: {output} ({len(profile.pins)} pins, part={profile.part_number})")
+
+
+@app.command(name="store-datasheet-profile")
+def store_datasheet_profile(
+    profile_path: Path = typer.Argument(..., help="Path to a DatasheetProfile JSON file."),
+    db_path: Path = typer.Option(
+        ...,
+        "--db-path",
+        help="SQLite database path for the structured profile contract store.",
+    ),
+) -> None:
+    """Store a structured datasheet profile contract in the relational store."""
+
+    from hardwise.ir.profile import DatasheetProfile
+    from hardwise.store.profile_contracts import (
+        DatasheetProfileStoreError,
+        get_datasheet_profile,
+        upsert_datasheet_profile,
+    )
+    from hardwise.store.relational import create_store
+
+    try:
+        profile = DatasheetProfile.load(profile_path)
+    except Exception as e:
+        typer.echo(f"error: profile load failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    session = create_store(db_path)
+    try:
+        upsert_datasheet_profile(session, profile, source_path=profile_path)
+        stored = get_datasheet_profile(session, profile.part_number)
+    except DatasheetProfileStoreError as e:
+        typer.echo(f"error: profile store failed: {e}", err=True)
+        raise typer.Exit(1) from e
+    except Exception as e:
+        typer.echo(f"error: profile store failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+    finally:
+        session.close()
+
+    if stored is None:
+        typer.echo(f"error: stored profile not found: {profile.part_number}", err=True)
+        raise typer.Exit(1)
+
+    typer.echo(
+        f"datasheet-profile-store: {display_path(db_path)} "
+        f"(part={stored.part_number}, aliases={len(stored.part_number_aliases)}, "
+        f"pins={len(stored.pins)}, status={stored.review_status})"
+    )
 
 
 @app.command(name="report-component-validation")
@@ -1371,6 +1512,154 @@ def build_document_index_candidates(
     )
 
 
+@app.command(name="fetch-approved-documents")
+def fetch_approved_documents_cmd(
+    document_index: Path = typer.Argument(
+        ...,
+        help="Reviewed document-index CSV/TSV with direct public PDF URLs.",
+    ),
+    cache_dir: Path = typer.Option(
+        Path("data/datasheets/cache"),
+        "--cache-dir",
+        help="Directory for SHA-addressed cached PDFs.",
+    ),
+    metadata: Path | None = typer.Option(
+        Path("data/datasheets/documents.jsonl"),
+        "--metadata",
+        help="Append JSONL provenance records here.",
+    ),
+    no_metadata: bool = typer.Option(
+        False,
+        "--no-metadata",
+        help="Do not write provenance JSONL records.",
+    ),
+    timeout_seconds: int = typer.Option(
+        20,
+        "--timeout",
+        help="Per-document HTTP timeout in seconds.",
+    ),
+) -> None:
+    """Fetch reviewed public datasheet PDFs into the local document cache."""
+
+    from hardwise.documents import fetch_approved_documents, parse_document_index
+
+    if timeout_seconds < 1:
+        typer.echo("error: --timeout must be >= 1", err=True)
+        raise typer.Exit(1)
+    resolved_metadata = None if no_metadata else metadata
+
+    try:
+        index = parse_document_index(document_index)
+        report = fetch_approved_documents(
+            index,
+            cache_dir,
+            metadata_path=resolved_metadata,
+            timeout_seconds=timeout_seconds,
+        )
+    except Exception as e:
+        typer.echo(f"error: document fetch failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    typer.echo(
+        f"documents-fetch: {cache_dir} "
+        f"(fetched={len(report.fetched)}, skipped={len(report.skipped)}, "
+        f"metadata={display_path(resolved_metadata) if resolved_metadata else 'off'})"
+    )
+    for skipped in report.skipped[:5]:
+        typer.echo(
+            f"skip line {skipped.source_line}: {skipped.reason} "
+            f"({skipped.title})",
+            err=True,
+        )
+
+
+@app.command(name="search-datasheets-com")
+def search_datasheets_com_cmd(
+    query: str = typer.Argument(..., help="MPN or part search query."),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output reviewable document-index CSV path.",
+    ),
+    limit: int = typer.Option(
+        5,
+        "--limit",
+        help="Maximum search results to request (1-10).",
+    ),
+    page: int = typer.Option(
+        1,
+        "--page",
+        help="Search result page to request.",
+    ),
+    timeout_seconds: int = typer.Option(
+        20,
+        "--timeout",
+        help="HTTP timeout in seconds.",
+    ),
+) -> None:
+    """Search Datasheets.com and write candidate document-index rows."""
+
+    import os
+
+    from dotenv import load_dotenv
+
+    from hardwise.documents.datasheets_com import (
+        DATASHEETS_COM_API_KEY_ENV,
+        DATASHEETS_COM_API_KEY_ENV_LEGACY,
+        lookup_datasheets_com,
+        render_datasheets_com_document_index_csv,
+    )
+
+    if limit < 1 or limit > 10:
+        typer.echo("error: --limit must be between 1 and 10", err=True)
+        raise typer.Exit(1)
+    if page < 1:
+        typer.echo("error: --page must be >= 1", err=True)
+        raise typer.Exit(1)
+    if timeout_seconds < 1:
+        typer.echo("error: --timeout must be >= 1", err=True)
+        raise typer.Exit(1)
+
+    load_dotenv(override=True)
+    api_key = os.environ.get(DATASHEETS_COM_API_KEY_ENV) or os.environ.get(
+        DATASHEETS_COM_API_KEY_ENV_LEGACY
+    )
+    if api_key == "replace_me":
+        api_key = None
+
+    report = lookup_datasheets_com(
+        query,
+        api_key=api_key,
+        limit=limit,
+        page=page,
+        timeout_seconds=timeout_seconds,
+    )
+    if report.status in {
+        "not_configured",
+        "rate_limited",
+        "cloudflare_challenge",
+        "provider_error",
+    }:
+        typer.echo(f"error: datasheets.com lookup failed: {report.status}", err=True)
+        if report.reason:
+            typer.echo(f"reason: {report.reason}", err=True)
+        raise typer.Exit(1)
+
+    if output is None:
+        output = Path("reports") / f"{_safe_output_stem(query)}-datasheets-com-candidates.csv"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(render_datasheets_com_document_index_csv(report), encoding="utf-8")
+
+    remaining = report.rate_limits.remaining_month
+    remaining_text = f", remaining_month={remaining}" if remaining is not None else ""
+    typer.echo(
+        f"datasheets-com-lookup: {output} "
+        f"(status={report.status}, results={len(report.results)}, "
+        f"direct_pdfs={report.direct_datasheet_count}{remaining_text})"
+    )
+
+
 @app.command(name="recommend-next-family")
 def recommend_next_family(
     validation_index: Path = typer.Argument(
@@ -1570,6 +1859,13 @@ def _load_allegro_design(netlist_path: Path):
 def _report_source_name(source: Path) -> str:
     """Return a stable report basename for a netlist source path."""
     return source.name if source.is_dir() else source.stem
+
+
+def _safe_output_stem(value: str) -> str:
+    """Return a conservative filesystem stem for generated report paths."""
+
+    stem = re.sub(r"[^A-Za-z0-9._-]+", "-", value.strip()).strip("-._")
+    return stem.lower() or "datasheets-com"
 
 
 def _bom_report_mismatch_count(report) -> int:

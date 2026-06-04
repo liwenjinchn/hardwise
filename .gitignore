@@ -44,8 +44,13 @@ data/chroma/
 reports/*.md
 reports/*.html
 reports/*.jsonl
+reports/*.yaml
+reports/*.yml
 reports/eval/
 !reports/.gitkeep
+
+# Browser automation/debug artifacts
+.playwright-mcp/
 
 # Submission package — resumes and role-specific materials are delivered
 # separately by email/cloud drive, not committed to the repo.
