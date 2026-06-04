@@ -224,6 +224,8 @@ ComponentNotFound(
 
 **v5.37 (D3a evidence chunks to needs-review contract draft)**: D3a 收口点是把 `MPQ8626GD` 的 public text evidence 接进 profile draft，但不绕过人工审核。新增 `draft-datasheet-profile --evidence-chunks`：从 `extract-datasheet-html` 或 PDF ingest 产出的 chunk JSONL 里读取/派生 `datasheet:mpq8626.html#p1` 这种页级 token，写入 `evidence.chunks.*`；document-index provenance 仍在 `document.source=doc:power_v1_docs.csv#line2`。输出强制保持 `review_status=needs_review`，不会自动填 pin facts、不会自动变 `ready`。smoke 链路现在能串起来：HTML chunk extract -> `design-validator-ui` 生成 MPQ8626 project index -> `draft-datasheet-profile --evidence-chunks` 生成可审阅草稿 -> `store-datasheet-profile` round-trip；真正 PASS 仍来自已有 reviewed ready `mpq8626.json` topology checker。
 
+**v5.38 (MPQ8626 contract review gate held)**: 并行 review lane 复跑 `MPQ8626GD` 证据链后，没有把 draft 提升成 `ready`。原因很具体：当前可复现公开 fixture 只产出 `datasheet:mpq8626.html#p1` 一个 HTML 页 token，能支持 `doc:power_v1_docs.csv#line2`、VIN `2.85-16 V`、`PGND1/SW1/VIN/BST` 等少数字段和 SW-to-inductor 片段，但不能证明现有 ready profile 的完整 14-pin map，也不能复现它引用的 `datasheet:mpq8626.pdf#p1/#p3/#p5/#p17`。所以这次的正确结论是保留 `needs_review` draft、不改 `data/datasheet_profiles/mpq8626.json`；要 promotion，必须先拿到公开 text-extractable PDF 或覆盖完整页表的 public HTML page set。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？

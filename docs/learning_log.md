@@ -8,6 +8,38 @@
 
 ---
 
+## 2026-06-04 · MPQ8626 draft is not ready from the reproduced HTML evidence
+
+**Symptom**
+
+The MPQ8626 review lane needed to decide whether the `MPQ8626GD`
+`needs_review` draft could become a reviewed ready contract. The existing
+`data/datasheet_profiles/mpq8626.json` is already marked `ready`, but its
+field evidence points at `datasheet:mpq8626.pdf#p1/#p3/#p5/#p17`.
+
+**Root cause**
+
+The reproduced public fixture path produced only one page-level HTML token:
+`datasheet:mpq8626.html#p1`. That excerpt supports document provenance, the
+draft identity, VIN range, a few pin facts (`PGND1`, `SW1`, `VIN`, `BST`), and a
+generic SW-to-inductor application statement. It does not reproduce the full
+14-pin table or the PDF page tokens used by the existing ready profile.
+
+**Fix**
+
+Kept `/tmp/hardwise-mpq8626-needs-review-profile.json` as
+`review_status=needs_review` and did not update
+`data/datasheet_profiles/mpq8626.json`. Recorded the audit table in the D3a
+Trellis implementation notes, including the exact missing evidence needed for a
+future promotion.
+
+**Takeaway**
+
+A page token attached to a draft is not a blanket contract proof. Promotion to
+`ready` requires every field in the structured profile to be backed by
+reproduced public page-level evidence for the same source shape named in the
+contract.
+
 ## 2026-06-04 · Evidence chunks can seed drafts without promoting contracts
 
 **Symptom**

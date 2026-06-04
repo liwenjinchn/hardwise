@@ -320,6 +320,65 @@ Review the MPQ8626 needs-review draft against public page-level evidence, then
 promote only confirmed fields into the ready contract if the evidence supports
 each pin/topology claim.
 
+## Parallel Session 3: MPQ8626 Contract Review Audit
+
+Reproduced the public evidence path:
+
+```bash
+uv run hardwise extract-datasheet-html \
+  tests/fixtures/datasheets/mpq8626_fulltext.html \
+  --source-name mpq8626.html \
+  --output /tmp/hardwise-mpq8626-html-chunks.jsonl \
+  --chunk-size 1000
+uv run hardwise design-validator-ui \
+  tests/fixtures/allegro/mpq8626_sync_buck.net \
+  tests/fixtures/allegro/mpq8626_sync_buck_bom.csv \
+  --document-index data/document_indexes/power_v1_docs.csv \
+  --output /tmp/hardwise-mpq8626-workbench.html \
+  --index-output /tmp/hardwise-mpq8626-index.md \
+  --index-json /tmp/hardwise-mpq8626-index.json
+uv run hardwise draft-datasheet-profile \
+  /tmp/hardwise-mpq8626-index.json \
+  --identity MPQ8626GD \
+  --document-index data/document_indexes/power_v1_docs.csv \
+  --evidence-chunks /tmp/hardwise-mpq8626-html-chunks.jsonl \
+  --output /tmp/hardwise-mpq8626-needs-review-profile.json
+```
+
+Results:
+
+```text
+html-datasheet-extract: chunks=1, source=mpq8626.html, page=1
+design-validator-ui: validated=1, PASS/WARN/ERROR=1/0/0, manual=3
+profile-draft: part_number=MPQ8626GD, review_status=needs_review, evidence_chunks=on
+```
+
+Audit decision: do not promote the MPQ8626 draft to `ready` from this evidence
+set. The only reproduced public page token is `datasheet:mpq8626.html#p1`, and
+the fixture contains a compact excerpt, not the full datasheet pages referenced
+by the existing reviewed profile (`datasheet:mpq8626.pdf#p1/#p3/#p5/#p17`).
+
+| Field area | Current ready value | Reproduced evidence | Audit | Action |
+|---|---|---|---|---|
+| Document provenance | MPS public MPQ8626 product page row | `doc:power_v1_docs.csv#line2` | Pass | Keep draft provenance. |
+| Draft evidence token | Chunk source/page available | `datasheet:mpq8626.html#p1` | Pass | Keep draft `needs_review`. |
+| Identity | `MPQ8626GD` group matched from BOM/index | `/tmp/hardwise-mpq8626-index.json`, group `1` | Pass | Draft identity is reviewable. |
+| `recommended.vin_min/max` and pin 3 `VIN` range | `2.85` to `16.0` | `datasheet:mpq8626.html#p1` | Pass for this value only | Can be manually transferred only if using the HTML token. |
+| Pin 1 `PGND1`, pin 2 `SW1`, pin 10 `BST` names/functions | Present in existing ready profile | `datasheet:mpq8626.html#p1` | Partial pass | Only these pin facts are supported by reproduced evidence. |
+| Switch-node to inductor topology | Existing ready profile uses `recommended.inductor` | `datasheet:mpq8626.html#p1` | Partial pass | Supports a generic SW-to-inductor claim, not the full existing token set. |
+| Full 14-pin map | Pins 1-14 populated | Existing profile cites `datasheet:mpq8626.pdf#p3`; not reproduced here | Fail | Missing public page-level evidence for pins 4-9, 11-14. |
+| Synchronous buck / no external diode | Existing profile cites `datasheet:mpq8626.pdf#p1` | HTML excerpt only says integrated synchronous buck power stage for SW1 | Partial/fail | Not enough to confirm every ready field. |
+| Existing PDF evidence tokens | `datasheet:mpq8626.pdf#p1/#p3/#p5/#p17` | No local text-extractable public PDF in this worktree | Fail | Do not rewrite or newly certify the ready contract. |
+
+Required evidence to promote later:
+
+- A public text-extractable PDF or public HTML page set covering the full pin
+  description table, with stable page-level tokens for pins 1-14.
+- Public page evidence for recommended input voltage, output current, topology,
+  synchronous rectification, and typical SW/inductor application.
+- A reviewed profile update that changes evidence tokens to the actually
+  reproduced public source shape instead of carrying unverified token names.
+
 ## Stop Conditions
 
 - If the source is only a product page or guarded HTML page, do not cache it as
