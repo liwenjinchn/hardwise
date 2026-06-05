@@ -31,7 +31,7 @@ datasheet claims have page/token evidence.
 | C2 | Evidence-first UI | Trust labels (`deterministic`, `grounded`, `manual`), page/token chips, tool trace, and topology path shown beside each finding | Review detail makes evidence provenance obvious without opening raw JSON or markdown |
 | C3 | Coverage/profile loop | Document-index candidates -> draft profile -> human review -> ready profile -> validation target | A large public board can move from grouped coverage gaps to reviewed profile candidates without auto-validating unfinished drafts |
 | C4 | High-value deterministic family expansion | Select families from coverage data; likely LED polarity, small BJT/VCEO margin, common LDO/buck/gate-driver/MCU-debug refinements | At least one current no-profile/manual class becomes an L1 deterministic finding with tests and profile evidence |
-| C5 | Grounded LLM long tail | L2 claim schema, datasheet retrieval requirement, evidence downgrade path, and report trust labels | A no-profile component can receive a grounded suggestion only when the answer cites retrieved datasheet evidence; missing evidence downgrades to manual |
+| C5 | Grounded LLM long tail | L2 claim schema, datasheet retrieval requirement, evidence downgrade path, and report trust labels | **Trace-level done** (DR-014 第 4 条 discharge): per-tool trust-tier gating proven — L2-cites-evidence / unsupported→L3 / L2-cannot-override-L1 all tested. A no-profile component receives a grounded suggestion only when the answer cites retrieved datasheet evidence; missing evidence downgrades to manual. Sentence-level prose spec-claim gating remains a heavier future slice (separate DR if pursued). |
 | C6 | Hosted shell | Upload/login/project persistence around the local trust loop | Hosted demo preserves the same guard/ledger/tool contracts and does not expose model secrets to the browser |
 
 **Acceptance details for C1 report polish**:
@@ -82,6 +82,19 @@ datasheet claims have page/token evidence.
    them, but the structured validator remains authoritative.
 5. Tests must include an unsupported-spec case that proves the claim is
    downgraded when evidence retrieval fails.
+
+**Status (DR-014 第 4 条, 2026-06-05)**: acceptance items 1-5 are satisfied at
+the **per-tool trace** granularity, not per-sentence. The trust tier rides on
+each `ToolCallTrace`: `search_datasheet` is L2 only when retrieved hits carry
+`datasheet:<pdf>#p<N>` provenance (`grounding.py:trust_tier_for_datasheet_search`),
+fails closed to L3 with no hits / no collection (`runner.py`), and the L1
+`run_component_validation` verdict lives on a separate trace that an L2 row never
+merges into. Tested by `tests/agent/test_runner.py` (L2-evidence + unsupported→L3)
+and `tests/agent/test_validation_bridge.py::test_runner_l2_search_does_not_override_l1_validation`.
+Deferred (heavier, not "thin"): **sentence-level prose gating** — parsing the
+final answer text so each spec-claim sentence must carry a backing token. Today
+only the Refdes Guard scans answer prose; spec-claim entailment is not enforced
+at the sentence layer. Pursue only behind a new DR if an interview/demo needs it.
 
 ---
 
