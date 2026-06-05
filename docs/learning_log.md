@@ -8,7 +8,48 @@
 
 ---
 
-## 2026-06-04 · EG2132 bootstrap diode voltage is board policy, not a datasheet field
+## 2026-06-05 · Evidence-gap marker over-flagged facts backed by grouped tokens
+
+**Symptom**
+
+C1's first evidence-gap chip flagged "⚠ 无页码证据" on profile facts that *do*
+have datasheet backing — e.g. xl1509 `recommended.inductor_min_uh` and
+`inductor_max_uh`. The chip made the strongest profiles look less trustworthy
+than they are, the opposite of C1's goal. (Caught in external review, not by me.)
+
+**Root cause**
+
+Profiles store evidence under **grouped keys**: one token
+`recommended.inductor → datasheet:xl1509.pdf#p9` backs both the `_min_uh` and
+`_max_uh` sub-facts. The first cut did an exact-key lookup
+(`evidence.get("recommended.inductor_min_uh")`), found nothing, and flagged a gap
+— even though the group-level token covers it. It also flagged text descriptors
+like `topology_family=buck`, which are design classifications, not datasheet
+quantities that owe a page citation.
+
+HW analogy: like failing a BOM line because the line-item cell is blank, when the
+value is actually called out once in a shared note covering the whole group.
+
+**Fix**
+
+`evidence_gap_chip(claim_key, value, evidence)` now (1) only considers **numeric**
+specs, and (2) treats a fact as covered by exact-key OR first-segment grouping
+(`recommended.inductor` covers `recommended.inductor_*`), with group isolation so
+a `recommended.*` token can't satisfy an `abs_max.*` claim. Logic moved into a
+testable `_fact_has_evidence` helper with 7 unit tests in
+`tests/report/test_component_validation_details.py`. After the fix, gaps fire only
+for genuinely-uncited numeric specs (xl1509 `abs_max.vin`/`on_off`/`vin_max`/
+`vin_min`, stm32 `abs_max.vdd`); eg2132 has zero false gaps.
+
+**Takeaway**
+
+A provenance marker is only as trustworthy as its coverage model. An over-eager
+"missing evidence" signal is worse than none — it teaches the viewer to distrust
+correctly-cited facts. When the data model stores evidence at a coarser grain than
+the facts, the gap check has to match that grain. Verify the heuristic against the
+real data shape before shipping, not just the happy-path key.
+
+
 
 **Symptom**
 
