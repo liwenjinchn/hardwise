@@ -55,11 +55,11 @@ def render(
         "supplier data, PLM, lifecycle, price, or availability."
     )
     lines.append("")
-    lines.extend(_render_pin_check_summary(report.pin_results))
-    lines.extend(_render_component_basic_info(report))
     lines.extend(_render_model_check(report))
-    lines.extend(_render_pin_function_connectivity(report.pin_results, component, design))
+    lines.extend(_render_component_basic_info(report))
+    lines.extend(_render_pin_check_summary(report.pin_results))
     lines.extend(_render_pin_consistency(report, component, profile))
+    lines.extend(_render_pin_function_connectivity(report.pin_results, component, design))
     lines.extend(_render_compliance_checks(report))
     lines.extend(_render_evidence_details(report, profile))
     lines.extend(_render_summary(report))
@@ -78,7 +78,7 @@ def render(
 
 
 def _render_pin_check_summary(pins: list[PinValidation]) -> list[str]:
-    lines = ["## Pin Check Summary", ""]
+    lines = ["## 2. Pin Check Summary", ""]
     lines.append("| Pin No | Pin Name | Status | Summarize |")
     lines.append("|---|---|---|---|")
     for pin in pins:
@@ -91,7 +91,7 @@ def _render_pin_check_summary(pins: list[PinValidation]) -> list[str]:
 
 
 def _render_component_basic_info(report: ValidationReport) -> list[str]:
-    lines = ["## Component Basic Info", ""]
+    lines = ["### Component Basic Info", ""]
     lines.append("| Item | Value |")
     lines.append("|---|---|")
     lines.append(f"| Refdes | {report.refdes} |")
@@ -114,7 +114,7 @@ def _render_model_check(report: ValidationReport) -> list[str]:
         if status == "PASS"
         else "Component identity differs from the structured profile part; reviewer should confirm."
     )
-    lines = ["## Model Check", ""]
+    lines = ["## 1. Model Check", ""]
     lines.append("| Item | Matched model | Profile model | Status | Note |")
     lines.append("|---|---|---|---|---|")
     lines.append(
@@ -130,7 +130,7 @@ def _render_pin_function_connectivity(
     component: Component | None,
     design: Design | None,
 ) -> list[str]:
-    lines = ["## Pin Function and Connectivity", ""]
+    lines = ["## 3. Connection Path", ""]
     lines.append("| Pin | Name | Category | Net | Schematic path | Evidence |")
     lines.append("|---|---|---|---|---|---|")
     for pin in pins:
@@ -152,7 +152,7 @@ def _render_pin_consistency(
     component: Component | None,
     profile: DatasheetProfile | None,
 ) -> list[str]:
-    lines = ["## Pin Consistency", ""]
+    lines = ["### Pin Consistency", ""]
     lines.append("| Item | Profile | Schematic | Status | Note |")
     lines.append("|---|---|---|---|---|")
     if component is None:
@@ -178,7 +178,7 @@ def _render_pin_consistency(
 
 
 def _render_compliance_checks(report: ValidationReport) -> list[str]:
-    lines = ["## Compliance Checks", ""]
+    lines = ["## 4. Compliance Matrix", ""]
     lines.append("| Check | Refdes | Status | Summary | Evidence |")
     lines.append("|---|---|---|---|---|")
     for pin in report.pin_results:
@@ -199,7 +199,7 @@ def _render_evidence_details(
     report: ValidationReport,
     profile: DatasheetProfile | None,
 ) -> list[str]:
-    lines = ["## Evidence / Datasheet Details", ""]
+    lines = ["## 5. Evidence Details", ""]
     if profile is None:
         lines.append(
             "Profile detail was not loaded. Only ValidationReport pin/check evidence is available."
@@ -271,7 +271,7 @@ def _render_evidence_details(
 def _render_summary(report: ValidationReport) -> list[str]:
     problems = [check for check in report.component_checks if check.status in {"WARN", "ERROR"}]
     problems.extend(pin for pin in report.pin_results if pin.status in {"WARN", "ERROR"})
-    lines = ["## Summary", ""]
+    lines = ["## 6. Final Summary", ""]
     lines.append(f"Final validation status: **{report.status}**.")
     lines.append("")
     if problems:

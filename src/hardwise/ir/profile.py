@@ -17,6 +17,7 @@ class PinProfile(BaseModel):
 
     number: str
     name: str
+    schematic_pin_aliases: list[str] = Field(default_factory=list)
     category: str
     function: str
     limits: dict[str, ProfileValue] = Field(default_factory=dict)

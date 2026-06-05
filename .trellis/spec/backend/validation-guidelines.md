@@ -54,6 +54,14 @@ profile to `review_status="ready"` unless public pinout/polarity/limit evidence
 matches the local symbol. If the public source conflicts with the local symbol,
 leave the row manual instead of improving coverage with a speculative PASS.
 
+Ready profiles must not store board-specific design policy as if it were a
+datasheet fact. For example, a gate-driver datasheet can support "external
+bootstrap diode/capacitor required", while the bootstrap diode reverse-voltage
+requirement depends on the board's high-side/switch-node rail. Keep the
+topology requirement in the profile, derive the board-specific voltage inside
+the validator from `Design.nets`, and return WARN when that path evidence is
+not present.
+
 Generic passives are the exception: capacitors and resistors may run a
 profile-free generic path because their light checks come from BOM value,
 schematic package, and deterministic net voltage. This coverage must be labeled

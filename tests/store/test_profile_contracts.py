@@ -114,6 +114,22 @@ def test_upsert_replaces_aliases_and_pins(tmp_path: Path) -> None:
         session.close()
 
 
+def test_profile_contract_store_round_trips_schematic_pin_aliases(tmp_path: Path) -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/ln2312lt1g.json"))
+    session = create_store(tmp_path / "profiles.db")
+    try:
+        upsert_datasheet_profile(session, profile)
+
+        stored = get_datasheet_profile(session, "LN2312LT1G")
+
+        assert stored is not None
+        assert stored.pin_by_number("1").schematic_pin_aliases == ["G"]
+        assert stored.pin_by_number("2").schematic_pin_aliases == ["S"]
+        assert stored.pin_by_number("3").schematic_pin_aliases == ["D"]
+    finally:
+        session.close()
+
+
 def test_duplicate_alias_is_rejected(tmp_path: Path) -> None:
     session = create_store(tmp_path / "profiles.db")
     try:

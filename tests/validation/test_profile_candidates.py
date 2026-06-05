@@ -179,7 +179,7 @@ $END
     assert "doc:docs.csv#line2" in candidate.reason
 
 
-def test_suggest_profile_candidates_rejects_document_mpn_when_pin_ids_do_not_fit(
+def test_suggest_profile_candidates_uses_document_mpn_with_schematic_pin_aliases(
     tmp_path: Path,
 ) -> None:
     value_alias = "N-MOS管 LN2312LT1G 5A SOT-23 LRC"
@@ -220,11 +220,29 @@ $END
 
     candidate = report.candidates[0]
     assert candidate.refdes == "PQ9"
-    assert candidate.match_status == "no_result"
+    assert candidate.match_status == "matched"
     assert candidate.identity == "LN2312LT1G"
     assert candidate.identity_kind == "document_mpn"
-    assert candidate.profile is None
-    assert "pin IDs do not match" in candidate.reason
+    assert candidate.profile == Path("data/datasheet_profiles/ln2312lt1g.json")
+    assert "doc:docs.csv#line2" in candidate.reason
+
+
+def test_suggest_profile_candidates_uses_value_mpn_with_schematic_pin_aliases() -> None:
+    bom_path = Path("tests/fixtures/allegro/ln2312lt1g_symbol_alias_bom.csv")
+    design = build_design_from_netlist(
+        parse_allegro_netlist(Path("tests/fixtures/allegro/ln2312lt1g_symbol_alias.net"))
+    )
+    bom = parse_bom(bom_path)
+    bom.items[0].part_number = "1270001"
+
+    report = suggest_profile_candidates(bom, Path("data/datasheet_profiles"), design=design)
+
+    candidate = report.candidates[0]
+    assert candidate.refdes == "Q9"
+    assert candidate.match_status == "matched"
+    assert candidate.identity == "LN2312LT1G"
+    assert candidate.identity_kind == "value_mpn"
+    assert candidate.profile == Path("data/datasheet_profiles/ln2312lt1g.json")
 
 
 def test_suggest_profile_candidates_skips_needs_review_drafts(tmp_path: Path) -> None:

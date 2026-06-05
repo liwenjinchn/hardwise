@@ -8,6 +8,7 @@ from html import escape
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.trust import TRUST_LABELS, TrustTier, trust_label_text
+from hardwise.validation.pin_resolver import schematic_pin_for_profile_pin
 from hardwise.validation.types import ValidationReport
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "trust_label_text",
     "trust_label_html",
     "evidence_chips_html",
+    "evidence_gap_chip",
     "build_pin_consistency",
     "schematic_connection_path",
     "profile_has_thermal_or_package_evidence",
@@ -51,14 +53,31 @@ def build_pin_consistency(
 ) -> PinConsistency:
     """Compare profile/report pins with parsed schematic pins without changing verdicts."""
 
-    profile_numbers = (
-        {pin.number for pin in profile.pins}
-        if profile is not None
-        else {pin.pin_number for pin in report.pin_results}
-    )
+    profile_numbers = {pin.number for pin in profile.pins} if profile is not None else {
+        pin.pin_number for pin in report.pin_results
+    }
     schematic_numbers = {pin.number for pin in component.pins}
-    missing = tuple(sorted(profile_numbers - schematic_numbers, key=_pin_sort_key))
-    extra = tuple(sorted(schematic_numbers - profile_numbers, key=_pin_sort_key))
+    if profile is not None:
+        resolved_schematic = {
+            pin.number
+            for profile_pin in profile.pins
+            for pin in [schematic_pin_for_profile_pin(component, profile_pin)]
+            if pin is not None
+        }
+        missing = tuple(
+            sorted(
+                [
+                    pin.number
+                    for pin in profile.pins
+                    if schematic_pin_for_profile_pin(component, pin) is None
+                ],
+                key=_pin_sort_key,
+            )
+        )
+        extra = tuple(sorted(schematic_numbers - resolved_schematic, key=_pin_sort_key))
+    else:
+        missing = tuple(sorted(profile_numbers - schematic_numbers, key=_pin_sort_key))
+        extra = tuple(sorted(schematic_numbers - profile_numbers, key=_pin_sort_key))
     status = "PASS" if not missing and not extra else "WARN"
     return PinConsistency(
         status=status,
@@ -138,6 +157,50 @@ def evidence_chips_html(tokens: list[str]) -> str:
             f'data-source="{escape(source)}">{escape(token)}</span>'
         )
     return " ".join(chips)
+
+
+def evidence_gap_chip(
+    claim_key: str,
+    value: object,
+    evidence: dict[str, str],
+) -> str:
+    """Return gap warning HTML when a numeric datasheet spec has no source token.
+
+    A fact is considered covered when its evidence key is present either exactly
+    (``recommended.vin_max``) or by first-segment grouping (``recommended.inductor``
+    backing ``recommended.inductor_min_uh``). Only numeric specs are flagged — text
+    descriptors like ``topology_family=buck`` are design classifications, not
+    datasheet quantities that demand a page citation. Board-topology (``sch:``),
+    rule (``rule:``), and document-index (``doc:``) tokens are legitimate sources
+    and never produce a gap.
+    """
+
+    is_numeric = isinstance(value, (int, float)) and not isinstance(value, bool)
+    if not is_numeric:
+        return ""
+    if _fact_has_evidence(claim_key, evidence):
+        return ""
+    return '<span class="evidence-gap" title="此规格声明应有 datasheet 页码来源但当前缺失">⚠ 无页码证据</span>'
+
+
+def _fact_has_evidence(claim_key: str, evidence: dict[str, str]) -> bool:
+    """Return whether a claim is covered by an exact or first-segment evidence key."""
+
+    if evidence.get(claim_key):
+        return True
+    if "." not in claim_key:
+        return False
+    group, _, leaf = claim_key.partition(".")
+    segment = leaf.split("_")[0]
+    for key, token in evidence.items():
+        if not token or "." not in key:
+            continue
+        key_group, _, key_leaf = key.partition(".")
+        if key_group != group:
+            continue
+        if key_leaf.split("_")[0] == segment:
+            return True
+    return False
 
 
 def _pin_sort_key(value: str) -> tuple[int, int | str]:

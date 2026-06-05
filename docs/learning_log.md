@@ -8,6 +8,231 @@
 
 ---
 
+## 2026-06-05 · Evidence-gap marker over-flagged facts backed by grouped tokens
+
+**Symptom**
+
+C1's first evidence-gap chip flagged "⚠ 无页码证据" on profile facts that *do*
+have datasheet backing — e.g. xl1509 `recommended.inductor_min_uh` and
+`inductor_max_uh`. The chip made the strongest profiles look less trustworthy
+than they are, the opposite of C1's goal. (Caught in external review, not by me.)
+
+**Root cause**
+
+Profiles store evidence under **grouped keys**: one token
+`recommended.inductor → datasheet:xl1509.pdf#p9` backs both the `_min_uh` and
+`_max_uh` sub-facts. The first cut did an exact-key lookup
+(`evidence.get("recommended.inductor_min_uh")`), found nothing, and flagged a gap
+— even though the group-level token covers it. It also flagged text descriptors
+like `topology_family=buck`, which are design classifications, not datasheet
+quantities that owe a page citation.
+
+HW analogy: like failing a BOM line because the line-item cell is blank, when the
+value is actually called out once in a shared note covering the whole group.
+
+**Fix**
+
+`evidence_gap_chip(claim_key, value, evidence)` now (1) only considers **numeric**
+specs, and (2) treats a fact as covered by exact-key OR first-segment grouping
+(`recommended.inductor` covers `recommended.inductor_*`), with group isolation so
+a `recommended.*` token can't satisfy an `abs_max.*` claim. Logic moved into a
+testable `_fact_has_evidence` helper with 7 unit tests in
+`tests/report/test_component_validation_details.py`. After the fix, gaps fire only
+for genuinely-uncited numeric specs (xl1509 `abs_max.vin`/`on_off`/`vin_max`/
+`vin_min`, stm32 `abs_max.vdd`); eg2132 has zero false gaps.
+
+**Takeaway**
+
+A provenance marker is only as trustworthy as its coverage model. An over-eager
+"missing evidence" signal is worse than none — it teaches the viewer to distrust
+correctly-cited facts. When the data model stores evidence at a coarser grain than
+the facts, the gap check has to match that grain. Verify the heuristic against the
+real data shape before shipping, not just the happy-path key.
+
+
+
+**Symptom**
+
+The EG2132 profile was marked `ready`, but it mixed public datasheet facts with
+a board-level bootstrap diode rule. Official EGmicro evidence supports the
+pinout, VCC limits, logic thresholds, and bootstrap topology, while the profile
+also carried `bootstrap_diode_min_reverse_voltage = 24.0` as if that number came
+from the EG2132 datasheet.
+
+**Root cause**
+
+The validator needed a concrete threshold to classify `MBRA210LT3G`, so the
+first implementation stored the fixture-specific 24 V requirement in the
+datasheet profile. That conflated two contracts: the chip datasheet says the
+bootstrap path needs an external diode/capacitor, but the diode reverse voltage
+requirement comes from the schematic's high-side/switch-node rail.
+
+**Fix**
+
+Updated `eg2132.json` to official-PDF-backed limits: VCC abs max 25 V,
+recommended VCC 9-20 V, and HIN/LIN logic-high minimum 2.8 V. Removed the
+profile-level bootstrap diode voltage field. `gate_driver_bootstrap` now infers
+the required reverse voltage from the switch-node/high-side Q path when the
+schematic exposes a voltage rail, and returns WARN when the rail cannot be
+proven.
+
+**Takeaway**
+
+Ready profiles should hold datasheet facts; validators may still apply board
+policy, but only when the schematic provides path evidence for the board-specific
+quantity.
+
+## 2026-06-04 · Group rows need an explicit validated-refdes target
+
+**Symptom**
+
+The Dia-like workbench slice made the left rail group-oriented, but right-side
+detail panels are refdes-oriented. A grouped row could highlight itself without
+switching the detail panel when its `data-row-ref` was the BOM group id rather
+than a validated refdes.
+
+**Root cause**
+
+`ProjectComponentGroup` is a coverage artifact, while `ValidationReport` detail
+panels are deterministic per-component artifacts. Treating the group id as if
+it were a component id mixed two display grains.
+
+**Fix**
+
+`component_group_table()` now accepts the set of validated refdes. If a group
+contains one, the row targets that refdes so the existing panel can activate.
+Groups without validated refdes keep their group id and remain manual/coverage
+rows.
+
+**Takeaway**
+
+UI navigation may bridge coverage and validation artifacts, but the bridge must
+be explicit. A group can point to an already validated sample; it must not
+create a new electrical detail panel for an unvalidated group.
+
+## 2026-06-04 · MPQ8626 draft is not ready from the reproduced HTML evidence
+
+**Symptom**
+
+The MPQ8626 review lane needed to decide whether the `MPQ8626GD`
+`needs_review` draft could become a reviewed ready contract. The existing
+`data/datasheet_profiles/mpq8626.json` is already marked `ready`, but its
+field evidence points at `datasheet:mpq8626.pdf#p1/#p3/#p5/#p17`.
+
+**Root cause**
+
+The reproduced public fixture path produced only one page-level HTML token:
+`datasheet:mpq8626.html#p1`. That excerpt supports document provenance, the
+draft identity, VIN range, a few pin facts (`PGND1`, `SW1`, `VIN`, `BST`), and a
+generic SW-to-inductor application statement. It does not reproduce the full
+14-pin table or the PDF page tokens used by the existing ready profile.
+
+**Fix**
+
+Kept `/tmp/hardwise-mpq8626-needs-review-profile.json` as
+`review_status=needs_review` and did not update
+`data/datasheet_profiles/mpq8626.json`. Recorded the audit table in the D3a
+Trellis implementation notes, including the exact missing evidence needed for a
+future promotion.
+
+**Takeaway**
+
+A page token attached to a draft is not a blanket contract proof. Promotion to
+`ready` requires every field in the structured profile to be backed by
+reproduced public page-level evidence for the same source shape named in the
+contract.
+
+## 2026-06-04 · Evidence chunks can seed drafts without promoting contracts
+
+**Symptom**
+
+D3a could extract text evidence for `MPQ8626GD` as PDF/HTML chunk JSONL and
+could already validate the reviewed ready profile, but the draft profile path
+still only carried document-index provenance. The page-level
+`datasheet:<source>#p<N>` evidence tokens were not attached to the
+`needs_review` contract draft.
+
+**Root cause**
+
+Datasheet evidence and reviewed pin contracts have different trust levels. Raw
+chunks can prove which public page text was available, but they do not by
+themselves prove pin function, limits, topology, or readiness. Wiring chunks
+directly into a ready profile would collapse the review gate.
+
+**Fix**
+
+Added `draft-datasheet-profile --evidence-chunks`. The command reads
+PDF/HTML chunk JSONL, collects or derives page-level datasheet tokens, and
+stores them under `evidence.chunks.*` on the generated profile. The output still
+uses `review_status=needs_review`; document-index provenance stays in
+`document.source`, and existing ready validation continues to consume the
+reviewed MPQ8626 contract.
+
+**Takeaway**
+
+Evidence attachment is not evidence promotion. A safe golden path can move from
+public text chunks to a reviewable contract draft, but a human-reviewed step is
+still required before any profile becomes `ready`.
+
+## 2026-06-04 · Local symbol pin ids need explicit profile aliases
+
+**Symptom**
+
+`LN2312LT1G` had a ready public MOSFET profile, but the real mainboard coverage
+gap stayed `no_result` because the local schematic symbol exported terminal
+labels `D/G/S` while the reviewed datasheet profile used package pin numbers
+`1/2/3`.
+
+**Root cause**
+
+The validator correctly treated profile pin numbers as datasheet/package facts.
+Relaxing that rule globally would have let unrelated local symbols masquerade
+as package pinouts. The missing piece was an explicit reviewed bridge from a
+datasheet pin to a local schematic pin id.
+
+**Fix**
+
+Added `PinProfile.schematic_pin_aliases` and a shared
+`validation/pin_resolver.py` helper. `LN2312LT1G` now records
+`Gate -> G`, `Source -> S`, and `Drain -> D`; candidate matching, pin-level
+validation, MOSFET component checks, and UI pin consistency all use the same
+resolver. The focused `ln2312lt1g_symbol_alias` Allegro fixture validates `Q9`
+as PASS while the report still shows datasheet pins `1/2/3` and
+`datasheet:s-ln2312lt1g.pdf#p1` evidence.
+
+**Takeaway**
+
+Profile coverage is not just public MPN matching. A board-specific symbol can
+use non-package pin ids, and the safe way to unlock deterministic validation is
+an explicit alias in the reviewed profile contract, not a heuristic pin-name
+guess.
+
+## 2026-06-04 · MPN text matching needs token boundaries
+
+**Symptom**
+
+A stricter D3b test for value-text profile matching expected `LN2312LT1G`, but
+the matcher selected alias `S-LN2312LT1G`.
+
+**Root cause**
+
+The previous matcher normalized the whole BOM value string and then searched
+for normalized profile identities as substrings. That let the trailing `S` in
+`MOS` join across whitespace with `LN2312LT1G`, creating a false
+`S-LN2312LT1G` match.
+
+**Fix**
+
+Changed `profile_candidate_text.py` to match identities against raw text with
+non-alphanumeric boundaries, while still allowing punctuation between identity
+characters so orderable MPNs such as `SD103AWS-7-F` remain matchable.
+
+**Takeaway**
+
+Hardware MPN normalization is useful, but substring matching across token
+boundaries is too loose. Preserve punctuation tolerance inside a part number;
+require real boundaries around it.
+
 ## 2026-06-03 · Internal BOM PNs can hide reviewed public MPNs
 
 **Symptom**

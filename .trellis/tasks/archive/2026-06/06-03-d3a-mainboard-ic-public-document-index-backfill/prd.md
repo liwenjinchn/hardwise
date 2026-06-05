@@ -66,14 +66,17 @@ document cache.
 - [x] Unapproved candidate rows are skipped rather than fetched.
 - [x] A CLI command can query Datasheets.com and emit reviewable candidate
       document-index rows without making them cache-eligible.
-- [ ] A D3a MPQ8626 reviewed document row records the source route
-      (`datasheets.com` or manual approved URL) and can be cached locally.
-- [ ] The cached PDF can be chunked with existing PDF ingest and evidence tokens.
-- [ ] The materialized `DatasheetProfile` contract for MPQ8626 is tied to cached
-      document provenance instead of being only an isolated manual profile.
-- [ ] The MPQ8626 fixture or real mainboard smoke still validates through the
+- [x] A D3a MPQ8626 reviewed document row records the source route used by the
+      golden-path fixture.
+- [x] Text-extractable evidence chunks can be produced for the MPQ8626 source
+      route with page-level evidence tokens. Direct-PDF caching remains a byte
+      provenance path when the source is a real text PDF.
+- [x] A `needs_review` `DatasheetProfile` draft can be tied to document
+      provenance plus PDF/HTML chunk evidence tokens without promoting it to
+      `ready`.
+- [x] The MPQ8626 fixture or real mainboard smoke still validates through the
       existing contract-driven buck checker.
-- [ ] `uv run pytest -q`, `uv run ruff check .`, and `git diff --check` pass
+- [x] `uv run pytest -q`, `uv run ruff check .`, and `git diff --check` pass
       before completion.
 
 ## Out Of Scope

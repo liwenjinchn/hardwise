@@ -238,19 +238,146 @@ Result:
 All checks passed!
 ```
 
+## Evidence-To-Draft Contract Step
+
+Added `draft-datasheet-profile --evidence-chunks`:
+
+```bash
+uv run hardwise draft-datasheet-profile \
+  /tmp/hardwise-mpq8626-index.json \
+  --identity MPQ8626GD \
+  --document-index data/document_indexes/power_v1_docs.csv \
+  --evidence-chunks /tmp/hardwise-mpq8626-html-chunks.jsonl \
+  --output /tmp/hardwise-mpq8626-needs-review-profile.json
+```
+
+This keeps the human-review gate intact:
+
+- The output profile stays `review_status=needs_review`.
+- Existing document provenance stays in `document.source`, for example
+  `doc:power_v1_docs.csv#line2`.
+- PDF/HTML chunk rows contribute page-level evidence tokens under
+  `evidence.chunks.*`, for example `datasheet:mpq8626.html#p1`.
+- The command accepts chunk JSONL from `extract-datasheet-html` or PDF ingest;
+  it does not promote the draft to `ready`, infer pin facts, or run validation
+  from raw chunks.
+
+MPQ8626 smoke:
+
+```text
+html-datasheet-extract: /tmp/hardwise-mpq8626-html-chunks.jsonl (chunks=1, source=mpq8626.html, page=1, ingested=off)
+design-validator-ui: /tmp/hardwise-mpq8626-workbench.html (4 components, validated=1, BOM matched=4, PASS/WARN/ERROR=1/0/0, manual=3)
+profile-draft: /tmp/hardwise-mpq8626-needs-review-profile.json (part_number=MPQ8626GD, review_status=needs_review, evidence_chunks=on)
+datasheet-profile-store: /tmp/hardwise-mpq8626-profiles.db (part=MPQ8626GD, aliases=0, pins=0, status=needs_review)
+component-validation: /tmp/hardwise-mpq8626-validation.md (PASS, PASS/WARN/ERROR=14/0/0)
+```
+
+Focused regression:
+
+```bash
+uv run pytest tests/test_cli_validator_ui.py::test_mpq8626_html_chunks_feed_needs_review_profile_draft \
+  tests/test_cli_validator_ui.py::test_design_validator_ui_matches_mpq8626_power_family_with_public_docs \
+  tests/ir/test_profile_archetypes.py \
+  tests/ingest/test_html.py -q
+uv run ruff check src/hardwise/ir/profile_draft.py src/hardwise/cli.py \
+  tests/ir/test_profile_archetypes.py tests/test_cli_validator_ui.py
+```
+
+Result:
+
+```text
+13 passed
+All checks passed!
+```
+
+Full verification:
+
+```bash
+uv run pytest -q
+uv run ruff check .
+git diff --check
+```
+
+Result:
+
+```text
+519 passed, 7 deselected
+All checks passed!
+git diff --check passed
+```
+
 ## Remaining Gap Table
 
 | Area | Current state | MVP next action | Deferred |
 |---|---|---|---|
 | Datasheet source/discovery | `search-datasheets-com` can propose candidate direct-PDF rows, but live Datasheets.com may return Cloudflare challenge; local document index remains the trust boundary. | Keep using candidate CSV + reviewer-approved rows; add source-specific adapters only for public APIs that return stable document URLs without anti-bot bypass. | Broad web crawling, PLM integration, supplier lifecycle/price/availability. |
-| Document bytes/text extraction | Direct PDFs enter SHA cache only after `%PDF-` verification; PDF text extraction works when the PDF has a text layer; HTML fulltext pages now produce `ChunkRecord` JSONL/vector chunks. | Use `extract-datasheet-html` for public mirror HTML pages whose PDF bytes are image-only or guarded. | Multi-page HTML crawler, OCR for image PDFs, guarded-download bypass. |
-| Contract generation/provenance | `DatasheetProfile` can be stored in the relational profile contract store; MPQ8626 round-trips and validates, but its current contract is still manually materialized. | Build a reviewed evidence-to-contract generation step that consumes PDF/HTML chunks and emits `needs_review` or `ready` `DatasheetProfile` with page-level evidence. | Fully automatic promotion to `ready`, unconstrained LLM pin facts, whole-BOM profile generation. |
+| Document bytes/text extraction | Direct PDFs enter SHA cache only after `%PDF-` verification; PDF text extraction works when the PDF has a text layer; HTML fulltext pages now produce `ChunkRecord` JSONL/vector chunks. | Keep explicit source-shape handling; use HTML chunks only when PDF bytes are image-only or guarded. | Multi-page HTML crawler, OCR for image PDFs, guarded-download bypass. |
+| Contract generation/provenance | `DatasheetProfile` can be stored in the relational profile contract store; `draft-datasheet-profile --evidence-chunks` ties document provenance and page-level chunk tokens to a `needs_review` draft; MPQ8626 still validates through the existing reviewed ready contract. | Human-review the draft fields before any `ready` promotion. | Fully automatic promotion to `ready`, unconstrained LLM pin facts, whole-BOM profile generation. |
 
 ## Next Step
 
-Use the extracted PDF/HTML chunks as evidence input for a narrow
-contract-generation step: produce a `needs_review` `DatasheetProfile` draft
-with page-level evidence first, then only promote to `ready` after review.
+Review the MPQ8626 needs-review draft against public page-level evidence, then
+promote only confirmed fields into the ready contract if the evidence supports
+each pin/topology claim.
+
+## Parallel Session 3: MPQ8626 Contract Review Audit
+
+Reproduced the public evidence path:
+
+```bash
+uv run hardwise extract-datasheet-html \
+  tests/fixtures/datasheets/mpq8626_fulltext.html \
+  --source-name mpq8626.html \
+  --output /tmp/hardwise-mpq8626-html-chunks.jsonl \
+  --chunk-size 1000
+uv run hardwise design-validator-ui \
+  tests/fixtures/allegro/mpq8626_sync_buck.net \
+  tests/fixtures/allegro/mpq8626_sync_buck_bom.csv \
+  --document-index data/document_indexes/power_v1_docs.csv \
+  --output /tmp/hardwise-mpq8626-workbench.html \
+  --index-output /tmp/hardwise-mpq8626-index.md \
+  --index-json /tmp/hardwise-mpq8626-index.json
+uv run hardwise draft-datasheet-profile \
+  /tmp/hardwise-mpq8626-index.json \
+  --identity MPQ8626GD \
+  --document-index data/document_indexes/power_v1_docs.csv \
+  --evidence-chunks /tmp/hardwise-mpq8626-html-chunks.jsonl \
+  --output /tmp/hardwise-mpq8626-needs-review-profile.json
+```
+
+Results:
+
+```text
+html-datasheet-extract: chunks=1, source=mpq8626.html, page=1
+design-validator-ui: validated=1, PASS/WARN/ERROR=1/0/0, manual=3
+profile-draft: part_number=MPQ8626GD, review_status=needs_review, evidence_chunks=on
+```
+
+Audit decision: do not promote the MPQ8626 draft to `ready` from this evidence
+set. The only reproduced public page token is `datasheet:mpq8626.html#p1`, and
+the fixture contains a compact excerpt, not the full datasheet pages referenced
+by the existing reviewed profile (`datasheet:mpq8626.pdf#p1/#p3/#p5/#p17`).
+
+| Field area | Current ready value | Reproduced evidence | Audit | Action |
+|---|---|---|---|---|
+| Document provenance | MPS public MPQ8626 product page row | `doc:power_v1_docs.csv#line2` | Pass | Keep draft provenance. |
+| Draft evidence token | Chunk source/page available | `datasheet:mpq8626.html#p1` | Pass | Keep draft `needs_review`. |
+| Identity | `MPQ8626GD` group matched from BOM/index | `/tmp/hardwise-mpq8626-index.json`, group `1` | Pass | Draft identity is reviewable. |
+| `recommended.vin_min/max` and pin 3 `VIN` range | `2.85` to `16.0` | `datasheet:mpq8626.html#p1` | Pass for this value only | Can be manually transferred only if using the HTML token. |
+| Pin 1 `PGND1`, pin 2 `SW1`, pin 10 `BST` names/functions | Present in existing ready profile | `datasheet:mpq8626.html#p1` | Partial pass | Only these pin facts are supported by reproduced evidence. |
+| Switch-node to inductor topology | Existing ready profile uses `recommended.inductor` | `datasheet:mpq8626.html#p1` | Partial pass | Supports a generic SW-to-inductor claim, not the full existing token set. |
+| Full 14-pin map | Pins 1-14 populated | Existing profile cites `datasheet:mpq8626.pdf#p3`; not reproduced here | Fail | Missing public page-level evidence for pins 4-9, 11-14. |
+| Synchronous buck / no external diode | Existing profile cites `datasheet:mpq8626.pdf#p1` | HTML excerpt only says integrated synchronous buck power stage for SW1 | Partial/fail | Not enough to confirm every ready field. |
+| Existing PDF evidence tokens | `datasheet:mpq8626.pdf#p1/#p3/#p5/#p17` | No local text-extractable public PDF in this worktree | Fail | Do not rewrite or newly certify the ready contract. |
+
+Required evidence to promote later:
+
+- A public text-extractable PDF or public HTML page set covering the full pin
+  description table, with stable page-level tokens for pins 1-14.
+- Public page evidence for recommended input voltage, output current, topology,
+  synchronous rectification, and typical SW/inductor application.
+- A reviewed profile update that changes evidence tokens to the actually
+  reproduced public source shape instead of carrying unverified token names.
 
 ## Stop Conditions
 

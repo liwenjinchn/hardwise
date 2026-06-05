@@ -13,16 +13,12 @@ from hardwise.ir.types import Component, Design
 from hardwise.report.component_validation_markdown import render as render_validation_markdown
 from hardwise.report.validator_multi_ui_assets import MULTI_UI_SCRIPT, MULTI_UI_STYLE
 from hardwise.report.validator_multi_ui_sections import (
-    basic_info,
-    compliance_checks,
-    connectivity_table,
-    evidence_details,
-    model_check,
-    pin_consistency,
-    pin_summary,
-    scope_panel,
-    summary,
-    topology_panel,
+    section_compliance_matrix,
+    section_connection_path,
+    section_evidence_details,
+    section_final_summary,
+    section_model_check,
+    section_pin_summary,
 )
 from hardwise.report.validator_ui import _status_class
 from hardwise.validation.types import ComponentValidation, ValidationReport
@@ -83,26 +79,28 @@ def render(
         </div>
       </header>
       <section class="workspace">
-        <aside class="rail" aria-label="器件">
-          <div class="rail-head">
-            <div class="section-title">
-              <h2>器件</h2>
-              <span class="count">{len(components)}</span>
+        <div class="left-stack" aria-label="器件与验证摘要">
+          <aside class="rail" aria-label="器件">
+            <div class="rail-head">
+              <div class="section-title">
+                <h2>器件</h2>
+                <span class="count">{len(components)}</span>
+              </div>
+              <input class="filter" data-filter placeholder="按位号过滤..." type="search">
             </div>
-            <input class="filter" data-filter placeholder="按位号过滤..." type="search">
-          </div>
-          <div class="table-wrap">{_component_table(components, validated, active_refdes, bom_report)}</div>
-        </aside>
-        <aside class="verify" aria-label="验证">
-          <div class="verify-head">
-            <div class="section-title">
-              <h2>验证</h2>
-              <span class="pill">验证完成</span>
+            <div class="table-wrap">{_component_table(components, validated, active_refdes, bom_report)}</div>
+          </aside>
+          <aside class="verify" aria-label="验证">
+            <div class="verify-head">
+              <div class="section-title">
+                <h2>验证</h2>
+                <span class="pill">验证完成</span>
+              </div>
+              <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
             </div>
-            <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
-          </div>
-          <div class="verified-list">{_validated_cards(ordered, active_refdes)}</div>
-        </aside>
+            <div class="verified-list">{_validated_cards(ordered, active_refdes)}</div>
+          </aside>
+        </div>
         <section class="detail" aria-label="验证报告">
           {_detail_panels(design, ordered, active_refdes, generated_at)}
         </section>
@@ -243,15 +241,11 @@ def _detail_panel(
         <div class="kpi"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
         <div class="kpi"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
       </div>
-      {pin_summary(validation)}
-      {basic_info(component, validation)}
-      {model_check(validation)}
-      {connectivity_table(validation, component, design)}
-      {pin_consistency(component, validation, item.profile)}
-      {compliance_checks(validation)}
-      {evidence_details(validation, item.profile)}
-      {summary(validation)}
-      {topology_panel(component, design)}
-      {scope_panel(generated_at, item.profile_path)}
+      {section_model_check(component, validation)}
+      {section_pin_summary(component, validation, item.profile)}
+      {section_connection_path(validation, component, design)}
+      {section_compliance_matrix(validation)}
+      {section_evidence_details(validation, item.profile)}
+      {section_final_summary(validation, generated_at, item.profile_path)}
     </article>
     """

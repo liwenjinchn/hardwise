@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/reporting-guidelines.md", "reason": "Check evidence visibility, L1/L3 trust labels, no-profile wording, and unchanged validation truth."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Confirm focused tests plus full pytest/ruff/diff check."}

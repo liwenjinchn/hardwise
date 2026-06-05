@@ -1726,6 +1726,11 @@ def draft_datasheet_profile(
         "--archetype",
         help="Optional needs-review profile archetype id, e.g. 74x165_piso_16pin.",
     ),
+    evidence_chunks: Path | None = typer.Option(
+        None,
+        "--evidence-chunks",
+        help="Optional PDF/HTML chunk JSONL used to attach datasheet page evidence tokens.",
+    ),
     output: Path = typer.Option(
         ...,
         "--output",
@@ -1743,6 +1748,7 @@ def draft_datasheet_profile(
             identity=identity,
             document_index_path=document_index,
             archetype_id=archetype,
+            evidence_chunks_path=evidence_chunks,
         )
         profile.save(output)
     except ProfileDraftError as e:
@@ -1755,7 +1761,8 @@ def draft_datasheet_profile(
     typer.echo(
         f"profile-draft: {output} "
         f"(part_number={profile.part_number}, review_status={profile.review_status}"
-        f"{', archetype=' + archetype if archetype else ''})"
+        f"{', archetype=' + archetype if archetype else ''}"
+        f"{', evidence_chunks=on' if evidence_chunks else ''})"
     )
 
 

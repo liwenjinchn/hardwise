@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/validation-guidelines.md", "reason": "Check that profile fields remain public source facts and board-specific thresholds are validator-derived."}
+{"file": ".trellis/tasks/06-04-06-04-eg2132-public-evidence-profile-audit/research/eg2132-public-evidence-audit.md", "reason": "Check field values and caveats against the public EGmicro evidence audit."}

@@ -93,14 +93,25 @@ def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: 
 
     html = output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
+    assert 'class="left-stack" aria-label="器件与验证摘要"' in html
     assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert '<article class="panel active" data-panel="U12">' in html
+    for section in (
+        "model-check",
+        "pin-summary",
+        "connection-path",
+        "compliance-matrix",
+        "evidence-details",
+        "final-summary",
+    ):
+        assert f'data-section="{section}"' in html
+    assert "data-detail-tab" not in html
     assert 'status pass">PASS' in html
     assert 'status error">ERROR' in html
     assert "下载报告" in html
-    assert "外围/拓扑检查" in html or "综合合规性检查" in html
+    assert "外围/拓扑检查" in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
     assert "本地原理图检验工具" in html
@@ -273,6 +284,37 @@ def test_report_validator_ui_batch_writes_mixed_controller_manifest(
     assert "MBRA210LT3G" in html
 
 
+def test_report_validator_ui_batch_writes_ln2312lt1g_alias_manifest(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "ln2312lt1g-validator-ui.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "report-validator-ui-batch",
+            "tests/fixtures/allegro/ln2312lt1g_symbol_alias.net",
+            "tests/fixtures/allegro/ln2312lt1g_symbol_alias_bom.csv",
+            "--targets-manifest",
+            "tests/fixtures/allegro/ln2312lt1g_symbol_alias_targets.yaml",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "validator-ui-batch:" in result.output
+    assert "validated=Q9" in result.output
+    assert "PASS/WARN/ERROR=1/0/0" in result.output
+
+    html = output.read_text(encoding="utf-8")
+    assert 'data-select-ref="Q9"' in html
+    assert '<article class="panel active" data-panel="Q9">' in html
+    assert "LN2312LT1G" in html
+    assert "gate 3.3 V - source 0 V" in html
+    assert "原理图缺少引脚" not in html
+
+
 def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     tmp_path: Path,
 ) -> None:
@@ -304,6 +346,8 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     html = html_output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
     assert "mixed_power_stage" in html
+    assert 'class="left-stack" aria-label="器件与验证摘要"' in html
+    assert 'data-row-ref="U12"' in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert 'data-select-ref="U3"' in html
@@ -360,9 +404,19 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert 'data-select-ref="U8"' in html
     assert "SWDIO is connected to SWCLK" in html
     assert "SWCLK is connected to SWDIO" in html
-    assert "引脚一致性检查" in html
-    assert "证据 / 数据手册详情" in html
-    assert "L1 deterministic" in html
+    for section in (
+        "model-check",
+        "pin-summary",
+        "connection-path",
+        "compliance-matrix",
+        "evidence-details",
+        "final-summary",
+    ):
+        assert f'data-section="{section}"' in html
+    assert "data-detail-tab" not in html
+    assert "1. 型号核对" in html
+    assert "6. 综合总结" in html
+    assert "L1 确定性" in html
     assert "evidence-chip" in html
     assert "recommended.swd" in html
     assert "datasheet:stm32g030.pdf#p33" in html
@@ -495,6 +549,8 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
 
     html = html_output.read_text(encoding="utf-8")
     assert "MPQ8626 public MPS product page and datasheet" in html
+    assert 'data-section="model-check"' in html
+    assert 'data-section="final-summary"' in html
     assert "doc:power_v1_docs.csv#line" in html
     assert "buck_inductor" in html
     assert "no external freewheel diode is required" in html
@@ -510,6 +566,72 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
     assert '"identity": "MPQ8626GD"' in index_payload
     assert '"document_status": "matched"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/mpq8626.json"' in index_payload
+
+
+def test_mpq8626_html_chunks_feed_needs_review_profile_draft(
+    tmp_path: Path,
+) -> None:
+    chunks = tmp_path / "mpq8626-html-chunks.jsonl"
+    index_json = tmp_path / "mpq8626-index.json"
+    draft = tmp_path / "mpq8626-draft.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "extract-datasheet-html",
+            "tests/fixtures/datasheets/mpq8626_fulltext.html",
+            "--source-name",
+            "mpq8626.html",
+            "--output",
+            str(chunks),
+            "--chunk-size",
+            "1000",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "chunks=1" in result.output
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mpq8626_sync_buck.net",
+            "tests/fixtures/allegro/mpq8626_sync_buck_bom.csv",
+            "--document-index",
+            "data/document_indexes/power_v1_docs.csv",
+            "--output",
+            str(tmp_path / "mpq8626-workbench.html"),
+            "--index-json",
+            str(index_json),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "validated=1" in result.output
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "draft-datasheet-profile",
+            str(index_json),
+            "--identity",
+            "MPQ8626GD",
+            "--document-index",
+            "data/document_indexes/power_v1_docs.csv",
+            "--evidence-chunks",
+            str(chunks),
+            "--output",
+            str(draft),
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "review_status=needs_review" in result.output
+    assert "evidence_chunks=on" in result.output
+
+    text = draft.read_text(encoding="utf-8")
+    assert '"part_number": "MPQ8626GD"' in text
+    assert '"review_status": "needs_review"' in text
+    assert '"document.source": "doc:power_v1_docs.csv#line2"' in text
+    assert '"evidence.chunks.tokens": "datasheet:mpq8626.html#p1"' in text
 
 
 def test_design_validator_ui_uses_document_mpn_for_l2n7002klt1g_profile(
@@ -577,8 +699,8 @@ $END
     )
 
     assert result.exit_code == 0, result.output
-    assert "validated=1" in result.output
-    assert "PASS/WARN/ERROR=1/0/0" in result.output
+    assert "validated=2" in result.output
+    assert "PASS/WARN/ERROR=2/0/0" in result.output
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"refdes": "PQ10"' in index_payload
@@ -586,8 +708,8 @@ $END
     assert '"profile_path": "data/datasheet_profiles/l2n7002klt1g.json"' in index_payload
     assert '"document_source": "doc:docs.csv#line2"' in index_payload
     assert '"refdes": "PQ9"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/ln2312lt1g.json"' in index_payload
     assert '"refdes": "Q13"' in index_payload
-    assert '"profile_path": "data/datasheet_profiles/ln2312lt1g.json"' not in index_payload
     assert "pe537ba.json" not in index_payload
     assert '"document_source": "doc:docs.csv#line3"' in index_payload
     assert '"document_source": "doc:docs.csv#line4"' in index_payload

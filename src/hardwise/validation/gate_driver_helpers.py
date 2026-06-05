@@ -6,6 +6,7 @@ import re
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Pin
+from hardwise.validation.pins import voltage_for_net
 from hardwise.validation.topology import components_on_net
 
 
@@ -83,6 +84,26 @@ def bootstrap_diode(design: Design, vb_net: str, vcc_net: str) -> Component | No
     return candidates[0] if candidates else None
 
 
+def bootstrap_required_reverse_voltage(design: Design, switch_node_net: str) -> float | None:
+    """Infer the bootstrap diode reverse-voltage requirement from the high-side rail."""
+
+    voltages: list[float] = []
+    switch_voltage = voltage_for_net(switch_node_net, design)
+    if switch_voltage is not None and switch_voltage > 0:
+        voltages.append(switch_voltage)
+
+    for component in components_on_net(design, switch_node_net):
+        if not component.refdes.startswith("Q"):
+            continue
+        for pin in component.pins:
+            if not pin.net or pin.net == switch_node_net or _looks_like_gate_control_net(pin.net):
+                continue
+            voltage = voltage_for_net(pin.net, design)
+            if voltage is not None and voltage > 0:
+                voltages.append(voltage)
+    return max(voltages) if voltages else None
+
+
 def diode_reverse_voltage_hint(diode: Component) -> float | None:
     """Return a conservative reverse-voltage hint from obvious diode identities."""
 
@@ -111,6 +132,11 @@ def looks_like_logic_input_net(net_name: str) -> bool:
 
     upper = net_name.upper()
     return any(token in upper for token in ["PWM", "HIN", "LIN", "GPIO", "MCU", "TIM"])
+
+
+def _looks_like_gate_control_net(net_name: str) -> bool:
+    upper = net_name.upper()
+    return any(token in upper for token in ["GATE", "PWM", "HIN", "LIN", "GPIO", "MCU", "TIM"])
 
 
 def float_recommended(profile: DatasheetProfile, key: str) -> float | None:

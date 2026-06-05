@@ -6,6 +6,7 @@ from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.gate_driver_helpers import (
     bootstrap_diode,
+    bootstrap_required_reverse_voltage,
     components_between_nets,
     diode_reverse_voltage_hint,
     float_recommended,
@@ -257,8 +258,19 @@ def _validate_bootstrap(
             evidence=evidence,
         )
 
-    min_voltage = float_recommended(profile, "bootstrap_diode_min_reverse_voltage")
+    min_voltage = bootstrap_required_reverse_voltage(design, vs.net)
     rating = diode_reverse_voltage_hint(diode)
+    if min_voltage is None:
+        return ComponentValidation(
+            check="gate_driver_bootstrap",
+            status="WARN",
+            refdes=diode.refdes,
+            summary=(
+                f"Bootstrap diode {diode.refdes} ({diode.part_number or diode.value}) is present, "
+                "but the required reverse-voltage cannot be inferred from a switch-node/high-side rail."
+            ),
+            evidence=evidence,
+        )
     if rating is not None and min_voltage is not None and rating < min_voltage:
         return ComponentValidation(
             check="gate_driver_bootstrap",

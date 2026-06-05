@@ -15,16 +15,23 @@ from hardwise.report.validator_ui import _status_class
 from hardwise.validation.component_groups import ProjectComponentGroup
 
 
-def component_group_table(groups: list[ProjectComponentGroup]) -> str:
+def component_group_table(
+    groups: list[ProjectComponentGroup],
+    *,
+    validated_refdes: set[str] | None = None,
+) -> str:
     """Render grouped component rows for the left rail."""
 
+    validated_refdes = validated_refdes or set()
     rows = [
         '<table id="component-index">',
         "<thead><tr><th>位号</th><th>BOM 身份</th><th>类别</th><th>资料</th></tr></thead><tbody>",
     ]
     for group in groups:
+        target_refdes = next((refdes for refdes in group.refdes if refdes in validated_refdes), None)
+        row_ref = target_refdes or group.group_id
         rows.append(
-            f'<tr class="component-row" data-row-ref="{escape(group.group_id)}">'
+            f'<tr class="component-row" data-row-ref="{escape(row_ref)}">'
             f'<td class="ref">{escape(", ".join(group.refdes_sample))}'
             f'<span class="sub">{group.refdes_count} 个位号</span></td>'
             f"<td>{escape(group.identity or '-')}"
