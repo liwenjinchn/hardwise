@@ -98,12 +98,20 @@ def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: 
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert '<article class="panel active" data-panel="U12">' in html
-    assert 'data-detail-tab="U12-report"' in html
-    assert 'data-detail-tab-panel="U12-topology"' in html
+    for section in (
+        "model-check",
+        "pin-summary",
+        "connection-path",
+        "compliance-matrix",
+        "evidence-details",
+        "final-summary",
+    ):
+        assert f'data-section="{section}"' in html
+    assert "data-detail-tab" not in html
     assert 'status pass">PASS' in html
     assert 'status error">ERROR' in html
     assert "下载报告" in html
-    assert "外围/拓扑检查" in html or "综合合规性检查" in html
+    assert "外围/拓扑检查" in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
     assert "本地原理图检验工具" in html
@@ -396,9 +404,19 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert 'data-select-ref="U8"' in html
     assert "SWDIO is connected to SWCLK" in html
     assert "SWCLK is connected to SWDIO" in html
-    assert "引脚一致性检查" in html
-    assert "证据 / 数据手册详情" in html
-    assert "L1 deterministic" in html
+    for section in (
+        "model-check",
+        "pin-summary",
+        "connection-path",
+        "compliance-matrix",
+        "evidence-details",
+        "final-summary",
+    ):
+        assert f'data-section="{section}"' in html
+    assert "data-detail-tab" not in html
+    assert "1. 型号核对" in html
+    assert "6. 综合总结" in html
+    assert "L1 确定性" in html
     assert "evidence-chip" in html
     assert "recommended.swd" in html
     assert "datasheet:stm32g030.pdf#p33" in html
@@ -531,8 +549,8 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
 
     html = html_output.read_text(encoding="utf-8")
     assert "MPQ8626 public MPS product page and datasheet" in html
-    assert 'data-detail-tab="U13-report"' in html
-    assert 'data-detail-tab-panel="U13-topology"' in html
+    assert 'data-section="model-check"' in html
+    assert 'data-section="final-summary"' in html
     assert "doc:power_v1_docs.csv#line" in html
     assert "buck_inductor" in html
     assert "no external freewheel diode is required" in html

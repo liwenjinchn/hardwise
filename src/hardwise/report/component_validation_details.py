@@ -17,6 +17,7 @@ __all__ = [
     "trust_label_text",
     "trust_label_html",
     "evidence_chips_html",
+    "evidence_gap_chip",
     "build_pin_consistency",
     "schematic_connection_path",
     "profile_has_thermal_or_package_evidence",
@@ -156,6 +157,50 @@ def evidence_chips_html(tokens: list[str]) -> str:
             f'data-source="{escape(source)}">{escape(token)}</span>'
         )
     return " ".join(chips)
+
+
+def evidence_gap_chip(
+    claim_key: str,
+    value: object,
+    evidence: dict[str, str],
+) -> str:
+    """Return gap warning HTML when a numeric datasheet spec has no source token.
+
+    A fact is considered covered when its evidence key is present either exactly
+    (``recommended.vin_max``) or by first-segment grouping (``recommended.inductor``
+    backing ``recommended.inductor_min_uh``). Only numeric specs are flagged — text
+    descriptors like ``topology_family=buck`` are design classifications, not
+    datasheet quantities that demand a page citation. Board-topology (``sch:``),
+    rule (``rule:``), and document-index (``doc:``) tokens are legitimate sources
+    and never produce a gap.
+    """
+
+    is_numeric = isinstance(value, (int, float)) and not isinstance(value, bool)
+    if not is_numeric:
+        return ""
+    if _fact_has_evidence(claim_key, evidence):
+        return ""
+    return '<span class="evidence-gap" title="此规格声明应有 datasheet 页码来源但当前缺失">⚠ 无页码证据</span>'
+
+
+def _fact_has_evidence(claim_key: str, evidence: dict[str, str]) -> bool:
+    """Return whether a claim is covered by an exact or first-segment evidence key."""
+
+    if evidence.get(claim_key):
+        return True
+    if "." not in claim_key:
+        return False
+    group, _, leaf = claim_key.partition(".")
+    segment = leaf.split("_")[0]
+    for key, token in evidence.items():
+        if not token or "." not in key:
+            continue
+        key_group, _, key_leaf = key.partition(".")
+        if key_group != group:
+            continue
+        if key_leaf.split("_")[0] == segment:
+            return True
+    return False
 
 
 def _pin_sort_key(value: str) -> tuple[int, int | str]:

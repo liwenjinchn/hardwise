@@ -14,6 +14,16 @@ from hardwise.report.validator_ui import render
 from hardwise.validation import suggest_profile_candidates, validate_component_against_profile
 from hardwise.validation.project_index import build_project_validation_index
 
+import re
+
+
+def _section_order(html: str, refdes: str) -> list[str]:
+    """Return the ordered data-section keys within one component panel."""
+    start = html.index(f'data-panel="{refdes}"')
+    end = html.find('class="panel', start + 1)
+    panel = html[start:] if end == -1 else html[start:end]
+    return re.findall(r'data-section="([^"]+)"', panel)
+
 
 def test_render_validator_ui_includes_index_detail_and_scope() -> None:
     from hardwise.adapters.allegro_netlist import parse_allegro_netlist
@@ -95,30 +105,44 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert '<article class="panel active" data-panel="U12">' in html
-    assert 'data-detail-tab="U12-report"' in html
-    assert 'data-detail-tab-panel="U12-topology"' in html
-    assert ">报告</button>" in html
-    assert ">原理图连接</button>" in html
+    # Six numbered top-level sections, fixed order, two validated panels.
+    for section in (
+        "model-check",
+        "pin-summary",
+        "connection-path",
+        "compliance-matrix",
+        "evidence-details",
+        "final-summary",
+    ):
+        assert html.count(f'data-section="{section}"') == 2
+    assert _section_order(html, "U12") == [
+        "model-check",
+        "pin-summary",
+        "connection-path",
+        "compliance-matrix",
+        "evidence-details",
+        "final-summary",
+    ]
+    # Old two-tab DOM must be gone.
+    assert "data-detail-tab" not in html
+    assert "data-detail-tab-panel" not in html
     assert 'status pass">PASS' in html
     assert 'status error">ERROR' in html
     assert "下载报告" in html
-    assert "引脚检查汇总" in html
-    assert "器件基本信息" in html
-    assert "型号核对" in html
-    assert "引脚功能与连接关系" in html
-    assert "连接路径" in html
-    assert "L1 deterministic" in html
+    assert "1. 型号核对" in html
+    assert "2. 引脚检查汇总" in html
+    assert "3. 连接路径" in html
+    assert "4. 合规矩阵" in html
+    assert "5. 证据详情" in html
+    assert "6. 综合总结" in html
+    assert "L1 确定性" in html
     assert "evidence-chip" in html
     assert 'data-source="datasheet">datasheet:xl1509.pdf#p9' in html
     assert "+24V" in html
     assert "U12-1" in html
-    assert "引脚一致性检查" in html
-    assert "综合合规性检查" in html
-    assert "证据 / 数据手册详情" in html
     assert "recommended.inductor" in html
     assert "datasheet:xl1509.pdf#p9" in html
     assert "没有档案级热/封装来源 token" in html
-    assert "综合总结" in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
     assert "本地原理图检验工具" in html

@@ -13,16 +13,12 @@ from hardwise.ir.types import Component, Design
 from hardwise.report.component_validation_markdown import render as render_validation_markdown
 from hardwise.report.validator_multi_ui_assets import MULTI_UI_SCRIPT, MULTI_UI_STYLE
 from hardwise.report.validator_multi_ui_sections import (
-    basic_info,
-    compliance_checks,
-    connectivity_table,
-    evidence_details,
-    model_check,
-    pin_consistency,
-    pin_summary,
-    scope_panel,
-    summary,
-    topology_panel,
+    section_compliance_matrix,
+    section_connection_path,
+    section_evidence_details,
+    section_final_summary,
+    section_model_check,
+    section_pin_summary,
 )
 from hardwise.report.validator_ui import _status_class
 from hardwise.validation.types import ComponentValidation, ValidationReport
@@ -225,8 +221,6 @@ def _detail_panel(
     )
     download_href = "data:text/markdown;charset=utf-8," + quote(markdown)
     active = " active" if validation.refdes == active_refdes else ""
-    report_tab = f"{validation.refdes}-report"
-    topology_tab = f"{validation.refdes}-topology"
     return f"""
     <article class="panel{active}" data-panel="{escape(validation.refdes)}">
       <div class="detail-head">
@@ -239,31 +233,19 @@ def _detail_panel(
           <a class="button secondary" href="#component-index">器件</a>
         </div>
       </div>
-      <div class="detail-tabs" role="tablist" aria-label="详情视图">
-        <button class="detail-tab active" data-detail-tab="{escape(report_tab)}" type="button" role="tab" aria-selected="true">报告</button>
-        <button class="detail-tab" data-detail-tab="{escape(topology_tab)}" type="button" role="tab" aria-selected="false">原理图连接</button>
+      <div class="kpis">
+        <div class="kpi"><span>PASS 引脚</span><strong>{counts["PASS"]}</strong></div>
+        <div class="kpi"><span>WARN 引脚</span><strong>{counts["WARN"]}</strong></div>
+        <div class="kpi"><span>ERROR 引脚</span><strong>{counts["ERROR"]}</strong></div>
+        <div class="kpi"><span>PASS 检查</span><strong>{component_counts["PASS"]}</strong></div>
+        <div class="kpi"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
+        <div class="kpi"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
       </div>
-      <div class="detail-tab-panel active" data-detail-tab-panel="{escape(report_tab)}">
-        <div class="kpis">
-          <div class="kpi"><span>PASS 引脚</span><strong>{counts["PASS"]}</strong></div>
-          <div class="kpi"><span>WARN 引脚</span><strong>{counts["WARN"]}</strong></div>
-          <div class="kpi"><span>ERROR 引脚</span><strong>{counts["ERROR"]}</strong></div>
-          <div class="kpi"><span>PASS 检查</span><strong>{component_counts["PASS"]}</strong></div>
-          <div class="kpi"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
-          <div class="kpi"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
-        </div>
-        {pin_summary(validation)}
-        {basic_info(component, validation)}
-        {model_check(validation)}
-        {connectivity_table(validation, component, design)}
-        {pin_consistency(component, validation, item.profile)}
-        {compliance_checks(validation)}
-        {evidence_details(validation, item.profile)}
-        {summary(validation)}
-      </div>
-      <div class="detail-tab-panel" data-detail-tab-panel="{escape(topology_tab)}">
-        {topology_panel(component, design)}
-        {scope_panel(generated_at, item.profile_path)}
-      </div>
+      {section_model_check(component, validation)}
+      {section_pin_summary(component, validation, item.profile)}
+      {section_connection_path(validation, component, design)}
+      {section_compliance_matrix(validation)}
+      {section_evidence_details(validation, item.profile)}
+      {section_final_summary(validation, generated_at, item.profile_path)}
     </article>
     """

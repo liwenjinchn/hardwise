@@ -33,8 +33,8 @@ def test_report_component_validation_writes_report(tmp_path: Path) -> None:
     md = output.read_text(encoding="utf-8")
     assert "# Hardwise Component Validation - U1" in md
     assert "| Component MPN | L7805 |" in md
-    assert "## Pin Consistency" in md
-    assert "## Evidence / Datasheet Details" in md
+    assert "Pin Consistency" in md
+    assert "5. Evidence Details" in md
     assert "| 3 | VO | power_output | +5V | PASS |" in md
 
 
@@ -66,13 +66,13 @@ def test_report_component_validation_writes_xl1509_dcdc_errors(tmp_path: Path) -
     assert "Pin Check Summary" in md
     assert "Component Basic Info" in md
     assert "Model Check" in md
-    assert "Pin Function and Connectivity" in md
+    assert "3. Connection Path" in md
     assert "Pin Consistency" in md
-    assert "Compliance Checks" in md
-    assert "Evidence / Datasheet Details" in md
+    assert "4. Compliance Matrix" in md
+    assert "5. Evidence Details" in md
     assert "recommended.inductor" in md
     assert "datasheet:xl1509.pdf#p9" in md
-    assert "Summary" in md
+    assert "6. Final Summary" in md
     assert "D5 (1N4007W)" in md
     assert "not a Schottky-style diode family" in md
     assert "L1 is 6.8 uH" in md

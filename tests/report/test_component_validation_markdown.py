@@ -48,9 +48,9 @@ def test_render_component_validation_markdown() -> None:
     assert "| Pin PASS/WARN/ERROR | 3 / 0 / 0 |" in md
     assert "Single-component schematic pin validation only" in md
     assert "does not parse PCB layout, boardview" in md
-    assert "## Pin Consistency" in md
+    assert "### Pin Consistency" in md
     assert "| Pin count | 3 | 3 | PASS |" in md
-    assert "## Evidence / Datasheet Details" in md
+    assert "## 5. Evidence Details" in md
     assert "| abs_max | tj | 125 | `datasheet:l78.pdf#p4` |" in md
     assert "### Profile Evidence Ledger" in md
     assert "| 1 | VI | power_input | +12V | PASS |" in md
