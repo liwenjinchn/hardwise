@@ -10,6 +10,12 @@ from urllib.parse import quote
 from hardwise.bom.types import BomMatchReport, sort_refdes_key
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
+from hardwise.report.ui_terms import (
+    check_label,
+    profile_part_label,
+    status_label,
+    validation_summary_label,
+)
 from hardwise.report.component_validation_markdown import render as render_validation_markdown
 from hardwise.report.validator_multi_ui_assets import MULTI_UI_SCRIPT, MULTI_UI_STYLE
 from hardwise.report.validator_multi_ui_sections import (
@@ -80,16 +86,6 @@ def render(
       </header>
       <section class="workspace">
         <div class="left-stack" aria-label="器件与验证摘要">
-          <aside class="rail" aria-label="器件">
-            <div class="rail-head">
-              <div class="section-title">
-                <h2>器件</h2>
-                <span class="count">{len(components)}</span>
-              </div>
-              <input class="filter" data-filter placeholder="按位号过滤..." type="search">
-            </div>
-            <div class="table-wrap">{_component_table(components, validated, active_refdes, bom_report)}</div>
-          </aside>
           <aside class="verify" aria-label="验证">
             <div class="verify-head">
               <div class="section-title">
@@ -99,6 +95,16 @@ def render(
               <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
             </div>
             <div class="verified-list">{_validated_cards(ordered, active_refdes)}</div>
+          </aside>
+          <aside class="rail" aria-label="器件">
+            <div class="rail-head">
+              <div class="section-title">
+                <h2>器件</h2>
+                <span class="count">{len(components)}</span>
+              </div>
+              <input class="filter" data-filter placeholder="按位号过滤..." type="search">
+            </div>
+            <div class="table-wrap">{_component_table(components, validated, active_refdes, bom_report)}</div>
           </aside>
         </div>
         <section class="detail" aria-label="验证报告">
@@ -142,16 +148,18 @@ def _component_table(
         status = (
             item.validation.status
             if item
-            else ("Matched" if component.refdes in matched else "No Result")
+            else ("matched" if component.refdes in matched else "no_result")
         )
         status_class = _status_class(status) if item else "pending"
         active = " active" if component.refdes == active_refdes else ""
         document = "已匹配" if item else "待完善"
+        status_text = status if item else status_label(status)
         rows.append(
             f'<tr class="component-row{active}" data-row-ref="{escape(component.refdes)}">'
             f'<td class="ref">{escape(component.refdes)}</td>'
             f"<td>{escape(component.value or '-')}</td>"
-            f'<td>{escape(component.part_number or component.value or "-")}<span class="sub">{len(component.pins)} pins · {escape(status)}</span></td>'
+            f'<td>{escape(component.part_number or component.value or "-")}'
+            f'<span class="sub">{len(component.pins)} 引脚 · {escape(status_text)}</span></td>'
             f'<td><span class="status {status_class}">{escape(document)}</span></td>'
             "</tr>"
         )
@@ -170,7 +178,8 @@ def _validated_cards(results: list[ValidatorUiResult], active_refdes: str) -> st
             f'<span class="device-title">{escape(validation.refdes)}</span>'
             f'<span class="status {_status_class(validation.status)}">{escape(validation.status)}</span>'
             "</div>"
-            f'<p class="device-meta">{escape(validation.component_value)} · {escape(validation.profile_part_number)}</p>'
+            f'<p class="device-meta">{escape(validation.component_value)} · '
+            f"{_profile_part_display(validation.profile_part_number)}</p>"
             f"{_issue_list(validation.component_checks)}"
             "</button>"
         )
@@ -185,8 +194,8 @@ def _issue_list(checks: list[ComponentValidation]) -> str:
     for check in issues[:3]:
         rendered.append(
             '<div class="issue">'
-            f"<strong>{escape(check.refdes or check.check)} · {escape(check.status)}</strong>"
-            f"<span>{escape(check.summary)}</span>"
+            f"<strong>{_check_subject(check.refdes or check.check)} · {escape(check.status)}</strong>"
+            f"<span>{escape(validation_summary_label(check.summary))}</span>"
             "</div>"
         )
     rendered.append("</div>")
@@ -221,31 +230,43 @@ def _detail_panel(
     )
     download_href = "data:text/markdown;charset=utf-8," + quote(markdown)
     active = " active" if validation.refdes == active_refdes else ""
-    return f"""
-    <article class="panel{active}" data-panel="{escape(validation.refdes)}">
-      <div class="detail-head">
-        <div class="detail-title">
-          <h2>{escape(validation.refdes)} <span class="{_status_class(validation.status)} status">综合判定 {escape(validation.status)}</span></h2>
-          <p>{escape(component.value or "-")} / MPN {escape(component.part_number or "-")} / 器件档案 {escape(validation.profile_part_number)}</p>
-        </div>
-        <div class="actions">
-          <a class="button" download="{escape(validation.refdes)}-component-validation.md" href="{download_href}">下载报告</a>
-          <a class="button secondary" href="#component-index">器件</a>
-        </div>
-      </div>
-      <div class="kpis">
-        <div class="kpi"><span>PASS 引脚</span><strong>{counts["PASS"]}</strong></div>
-        <div class="kpi"><span>WARN 引脚</span><strong>{counts["WARN"]}</strong></div>
-        <div class="kpi"><span>ERROR 引脚</span><strong>{counts["ERROR"]}</strong></div>
-        <div class="kpi"><span>PASS 检查</span><strong>{component_counts["PASS"]}</strong></div>
-        <div class="kpi"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
-        <div class="kpi"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
-      </div>
-      {section_model_check(component, validation)}
-      {section_pin_summary(component, validation, item.profile)}
-      {section_connection_path(validation, component, design)}
-      {section_compliance_matrix(validation)}
-      {section_evidence_details(validation, item.profile)}
-      {section_final_summary(validation, generated_at, item.profile_path)}
-    </article>
-    """
+    return f"""<article class="panel{active}" data-panel="{escape(validation.refdes)}">
+  <div class="detail-head">
+    <div class="detail-title">
+      <h2>{escape(validation.refdes)} <span class="{_status_class(validation.status)} status">综合判定 {escape(validation.status)}</span></h2>
+      <p>{escape(component.value or "-")} / MPN {escape(component.part_number or "-")} / 器件档案 {_profile_part_display(validation.profile_part_number)}</p>
+    </div>
+    <div class="actions">
+      <a class="button" download="{escape(validation.refdes)}-component-validation.md" href="{download_href}">下载报告</a>
+      <a class="button secondary" href="#component-index">器件</a>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><span>PASS 引脚</span><strong>{counts["PASS"]}</strong></div>
+    <div class="kpi"><span>WARN 引脚</span><strong>{counts["WARN"]}</strong></div>
+    <div class="kpi"><span>ERROR 引脚</span><strong>{counts["ERROR"]}</strong></div>
+    <div class="kpi"><span>PASS 检查</span><strong>{component_counts["PASS"]}</strong></div>
+    <div class="kpi"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
+    <div class="kpi"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
+  </div>
+  {section_model_check(component, validation)}
+  {section_pin_summary(component, validation, item.profile)}
+  {section_connection_path(validation, component, design)}
+  {section_compliance_matrix(validation)}
+  {section_evidence_details(validation, item.profile)}
+  {section_final_summary(validation, generated_at, item.profile_path)}
+</article>"""
+
+
+def _profile_part_display(part_number: str) -> str:
+    label = profile_part_label(part_number)
+    if label == part_number:
+        return escape(label)
+    return f'<span title="{escape(part_number)}">{escape(label)}</span>'
+
+
+def _check_subject(value: str) -> str:
+    label = check_label(value)
+    if label == value:
+        return escape(label)
+    return f'<span title="{escape(value)}">{escape(label)}</span>'

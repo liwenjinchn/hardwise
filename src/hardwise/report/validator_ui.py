@@ -12,6 +12,13 @@ from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.report.component_validation_details import evidence_chips_html, trust_label_html
 from hardwise.report.component_validation_markdown import render as render_validation_markdown
+from hardwise.report.ui_terms import (
+    check_label,
+    pin_category_label,
+    profile_part_label,
+    status_label,
+    validation_summary_label,
+)
 from hardwise.validation.types import ValidationReport
 
 _STYLE = """
@@ -106,68 +113,68 @@ def render(
     download_href = "data:text/markdown;charset=utf-8," + quote(markdown)
 
     return f"""<!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hardwise Validator UI - {escape(project_name)}</title>
+  <title>Hardwise 原理图检验工具 - {escape(project_name)}</title>
   <style>{_STYLE}</style>
 </head>
 <body>
   <main>
-    <section class="app" aria-label="Hardwise local validator UI">
+    <section class="app" aria-label="Hardwise 本地原理图检验工具">
       <header class="hero">
         <div class="title">
-          <p class="eyebrow">Hardwise local validator UI</p>
+          <p class="eyebrow">Hardwise / 原理图检验工具</p>
           <h1>{escape(project_name)}</h1>
           <p class="source">{escape(str(netlist_source))}</p>
         </div>
-        <div class="metrics" aria-label="Design summary">
-          <div class="metric"><span>Components</span><strong>{len(components)}</strong></div>
-          <div class="metric"><span>Nets</span><strong>{len(design.nets)}</strong></div>
-          <div class="metric"><span>Selected</span><strong>{escape(validation.refdes)}</strong></div>
-          <div class="metric"><span>Status</span><strong>{escape(validation.status)}</strong></div>
+        <div class="metrics" aria-label="设计摘要">
+          <div class="metric"><span>器件</span><strong>{len(components)}</strong></div>
+          <div class="metric"><span>网络</span><strong>{len(design.nets)}</strong></div>
+          <div class="metric"><span>当前器件</span><strong>{escape(validation.refdes)}</strong></div>
+          <div class="metric"><span>综合判定</span><strong>{escape(validation.status)}</strong></div>
         </div>
       </header>
       <section class="workspace">
-        <aside class="index" aria-label="Component index">
+        <aside class="index" aria-label="器件索引">
           <div class="toolbar">
-            <h2>Components</h2>
+            <h2>器件</h2>
             <span class="pill">{_match_summary(bom_report)}</span>
           </div>
           <div class="table-wrap">{_component_table(components, validation, bom_report)}</div>
         </aside>
-        <section class="detail" aria-label="Selected component detail">
+        <section class="detail" aria-label="当前器件详情">
           <div class="detail-head">
             <div class="detail-title">
               <h2>{escape(validation.refdes)} <span class="{_status_class(validation.status)} status">{escape(validation.status)}</span></h2>
-              <p>{escape(selected.value or "-")} / MPN {escape(selected.part_number or "-")} / profile {escape(validation.profile_part_number)}</p>
+              <p>{escape(selected.value or "-")} / MPN {escape(selected.part_number or "-")} / 器件档案 {_profile_part_display(validation.profile_part_number)}</p>
             </div>
             <div class="actions">
-              <a class="button" download="{escape(validation.refdes)}-component-validation.md" href="{download_href}">Download report</a>
-              <a class="button secondary" href="#component-index">Component index</a>
+              <a class="button" download="{escape(validation.refdes)}-component-validation.md" href="{download_href}">下载报告</a>
+              <a class="button secondary" href="#component-index">器件索引</a>
             </div>
           </div>
           <div class="cards">
-            <div class="card"><span>PASS pins</span><strong>{status_counts["PASS"]}</strong></div>
-            <div class="card"><span>WARN pins</span><strong>{status_counts["WARN"]}</strong></div>
-            <div class="card"><span>ERROR pins</span><strong>{status_counts["ERROR"]}</strong></div>
-            <div class="card"><span>PASS checks</span><strong>{component_counts["PASS"]}</strong></div>
-            <div class="card"><span>WARN checks</span><strong>{component_counts["WARN"]}</strong></div>
-            <div class="card"><span>ERROR checks</span><strong>{component_counts["ERROR"]}</strong></div>
+            <div class="card"><span>PASS 引脚</span><strong>{status_counts["PASS"]}</strong></div>
+            <div class="card"><span>WARN 引脚</span><strong>{status_counts["WARN"]}</strong></div>
+            <div class="card"><span>ERROR 引脚</span><strong>{status_counts["ERROR"]}</strong></div>
+            <div class="card"><span>PASS 检查</span><strong>{component_counts["PASS"]}</strong></div>
+            <div class="card"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
+            <div class="card"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
           </div>
           <div class="tabs">
             <input checked class="tab-input" id="tab-report" name="tab" type="radio">
             <input class="tab-input" id="tab-topology" name="tab" type="radio">
             <input class="tab-input" id="tab-boundary" name="tab" type="radio">
             <div class="tabbar" role="tablist">
-              <label for="tab-report">Validation</label>
-              <label for="tab-topology">Schematic Nets</label>
-              <label for="tab-boundary">Scope</label>
+              <label for="tab-report">验证</label>
+              <label for="tab-topology">原理图网络</label>
+              <label for="tab-boundary">范围</label>
             </div>
             <div class="panels">
-              <div class="tab-panel report">{_pin_table(validation)}</div>
-              <div class="tab-panel topology">{_topology_panel(selected, design)}</div>
+              <div class="tab-panel report" id="evidence-details">{_pin_table(validation)}</div>
+              <div class="tab-panel topology" id="connection-path">{_topology_panel(selected, design, validation)}</div>
               <div class="tab-panel boundary">{_scope_panel(generated_at, profile_path)}</div>
             </div>
           </div>
@@ -187,7 +194,7 @@ def _component_table(
 ) -> str:
     rows = [
         '<table id="component-index">',
-        "<thead><tr><th>Refdes</th><th>Description</th><th>MPN</th><th>Pins</th><th>Status</th></tr></thead>",
+        "<thead><tr><th>位号</th><th>描述</th><th>MPN</th><th>引脚</th><th>状态</th></tr></thead>",
         "<tbody>",
     ]
     matched = set(bom_report.matched_refdes) if bom_report else set()
@@ -196,9 +203,10 @@ def _component_table(
         status = (
             validation.status
             if is_selected
-            else ("Matched" if component.refdes in matched else "Profile needed")
+            else ("matched" if component.refdes in matched else "no_result")
         )
         status_class = _status_class(validation.status) if is_selected else "pending"
+        status_text = status if is_selected else status_label(status)
         selected_class = ' class="selected"' if is_selected else ""
         rows.append(
             f"<tr{selected_class}>"
@@ -206,7 +214,7 @@ def _component_table(
             f"<td>{escape(component.value or '-')}</td>"
             f"<td>{escape(component.part_number or '-')}</td>"
             f"<td>{len(component.pins)}</td>"
-            f'<td><span class="status {status_class}">{escape(status)}</span></td>'
+            f'<td><span class="status {status_class}">{escape(status_text)}</span></td>'
             "</tr>"
         )
     rows.append("</tbody></table>")
@@ -215,38 +223,38 @@ def _component_table(
 
 def _pin_table(validation: ValidationReport) -> str:
     rows = [
-        '<p class="scope">This pane shows deterministic single-component schematic pin validation. Each row is produced from parsed pins, net names, structured profile limits, and profile evidence tokens.</p>',
-        '<table class="pin-table"><thead><tr><th>Pin</th><th>Name</th><th>Category</th><th>Net</th><th>Status</th><th>Trust</th><th>Summary</th><th>Evidence</th></tr></thead><tbody>',
+        '<p class="scope">本面板展示单器件的确定性原理图引脚验证；每行来自解析后的引脚、网络名、结构化器件档案限制和证据 token。</p>',
+        '<table class="pin-table"><thead><tr><th>引脚</th><th>名称</th><th>类别</th><th>网络</th><th>结论</th><th>可信度</th><th>说明</th><th>证据</th></tr></thead><tbody>',
     ]
     for pin in validation.pin_results:
         rows.append(
             "<tr>"
             f'<td class="ref">{escape(pin.pin_number)}</td>'
             f"<td>{escape(pin.pin_name)}</td>"
-            f"<td>{escape(pin.category)}</td>"
+            f"<td>{escape(pin_category_label(pin.category))}</td>"
             f"<td>{escape(pin.net or '-')}</td>"
             f'<td><span class="status {_status_class(pin.status)}">{escape(pin.status)}</span></td>'
             f"<td>{trust_label_html('l1')}</td>"
-            f"<td>{escape(pin.summary)}</td>"
+            f"<td>{escape(validation_summary_label(pin.summary))}</td>"
             f'<td class="evidence">{_evidence(pin.evidence)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table>")
     if validation.component_checks:
         rows.append(
-            '<p class="scope">Component checks cover deterministic schematic-side peripheral/topology facts for this selected part only.</p>'
+            '<p class="scope">器件级检查只覆盖当前器件的确定性原理图外围/拓扑事实。</p>'
         )
         rows.append(
-            '<table class="pin-table"><thead><tr><th>Check</th><th>Refdes</th><th>Status</th><th>Trust</th><th>Summary</th><th>Evidence</th></tr></thead><tbody>'
+            '<table class="pin-table"><thead><tr><th>检查项</th><th>位号</th><th>结论</th><th>可信度</th><th>说明</th><th>证据</th></tr></thead><tbody>'
         )
         for check in validation.component_checks:
             rows.append(
                 "<tr>"
-                f"<td>{escape(check.check)}</td>"
+                f"<td>{escape(check_label(check.check))}</td>"
                 f'<td class="ref">{escape(check.refdes or "-")}</td>'
                 f'<td><span class="status {_status_class(check.status)}">{escape(check.status)}</span></td>'
                 f"<td>{trust_label_html('l1')}</td>"
-                f"<td>{escape(check.summary)}</td>"
+                f"<td>{escape(validation_summary_label(check.summary))}</td>"
                 f'<td class="evidence">{_evidence(check.evidence)}</td>'
                 "</tr>"
             )
@@ -254,20 +262,22 @@ def _pin_table(validation: ValidationReport) -> str:
     return "".join(rows)
 
 
-def _topology_panel(component: Component, design: Design) -> str:
+def _topology_panel(component: Component, design: Design, validation: ValidationReport) -> str:
     lines = [
-        '<p class="scope">Schematic topology only. These nets come from the parsed netlist, not from boardview, placement, routing, or PCB geometry.</p>'
+        '<p class="scope">仅展示原理图拓扑。这些网络来自解析后的网表，不代表 boardview/板图、布局、走线或 PCB 几何。</p>'
     ]
     lines.append('<div class="net-grid">')
+    pin_names = {pin.pin_number: pin.pin_name for pin in validation.pin_results}
     for pin in component.pins:
         net = design.nets.get(pin.net or "")
         members = sorted(net.nodes if net else [(component.refdes, pin.number)])
         rendered_members = " ".join(
             f"<code>{escape(refdes)}.{escape(number)}</code>" for refdes, number in members
         )
+        pin_name = pin_names.get(pin.number) or pin.name or "-"
         lines.append(
             '<div class="net">'
-            f"<b>Pin {escape(pin.number)} {escape(pin.name or '-')} -> {escape(pin.net or '-')}</b>"
+            f"<b>引脚 {escape(pin.number)} {escape(pin_name)} -> {escape(pin.net or '-')}</b>"
             f"{rendered_members}</div>"
         )
     lines.append("</div>")
@@ -276,18 +286,18 @@ def _topology_panel(component: Component, design: Design) -> str:
 
 def _scope_panel(generated_at: str, profile_path: Path) -> str:
     return (
-        '<p class="scope">V3.3 is a local static UI over existing deterministic artifacts. It is not a hosted product surface and not a PCB parser.</p>'
+        '<p class="scope">这是基于确定性产物的本地原理图检验工具，不是在线产品，也不是 PCB 解析器。</p>'
         '<ul class="boundary-list">'
-        f"<li>Generated at: {escape(generated_at or '-')}</li>"
-        f"<li>Profile source: <code>{escape(str(profile_path))}</code></li>"
-        "<li>Allowed inputs: schematic-exported Allegro/Telesis/PST topology, schematic BOM identity, and public structured profile facts.</li>"
-        "<li>Out of scope: .brd, boardview, placement, routing, PCB geometry, live supplier lookup, PLM, lifecycle, pricing, and availability.</li>"
+        f"<li>生成时间：{escape(generated_at or '-')}</li>"
+        f"<li>器件档案来源：<code>{escape(str(profile_path))}</code></li>"
+        "<li>允许输入：原理图导出的 Allegro/Telesis/PST 网表拓扑、原理图 BOM 身份，以及公开结构化器件档案事实。</li>"
+        "<li>不包含：.brd、boardview/板图、布局、走线、PCB 几何、在线供应商查询、PLM、生命周期、价格与库存。</li>"
         "</ul>"
     )
 
 
-def _evidence(tokens: list[str]) -> str:
-    return evidence_chips_html(tokens)
+def _evidence(tokens: list[str], refdes: str | None = None) -> str:
+    return evidence_chips_html(tokens, refdes=refdes)
 
 
 def _status_class(status: str) -> str:
@@ -303,8 +313,15 @@ def _status_class(status: str) -> str:
 
 def _match_summary(report: BomMatchReport | None) -> str:
     if report is None:
-        return "No BOM"
+        return "无 BOM"
     counts = Counter()
     counts["matched"] = len(report.matched_refdes)
     counts["design"] = report.design_refdes_count
-    return f"{counts['matched']}/{counts['design']} matched"
+    return f"{counts['matched']}/{counts['design']} 已匹配"
+
+
+def _profile_part_display(part_number: str) -> str:
+    label = profile_part_label(part_number)
+    if label == part_number:
+        return escape(label)
+    return f'<span title="{escape(part_number)}">{escape(label)}</span>'

@@ -14,6 +14,19 @@ from hardwise.report.component_validation_details import (
     schematic_connection_path,
     trust_label_html,
 )
+from hardwise.report.ui_terms import recommended_topology_label, validation_summary_label
+from hardwise.report.ui_terms import (
+    check_label,
+    extraction_model_label,
+    limit_label,
+    pin_category_label,
+    profile_claim_label,
+    profile_fact_label,
+    profile_group_label,
+    profile_part_label,
+    profile_value_label,
+    review_status_label,
+)
 from hardwise.report.validator_ui import _evidence, _status_class
 from hardwise.validation.types import ValidationReport
 
@@ -61,11 +74,12 @@ def section_connection_path(
 ) -> str:
     """Section 3: Connection Path — connectivity table + topology net grid."""
     return (
-        '<section class="section report-section" data-section="connection-path">'
+        f'<section class="section report-section" id="{escape(validation.refdes)}-connection-path" '
+        'data-section="connection-path">'
         '<div class="section-head"><h3>3. 连接路径</h3>'
         f"{trust_label_html('l1')}</div>"
         f"{_connectivity_content(validation, component, design)}"
-        f"{_topology_content(component, design)}"
+        f"{_topology_content(component, design, validation)}"
         "</section>"
     )
 
@@ -87,7 +101,8 @@ def section_evidence_details(
 ) -> str:
     """Section 5: Evidence Details — profile facts, tokens, gap warnings."""
     return (
-        '<section class="section report-section" data-section="evidence-details">'
+        f'<section class="section report-section" id="{escape(validation.refdes)}-evidence-details" '
+        'data-section="evidence-details">'
         '<div class="section-head"><h3>5. 证据详情</h3>'
         f"{trust_label_html('l1')}</div>"
         f"{_evidence_content(validation, profile)}"
@@ -125,7 +140,7 @@ def pin_summary(validation: ValidationReport) -> str:
         notes.append(
             '<div class="pin-note">'
             f'<span class="ref">引脚 {escape(pin.pin_number)}<span class="sub">{escape(pin.pin_name)}</span></span>'
-            f"<p>{escape(pin.summary)}</p>"
+            f"<p>{escape(validation_summary_label(pin.summary))}</p>"
             f'<span><span class="status {_status_class(pin.status)}">{escape(pin.status)}</span>'
             f"{trust_label_html('l1')}</span>"
             "</div>"
@@ -141,7 +156,7 @@ def basic_info(component: Component, validation: ValidationReport) -> str:
         f"<tr><th>位号</th><td>{escape(validation.refdes)}</td></tr>"
         f"<tr><th>描述</th><td>{escape(component.value or '-')}</td></tr>"
         f"<tr><th>MPN</th><td>{escape(component.part_number or '-')}</td></tr>"
-        f"<tr><th>器件档案</th><td>{escape(validation.profile_part_number)}</td></tr>"
+        f"<tr><th>器件档案</th><td>{_profile_part_cell(validation.profile_part_number)}</td></tr>"
         f"<tr><th>引脚数</th><td>{len(component.pins)}</td></tr>"
         "</tbody></table></section>"
     )
@@ -168,7 +183,7 @@ def model_check(validation: ValidationReport) -> str:
         "<tr>"
         "<td>料号</td>"
         f"<td>{escape(validation.part_number or '-')}</td>"
-        f"<td>{escape(validation.profile_part_number)}</td>"
+        f"<td>{_profile_part_cell(validation.profile_part_number)}</td>"
         f'<td><span class="status {_status_class(status)}">{status}</span></td>'
         f"<td>{escape(note)}</td>"
         "</tr>"
@@ -192,11 +207,11 @@ def connectivity_table(
             "<tr>"
             f'<td class="ref">{escape(pin.pin_number)}</td>'
             f"<td>{escape(pin.pin_name)}</td>"
-            f"<td>{escape(pin.category)}</td>"
+            f"<td>{_raw_title_cell(pin_category_label(pin.category), pin.category)}</td>"
             f"<td>{escape(pin.net or '-')}</td>"
             f"<td>{escape(path)}</td>"
             f"<td>{trust_label_html('l1')}</td>"
-            f'<td class="evidence">{_evidence(pin.evidence)}</td>'
+            f'<td class="evidence">{_evidence(pin.evidence, validation.refdes)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table></section>")
@@ -239,33 +254,34 @@ def compliance_checks(validation: ValidationReport) -> str:
             f'<td class="ref">{escape(validation.refdes)}</td>'
             f'<td><span class="status {_status_class(pin.status)}">{escape(pin.status)}</span></td>'
             f"<td>{trust_label_html('l1')}</td>"
-            f"<td>{escape(pin.summary)}</td>"
-            f'<td class="evidence">{_evidence(pin.evidence)}</td>'
+            f"<td>{escape(validation_summary_label(pin.summary))}</td>"
+            f'<td class="evidence">{_evidence(pin.evidence, validation.refdes)}</td>'
             "</tr>"
         )
     for check in validation.component_checks:
         rows.append(
             "<tr>"
-            f"<td>{escape(check.check)}</td>"
+            f"<td>{_raw_title_cell(check_label(check.check), check.check)}</td>"
             f'<td class="ref">{escape(check.refdes or "-")}</td>'
             f'<td><span class="status {_status_class(check.status)}">{escape(check.status)}</span></td>'
             f"<td>{trust_label_html('l1')}</td>"
-            f"<td>{escape(check.summary)}</td>"
-            f'<td class="evidence">{_evidence(check.evidence)}</td>'
+            f"<td>{escape(validation_summary_label(check.summary))}</td>"
+            f'<td class="evidence">{_evidence(check.evidence, validation.refdes)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table>")
     if validation.component_checks:
         rows.append(
             '<div class="section-head inline-head"><h4>外围/拓扑检查</h4>'
-            '<span class="pill">component_checks</span></div><div class="check-grid">'
+            '<span class="pill">器件级检查</span></div><div class="check-grid">'
         )
         for check in validation.component_checks:
             rows.append(
                 '<div class="check-card">'
                 f'<span class="status {_status_class(check.status)}">{escape(check.status)}</span>'
                 f"{trust_label_html('l1')}"
-                f"<p><strong>{escape(check.refdes or check.check)}</strong> {escape(check.summary)}</p>"
+                f"<p><strong>{_check_subject(check.refdes or check.check)}</strong> "
+                f"{escape(validation_summary_label(check.summary))}</p>"
                 "</div>"
             )
         rows.append("</div>")
@@ -278,9 +294,9 @@ def evidence_details(validation: ValidationReport, profile: DatasheetProfile | N
         '<section class="section table-section"><div class="section-head"><h3>证据 / 数据手册详情</h3>'
         f"{trust_label_html('l1')}</div>",
         _profile_meta(validation, profile),
-        _profile_fact_table(profile),
-        _profile_pin_detail_table(profile),
-        _profile_evidence_table(profile),
+        _profile_fact_table(profile, refdes=validation.refdes),
+        _profile_pin_detail_table(profile, refdes=validation.refdes),
+        _profile_evidence_table(profile, refdes=validation.refdes),
         _thermal_package_note(profile),
         "</section>",
     ]
@@ -310,11 +326,19 @@ def topology_panel(component: Component, design: Design) -> str:
 
 def summary(validation: ValidationReport) -> str:
     issues = [
-        *[pin.summary for pin in validation.pin_results if pin.status != "PASS"],
-        *[check.summary for check in validation.component_checks if check.status != "PASS"],
+        *[
+            validation_summary_label(pin.summary)
+            for pin in validation.pin_results
+            if pin.status != "PASS"
+        ],
+        *[
+            validation_summary_label(check.summary)
+            for check in validation.component_checks
+            if check.status != "PASS"
+        ],
     ]
     if not issues:
-        body = "<p>未发现 deterministic pin 或外围/拓扑问题。</p>"
+        body = "<p>未发现确定性引脚或外围/拓扑问题。</p>"
     else:
         body = "<ul>" + "".join(f"<li>{escape(issue)}</li>" for issue in issues) + "</ul>"
     return (
@@ -349,7 +373,7 @@ def _basic_info_content(component: Component, validation: ValidationReport) -> s
         f"<tr><th>位号</th><td>{escape(validation.refdes)}</td></tr>"
         f"<tr><th>描述</th><td>{escape(component.value or '-')}</td></tr>"
         f"<tr><th>MPN</th><td>{escape(component.part_number or '-')}</td></tr>"
-        f"<tr><th>器件档案</th><td>{escape(validation.profile_part_number)}</td></tr>"
+        f"<tr><th>器件档案</th><td>{_profile_part_cell(validation.profile_part_number)}</td></tr>"
         f"<tr><th>引脚数</th><td>{len(component.pins)}</td></tr>"
         "</tbody></table></div>"
     )
@@ -375,7 +399,7 @@ def _model_check_content(validation: ValidationReport) -> str:
         "<tr>"
         "<td>料号</td>"
         f"<td>{escape(validation.part_number or '-')}</td>"
-        f"<td>{escape(validation.profile_part_number)}</td>"
+        f"<td>{_profile_part_cell(validation.profile_part_number)}</td>"
         f'<td><span class="status {_status_class(status)}">{status}</span></td>'
         f"<td>{escape(note)}</td>"
         "</tr>"
@@ -389,7 +413,7 @@ def _pin_feed_content(validation: ValidationReport) -> str:
         notes.append(
             '<div class="pin-note">'
             f'<span class="ref">引脚 {escape(pin.pin_number)}<span class="sub">{escape(pin.pin_name)}</span></span>'
-            f"<p>{escape(pin.summary)}</p>"
+            f"<p>{escape(validation_summary_label(pin.summary))}</p>"
             f'<span><span class="status {_status_class(pin.status)}">{escape(pin.status)}</span>'
             f"{trust_label_html('l1')}</span>"
             "</div>"
@@ -433,32 +457,34 @@ def _connectivity_content(
             "<tr>"
             f'<td class="ref">{escape(pin.pin_number)}</td>'
             f"<td>{escape(pin.pin_name)}</td>"
-            f"<td>{escape(pin.category)}</td>"
+            f"<td>{_raw_title_cell(pin_category_label(pin.category), pin.category)}</td>"
             f"<td>{escape(pin.net or '-')}</td>"
             f"<td>{escape(path)}</td>"
             f"<td>{trust_label_html('l1')}</td>"
-            f'<td class="evidence">{_evidence(pin.evidence)}</td>'
+            f'<td class="evidence">{_evidence(pin.evidence, validation.refdes)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table></div>")
     return "".join(rows)
 
 
-def _topology_content(component: Component, design: Design) -> str:
+def _topology_content(component: Component, design: Design, validation: ValidationReport) -> str:
     lines = [
         '<div class="topology-grid">',
         '<p class="scope">仅展示原理图拓扑。这些网络来自解析后的网表，不代表 boardview/板图、布局、走线或 PCB 几何。</p>',
         '<div class="net-grid">',
     ]
+    pin_names = {pin.pin_number: pin.pin_name for pin in validation.pin_results}
     for pin in component.pins:
         net = design.nets.get(pin.net or "")
         members = sorted(net.nodes if net else [(component.refdes, pin.number)])
         rendered_members = " ".join(
             f"<code>{escape(refdes)}.{escape(number)}</code>" for refdes, number in members
         )
+        pin_name = pin_names.get(pin.number) or pin.name or "-"
         lines.append(
             '<div class="net">'
-            f"<b>引脚 {escape(pin.number)} {escape(pin.name or '-')} -> {escape(pin.net or '-')}</b>"
+            f"<b>引脚 {escape(pin.number)} {escape(pin_name)} -> {escape(pin.net or '-')}</b>"
             f"{rendered_members}</div>"
         )
     lines.append("</div></div>")
@@ -477,33 +503,34 @@ def _compliance_content(validation: ValidationReport) -> str:
             f'<td class="ref">{escape(validation.refdes)}</td>'
             f'<td><span class="status {_status_class(pin.status)}">{escape(pin.status)}</span></td>'
             f"<td>{trust_label_html('l1')}</td>"
-            f"<td>{escape(pin.summary)}</td>"
-            f'<td class="evidence">{_evidence(pin.evidence)}</td>'
+            f"<td>{escape(validation_summary_label(pin.summary))}</td>"
+            f'<td class="evidence">{_evidence(pin.evidence, validation.refdes)}</td>'
             "</tr>"
         )
     for check in validation.component_checks:
         rows.append(
             "<tr>"
-            f"<td>{escape(check.check)}</td>"
+            f"<td>{_raw_title_cell(check_label(check.check), check.check)}</td>"
             f'<td class="ref">{escape(check.refdes or "-")}</td>'
             f'<td><span class="status {_status_class(check.status)}">{escape(check.status)}</span></td>'
             f"<td>{trust_label_html('l1')}</td>"
-            f"<td>{escape(check.summary)}</td>"
-            f'<td class="evidence">{_evidence(check.evidence)}</td>'
+            f"<td>{escape(validation_summary_label(check.summary))}</td>"
+            f'<td class="evidence">{_evidence(check.evidence, validation.refdes)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table>")
     if validation.component_checks:
         rows.append(
             '<div class="section-head inline-head"><h4>外围/拓扑检查</h4>'
-            '<span class="pill">component_checks</span></div><div class="check-grid">'
+            '<span class="pill">器件级检查</span></div><div class="check-grid">'
         )
         for check in validation.component_checks:
             rows.append(
                 '<div class="check-card">'
                 f'<span class="status {_status_class(check.status)}">{escape(check.status)}</span>'
                 f"{trust_label_html('l1')}"
-                f"<p><strong>{escape(check.refdes or check.check)}</strong> {escape(check.summary)}</p>"
+                f"<p><strong>{_check_subject(check.refdes or check.check)}</strong> "
+                f"{escape(validation_summary_label(check.summary))}</p>"
                 "</div>"
             )
         rows.append("</div>")
@@ -513,11 +540,19 @@ def _compliance_content(validation: ValidationReport) -> str:
 
 def _summary_content(validation: ValidationReport) -> str:
     issues = [
-        *[pin.summary for pin in validation.pin_results if pin.status != "PASS"],
-        *[check.summary for check in validation.component_checks if check.status != "PASS"],
+        *[
+            validation_summary_label(pin.summary)
+            for pin in validation.pin_results
+            if pin.status != "PASS"
+        ],
+        *[
+            validation_summary_label(check.summary)
+            for check in validation.component_checks
+            if check.status != "PASS"
+        ],
     ]
     if not issues:
-        return "<p>未发现 deterministic pin 或外围/拓扑问题。</p>"
+        return "<p>未发现确定性引脚或外围/拓扑问题。</p>"
     return "<ul>" + "".join(f"<li>{escape(issue)}</li>" for issue in issues) + "</ul>"
 
 
@@ -538,9 +573,9 @@ def _scope_content(generated_at: str, profile_path: Path) -> str:
 def _evidence_content(validation: ValidationReport, profile: DatasheetProfile | None) -> str:
     rows = [
         _profile_meta(validation, profile),
-        _profile_fact_table_with_gaps(profile),
-        _profile_pin_detail_table(profile),
-        _profile_evidence_table(profile),
+        _profile_fact_table_with_gaps(profile, refdes=validation.refdes),
+        _profile_pin_detail_table(profile, refdes=validation.refdes),
+        _profile_evidence_table(profile, refdes=validation.refdes),
         _thermal_package_note(profile),
     ]
     return "".join(rows)
@@ -559,16 +594,16 @@ def _profile_meta(validation: ValidationReport, profile: DatasheetProfile | None
         )
     return (
         "<table><tbody>"
-        f"<tr><th>验证来源</th><td>{escape(validation.profile_part_number)}</td></tr>"
+        f"<tr><th>验证来源</th><td>{_profile_part_cell(validation.profile_part_number)}</td></tr>"
         f"<tr><th>档案型号</th><td>{escape(profile.part_number)}</td></tr>"
-        f"<tr><th>审核状态</th><td>{escape(profile.review_status)}</td></tr>"
-        f"<tr><th>Schema</th><td>{escape(profile.schema_version)}</td></tr>"
-        f"<tr><th>抽取模型</th><td>{escape(profile.extracted_model)}</td></tr>"
+        f"<tr><th>审核状态</th><td>{_raw_title_cell(review_status_label(profile.review_status), profile.review_status)}</td></tr>"
+        f"<tr><th>档案版本</th><td>{escape(profile.schema_version)}</td></tr>"
+        f"<tr><th>抽取来源</th><td>{_raw_title_cell(extraction_model_label(profile.extracted_model), profile.extracted_model)}</td></tr>"
         "</tbody></table>"
     )
 
 
-def _profile_fact_table(profile: DatasheetProfile | None) -> str:
+def _profile_fact_table(profile: DatasheetProfile | None, *, refdes: str | None = None) -> str:
     if profile is None:
         return ""
     rows = [
@@ -577,23 +612,28 @@ def _profile_fact_table(profile: DatasheetProfile | None) -> str:
     ]
     for group, facts in (("abs_max", profile.abs_max), ("recommended", profile.recommended)):
         if not facts:
-            rows.append(f"<tr><td>{group}</td><td>-</td><td>-</td><td>-</td></tr>")
+            rows.append(
+                f"<tr><td>{_raw_title_cell(profile_group_label(group), group)}</td>"
+                "<td>-</td><td>-</td><td>-</td></tr>"
+            )
             continue
         for key, value in sorted(facts.items()):
             token = profile.evidence.get(f"{group}.{key}", "")
             rows.append(
                 "<tr>"
-                f"<td>{group}</td>"
-                f"<td>{escape(key)}</td>"
-                f"<td>{escape(_format_profile_value(value))}</td>"
-                f'<td class="evidence">{_evidence([token] if token else [])}</td>'
+                f"<td>{_raw_title_cell(profile_group_label(group), group)}</td>"
+                f"<td>{_raw_title_cell(profile_fact_label(group, key), f'{group}.{key}')}</td>"
+                f"<td>{_raw_title_cell(_format_profile_value(value), str(value))}</td>"
+                f'<td class="evidence">{_evidence([token] if token else [], refdes)}</td>'
                 "</tr>"
             )
     rows.append("</tbody></table>")
     return "".join(rows)
 
 
-def _profile_fact_table_with_gaps(profile: DatasheetProfile | None) -> str:
+def _profile_fact_table_with_gaps(
+    profile: DatasheetProfile | None, *, refdes: str | None = None
+) -> str:
     if profile is None:
         return ""
     rows = [
@@ -602,18 +642,21 @@ def _profile_fact_table_with_gaps(profile: DatasheetProfile | None) -> str:
     ]
     for group, facts in (("abs_max", profile.abs_max), ("recommended", profile.recommended)):
         if not facts:
-            rows.append(f"<tr><td>{group}</td><td>-</td><td>-</td><td>-</td></tr>")
+            rows.append(
+                f"<tr><td>{_raw_title_cell(profile_group_label(group), group)}</td>"
+                "<td>-</td><td>-</td><td>-</td></tr>"
+            )
             continue
         for key, value in sorted(facts.items()):
             claim_key = f"{group}.{key}"
             token = profile.evidence.get(claim_key, "")
             gap = evidence_gap_chip(claim_key, value, profile.evidence)
-            evidence_html = _evidence([token] if token else []) + gap
+            evidence_html = _evidence([token] if token else [], refdes) + gap
             rows.append(
                 "<tr>"
-                f"<td>{group}</td>"
-                f"<td>{escape(key)}</td>"
-                f"<td>{escape(_format_profile_value(value))}</td>"
+                f"<td>{_raw_title_cell(profile_group_label(group), group)}</td>"
+                f"<td>{_raw_title_cell(profile_fact_label(group, key), claim_key)}</td>"
+                f"<td>{_raw_title_cell(_format_profile_value(value), str(value))}</td>"
                 f'<td class="evidence">{evidence_html}</td>'
                 "</tr>"
             )
@@ -621,7 +664,9 @@ def _profile_fact_table_with_gaps(profile: DatasheetProfile | None) -> str:
     return "".join(rows)
 
 
-def _profile_pin_detail_table(profile: DatasheetProfile | None) -> str:
+def _profile_pin_detail_table(
+    profile: DatasheetProfile | None, *, refdes: str | None = None
+) -> str:
     if profile is None:
         return ""
     rows = [
@@ -633,16 +678,16 @@ def _profile_pin_detail_table(profile: DatasheetProfile | None) -> str:
             "<tr>"
             f'<td class="ref">{escape(pin.number)}</td>'
             f"<td>{escape(pin.name)}</td>"
-            f"<td>{escape(_format_mapping(pin.limits))}</td>"
-            f"<td>{escape('; '.join(pin.recommended_topology) or '-')}</td>"
-            f'<td class="evidence">{_evidence(pin.evidence)}</td>'
+            f"<td>{escape(_format_mapping(pin.limits or {}))}</td>"
+            f"<td>{escape(_format_recommended_topology(pin.recommended_topology))}</td>"
+            f'<td class="evidence">{_evidence(pin.evidence, refdes)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table>")
     return "".join(rows)
 
 
-def _profile_evidence_table(profile: DatasheetProfile | None) -> str:
+def _profile_evidence_table(profile: DatasheetProfile | None, *, refdes: str | None = None) -> str:
     if profile is None:
         return ""
     rows = [
@@ -653,7 +698,8 @@ def _profile_evidence_table(profile: DatasheetProfile | None) -> str:
         rows.append("<tr><td>-</td><td>-</td></tr>")
     for key, token in sorted(profile.evidence.items()):
         rows.append(
-            f'<tr><td>{escape(key)}</td><td class="evidence">{_evidence([token])}</td></tr>'
+            f"<tr><td>{_raw_title_cell(profile_claim_label(key), key)}</td>"
+            f'<td class="evidence">{_evidence([token], refdes)}</td></tr>'
         )
     rows.append("</tbody></table>")
     return "".join(rows)
@@ -669,13 +715,33 @@ def _format_mapping(values: dict[str, ProfileValue]) -> str:
     if not values:
         return "-"
     return ", ".join(
-        f"{key}={_format_profile_value(value)}" for key, value in sorted(values.items())
+        f"{limit_label(key)}={_format_profile_value(value)}" for key, value in sorted(values.items())
     )
+
+
+def _format_recommended_topology(values: list[str]) -> str:
+    if not values:
+        return "-"
+    return "；".join(recommended_topology_label(value) for value in values)
 
 
 def _format_profile_value(value: ProfileValue) -> str:
     if isinstance(value, bool):
-        return "true" if value else "false"
+        return profile_value_label(value)
     if isinstance(value, float):
         return f"{value:g}"
-    return str(value)
+    return profile_value_label(value)
+
+
+def _profile_part_cell(part_number: str) -> str:
+    return _raw_title_cell(profile_part_label(part_number), part_number)
+
+
+def _raw_title_cell(label: str, raw: str) -> str:
+    if label == raw:
+        return escape(label)
+    return f'<span title="{escape(raw)}">{escape(label)}</span>'
+
+
+def _check_subject(value: str) -> str:
+    return _raw_title_cell(check_label(value), value)

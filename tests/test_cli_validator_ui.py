@@ -32,11 +32,15 @@ def test_report_validator_ui_writes_html(tmp_path: Path) -> None:
     assert "(3 components, selected=U1, PASS, PASS/WARN/ERROR=3/0/0)" in result.output
 
     html = output.read_text(encoding="utf-8")
-    assert "<title>Hardwise Validator UI - l78_regulator</title>" in html
-    assert "Component index" in html
+    assert "<title>Hardwise 原理图检验工具 - l78_regulator</title>" in html
+    assert "器件索引" in html
     assert "U1" in html
-    assert "Download report" in html
+    assert "下载报告" in html
+    assert "Hardwise / 原理图检验工具" in html
+    assert "电源输入" in html
     assert "boardview" in html
+    assert "Download report" not in html
+    assert "Component index" not in html
 
 
 def test_report_validator_ui_writes_xl1509_dcdc_checks(tmp_path: Path) -> None:
@@ -60,14 +64,15 @@ def test_report_validator_ui_writes_xl1509_dcdc_checks(tmp_path: Path) -> None:
     assert "selected=U12, ERROR" in result.output
 
     html = output.read_text(encoding="utf-8")
-    assert "Hardwise Validator UI - xl1509_buck" in html
+    assert "Hardwise 原理图检验工具 - xl1509_buck" in html
     assert "U12" in html
     assert "ERROR" in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
-    assert "buck_freewheel_diode" in html
-    assert "buck_inductor" in html
-    assert ".brd, boardview, placement, routing, PCB geometry" in html
+    assert "Buck 续流二极管" in html
+    assert "Buck 电感" in html
+    assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
+    assert "not a Schottky-style diode family" not in html
 
 
 def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: Path) -> None:
@@ -94,6 +99,7 @@ def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: 
     html = output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
     assert 'class="left-stack" aria-label="器件与验证摘要"' in html
+    assert html.index('aria-label="验证"') < html.index('aria-label="器件"')
     assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
@@ -180,7 +186,7 @@ def test_report_validator_ui_batch_writes_eg2132_gate_driver_checks(
     assert "外围/拓扑检查" in html
     assert "gate_driver_bootstrap" in html
     assert "MBRA210LT3G" in html
-    assert "below required 24 V" in html
+    assert "低于所需 24 V" in html
     assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
@@ -213,8 +219,8 @@ def test_report_validator_ui_batch_writes_stm32_mcu_checks(
     assert "外围/拓扑检查" in html
     assert "mcu_swdio" in html
     assert "mcu_swclk" in html
-    assert "SWDIO is connected to SWCLK" in html
-    assert "SWCLK is connected to SWDIO" in html
+    assert "MCU SWDIO 连接到了 SWCLK，期望连接到 SWDIO" in html
+    assert "MCU SWCLK 连接到了 SWDIO，期望连接到 SWCLK" in html
     assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
@@ -279,8 +285,8 @@ def test_report_validator_ui_batch_writes_mixed_controller_manifest(
     html = output.read_text(encoding="utf-8")
     assert 'data-select-ref="U8"' in html
     assert '<article class="panel" data-panel="U8">' in html
-    assert "SWDIO is connected to SWCLK" in html
-    assert "SWCLK is connected to SWDIO" in html
+    assert "MCU SWDIO 连接到了 SWCLK，期望连接到 SWDIO" in html
+    assert "MCU SWCLK 连接到了 SWDIO，期望连接到 SWCLK" in html
     assert "MBRA210LT3G" in html
 
 
@@ -401,9 +407,10 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
 
     html = html_output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
+    assert html.index('aria-label="验证"') < html.index('aria-label="器件"')
     assert 'data-select-ref="U8"' in html
-    assert "SWDIO is connected to SWCLK" in html
-    assert "SWCLK is connected to SWDIO" in html
+    assert "MCU SWDIO 连接到了 SWCLK，期望连接到 SWDIO" in html
+    assert "MCU SWCLK 连接到了 SWDIO，期望连接到 SWCLK" in html
     for section in (
         "model-check",
         "pin-summary",
@@ -418,6 +425,9 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert "6. 综合总结" in html
     assert "L1 确定性" in html
     assert "evidence-chip" in html
+    assert "data-evidence-token" in html
+    assert 'href="#U8-evidence-details"' in html
+    assert 'id="U8-evidence-details"' in html
     assert "recommended.swd" in html
     assert "datasheet:stm32g030.pdf#p33" in html
     assert "外围/拓扑检查" in html
@@ -455,13 +465,17 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     assert "data-ai-root" in html
     assert "hardwise-copilot-config" in html
     assert "离线审计快照" in html
+    assert "ai-guide" in html
+    assert '<div class="ai-msg assistant"><p>可以询问选中器件' not in html
     assert "run_component_validation" in html
     assert "search_datasheet" in html
-    assert "Guard wraps" in html
-    assert "Trust" in html
+    assert "位号防护" in html
+    assert "防护包裹次数" in html
+    assert "可信度" in html
+    assert "证据 token" in html
     assert "L2 grounded" in html
     assert "datasheet:l78.pdf#p4" in html
-    assert "Show regulator datasheet evidence-chain smoke" in html
+    assert "查看 L7805 输入耐压的数据手册证据链" in html
     assert "没有配置向量数据手册搜索" in html
     assert "⟨?U999⟩" in html
 

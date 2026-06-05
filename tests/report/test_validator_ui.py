@@ -50,17 +50,19 @@ def test_render_validator_ui_includes_index_detail_and_scope() -> None:
     )
 
     assert "<!doctype html>" in html
-    assert "Hardwise local validator UI" in html
+    assert "Hardwise / 原理图检验工具" in html
     assert 'id="component-index"' in html
     assert '<td class="ref">U1</td>' in html
-    assert "Download report" in html
+    assert "下载报告" in html
     assert "PASS/WARN/ERROR" in html
-    assert "Pin 1 - -> +12V" in html
-    assert "L1 deterministic" in html
+    assert "引脚 1 VI -> +12V" in html
+    assert "L1 确定性" in html
     assert "evidence-chip" in html
-    assert 'data-source="datasheet">datasheet:l78.pdf#p4' in html
+    assert 'data-evidence-token="datasheet:l78.pdf#p4"' in html
+    assert 'href="#evidence-details"' in html
+    assert 'id="evidence-details"' in html
     assert "datasheet:l78.pdf#p4" in html
-    assert ".brd, boardview, placement, routing, PCB geometry" in html
+    assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
 def test_render_multi_validator_ui_includes_multiple_details() -> None:
@@ -101,6 +103,7 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
 
     assert "Hardwise / 原理图检验工具" in html
     assert 'class="left-stack" aria-label="器件与验证摘要"' in html
+    assert html.index('aria-label="验证"') < html.index('aria-label="器件"')
     assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
@@ -135,9 +138,13 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert "4. 合规矩阵" in html
     assert "5. 证据详情" in html
     assert "6. 综合总结" in html
+    assert "器件级检查" in html
+    assert '<span class="pill">component_checks</span>' not in html
     assert "L1 确定性" in html
     assert "evidence-chip" in html
-    assert 'data-source="datasheet">datasheet:xl1509.pdf#p9' in html
+    assert 'data-evidence-token="datasheet:xl1509.pdf#p9"' in html
+    assert 'href="#U12-evidence-details"' in html
+    assert 'id="U12-evidence-details"' in html
     assert "+24V" in html
     assert "U12-1" in html
     assert "recommended.inductor" in html
@@ -248,9 +255,17 @@ def test_copilot_snapshot_fallback_uses_boundary_answer_only() -> None:
     assert "return snapshots.__fallback__" in COPILOT_SCRIPT
     assert "item !== '__fallback__' && !/U999/i.test(item)" not in COPILOT_SCRIPT
     assert "ai-trace-field" in COPILOT_SCRIPT
-    assert "Guard wraps" in COPILOT_SCRIPT
-    assert "Trust" in COPILOT_SCRIPT
+    assert "防护包裹次数" in COPILOT_SCRIPT
+    assert "可信度" in COPILOT_SCRIPT
     assert "root.classList.add('ai-open')" in COPILOT_SCRIPT
     assert "root.classList.remove('ai-open')" in COPILOT_SCRIPT
     assert ".ai-root.ai-open .ai-fab{display:none}" in COPILOT_STYLE
+    assert "ai-guide" in COPILOT_STYLE
+    assert "状态：已完成确定性验证" in COPILOT_SCRIPT
+    assert "查询范围" in COPILOT_SCRIPT
+    assert "工具入参" not in COPILOT_SCRIPT
+    assert "证据 token" in COPILOT_SCRIPT
+    assert "防护包裹次数" in COPILOT_SCRIPT
+    assert "data-evidence-token" in COPILOT_SCRIPT
+    assert "scrollIntoView({block: 'start', behavior: 'smooth'})" in COPILOT_SCRIPT
     assert "input=${JSON.stringify" not in COPILOT_SCRIPT

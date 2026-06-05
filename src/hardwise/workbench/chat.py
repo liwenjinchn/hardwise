@@ -14,15 +14,14 @@ from hardwise.agent.prompts import WORKBENCH_SYSTEM_PROMPT
 from hardwise.agent.router import ModelRouter, Tier
 from hardwise.agent.runner import RunResult, Runner, ToolCallTrace
 from hardwise.guards.refdes import sanitize_text
+from hardwise.report.ui_terms import check_label, validation_summary_label
 from hardwise.trust import TrustTier, trust_label_text
 from hardwise.validation.project_index import ProjectValidationRow
 from hardwise.workbench.context import WorkbenchContext
 
 
 ChatMode = Literal["fake", "real", "snapshot"]
-C5_L2_SNAPSHOT_QUESTION = (
-    "Show regulator datasheet evidence-chain smoke for absolute maximum input voltage"
-)
+C5_L2_SNAPSHOT_QUESTION = "查看 L7805 输入耐压的数据手册证据链"
 
 
 class ChatMessage(BaseModel):
@@ -185,7 +184,7 @@ class _FakeWorkbenchMessages:
             return _localized(
                 self._last_question,
                 "The tool returned a result, but this fake workbench mode cannot summarize it yet.",
-                "工具已经返回结果，但 fake 模式暂时不能总结这个结果。",
+                "工具已经返回结果，但演示模式暂时不能总结这个结果。",
             )
         return self._answer_from_validation_result(validation_payload)
 
@@ -222,6 +221,11 @@ class _FakeWorkbenchMessages:
             snippet = text[:220]
             if _wants_english(self._last_question):
                 return f"Datasheet search found {source} p{page}: {snippet}"
+            if "Absolute maximum ratings table: input voltage VI is 35 V" in text:
+                return (
+                    f"数据手册搜索命中 {source} 第 {page} 页："
+                    "绝对最大额定值表显示，VI 输入耐压为 35 V。"
+                )
             return f"数据手册搜索找到 {source} 第 {page} 页：{snippet}"
 
         return _localized(
@@ -237,9 +241,10 @@ class _FakeWorkbenchMessages:
             overall = str(payload.get("overall") or "UNKNOWN")
             counts = payload.get("counts") if isinstance(payload.get("counts"), dict) else {}
             checks = payload.get("checks") if isinstance(payload.get("checks"), list) else []
-            important = _important_checks(checks)
+            wants_english = _wants_english(self._last_question)
+            important = _important_checks(checks, localized=not wants_english)
             evidence = _evidence_from_checks(checks)
-            if _wants_english(self._last_question):
+            if wants_english:
                 lines = [
                     f"{refdes} is {overall} in the deterministic family validator.",
                     (
@@ -275,7 +280,7 @@ class _FakeWorkbenchMessages:
                 suffix = f" Closest matches: {suggestions}." if suggestions else ""
                 return f"I could not find {refdes} in the EDA registry.{suffix}"
             suffix = f" 最接近的是: {suggestions}。" if suggestions else ""
-            return f"我没有在当前 EDA registry 中找到 {refdes}。{suffix}"
+            return f"我没有在当前解析到的 EDA 器件清单中找到 {refdes}。{suffix}"
 
         if status == "no_profile":
             if _wants_english(self._last_question):
@@ -284,7 +289,7 @@ class _FakeWorkbenchMessages:
 
         if _wants_english(self._last_question):
             return "The tool returned a result, but this fake workbench mode cannot summarize it yet."
-        return "工具已经返回结果，但 fake 模式暂时不能总结这个结果。"
+        return "工具已经返回结果，但演示模式暂时不能总结这个结果。"
 
     def _answer_from_topology_result(self, payload: dict[str, Any]) -> str:
         status = str(payload.get("status") or "")
@@ -305,7 +310,7 @@ class _FakeWorkbenchMessages:
         return _localized(
             self._last_question,
             "The topology tool returned a result, but this fake workbench mode cannot summarize it yet.",
-            "topology 工具已经返回结果，但 fake 模式暂时不能总结这个结果。",
+            "拓扑工具已经返回结果，但演示模式暂时不能总结这个结果。",
         )
 
     def _answer_from_document_result(self, payload: dict[str, Any]) -> str:
@@ -314,7 +319,7 @@ class _FakeWorkbenchMessages:
             return _localized(
                 self._last_question,
                 "No public document index is configured for this workbench run.",
-                "这次 workbench 没有配置公开 document index，所以不能给出资料覆盖状态。",
+                "这次工作台没有配置公开资料索引，所以不能给出资料覆盖状态。",
             )
 
         if status == "configured":
@@ -337,7 +342,7 @@ class _FakeWorkbenchMessages:
                     f"First gap/sample: {identity} ({doc_status})."
                 )
             return (
-                "资料覆盖来自已配置的公开 document index，不代表电气规格结论。"
+                "资料覆盖来自已配置的公开资料索引，不代表电气规格结论。"
                 f"计数: matched={counts.get('matched', 0)}，no_result={counts.get('no_result', 0)}，"
                 f"ambiguous={counts.get('ambiguous', 0)}，manual_needed={counts.get('manual_needed', 0)}。"
                 f"首个缺口/样例: {identity}（{doc_status}）。"
@@ -357,14 +362,14 @@ class _FakeWorkbenchMessages:
                     "not an electrical spec claim."
                 )
             return (
-                f"{refdes} 对应 BOM 身份 {identity}；本地公开 document index 已匹配资料："
+                f"{refdes} 对应 BOM 身份 {identity}；本地公开资料索引已匹配资料："
                 f"{title}（{source}）。这只是资料覆盖证据，不是电气规格结论。"
             )
         if status == "ambiguous":
             count = len(candidates)
             if _wants_english(self._last_question):
                 return f"{refdes} maps to {identity}, but the document index has {count} candidates; reviewer selection is needed."
-            return f"{refdes} 对应 BOM 身份 {identity}，但 document index 有 {count} 个候选，需要人工选定。"
+            return f"{refdes} 对应 BOM 身份 {identity}，但公开资料索引有 {count} 个候选，需要人工选定。"
         if status in {"no_result", "manual_needed"}:
             reason = str(payload.get("reason") or "")
             if _wants_english(self._last_question):
@@ -380,7 +385,7 @@ class _FakeWorkbenchMessages:
         return _localized(
             self._last_question,
             "The document tool returned a result, but this fake workbench mode cannot summarize it yet.",
-            "document 工具已经返回结果，但 fake 模式暂时不能总结这个结果。",
+            "资料工具已经返回结果，但演示模式暂时不能总结这个结果。",
         )
 
 
@@ -867,12 +872,12 @@ def _summarize_topology_payload(question: str, payload: dict[str, Any]) -> str:
             f"First profile gap: {first_gap.get('identity', '-')} ({first_gap.get('refdes_count', 0)} refs)."
         )
     return (
-        "拓扑摘要只基于 schematic/netlist："
+        "拓扑摘要只基于解析后的原理图/netlist："
         f"{payload.get('component_count')} 个器件，{payload.get('net_count')} 条网络，"
-        f"已验证 {payload.get('validated_count')} 个，待人工/profile {payload.get('manual_count')} 个，"
+        f"已验证 {payload.get('validated_count')} 个，待人工补档案 {payload.get('manual_count')} 个，"
         f"PASS/WARN/ERROR={totals.get('PASS', 0)}/{totals.get('WARN', 0)}/{totals.get('ERROR', 0)}。"
         f"电源类网络: {power}。接口类网络: {interface}。控制类网络: {control}。"
-        f"首个 profile 缺口: {first_gap.get('identity', '-')}（{first_gap.get('refdes_count', 0)} 个 refdes）。"
+        f"首个器件档案缺口: {first_gap.get('identity', '-')}（{first_gap.get('refdes_count', 0)} 个位号）。"
     )
 
 
@@ -964,10 +969,11 @@ def _needs_datasheet_search(question: str) -> bool:
 
 
 def _is_evidence_chain_smoke(question: str) -> bool:
-    return "evidence-chain smoke" in question.lower()
+    text = question.lower()
+    return "evidence-chain smoke" in text or "证据链" in question
 
 
-def _important_checks(checks: list[Any]) -> list[str]:
+def _important_checks(checks: list[Any], *, localized: bool = False) -> list[str]:
     rendered: list[str] = []
     for status in ("ERROR", "WARN"):
         for check in checks:
@@ -975,6 +981,10 @@ def _important_checks(checks: list[Any]) -> list[str]:
                 continue
             name = str(check.get("check") or "check")
             summary = str(check.get("summary") or "")
+            if localized:
+                name = check_label(name)
+            if localized:
+                summary = validation_summary_label(summary)
             rendered.append(f"{name}: {summary}")
     return rendered
 

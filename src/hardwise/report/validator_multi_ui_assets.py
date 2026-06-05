@@ -19,9 +19,10 @@ h1{margin:0;font-family:var(--serif);font-size:34px;line-height:1;letter-spacing
 .metric strong{display:block;margin-top:8px;font-family:var(--serif);font-size:31px;line-height:1}
 .metric.pass strong{color:var(--pass)}.metric.warn strong{color:var(--warn)}.metric.error strong{color:var(--error)}
 .workspace{display:grid;grid-template-columns:minmax(360px,480px) minmax(520px,1fr);min-height:760px}
-.left-stack{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:760px;border-right:1px solid var(--line);background:#0b0e0d}
+.left-stack{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:760px;border-right:1px solid var(--line);background:#0b0e0d}
 .rail,.verify{background:#0b0e0d}
-.rail{min-height:0;border-bottom:1px solid var(--line)}
+.rail{min-height:0}
+.verify{border-bottom:1px solid var(--line)}
 .rail-head,.verify-head{padding:16px 18px;border-bottom:1px solid var(--line)}
 .section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
 h2,h3{margin:0;font-size:18px;line-height:1.2}
@@ -38,7 +39,7 @@ th{position:sticky;top:0;z-index:1;background:#121716;color:var(--muted);font-fa
 .sub{display:block;margin-top:3px;color:var(--muted);font-size:12px}
 .status{display:inline-flex;align-items:center;justify-content:center;min-width:58px;min-height:24px;padding:3px 7px;border:1px solid currentColor;font-family:var(--mono);font-size:11px;font-weight:800}
 .pass{color:var(--pass)}.warn{color:var(--warn)}.error{color:var(--error)}.pending{color:var(--info)}
-.verified-list{padding:14px;display:grid;gap:10px}
+.verified-list{max-height:430px;overflow:auto;padding:14px;display:grid;gap:10px}
 .device-card{width:100%;text-align:left;border:1px solid var(--line);background:#101413;color:var(--ink);padding:12px 12px;cursor:pointer}
 .device-card.active{outline:2px solid rgba(0,184,212,.3);background:#101b1b}
 .device-line{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -77,7 +78,8 @@ th{position:sticky;top:0;z-index:1;background:#121716;color:var(--muted);font-fa
 .check-card p{margin:6px 0 0}
 .table-section{overflow:auto}
 .evidence code,.net code,.evidence-chip{display:inline-block;margin:0 4px 4px 0;padding:3px 5px;background:#17211f;font-family:var(--mono);font-size:12px}
-.evidence-chip{border:1px solid #263f39;color:#b7e8d7}
+.evidence-chip{border:1px solid #263f39;color:#b7e8d7;text-decoration:none;cursor:pointer}
+.evidence-chip:hover{border-color:var(--rail);color:#d8fff0}
 .evidence-gap{display:inline-block;margin:0 4px 4px 0;padding:3px 6px;border:1px solid #5a4a1f;background:#231d0e;color:#e8d3a0;font-family:var(--mono);font-size:11px;font-weight:700}
 .trust{display:inline-flex;align-items:center;min-height:24px;padding:3px 7px;border:1px solid currentColor;font-family:var(--mono);font-size:11px;font-weight:800;white-space:nowrap}
 .trust-l1{color:var(--pass)}.trust-l2{color:var(--info)}.trust-l3{color:var(--warn)}
@@ -121,5 +123,27 @@ MULTI_UI_SCRIPT = """
       });
     });
   }
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const chip = target.closest('a.evidence-chip[data-evidence-token]');
+    if (!chip) return;
+    const token = chip.dataset.evidenceToken || chip.textContent || '';
+    if (navigator.clipboard && token) navigator.clipboard.writeText(token).catch(() => {});
+    const href = chip.getAttribute('href') || '';
+    if (!href.startsWith('#')) return;
+    event.preventDefault();
+    const targetId = href.slice(1);
+    const section = targetId.replace(/^[^-]+-/, '');
+    let destination = null;
+    if (targetId === 'component-index') {
+      destination = document.getElementById('component-index');
+    } else {
+      destination = document.getElementById(targetId);
+      const panel = chip.closest('[data-panel]') || document.querySelector('.panel.active');
+      destination = destination || (panel ? panel.querySelector(`[data-section="${section}"]`) : null);
+    }
+    if (destination) destination.scrollIntoView({block: 'start', behavior: 'smooth'});
+  });
 })();
 """

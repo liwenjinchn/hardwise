@@ -3545,3 +3545,114 @@ A closeout smoke is not busywork: it proves coverage moved by a named public
 profile group and keeps the remaining manual work visible. After a profile
 slice, the next-family advisory should be read as a review queue, not as
 permission to promote the next part without public document evidence.
+
+## 2026-06-05 — Public demo packaging must point to the strongest audited artifact
+
+**Symptom**
+
+The browser preview opened a generated `/tmp` workbench without the Copilot
+snapshot and with the old mixed-controller counts:
+
+```text
+25 components
+validated=4
+PASS/WARN/ERROR=1/0/3
+manual=21
+```
+
+That made the demo look half-finished even though the current CLI could already
+render the stronger offline Copilot workbench.
+
+**Root cause**
+
+The implementation and the public reading layer had drifted apart. The latest
+`design-validator-ui --ai-snapshot` output had 16 validated rows and a baked
+Copilot panel, but README / GitHub Pages / demo docs were still easy to read as
+the older static validator surface. `docs/index.html` also linked to
+`docs/submission/` files, but that directory is intentionally gitignored and
+therefore not a reliable public Pages entry.
+
+**Fix**
+
+Regenerated `docs/hardware-demo.html` with `--ai-snapshot` and updated the
+public docs around that artifact:
+
+```text
+25 components
+BOM matched=25
+validated rows=16
+PASS/WARN/ERROR=4/9/3
+manual/no-local-profile rows=9
+```
+
+The README quickstart now includes both the KiCad review command and the
+Allegro Copilot workbench command. The public docs explicitly distinguish the
+4 profile-backed targets from 12 generic passive checks, and `docs/index.html`
+now treats `docs/submission/` as local-only rather than linking ignored files.
+
+**Takeaway**
+
+For a portfolio demo, correctness includes routing. The public entry point must
+open the strongest audited artifact, and the counts must say what kind of
+coverage they represent. Generic passive rows are light deterministic coverage,
+not deep datasheet validation; ignored local submission files should not appear
+as public Pages links.
+
+## 2026-06-05 — Demo UI must separate audit keys from reader-facing labels
+
+**Symptom**
+
+`docs/hardware-demo.html` still exposed internal strings such as
+`GENERIC_CAPACITOR`, `power_input`, `recommended.*`, `component_checks`, `mpn`,
+`ready`, and `+N more`. The validation was stronger, but the visible page read
+like an implementation dump rather than an interview-ready tool.
+
+**Root cause**
+
+The renderer reused deterministic profile/check keys directly in visible table
+cells. Those keys are useful audit metadata, but the UI did not distinguish
+machine-readable facts from reader-facing labels.
+
+**Fix**
+
+Added shared display helpers in `src/hardwise/report/ui_terms.py` for profile
+parts, pin categories, check names, profile claim keys, review status, and
+extraction source. The workbench now renders Chinese labels while preserving
+raw keys/tokens in tooltips, generated JSON, and evidence chips. Evidence chips
+remain visible/copyable links and scroll to the current component evidence
+section.
+
+**Takeaway**
+
+For demo artifacts, provenance should stay raw where it proves the claim, but
+internal enum names should not be the main reading surface. Keep audit tokens
+visible; translate structural labels.
+
+## 2026-06-05 — Workbench affordances must match actual interaction
+
+**Symptom**
+
+The hardware demo page made the strongest validation path hard to notice: the
+validation rail appeared below the component index, the Copilot scope note was
+styled too much like a clickable module, and evidence chips were visible tokens
+but did not point to the current component's evidence section.
+
+**Root cause**
+
+The renderer treated all panel blocks as equal visual cards and used generic
+anchors such as `#evidence-details` inside a multi-component page where real
+section IDs are scoped by refdes, for example `#U12-evidence-details`.
+
+**Fix**
+
+Moved the validation rail above the component rail, changed the Copilot scope
+copy into a plain non-interactive note, and made evidence chips render
+refdes-scoped links while preserving raw token text. Browser QA confirmed that
+U12 evidence links scroll to the U12 evidence section and that the Copilot guide
+has no button role, tab stop, border, background, or pointer cursor.
+
+**Takeaway**
+
+For an interview demo, visible affordances are part of correctness. If something
+looks clickable, it should be clickable; if an evidence token is clickable, it
+must land on the exact audited evidence for the active component.

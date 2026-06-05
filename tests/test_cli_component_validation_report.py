@@ -31,11 +31,11 @@ def test_report_component_validation_writes_report(tmp_path: Path) -> None:
     assert "(PASS, PASS/WARN/ERROR=3/0/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
-    assert "# Hardwise Component Validation - U1" in md
-    assert "| Component MPN | L7805 |" in md
-    assert "Pin Consistency" in md
-    assert "5. Evidence Details" in md
-    assert "| 3 | VO | power_output | +5V | PASS |" in md
+    assert "# Hardwise 器件验证报告 - U1" in md
+    assert "| 器件 MPN | L7805 |" in md
+    assert "引脚一致性" in md
+    assert "5. 证据详情" in md
+    assert "| 3 | VO | 电源输出 | +5V | PASS |" in md
 
 
 def test_report_component_validation_writes_xl1509_dcdc_errors(tmp_path: Path) -> None:
@@ -60,23 +60,23 @@ def test_report_component_validation_writes_xl1509_dcdc_errors(tmp_path: Path) -
     assert "(ERROR, PASS/WARN/ERROR=8/0/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
-    assert "# Hardwise Component Validation - U12" in md
-    assert "| Overall status | ERROR |" in md
-    assert "| Component check PASS/WARN/ERROR | 0 / 0 / 2 |" in md
-    assert "Pin Check Summary" in md
-    assert "Component Basic Info" in md
-    assert "Model Check" in md
-    assert "3. Connection Path" in md
-    assert "Pin Consistency" in md
-    assert "4. Compliance Matrix" in md
-    assert "5. Evidence Details" in md
-    assert "recommended.inductor" in md
+    assert "# Hardwise 器件验证报告 - U12" in md
+    assert "| 综合判定 | ERROR |" in md
+    assert "| 器件级检查 PASS/WARN/ERROR | 0 / 0 / 2 |" in md
+    assert "引脚检查汇总" in md
+    assert "器件基本信息" in md
+    assert "型号核对" in md
+    assert "3. 连接路径" in md
+    assert "引脚一致性" in md
+    assert "4. 合规矩阵" in md
+    assert "5. 证据详情" in md
+    assert "电感选型" in md
     assert "datasheet:xl1509.pdf#p9" in md
-    assert "6. Final Summary" in md
-    assert "D5 (1N4007W)" in md
-    assert "not a Schottky-style diode family" in md
-    assert "L1 is 6.8 uH" in md
-    assert "below the profile minimum 68 uH" in md
+    assert "6. 综合总结" in md
+    assert "D5（1N4007W）" in md
+    assert "不是肖特基类型" in md
+    assert "电感 L1 为 6.8 uH" in md
+    assert "低于器件档案下限 68 uH" in md
 
 
 def test_report_component_validation_writes_eg2132_gate_driver_errors(
@@ -103,14 +103,14 @@ def test_report_component_validation_writes_eg2132_gate_driver_errors(
     assert "(ERROR, PASS/WARN/ERROR=8/0/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
-    assert "# Hardwise Component Validation - U3" in md
-    assert "| Profile part | EG2132 |" in md
-    assert "| Overall status | ERROR |" in md
-    assert "| Component check PASS/WARN/ERROR | 6 / 0 / 1 |" in md
-    assert "gate_driver_bootstrap" in md
+    assert "# Hardwise 器件验证报告 - U3" in md
+    assert "| 器件档案 | EG2132 |" in md
+    assert "| 综合判定 | ERROR |" in md
+    assert "| 器件级检查 PASS/WARN/ERROR | 6 / 0 / 1 |" in md
+    assert "栅极驱动自举路径" in md
     assert "MBRA210LT3G" in md
-    assert "below required 24 V" in md
-    assert "recommended.bootstrap_diode" in md
+    assert "低于所需 24 V" in md
+    assert "自举二极管" in md
     assert "datasheet:eg2132.pdf#p6" in md
 
 
@@ -138,15 +138,16 @@ def test_report_component_validation_writes_stm32_mcu_errors(
     assert "(ERROR, PASS/WARN/ERROR=9/0/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
-    assert "# Hardwise Component Validation - U8" in md
-    assert "| Profile part | STM32G030C8T6 |" in md
-    assert "| Overall status | ERROR |" in md
-    assert "mcu_swdio" in md
-    assert "mcu_swclk" in md
-    assert "SWDIO is connected to SWCLK" in md
-    assert "SWCLK is connected to SWDIO" in md
-    assert "recommended.swd" in md
+    assert "# Hardwise 器件验证报告 - U8" in md
+    assert "| 器件档案 | STM32G030C8T6 |" in md
+    assert "| 综合判定 | ERROR |" in md
+    assert "MCU SWDIO 调试线" in md
+    assert "MCU SWCLK 调试线" in md
+    assert "MCU SWDIO 连接到了 SWCLK" in md
+    assert "MCU SWCLK 连接到了 SWDIO" in md
+    assert "SWD 调试接口" in md
     assert "datasheet:stm32g030.pdf#p33" in md
+    assert "SWDIO is connected to SWCLK" not in md
 
 
 def test_report_component_validation_rejects_unknown_refdes() -> None:

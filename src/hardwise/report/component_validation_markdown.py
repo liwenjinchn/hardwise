@@ -13,6 +13,20 @@ from hardwise.report.component_validation_details import (
     trust_label_text,
 )
 from hardwise.report.markdown import _escape_pipe
+from hardwise.report.ui_terms import (
+    check_label,
+    extraction_model_label,
+    limit_label,
+    pin_category_label,
+    profile_claim_label,
+    profile_fact_label,
+    profile_group_label,
+    profile_part_label,
+    profile_value_label,
+    recommended_topology_label,
+    review_status_label,
+    validation_summary_label,
+)
 from hardwise.validation.types import PinValidation, ValidationReport
 
 
@@ -27,32 +41,31 @@ def render(
     """Return markdown for one component validation report."""
 
     counts = report.counts_by_status
-    lines = [f"# Hardwise Component Validation - {report.refdes}", ""]
-    lines.append("| Field | Value |")
+    lines = [f"# Hardwise 器件验证报告 - {report.refdes}", ""]
+    lines.append("| 字段 | 值 |")
     lines.append("|---|---|")
-    lines.append(f"| Refdes | {report.refdes} |")
-    lines.append(f"| Component value | {_escape_pipe(report.component_value or '-')} |")
-    lines.append(f"| Component MPN | {_escape_pipe(report.part_number or '-')} |")
-    lines.append(f"| Profile part | {_escape_pipe(report.profile_part_number)} |")
-    lines.append(f"| Trust tier | {trust_label_text('l1')} |")
+    lines.append(f"| 位号 | {report.refdes} |")
+    lines.append(f"| 器件描述 | {_escape_pipe(report.component_value or '-')} |")
+    lines.append(f"| 器件 MPN | {_escape_pipe(report.part_number or '-')} |")
+    lines.append(f"| 器件档案 | {_escape_pipe(profile_part_label(report.profile_part_number))} |")
+    lines.append(f"| 可信度 | {trust_label_text('l1')} |")
     if profile_path is not None:
-        lines.append(f"| Profile source | `{profile_path}` |")
-    lines.append(f"| Overall status | {report.status} |")
+        lines.append(f"| 器件档案来源 | `{profile_path}` |")
+    lines.append(f"| 综合判定 | {report.status} |")
     lines.append(
-        f"| Pin PASS/WARN/ERROR | {counts['PASS']} / {counts['WARN']} / {counts['ERROR']} |"
+        f"| 引脚 PASS/WARN/ERROR | {counts['PASS']} / {counts['WARN']} / {counts['ERROR']} |"
     )
     if report.component_checks:
         component_counts = report.component_counts_by_status
         lines.append(
-            "| Component check PASS/WARN/ERROR | "
+            "| 器件级检查 PASS/WARN/ERROR | "
             f"{component_counts['PASS']} / {component_counts['WARN']} / {component_counts['ERROR']} |"
         )
-    lines.append("| Scope | Single-component schematic pin validation only |")
+    lines.append("| 范围 | 单器件原理图引脚与外围/拓扑验证 |")
     lines.append("")
     lines.append(
-        "This report uses parsed schematic/netlist pins and structured datasheet pin "
-        "profiles. It does not parse PCB layout, boardview, placement, routing, "
-        "supplier data, PLM, lifecycle, price, or availability."
+        "本报告只使用解析后的原理图/netlist 引脚、网络拓扑和公开结构化器件档案事实；"
+        "不解析 PCB layout、boardview/板图、布局、走线、供应商在线数据、PLM、生命周期、价格或库存。"
     )
     lines.append("")
     lines.extend(_render_model_check(report))
@@ -63,63 +76,67 @@ def render(
     lines.extend(_render_compliance_checks(report))
     lines.extend(_render_evidence_details(report, profile))
     lines.extend(_render_summary(report))
-    lines.append("## Pin Validation")
+    lines.append("## 引脚验证明细")
     lines.append("")
-    lines.append("| Pin | Name | Category | Net | Status | Summary | Evidence |")
+    lines.append("| 引脚 | 名称 | 类别 | 网络 | 结论 | 说明 | 证据 |")
     lines.append("|---|---|---|---|---|---|---|")
     for pin in report.pin_results:
         lines.append(
             f"| {pin.pin_number} | {_escape_pipe(pin.pin_name)} | "
-            f"{_escape_pipe(pin.category)} | {_escape_pipe(pin.net or '-')} | "
-            f"{pin.status} | {_escape_pipe(pin.summary)} | {_evidence_cell(pin.evidence)} |"
+            f"{_escape_pipe(pin_category_label(pin.category))} | {_escape_pipe(pin.net or '-')} | "
+            f"{pin.status} | {_escape_pipe(validation_summary_label(pin.summary))} | "
+            f"{_evidence_cell(pin.evidence)} |"
         )
     lines.append("")
     return "\n".join(lines)
 
 
 def _render_pin_check_summary(pins: list[PinValidation]) -> list[str]:
-    lines = ["## 2. Pin Check Summary", ""]
-    lines.append("| Pin No | Pin Name | Status | Summarize |")
+    lines = ["## 2. 引脚检查汇总", ""]
+    lines.append("| 引脚 | 名称 | 结论 | 说明 |")
     lines.append("|---|---|---|---|")
     for pin in pins:
         lines.append(
             f"| {pin.pin_number} | {_escape_pipe(pin.pin_name)} | {pin.status} | "
-            f"{_escape_pipe(pin.summary)} |"
+            f"{_escape_pipe(validation_summary_label(pin.summary))} |"
         )
     lines.append("")
     return lines
 
 
 def _render_component_basic_info(report: ValidationReport) -> list[str]:
-    lines = ["### Component Basic Info", ""]
-    lines.append("| Item | Value |")
+    lines = ["### 器件基本信息", ""]
+    lines.append("| 项目 | 值 |")
     lines.append("|---|---|")
-    lines.append(f"| Refdes | {report.refdes} |")
-    lines.append(f"| Component value | {_escape_pipe(report.component_value or '-')} |")
-    lines.append(f"| Component MPN | {_escape_pipe(report.part_number or '-')} |")
-    lines.append(f"| Profile part | {_escape_pipe(report.profile_part_number)} |")
-    lines.append(f"| Profiled pins | {len(report.pin_results)} |")
+    lines.append(f"| 位号 | {report.refdes} |")
+    lines.append(f"| 器件描述 | {_escape_pipe(report.component_value or '-')} |")
+    lines.append(f"| 器件 MPN | {_escape_pipe(report.part_number or '-')} |")
+    lines.append(f"| 器件档案 | {_escape_pipe(profile_part_label(report.profile_part_number))} |")
+    lines.append(f"| 档案引脚数 | {len(report.pin_results)} |")
     lines.append("")
     return lines
 
 
 def _render_model_check(report: ValidationReport) -> list[str]:
+    is_generic = report.profile_part_number.startswith("GENERIC_")
     status = (
         "PASS"
-        if (report.part_number or report.component_value) == report.profile_part_number
+        if is_generic or (report.part_number or report.component_value) == report.profile_part_number
         else "WARN"
     )
     note = (
-        "BOM/component identity matches the structured profile part."
+        "BOM 参数进入通用被动件检查；这不是逐料号 datasheet 档案。"
+        if is_generic
+        else "BOM/器件身份与结构化器件档案匹配。"
         if status == "PASS"
-        else "Component identity differs from the structured profile part; reviewer should confirm."
+        else "BOM/器件身份需要人工对照器件档案确认。"
     )
-    lines = ["## 1. Model Check", ""]
-    lines.append("| Item | Matched model | Profile model | Status | Note |")
+    lines = ["## 1. 型号核对", ""]
+    lines.append("| 项目 | BOM/原理图型号 | 器件档案型号 | 结论 | 说明 |")
     lines.append("|---|---|---|---|---|")
     lines.append(
-        f"| Part number | {_escape_pipe(report.part_number or report.component_value or '-')} | "
-        f"{_escape_pipe(report.profile_part_number)} | {status} | {note} |"
+        f"| 料号 | {_escape_pipe(report.part_number or report.component_value or '-')} | "
+        f"{_escape_pipe(profile_part_label(report.profile_part_number))} | {status} | {note} |"
     )
     lines.append("")
     return lines
@@ -130,8 +147,8 @@ def _render_pin_function_connectivity(
     component: Component | None,
     design: Design | None,
 ) -> list[str]:
-    lines = ["## 3. Connection Path", ""]
-    lines.append("| Pin | Name | Category | Net | Schematic path | Evidence |")
+    lines = ["## 3. 连接路径", ""]
+    lines.append("| 引脚 | 名称 | 类别 | 网络 | 原理图连接路径 | 证据 |")
     lines.append("|---|---|---|---|---|---|")
     for pin in pins:
         path = (
@@ -140,8 +157,9 @@ def _render_pin_function_connectivity(
             else "-"
         )
         lines.append(
-            f"| {pin.pin_number} | {_escape_pipe(pin.pin_name)} | {_escape_pipe(pin.category)} | "
-            f"{_escape_pipe(pin.net or '-')} | {_escape_pipe(path)} | {_evidence_cell(pin.evidence)} |"
+            f"| {pin.pin_number} | {_escape_pipe(pin.pin_name)} | "
+            f"{_escape_pipe(pin_category_label(pin.category))} | {_escape_pipe(pin.net or '-')} | "
+            f"{_escape_pipe(path)} | {_evidence_cell(pin.evidence)} |"
         )
     lines.append("")
     return lines
@@ -152,44 +170,42 @@ def _render_pin_consistency(
     component: Component | None,
     profile: DatasheetProfile | None,
 ) -> list[str]:
-    lines = ["### Pin Consistency", ""]
-    lines.append("| Item | Profile | Schematic | Status | Note |")
+    lines = ["### 引脚一致性", ""]
+    lines.append("| 项目 | 器件档案 | 原理图 | 结论 | 说明 |")
     lines.append("|---|---|---|---|---|")
     if component is None:
         profile_count = len(profile.pins) if profile is not None else len(report.pin_results)
         lines.append(
-            "| Pin count | "
-            f"{profile_count} | - | WARN | Schematic component context was not provided; "
-            "this markdown cannot compare parsed schematic pins. |"
+            "| 引脚数量 | "
+            f"{profile_count} | - | WARN | 未提供原理图器件上下文；此 Markdown 无法对比解析后的原理图引脚。 |"
         )
     else:
         consistency = build_pin_consistency(component, report, profile)
         lines.append(
-            "| Pin count | "
+            "| 引脚数量 | "
             f"{consistency.profile_pin_count} | {consistency.schematic_pin_count} | "
             f"{consistency.status} | {_escape_pipe(consistency.note)} |"
         )
     lines.append("")
-    lines.append(
-        "This section is report-only and does not change deterministic PASS/WARN/ERROR verdicts."
-    )
+    lines.append("本节只展示引脚一致性，不改变确定性 PASS/WARN/ERROR 结论。")
     lines.append("")
     return lines
 
 
 def _render_compliance_checks(report: ValidationReport) -> list[str]:
-    lines = ["## 4. Compliance Matrix", ""]
-    lines.append("| Check | Refdes | Status | Summary | Evidence |")
+    lines = ["## 4. 合规矩阵", ""]
+    lines.append("| 检查项 | 位号 | 结论 | 说明 | 证据 |")
     lines.append("|---|---|---|---|---|")
     for pin in report.pin_results:
         lines.append(
             f"| pin:{pin.pin_number} {pin.pin_name} | {report.refdes} | {pin.status} | "
-            f"{_escape_pipe(pin.summary)} | {_evidence_cell(pin.evidence)} |"
+            f"{_escape_pipe(validation_summary_label(pin.summary))} | {_evidence_cell(pin.evidence)} |"
         )
     for check in report.component_checks:
         lines.append(
-            f"| {_escape_pipe(check.check)} | {_escape_pipe(check.refdes or '-')} | "
-            f"{check.status} | {_escape_pipe(check.summary)} | {_evidence_cell(check.evidence)} |"
+            f"| {_escape_pipe(check_label(check.check))} | {_escape_pipe(check.refdes or '-')} | "
+            f"{check.status} | {_escape_pipe(validation_summary_label(check.summary))} | "
+            f"{_evidence_cell(check.evidence)} |"
         )
     lines.append("")
     return lines
@@ -199,71 +215,65 @@ def _render_evidence_details(
     report: ValidationReport,
     profile: DatasheetProfile | None,
 ) -> list[str]:
-    lines = ["## 5. Evidence Details", ""]
+    lines = ["## 5. 证据详情", ""]
     if profile is None:
-        lines.append(
-            "Profile detail was not loaded. Only ValidationReport pin/check evidence is available."
-        )
+        lines.append("未加载器件档案详情；仅展示 ValidationReport 中已有的引脚/检查证据。")
         lines.append("")
         return lines
 
-    lines.append("| Field | Value |")
+    lines.append("| 字段 | 值 |")
     lines.append("|---|---|")
-    lines.append(f"| Validation source | {_escape_pipe(report.profile_part_number)} |")
-    lines.append(f"| Profile part | {_escape_pipe(profile.part_number)} |")
-    lines.append(f"| Review status | {_escape_pipe(profile.review_status)} |")
-    lines.append(f"| Schema | {_escape_pipe(profile.schema_version)} |")
-    lines.append(f"| Extracted model | {_escape_pipe(profile.extracted_model)} |")
+    lines.append(f"| 验证来源 | {_escape_pipe(profile_part_label(report.profile_part_number))} |")
+    lines.append(f"| 档案型号 | {_escape_pipe(profile.part_number)} |")
+    lines.append(f"| 审核状态 | {_escape_pipe(review_status_label(profile.review_status))} |")
+    lines.append(f"| 档案版本 | {_escape_pipe(profile.schema_version)} |")
+    lines.append(f"| 抽取来源 | {_escape_pipe(extraction_model_label(profile.extracted_model))} |")
     lines.append("")
 
-    lines.append("### Structured Profile Facts")
+    lines.append("### 结构化规格")
     lines.append("")
-    lines.append("| Group | Key | Value | Evidence |")
+    lines.append("| 分组 | 键 | 值 | 证据 |")
     lines.append("|---|---|---|---|")
     for group, facts in (("abs_max", profile.abs_max), ("recommended", profile.recommended)):
         if not facts:
-            lines.append(f"| {group} | - | - | - |")
+            lines.append(f"| {profile_group_label(group)} | - | - | - |")
             continue
         for key, value in sorted(facts.items()):
             token = profile.evidence.get(f"{group}.{key}", "")
             lines.append(
-                f"| {group} | {_escape_pipe(key)} | {_escape_pipe(_format_profile_value(value))} | "
+                f"| {_escape_pipe(profile_group_label(group))} | "
+                f"{_escape_pipe(profile_fact_label(group, key))} | "
+                f"{_escape_pipe(_format_profile_value(value))} | "
                 f"{_evidence_cell([token] if token else [])} |"
             )
     lines.append("")
 
-    lines.append("### Profile Pin Details")
+    lines.append("### 器件档案引脚细节")
     lines.append("")
-    lines.append("| Pin | Name | Limits | Recommended topology | Evidence |")
+    lines.append("| 引脚 | 名称 | 限制 | 推荐连接 | 证据 |")
     lines.append("|---|---|---|---|---|")
     for pin in profile.pins:
         lines.append(
             f"| {pin.number} | {_escape_pipe(pin.name)} | {_escape_pipe(_format_mapping(pin.limits))} | "
-            f"{_escape_pipe('; '.join(pin.recommended_topology) or '-')} | "
+            f"{_escape_pipe(_format_recommended_topology(pin.recommended_topology))} | "
             f"{_evidence_cell(pin.evidence)} |"
         )
     lines.append("")
 
-    lines.append("### Profile Evidence Ledger")
+    lines.append("### 器件档案证据账本")
     lines.append("")
-    lines.append("| Claim key | Source token |")
+    lines.append("| 声明 | 来源 token |")
     lines.append("|---|---|")
     if not profile.evidence:
         lines.append("| - | - |")
     for key, token in sorted(profile.evidence.items()):
-        lines.append(f"| {_escape_pipe(key)} | `{token}` |")
+        lines.append(f"| {_escape_pipe(profile_claim_label(key))} | `{token}` |")
     lines.append("")
 
     if profile_has_thermal_or_package_evidence(profile):
-        lines.append(
-            "Thermal/package-related rows are shown only where the structured profile already "
-            "carries source tokens."
-        )
+        lines.append("只有结构化器件档案已经带有来源 token 时，才展示热/封装相关行。")
     else:
-        lines.append(
-            "No profile-level thermal/package source token is present for this component. "
-            "Hardwise does not infer missing thermal or package facts in this slice."
-        )
+        lines.append("这个器件没有档案级热/封装来源 token；Hardwise 不会在当前切片中推断缺失的热或封装事实。")
     lines.append("")
     return lines
 
@@ -271,17 +281,20 @@ def _render_evidence_details(
 def _render_summary(report: ValidationReport) -> list[str]:
     problems = [check for check in report.component_checks if check.status in {"WARN", "ERROR"}]
     problems.extend(pin for pin in report.pin_results if pin.status in {"WARN", "ERROR"})
-    lines = ["## 6. Final Summary", ""]
-    lines.append(f"Final validation status: **{report.status}**.")
+    lines = ["## 6. 综合总结", ""]
+    lines.append(f"综合判定：**{report.status}**。")
     lines.append("")
     if problems:
-        lines.append("Issues:")
+        lines.append("问题：")
         lines.append("")
         for issue in problems:
             refdes = getattr(issue, "refdes", None) or report.refdes
-            lines.append(f"- {issue.status}: {refdes} - {_escape_pipe(issue.summary)}")
+            lines.append(
+                f"- {issue.status}: {refdes} - "
+                f"{_escape_pipe(validation_summary_label(issue.summary))}"
+            )
     else:
-        lines.append("No deterministic pin or component-level issues were found.")
+        lines.append("未发现确定性引脚或外围/拓扑问题。")
     lines.append("")
     return lines
 
@@ -296,13 +309,19 @@ def _format_mapping(values: dict[str, ProfileValue]) -> str:
     if not values:
         return "-"
     return ", ".join(
-        f"{key}={_format_profile_value(value)}" for key, value in sorted(values.items())
+        f"{limit_label(key)}={_format_profile_value(value)}" for key, value in sorted(values.items())
     )
+
+
+def _format_recommended_topology(values: list[str]) -> str:
+    if not values:
+        return "-"
+    return "；".join(recommended_topology_label(value) for value in values)
 
 
 def _format_profile_value(value: ProfileValue) -> str:
     if isinstance(value, bool):
-        return "true" if value else "false"
+        return profile_value_label(value)
     if isinstance(value, float):
         return f"{value:g}"
-    return str(value)
+    return profile_value_label(value)
