@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardwise Demo 录屏脚本</title>
+  <style>
+    :root{--bg:#0f1418;--panel:#171d23;--ink:#eef4f6;--muted:#9daab0;--line:#2a333b;--rail:#00b8d4;--bad:#ff6b6b;--warn:#facc15;--ok:#4ade80}*{box-sizing:border-box}body{margin:0;background:#0f1418;color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,"PingFang SC",sans-serif}.shell{max-width:980px;margin:0 auto;padding:44px 22px 70px}.kicker{color:var(--rail);font-size:12px;text-transform:uppercase;letter-spacing:.14em}h1{margin:10px 0 14px;font-size:34px}h2{margin:30px 0 10px}.lead{font-size:18px;color:#cbd6db}.step{display:grid;grid-template-columns:64px 1fr;gap:14px;margin:12px 0;padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:8px}.num{font:800 24px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--rail)}code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}pre{overflow:auto;background:#0a0f12;border:1px solid var(--line);border-radius:8px;padding:14px}.dont li{margin:6px 0}.nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.nav a{color:#001013;background:var(--rail);padding:8px 11px;border-radius:6px;text-decoration:none;font-weight:800}.nav a.secondary{color:var(--rail);background:transparent;border:1px solid var(--rail)}@media(max-width:680px){.step{grid-template-columns:1fr}h1{font-size:28px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <p class="kicker">60-90 second demo script</p>
+    <h1>Hardwise Demo 录屏脚本</h1>
+    <p class="lead">主线只讲 trust architecture：模型不能自由评审硬件，必须被 EDA registry、evidence token、deterministic validator 和 Refdes Guard 约束住。coverage 数字只当支撑材料。</p>
+
+    <h2>录屏前准备</h2>
+    <pre><code>uv sync
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --output /tmp/hardwise-review.md
+uv run hardwise design-validator-ui \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --ai-snapshot \
+  --output /tmp/hardwise-copilot-workbench.html</code></pre>
+
+    <h2>分镜</h2>
+    <div class="step"><div class="num">01</div><div><b>README 开场，10 秒</b><p>Hardwise 不是让 LLM 自由判断硬件，而是一个 pre-Layout 原理图评审工作台。模型只能通过结构化工具拿到 EDA registry、netlist 和 evidence token，输出再经过 Refdes Guard。</p></div></div>
+    <div class="step"><div class="num">02</div><div><b>工作台摘要，15 秒</b><p>指顶部指标：25 components、17 L1 rows、PASS/WARN/ERROR=5/9/3。强调 17 个 L1 rows 包括 4 个 profile-backed targets 和 13 个 generic passive checks，剩余 8 个保持 manual/no-local-profile。</p></div></div>
+    <div class="step"><div class="num">03</div><div><b>确定性问题，20 秒</b><p>点 U12，展示 buck 错误。这个 ERROR 不是模型意见，而是 deterministic validator 从网表和 XL1509 profile 得到的结论。</p></div></div>
+    <div class="step"><div class="num">04</div><div><b>Copilot trace，20 秒</b><p>打开右下角 AI 按钮，点已烘焙问题。展示 tool trace：<code>run_component_validation</code> 是 L1 deterministic，证据 token 必须可见。</p></div></div>
+    <div class="step"><div class="num">05</div><div><b>Refdes Guard，15 秒</b><p>点“板上有没有 U999?”。不存在的位号不会被模型编造成器件，最终显示会把它包成 <code>⟨?U999⟩</code>。</p></div></div>
+    <div class="step"><div class="num">06</div><div><b>收束，10 秒</b><p>只做 schematic-side review，只用公开输入，不做 PCB layout、boardview、PLM、供应商、价格库存，也不碰公司内部硬件数据。</p></div></div>
+
+    <h2>不要这么说</h2>
+    <ul class="dont">
+      <li>不说“模型独立验证整块板”。</li>
+      <li>不说 generic passive checks 是深度 datasheet review。</li>
+      <li>不说所有 profile token 都经过 live vector retrieval。</li>
+      <li>不暗示覆盖 PCB geometry、layout、routing、supplier status、lifecycle 或 PLM。</li>
+    </ul>
+
+    <div class="nav">
+      <a href="./hardware-demo.html">打开 AI 工作台</a>
+      <a href="./index.html" class="secondary">回到阅读索引</a>
+      <a href="./demo_recording_script.md" class="secondary">Markdown source</a>
+    </div>
+  </main>
+</body>
+</html>

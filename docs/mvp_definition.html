@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardwise MVP Definition</title>
+  <style>
+    :root{--bg:#0f1418;--panel:#171d23;--ink:#eef4f6;--muted:#9daab0;--line:#2a333b;--rail:#00b8d4;--ok:#4ade80;--warn:#facc15;--bad:#ff6b6b}*{box-sizing:border-box}body{margin:0;background:#0f1418;color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,"PingFang SC",sans-serif}.shell{max-width:980px;margin:0 auto;padding:44px 22px 70px}.kicker{color:var(--rail);font-size:12px;text-transform:uppercase;letter-spacing:.14em}h1{margin:10px 0 14px;font-size:34px;letter-spacing:0}h2{margin:28px 0 10px;font-size:21px}.lead{font-size:18px;color:#cbd6db;max-width:840px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}.card b{display:block;font-size:20px}.card span,.muted{color:var(--muted)}ul,ol{padding-left:22px}.tag{display:inline-flex;margin:3px 6px 3px 0;padding:4px 8px;border:1px solid var(--line);border-radius:999px;color:#cdd8dd}.nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.nav a{color:#001013;background:var(--rail);padding:8px 11px;border-radius:6px;text-decoration:none;font-weight:800}.nav a.secondary{color:var(--rail);background:transparent;border:1px solid var(--rail)}@media(max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:28px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <p class="kicker">Hardwise public reading page</p>
+    <h1>Hardwise MVP Definition</h1>
+    <p class="lead">Hardwise 的 MVP 是一个可信的 pre-Layout 原理图评审工作台。它不证明 LLM 能独立判断完整硬件设计；它证明一个更窄、更有用的流程：公开 EDA 文件、BOM 身份和公开 datasheet/profile 证据进入评审工作台，每个对象可追溯，每个不确定项留给 reviewer。</p>
+
+    <section class="grid" aria-label="MVP summary">
+      <div class="card"><b>Review Node</b><span>Layout handoff 前的 schematic review。</span></div>
+      <div class="card"><b>Trust Boundary</b><span>refdes 来自 EDA registry；finding 必须带 source token。</span></div>
+      <div class="card"><b>AI Role</b><span>Copilot 解释工具证据，不替代 deterministic verdict。</span></div>
+    </section>
+
+    <h2>User Problem</h2>
+    <p>目标用户是准备 schematic 进入 Layout handoff 的硬件工程师。评审前他们需要快速知道：哪些器件必须看、哪些只是 manual gap、每条结论由哪一页 datasheet、哪条 netlist fact、哪条 rule 或哪行 BOM 支撑，以及 AI 有没有提到真实存在的板上对象。</p>
+
+    <h2>Core Flow</h2>
+    <ol>
+      <li>导入公开 schematic project，或 schematic netlist + BOM。</li>
+      <li>建立 refdes、pin、net、BOM identity 的可信 EDA registry。</li>
+      <li>匹配本地公开 datasheet index 和 reviewed structured profiles。</li>
+      <li>运行 deterministic checklist rules 和 component-family validators。</li>
+      <li>把输出分成 <span class="tag">Must review</span><span class="tag">Manual gap</span><span class="tag">Passed</span>。</li>
+      <li>Copilot 只解释 tool-backed facts：component context、validation result、topology、datasheet evidence、unknown-refdes miss。</li>
+      <li>导出 review workbench 和反馈列表，供 schematic review meeting 逐项关闭。</li>
+    </ol>
+
+    <h2>UI Shape</h2>
+    <ul>
+      <li>Project summary: input files, component count, BOM match, validated count, PASS/WARN/ERROR/manual counts。</li>
+      <li>Review queue: issue-first 的 Must Review / Manual Gap / Passed rows。</li>
+      <li>Component detail: identity、pins、nets、validation result、profile/document state、evidence tokens。</li>
+      <li>Copilot panel: 展示 tool trace 和 trust tier，解释结果但不覆盖 L1 verdict。</li>
+      <li>Feedback export: refdes、描述、证据、reviewer 接受/拒绝、close status。</li>
+    </ul>
+
+    <h2>Scope</h2>
+    <p>In scope: public KiCad project、public Allegro netlist/PST + schematic BOM fixture、registry-verified component/pin/net/BOM identity、public datasheet/profile evidence、deterministic rules、reviewed component validators、L1/L2/L3 trust tiers、static HTML workbench 和本地 Copilot panel。</p>
+
+    <h2>Non-Goals</h2>
+    <p>不做 PCB layout、.brd、boardview、placement/routing、SI/PI、EMC、thermal、simulation、PLM、supplier risk、price/inventory、production BOM governance、公司内部硬件数据、整板自动正确性判断、profile draft 自动转 ready。</p>
+
+    <h2>Acceptance</h2>
+    <ul>
+      <li>公开 demo input 能打开含 project summary、review queue、component detail、evidence 和 manual gap 的工作台。</li>
+      <li>未知位号如 U999 不能被展示成有效板上对象。</li>
+      <li>每个 hard finding 都有 source token；没有证据就降级。</li>
+      <li>至少一个 L1 deterministic issue 能从 component 追到 net/profile evidence。</li>
+      <li>至少一个 L2 datasheet answer 展示 <code>datasheet:&lt;file&gt;#pN</code> token。</li>
+      <li>Copilot answers 暴露 tool trace，不能覆盖 L1 validator result。</li>
+    </ul>
+
+    <div class="nav">
+      <a href="./hardware-demo.html">打开 AI 工作台</a>
+      <a href="./index.html" class="secondary">回到阅读索引</a>
+      <a href="./mvp_definition.md" class="secondary">Markdown source</a>
+    </div>
+  </main>
+</body>
+</html>

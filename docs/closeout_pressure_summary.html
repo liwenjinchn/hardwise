@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardwise Closeout Pressure-Test Summary</title>
+  <style>
+    :root{--bg:#0f1418;--panel:#171d23;--panel2:#202832;--ink:#eef4f6;--muted:#9daab0;--line:#2a333b;--rail:#00b8d4;--ok:#4ade80;--warn:#facc15;--bad:#ff6b6b;--manual:#697781}*{box-sizing:border-box}body{margin:0;background:#0f1418;color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,"PingFang SC",sans-serif}.shell{max-width:1120px;margin:0 auto;padding:44px 22px 70px}.kicker{color:var(--rail);font-size:12px;text-transform:uppercase;letter-spacing:.14em}h1{margin:10px 0 14px;font-size:34px}.lead{font-size:18px;color:#cbd6db}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.metric{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px}.metric span{display:block;color:var(--muted);font-size:12px}.metric b{font-size:24px}.bar{height:12px;display:flex;overflow:hidden;border-radius:999px;background:#26313a;margin:14px 0}.pass{background:var(--ok)}.warn{background:var(--warn)}.error{background:var(--bad)}.manual{background:var(--manual)}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border-bottom:1px solid var(--line);padding:9px 6px;text-align:left}th{color:var(--muted)}.note{margin-top:16px;padding:14px 16px;background:#121920;border:1px solid var(--line);border-radius:8px}.delta{color:var(--ok);font-weight:800}.nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.nav a{color:#001013;background:var(--rail);padding:8px 11px;border-radius:6px;text-decoration:none;font-weight:800}.nav a.secondary{color:var(--rail);background:transparent;border:1px solid var(--rail)}@media(max-width:860px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:28px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <p class="kicker">Closeout pressure tests</p>
+    <h1>Switch board / Mainboard 覆盖率复跑结果</h1>
+    <p class="lead">这两块真实板是 pressure-test evidence，不是主公开 demo。大 HTML/JSON artifact 不提交；公开材料只保留脱敏 summary，不记录本机输入路径。</p>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Switch board</h2>
+        <p>4010 components · BOM matched 4010</p>
+        <div class="metrics">
+          <div class="metric"><span>Validated after</span><b>3794</b></div>
+          <div class="metric"><span>Manual after</span><b>216</b></div>
+          <div class="metric"><span>Coverage</span><b>94.6%</b></div>
+        </div>
+        <div class="bar"><i class="pass" style="width:91.35%"></i><i class="warn" style="width:3.12%"></i><i class="error" style="width:.15%"></i><i class="manual" style="width:5.39%"></i></div>
+        <p>PASS 3663 · WARN 125 · ERROR 6 · manual 216</p>
+        <table><tr><th>Slice</th><th>Rows moved</th><th>Status</th></tr><tr><td>Generic inductor</td><td class="delta">18</td><td>L1 light deterministic</td></tr><tr><td>Generic ferrite</td><td class="delta">38</td><td>L1 light deterministic</td></tr></table>
+        <p class="note">Remaining gaps: IC 35 refdes / 14 groups, unknown 41 / 6, diode 8 / 2。</p>
+      </article>
+      <article class="card">
+        <h2>Mainboard</h2>
+        <p>8180 components · BOM matched 7248</p>
+        <div class="metrics">
+          <div class="metric"><span>Validated after</span><b>6847</b></div>
+          <div class="metric"><span>Manual after</span><b>1333</b></div>
+          <div class="metric"><span>Coverage</span><b>83.7%</b></div>
+        </div>
+        <div class="bar"><i class="pass" style="width:47.93%"></i><i class="warn" style="width:35.77%"></i><i class="manual" style="width:16.30%"></i></div>
+        <p>PASS 3921 · WARN 2926 · ERROR 0 · manual 1333</p>
+        <table><tr><th>Slice</th><th>Rows moved</th><th>Status</th></tr><tr><td>Generic inductor</td><td class="delta">41</td><td>L1 light deterministic</td></tr><tr><td>Generic ferrite</td><td class="delta">43</td><td>L1 light deterministic</td></tr><tr><td>PE537BA P-MOS</td><td class="delta">11</td><td>MOSFET validator, WARN-safe</td></tr></table>
+        <p class="note">Remaining gaps: unknown 1118 refdes / 957 groups, IC 121 / 28, diode 54 / 8。</p>
+      </article>
+    </section>
+
+    <h2>Interpretation</h2>
+    <p>Closeout branch 提升了 coverage，但没有改变产品 claim：Hardwise 仍是 trusted pre-Layout schematic-review workbench。Generic inductor/ferrite 是 BOM/package/connectivity 的保守 L1 facts，不是 topology、EMI 或 saturation margin 充分性判断。PE537BA 证明既有 MOSFET validator 能复用到 P-channel profile，同时不猜 static drain/load voltage。</p>
+
+    <div class="nav">
+      <a href="./hardware-demo.html">打开 AI 工作台</a>
+      <a href="./index.html" class="secondary">回到阅读索引</a>
+      <a href="./closeout_pressure_summary.md" class="secondary">Markdown source</a>
+    </div>
+  </main>
+</body>
+</html>

@@ -26,13 +26,13 @@ If you only have 90 seconds, start here:
 
 GitHub shows HTML files as source. Open the rendered GitHub Pages demos for the intended reading view:
 
+- **Reading index:** [https://liwenjinchn.github.io/hardwise/](https://liwenjinchn.github.io/hardwise/)
 - **Product intro:** [https://liwenjinchn.github.io/hardwise/product-intro.html](https://liwenjinchn.github.io/hardwise/product-intro.html)
 - **Offline Copilot workbench:** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
-- **MVP definition:** [`docs/mvp_definition.md`](docs/mvp_definition.md)
-- **Technical snapshot:** [`docs/demo.html`](docs/demo.html)
-- **Short read:** [`docs/demo.md`](docs/demo.md)
-- **Recording script:** [`docs/demo_recording_script.md`](docs/demo_recording_script.md)
-- **Docs inventory:** [`docs/docs_inventory.md`](docs/docs_inventory.md)
+- **MVP definition:** [https://liwenjinchn.github.io/hardwise/mvp_definition.html](https://liwenjinchn.github.io/hardwise/mvp_definition.html)
+- **Technical snapshot:** [https://liwenjinchn.github.io/hardwise/demo.html](https://liwenjinchn.github.io/hardwise/demo.html)
+- **Recording script:** [https://liwenjinchn.github.io/hardwise/demo_recording_script.html](https://liwenjinchn.github.io/hardwise/demo_recording_script.html)
+- **Docs inventory:** [https://liwenjinchn.github.io/hardwise/docs_inventory.html](https://liwenjinchn.github.io/hardwise/docs_inventory.html)
 
 Local quickstart:
 

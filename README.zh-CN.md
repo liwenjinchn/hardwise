@@ -24,13 +24,13 @@ token，再让 Agent 只解释工具查到的事实。
 
 GitHub 会把 HTML 文件显示成源码。请打开渲染后的 GitHub Pages 阅读页：
 
+- **阅读索引：** [https://liwenjinchn.github.io/hardwise/](https://liwenjinchn.github.io/hardwise/)
 - **产品介绍页：** [https://liwenjinchn.github.io/hardwise/product-intro.html](https://liwenjinchn.github.io/hardwise/product-intro.html)
 - **离线 Copilot 工作台：** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
-- **MVP 定义：** [`docs/mvp_definition.md`](docs/mvp_definition.md)
-- **技术机制快照：** [`docs/demo.html`](docs/demo.html)
-- **90 秒文字版：** [`docs/demo.md`](docs/demo.md)
-- **录屏脚本：** [`docs/demo_recording_script.md`](docs/demo_recording_script.md)
-- **文档清单：** [`docs/docs_inventory.md`](docs/docs_inventory.md)
+- **MVP 定义：** [https://liwenjinchn.github.io/hardwise/mvp_definition.html](https://liwenjinchn.github.io/hardwise/mvp_definition.html)
+- **技术机制快照：** [https://liwenjinchn.github.io/hardwise/demo.html](https://liwenjinchn.github.io/hardwise/demo.html)
+- **录屏脚本：** [https://liwenjinchn.github.io/hardwise/demo_recording_script.html](https://liwenjinchn.github.io/hardwise/demo_recording_script.html)
+- **文档清单：** [https://liwenjinchn.github.io/hardwise/docs_inventory.html](https://liwenjinchn.github.io/hardwise/docs_inventory.html)
 
 本地 quickstart：
 

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardwise Docs Inventory</title>
+  <style>
+    :root{--bg:#0f1418;--panel:#171d23;--ink:#eef4f6;--muted:#9daab0;--line:#2a333b;--rail:#00b8d4;--ok:#4ade80;--warn:#facc15}*{box-sizing:border-box}body{margin:0;background:#0f1418;color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,"PingFang SC",sans-serif}.shell{max-width:1120px;margin:0 auto;padding:44px 22px 70px}.kicker{color:var(--rail);font-size:12px;text-transform:uppercase;letter-spacing:.14em}h1{margin:10px 0 14px;font-size:34px}.lead{font-size:18px;color:#cbd6db}.path{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}.path a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:13px;color:var(--ink);text-decoration:none}.path b{display:block}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border-bottom:1px solid var(--line);padding:9px 6px;text-align:left;vertical-align:top}th{color:var(--muted)}.tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--rail)}.muted{color:var(--muted)}.nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.nav a{color:#001013;background:var(--rail);padding:8px 11px;border-radius:6px;text-decoration:none;font-weight:800}.nav a.secondary{color:var(--rail);background:transparent;border:1px solid var(--rail)}@media(max-width:860px){.path{grid-template-columns:1fr}h1{font-size:28px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <p class="kicker">Current reading map</p>
+    <h1>Hardwise Docs Inventory</h1>
+    <p class="lead">这份清单把 current public entry、reference、historical record 和 staged plan 分开，避免 reviewer 或新会话把旧材料当成最新 claim。</p>
+
+    <h2>Recommended Reading Path</h2>
+    <div class="path">
+      <a href="./product-intro.html"><b>1. Product intro</b><span class="muted">产品定位</span></a>
+      <a href="./hardware-demo.html"><b>2. AI workbench</b><span class="muted">右下角 AI 按钮主 demo</span></a>
+      <a href="./mvp_definition.html"><b>3. MVP definition</b><span class="muted">边界和验收</span></a>
+      <a href="./demo.html"><b>4. Technical demo</b><span class="muted">机制与证据</span></a>
+      <a href="./evidence_chain_audit.html"><b>5. Evidence audit</b><span class="muted">L78 retrieval 边界</span></a>
+      <a href="./closeout_pressure_summary.html"><b>6. Pressure summary</b><span class="muted">真实板 coverage 证据</span></a>
+      <a href="./demo_recording_script.html"><b>7. Recording script</b><span class="muted">60-90 秒讲法</span></a>
+      <a href="./index.html"><b>8. Reading index</b><span class="muted">全部 HTML 入口</span></a>
+    </div>
+
+    <h2>Status Key</h2>
+    <table>
+      <tr><th>Status</th><th>Meaning</th></tr>
+      <tr><td class="tag">public_entry</td><td>Safe to put in front of a reviewer as the current demo/story.</td></tr>
+      <tr><td class="tag">current_reference</td><td>Accurate supporting design, boundary, or evidence reference.</td></tr>
+      <tr><td class="tag">historical_record</td><td>Useful history, but not the current entry path or current numbers.</td></tr>
+      <tr><td class="tag">staged_plan</td><td>Planning/spec material kept for traceability, not a public claim.</td></tr>
+      <tr><td class="tag">asset</td><td>Static media used by current pages.</td></tr>
+    </table>
+
+    <h2>Current Public Pages</h2>
+    <table>
+      <tr><th>Page</th><th>Status</th><th>Use</th></tr>
+      <tr><td><a href="./index.html">docs/index.html</a></td><td class="tag">public_entry</td><td>GitHub Pages reading index.</td></tr>
+      <tr><td><a href="./product-intro.html">docs/product-intro.html</a></td><td class="tag">public_entry</td><td>Product-facing first read.</td></tr>
+      <tr><td><a href="./hardware-demo.html">docs/hardware-demo.html</a></td><td class="tag">public_entry</td><td>Primary offline Copilot workbench with AI button.</td></tr>
+      <tr><td><a href="./mvp_definition.html">docs/mvp_definition.html</a></td><td class="tag">public_entry</td><td>HTML view of the MVP boundary.</td></tr>
+      <tr><td><a href="./demo.html">docs/demo.html</a></td><td class="tag">public_entry</td><td>Technical narrative and mechanism snapshot.</td></tr>
+      <tr><td><a href="./evidence_chain_audit.html">docs/evidence_chain_audit.html</a></td><td class="tag">current_reference</td><td>Evidence boundary summary.</td></tr>
+      <tr><td><a href="./closeout_pressure_summary.html">docs/closeout_pressure_summary.html</a></td><td class="tag">current_reference</td><td>Switch/mainboard pressure-test summary.</td></tr>
+      <tr><td><a href="./demo_recording_script.html">docs/demo_recording_script.html</a></td><td class="tag">public_entry</td><td>Short recording script.</td></tr>
+      <tr><td><a href="./docs_inventory.html">docs/docs_inventory.html</a></td><td class="tag">public_entry</td><td>This public reading map.</td></tr>
+    </table>
+
+    <p class="muted">Markdown files remain the source records in the repository. Public Pages entry links point to HTML so reviewers do not land on raw Markdown text.</p>
+
+    <div class="nav">
+      <a href="./hardware-demo.html">打开 AI 工作台</a>
+      <a href="./index.html" class="secondary">回到阅读索引</a>
+      <a href="./docs_inventory.md" class="secondary">Markdown source</a>
+    </div>
+  </main>
+</body>
+</html>

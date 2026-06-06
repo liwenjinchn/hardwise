@@ -11,10 +11,10 @@ Use this order for the current public narrative:
 1. `README.md` or `README.zh-CN.md`
 2. `docs/product-intro.html`
 3. `docs/hardware-demo.html`
-4. `docs/mvp_definition.md`
+4. `docs/mvp_definition.html`
 5. `docs/demo.md` or `docs/demo.html`
-6. `docs/evidence_chain_audit.md`
-7. `docs/closeout_pressure_summary.md`
+6. `docs/evidence_chain_audit.html`
+7. `docs/closeout_pressure_summary.html`
 
 `docs/index.html` is the GitHub Pages reading index for these files.
 
@@ -35,12 +35,17 @@ Use this order for the current public narrative:
 | `docs/index.html` | `public_entry` | GitHub Pages reading index and entry router. |
 | `docs/product-intro.html` | `public_entry` | Product-facing first read: pre-Layout review workbench framing. |
 | `docs/hardware-demo.html` | `public_entry` | Primary offline Copilot workbench demo. |
+| `docs/mvp_definition.html` | `public_entry` | Rendered GitHub Pages view of the MVP scope and non-goals. |
 | `docs/mvp_definition.md` | `public_entry` | Durable MVP scope, non-goals, and acceptance criteria. |
 | `docs/demo.md` | `public_entry` | 90-second technical narrative and reproducible commands. |
 | `docs/demo.html` | `public_entry` | HTML reading view for the technical demo narrative. |
+| `docs/demo_recording_script.html` | `public_entry` | Rendered GitHub Pages view of the recording script. |
 | `docs/demo_recording_script.md` | `public_entry` | Short recording script for the current public demo. |
+| `docs/docs_inventory.html` | `public_entry` | Rendered GitHub Pages reading map. |
 | `docs/docs_inventory.md` | `public_entry` | This map of current, reference, historical, and staged docs. |
+| `docs/evidence_chain_audit.html` | `current_reference` | Rendered GitHub Pages view of the evidence boundary. |
 | `docs/evidence_chain_audit.md` | `current_reference` | Boundary between L78 live retrieval and reviewed profile tokens. |
+| `docs/closeout_pressure_summary.html` | `current_reference` | Rendered GitHub Pages view of the pressure-test summary. |
 | `docs/closeout_pressure_summary.md` | `current_reference` | Small committed summary for Switch/mainboard pressure tests. |
 | `docs/architecture.md` | `current_reference` | Module-level architecture and trust-mechanism design. |
 | `docs/review_node.md` | `current_reference` | Pre-Layout schematic-review node profile and MVP anchor. |
