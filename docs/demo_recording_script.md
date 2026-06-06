@@ -24,7 +24,7 @@ uv run hardwise design-validator-ui \
 
 2. 工作台摘要，15 秒
 
-   指顶部指标：25 components、16 L1 rows、PASS-WARN-ERROR=4/9/3。说：16 个 L1 rows 不是 16 个深度 datasheet review，其中 4 个是 profile-backed targets，12 个是 generic passive checks；剩余 9 个保持 manual/no-local-profile。
+   指顶部指标：25 components、17 L1 rows、PASS-WARN-ERROR=5/9/3。说：17 个 L1 rows 不是 17 个深度 datasheet review，其中 4 个是 profile-backed targets，13 个是 generic passive checks；剩余 8 个保持 manual/no-local-profile。
 
 3. 确定性问题，20 秒
 

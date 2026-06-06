@@ -3722,3 +3722,64 @@ P-channel support does not require a new board rule, but it does require keeping
 the source terminal as the voltage reference. Public mirror evidence is usable
 for this MVP profile only when every copied rating is checked against the page,
 not inferred from similar vendor variants.
+
+## 2026-06-06 — Public demo numbers must be regenerated after coverage slices
+
+**Symptom**
+
+Workstream A moved the mixed controller fixture from 16 to 17 validated rows,
+but README, the GitHub Pages demo docs, the product intro, and the recording
+script still described the old 16 L1 rows / 9 manual rows snapshot.
+
+**Root cause**
+
+The generated workbench and the prose entry points are both public artifacts.
+When a conservative generic validator changes project-level counts, stale prose
+can make the demo look less reproducible than the CLI even when the code is
+correct.
+
+**Fix**
+
+Regenerated the offline Copilot workbench and synchronized the public narrative
+around the measured output: 25 components, 17 validated rows, BOM matched=25,
+PASS/WARN/ERROR=5/9/3, and 8 manual/no-local-profile rows. The docs now state
+that the 17 L1 rows are 4 profile-backed targets plus 13 generic passive checks,
+and keep Switch/mainboard results as pressure-test evidence linked through
+`docs/closeout_pressure_summary.md`.
+
+**Takeaway**
+
+Demo counts are part of the evidence chain. Treat documentation closeout like a
+verification step: rerun the command, copy the measured output, and preserve the
+boundary between primary demo and pressure-test coverage.
+
+## 2026-06-06 — Wide detail tables need section-level overflow containment
+
+**Symptom**
+
+Browser smoke found that `docs/hardware-demo.html` looked correct on desktop,
+but at a 390 px mobile viewport the page-level `documentElement.scrollWidth`
+was 610 px. The main culprit was not the visible layout summary; it was wide
+detail tables in component report sections.
+
+**Root cause**
+
+The tables were already inside `.table-section{overflow:auto}`, but the table's
+min-content width was still counted in the document-level horizontal overflow.
+The closed Copilot panel could also sit offscreen on mobile because it used
+`translateX(100%)` instead of being removed from layout.
+
+**Fix**
+
+The generated multi-validator workbench now hides page-level horizontal
+overflow, clips each report `.section`, and keeps `.table-section` as the
+internal scroll container. The Copilot panel is `display:none` on mobile until
+opened, then switches back to grid. Browser smoke confirmed no page-level
+horizontal overflow on desktop or 390 px mobile, while wide tables still have
+their own internal scroll where needed.
+
+**Takeaway**
+
+For generated report UIs, table overflow has to be contained at both the table
+wrapper and the surrounding section. A hidden off-canvas panel can also count as
+page width on mobile even when visually "closed."

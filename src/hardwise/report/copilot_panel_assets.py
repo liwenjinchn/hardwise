@@ -40,7 +40,7 @@ COPILOT_STYLE = """
 .ai-input:focus{outline:2px solid rgba(0,184,212,.24);border-color:var(--rail)}
 .ai-send{min-width:42px;border:1px solid var(--rail);background:var(--rail);color:#001013;font-weight:900;cursor:pointer}
 .ai-mode{font:11px var(--mono);color:var(--muted);margin-top:8px}
-@media(max-width:680px){.ai-fab{right:14px;bottom:14px}.ai-panel{width:100vw}.ai-msg{max-width:96%}}
+@media(max-width:680px){.ai-fab{right:14px;bottom:14px}.ai-panel{width:100vw;display:none}.ai-panel.open{display:grid}.ai-msg{max-width:96%}}
 @media print{.ai-fab,.ai-panel{display:none}}
 """
 

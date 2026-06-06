@@ -102,6 +102,8 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     )
 
     assert "Hardwise / 原理图检验工具" in html
+    assert "overflow-x:hidden" in html
+    assert ".table-section{max-width:100%;overflow:auto}" in html
     assert 'class="left-stack" aria-label="器件与验证摘要"' in html
     assert html.index('aria-label="验证"') < html.index('aria-label="器件"')
     assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
@@ -260,6 +262,7 @@ def test_copilot_snapshot_fallback_uses_boundary_answer_only() -> None:
     assert "root.classList.add('ai-open')" in COPILOT_SCRIPT
     assert "root.classList.remove('ai-open')" in COPILOT_SCRIPT
     assert ".ai-root.ai-open .ai-fab{display:none}" in COPILOT_STYLE
+    assert ".ai-panel{width:100vw;display:none}.ai-panel.open{display:grid}" in COPILOT_STYLE
     assert "ai-guide" in COPILOT_STYLE
     assert "状态：已完成确定性验证" in COPILOT_SCRIPT
     assert "查询范围" in COPILOT_SCRIPT

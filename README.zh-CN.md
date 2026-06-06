@@ -86,7 +86,7 @@ Hardwise 围绕 Layout handoff 前的原理图评审会组织：
 | **L2 grounded** | 某次 datasheet search turn 真的带回页码级检索证据，供 reviewer 核验；它不是逐句 NLP 证明。 | C5 L78 Copilot trace：`datasheet:l78.pdf#p4`。 |
 | **L3 manual** | 没有 ready profile 或没有 retrieval evidence，系统把问题留在人工确认区。 | no-profile workbench rows、无检索命中的 datasheet question。 |
 
-C3/C4 的 coverage loop 是支撑材料：C3 给 profile gap 排序，C4 把选中的 L3/manual group 推进到 L1 deterministic rows。它证明这条产品闭环可重复，但主角仍然是 trust：模型被 registry object、evidence token、deterministic validator 和 tool returns 约束住。
+Coverage loop 是支撑材料：Hardwise 先给 profile gap 排序，再按 family 把有公开证据的 L3/manual group 推进到 L1 deterministic rows。它证明这条产品闭环可重复，但主角仍然是 trust：模型被 registry object、evidence token、deterministic validator 和 tool returns 约束住。
 
 KiCad 轨证明 agent / review / evidence 路径：
 
@@ -120,7 +120,9 @@ uv run hardwise design-validator-ui \
   --index-json reports/controller-design-validator-index.json
 ```
 
-mixed controller fixture 输出 **25 components, 16 validated rows, BOM matched=25, PASS/WARN/ERROR = 4/9/3, 9 manual/no-local-profile rows**。16 个 L1 rows 包括 4 个 profile-backed targets 和 12 个 generic passive checks；generic passive 是 light deterministic coverage，不等同于深度 datasheet review。U1/L7805 重复 L78 evidence path；U12/XL1509、U3/EG2132、U8/STM32G030 展示确定性 topology / debug-interface 错误。
+mixed controller fixture 输出 **25 components, 17 validated rows, BOM matched=25, PASS/WARN/ERROR = 5/9/3, 8 manual/no-local-profile rows**。17 个 L1 rows 包括 4 个 profile-backed targets 和 13 个 generic passive checks；generic passive 只覆盖 BOM/netlist 里的显式轻量事实，不等同于深度 datasheet review。U1/L7805 重复 L78 evidence path；U12/XL1509、U3/EG2132、U8/STM32G030 展示确定性 topology / debug-interface 错误。
+
+真实板导入只是 pressure test 和 coverage-planning evidence，不是主公开 demo。收口复跑结果是：Switch board 4010 components / 3794 validated / 216 manual / PASS/WARN/ERROR = 3663/125/6；mainboard 8180 components / 7248 BOM matched / 6847 validated / 1333 manual / PASS/WARN/ERROR = 3921/2926/0。见 [`docs/closeout_pressure_summary.md`](docs/closeout_pressure_summary.md)；这次提升来自保守的 generic inductor/ferrite coverage 和 reviewed PE537BA P-MOS profile，不代表整板自动正确性判断。
 
 同一个 Allegro 工作台可以渲染一个可选的 Copilot 面板。`design-validator-ui --ai-snapshot` 把已审计的离线问答烘焙进单文件 HTML（无服务、无 key）；`serve-workbench` 起一个本地 FastAPI 服务，`--fake-ai` 模式用确定性的假 client 驱动真实 agent loop，真模型模式则连接 `.env` 里配置的任意 Anthropic-format endpoint。每条面板回答都跑同一套五工具 Runner 和同一个 Refdes Guard，所以像 `U999` 这种不存在的位号会被包成 `⟨?U999⟩` 而不是被编造出来。
 

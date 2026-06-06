@@ -3,7 +3,8 @@
 MULTI_UI_STYLE = """
 :root{color-scheme:dark;--ink:#e7ecea;--muted:#8f9d98;--line:#232b29;--paper:#090b0b;--panel:#101413;--rail:#00b8d4;--pass:#12d98b;--warn:#ffb02e;--error:#ff554a;--info:#4ea1ff;--soft:#141918;--mono:"SFMono-Regular","Cascadia Code","Liberation Mono",monospace;--sans:"Avenir Next","Segoe UI","Helvetica Neue",sans-serif;--serif:"Avenir Next","Segoe UI","Helvetica Neue",sans-serif;--shadow:0 24px 80px rgba(0,0,0,.42)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.42}
+html{overflow-x:hidden}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.42;overflow-x:hidden}
 body:before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(circle at 78% 4%,rgba(0,184,212,.12),transparent 26%),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(0deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:auto,30px 30px,30px 30px}
 main{width:min(1520px,calc(100% - 16px));margin:0 auto;padding:8px 0 18px}
 .app{border:1px solid var(--line);background:#0d100f;box-shadow:var(--shadow);min-height:calc(100vh - 18px)}
@@ -67,7 +68,7 @@ th{position:sticky;top:0;z-index:1;background:#121716;color:var(--muted);font-fa
 .kpi:last-child{border-right:0}
 .kpi span{display:block;color:var(--muted);font-family:var(--mono);font-size:11px;text-transform:uppercase}
 .kpi strong{display:block;margin-top:7px;font-size:22px}
-.section{padding:20px 24px;border-bottom:1px solid var(--line)}
+.section{padding:20px 24px;border-bottom:1px solid var(--line);overflow:hidden}
 .section:last-child{border-bottom:0}
 .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
 .pin-feed{display:grid;gap:9px}
@@ -76,7 +77,7 @@ th{position:sticky;top:0;z-index:1;background:#121716;color:var(--muted);font-fa
 .check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .check-card{border:1px solid var(--line);background:#14100f;padding:12px}
 .check-card p{margin:6px 0 0}
-.table-section{overflow:auto}
+.table-section{max-width:100%;overflow:auto}
 .evidence code,.net code,.evidence-chip{display:inline-block;margin:0 4px 4px 0;padding:3px 5px;background:#17211f;font-family:var(--mono);font-size:12px}
 .evidence-chip{border:1px solid #263f39;color:#b7e8d7;text-decoration:none;cursor:pointer}
 .evidence-chip:hover{border-color:var(--rail);color:#d8fff0}
