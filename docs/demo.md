@@ -149,6 +149,7 @@ Evidence: datasheet:l78.pdf#p4
 | `docs/evidence_chain_audit.md` | L78 live retrieval smoke 与 C4 reviewed profile token 的边界说明。 |
 | `docs/index.html` | 作为当前阅读入口刷新，优先指向产品介绍页和 MVP 定义。 |
 | `docs/hardware-demo.html` | 当前离线 Copilot workbench 展示页；不是 KiCad agent track。 |
+| `docs/docs_inventory.md` | 当前/参考/历史/计划文档清单；新会话先用它判断该读哪份。 |
 | `docs/interview_narrative.*`, `docs/midpoint_review.*` | 面试讲稿 / 历史收束材料；当前口径以本页、README、`interview_qa.md` 和 evidence audit 为准。 |
 | `docs/PLAN.html` | 阅读版路线图；source of truth 仍是 `docs/PLAN.md`。 |
 

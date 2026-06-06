@@ -3783,3 +3783,35 @@ their own internal scroll where needed.
 For generated report UIs, table overflow has to be contained at both the table
 wrapper and the surrounding section. A hidden off-canvas panel can also count as
 page width on mobile even when visually "closed."
+
+## 2026-06-06 — Docs inventory should also catch stale local links
+
+**Symptom**
+
+Workstream E reorganized the public reading path, and local link validation
+found that `docs/index.html` still linked to two old report HTML files under
+`reports/` that are not present in the current repository checkout.
+
+**Root cause**
+
+The reading index had accumulated historical report links from an earlier demo
+packaging phase. Because those report artifacts were generated locally rather
+than kept as current GitHub Pages entries, the index looked more complete than
+the repo actually was. A follow-up inventory coverage check also tripped on an
+ignored local `.DS_Store` file, which confirmed the check should operate on
+tracked repository docs rather than every filesystem artifact under `docs/`.
+
+**Fix**
+
+Added `docs/docs_inventory.md` as the canonical map of current, reference,
+historical, staged-plan, and asset docs. Updated `docs/index.html` to lead with
+the current public path and replaced the broken report section with existing
+reference docs: architecture, PLAN reading view, and learning log. The coverage
+check now uses the Git-tracked docs set, so local OS metadata cannot become a
+false missing inventory row.
+
+**Takeaway**
+
+Documentation inventory is not only taxonomy; it is link hygiene. A public
+index should link to committed, current artifacts or clearly describe local
+generated outputs without pretending they are Pages entries.

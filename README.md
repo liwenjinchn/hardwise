@@ -32,6 +32,7 @@ GitHub shows HTML files as source. Open the rendered GitHub Pages demos for the 
 - **Technical snapshot:** [`docs/demo.html`](docs/demo.html)
 - **Short read:** [`docs/demo.md`](docs/demo.md)
 - **Recording script:** [`docs/demo_recording_script.md`](docs/demo_recording_script.md)
+- **Docs inventory:** [`docs/docs_inventory.md`](docs/docs_inventory.md)
 
 Local quickstart:
 
@@ -59,6 +60,9 @@ architecture: what needs attention, what is only a manual gap, what passed, and
 which source token supports each row. See [`docs/mvp_definition.md`](docs/mvp_definition.md)
 for the durable MVP boundary: user problem, core flow, page structure, scope,
 non-goals, and acceptance criteria.
+
+If you are unsure whether a document is current or historical, use
+[`docs/docs_inventory.md`](docs/docs_inventory.md) as the reading map.
 
 ## What the MVP proves
 

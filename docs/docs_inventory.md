@@ -1,0 +1,73 @@
+# Hardwise Docs Inventory
+
+This inventory keeps the closeout branch readable. It classifies every file
+under `docs/` so a reviewer or a fresh Codex session can find the current public
+story without treating older planning artifacts as the latest claim.
+
+## Reading Path
+
+Use this order for the current public narrative:
+
+1. `README.md` or `README.zh-CN.md`
+2. `docs/product-intro.html`
+3. `docs/hardware-demo.html`
+4. `docs/mvp_definition.md`
+5. `docs/demo.md` or `docs/demo.html`
+6. `docs/evidence_chain_audit.md`
+7. `docs/closeout_pressure_summary.md`
+
+`docs/index.html` is the GitHub Pages reading index for these files.
+
+## Status Key
+
+| Status | Meaning |
+|---|---|
+| `public_entry` | Safe to put in front of a reviewer as the current demo/story. |
+| `current_reference` | Accurate supporting design, boundary, or evidence reference. |
+| `historical_record` | Useful history, but not the current entry path or current numbers. |
+| `staged_plan` | Planning/spec material kept for traceability, not a public claim. |
+| `asset` | Static media used by current pages. |
+
+## Inventory
+
+| File | Status | Current Use |
+|---|---|---|
+| `docs/index.html` | `public_entry` | GitHub Pages reading index and entry router. |
+| `docs/product-intro.html` | `public_entry` | Product-facing first read: pre-Layout review workbench framing. |
+| `docs/hardware-demo.html` | `public_entry` | Primary offline Copilot workbench demo. |
+| `docs/mvp_definition.md` | `public_entry` | Durable MVP scope, non-goals, and acceptance criteria. |
+| `docs/demo.md` | `public_entry` | 90-second technical narrative and reproducible commands. |
+| `docs/demo.html` | `public_entry` | HTML reading view for the technical demo narrative. |
+| `docs/demo_recording_script.md` | `public_entry` | Short recording script for the current public demo. |
+| `docs/docs_inventory.md` | `public_entry` | This map of current, reference, historical, and staged docs. |
+| `docs/evidence_chain_audit.md` | `current_reference` | Boundary between L78 live retrieval and reviewed profile tokens. |
+| `docs/closeout_pressure_summary.md` | `current_reference` | Small committed summary for Switch/mainboard pressure tests. |
+| `docs/architecture.md` | `current_reference` | Module-level architecture and trust-mechanism design. |
+| `docs/review_node.md` | `current_reference` | Pre-Layout schematic-review node profile and MVP anchor. |
+| `docs/profile_archetypes.md` | `current_reference` | Reusable `needs_review` profile draft workflow. |
+| `docs/windows.md` | `current_reference` | Windows/PowerShell setup notes and CI boundary. |
+| `docs/PLAN.md` | `current_reference` | Long-term roadmap and decision records. |
+| `docs/PLAN.html` | `current_reference` | Reading view of `docs/PLAN.md`; source of truth remains Markdown. |
+| `docs/interview_qa.md` | `current_reference` | Long-form evidence bank for interviews; not the first public page. |
+| `docs/learning_log.md` | `current_reference` | Debugging journal and task-specific lessons. |
+| `docs/rolling_log.md` | `current_reference` | Staged future improvements and deferred work. |
+| `docs/weekend_closeout_plan.md` | `current_reference` | Active branch closeout checklist; becomes historical after handoff. |
+| `docs/jd_alignment.md` | `historical_record` | Role-alignment support material; keep secondary to public demo docs. |
+| `docs/jd_alignment.html` | `historical_record` | HTML reading view of JD alignment. |
+| `docs/interview_narrative.md` | `historical_record` | Interview script; useful, but current facts live in README/demo/Q&A. |
+| `docs/interview_narrative.html` | `historical_record` | HTML reading view of interview script. |
+| `docs/midpoint_review.md` | `historical_record` | Midpoint memo; not current final narrative. |
+| `docs/midpoint_review.html` | `historical_record` | HTML reading view of midpoint memo. |
+| `docs/hardware-demo-review-queue.html` | `historical_record` | vNext/product exploration; do not promote over `hardware-demo.html`. |
+| `docs/validator_coverage_plan.md` | `historical_record` | Earlier coverage plan; use `closeout_pressure_summary.md` for current numbers. |
+| `docs/superpowers/plans/2026-05-25-hardwise-v2-1-ir-foundation.md` | `staged_plan` | Historical Superpowers plan. |
+| `docs/superpowers/plans/2026-05-26-hardwise-v2-5-allegro-netlist-adapter.md` | `staged_plan` | Historical Superpowers plan. |
+| `docs/superpowers/specs/2026-05-24-hardwise-v2-design.md` | `staged_plan` | Historical Superpowers spec. |
+| `docs/assets/hardwise-product-card.png` | `asset` | Product/demo image asset. |
+| `docs/assets/hardwise-product-intro-screenshot.png` | `asset` | Product intro screenshot asset. |
+
+## Cleanup Decision
+
+No docs are deleted in this closeout slice. The safer handoff is to make the
+current entry path explicit, keep historical files labeled, and avoid rewriting
+older artifacts that still explain how the project got here.
