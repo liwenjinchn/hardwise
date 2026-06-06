@@ -76,7 +76,7 @@ CSV_COLUMNS = [
     "Priority",
 ]
 
-_PASSIVE_FAMILIES = {"capacitor", "resistor"}
+_PASSIVE_FAMILIES = {"capacitor", "resistor", "inductor", "ferrite"}
 _MECHANICAL_FAMILIES = {"connector", "test_point", "mechanical"}
 _CANDIDATE_FAMILIES = {"ic", "diode", "transistor", "inductor", "ferrite", "unknown"}
 _USABLE_IDENTITY_KINDS = {"mpn", "part_like_value"}

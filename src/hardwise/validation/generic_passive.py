@@ -9,18 +9,49 @@ from typing import Literal
 from hardwise.bom.types import BomRow
 from hardwise.ir.types import Component, Design
 from hardwise.validation.pins import voltage_for_net
+from hardwise.validation.topology import parse_inductance_uh
 from hardwise.validation.types import ComponentValidation, PinValidation, ValidationReport
 
-PassiveFamily = Literal["capacitor", "resistor"]
+PassiveFamily = Literal["capacitor", "resistor", "inductor", "ferrite"]
 
 GENERIC_PASSIVE_REASON = (
     "Generic passive validation ran from BOM value/package; no per-MPN datasheet profile is required."
 )
 
+_FAMILY_LABELS: dict[PassiveFamily, str] = {
+    "capacitor": "capacitor",
+    "resistor": "resistor",
+    "inductor": "inductor",
+    "ferrite": "ferrite bead",
+}
+
+_PROFILE_PART_BY_FAMILY: dict[PassiveFamily, str] = {
+    "capacitor": "GENERIC_CAPACITOR",
+    "resistor": "GENERIC_RESISTOR",
+    "inductor": "GENERIC_INDUCTOR",
+    "ferrite": "GENERIC_FERRITE",
+}
+
 
 @dataclass(frozen=True)
 class ParsedResistance:
     """Resistance value parsed from a BOM value."""
+
+    ohms: float
+    token: str
+
+
+@dataclass(frozen=True)
+class ParsedCurrentRating:
+    """Current-rating token parsed from a BOM value."""
+
+    amps: float
+    token: str
+
+
+@dataclass(frozen=True)
+class ParsedImpedance:
+    """Ferrite impedance token parsed from a BOM value."""
 
     ohms: float
     token: str
@@ -39,15 +70,17 @@ def validate_generic_passive(
     pin_results = _terminal_connectivity(component, family, evidence)
     if family == "capacitor":
         checks = _capacitor_checks(component, value, design, evidence)
-        profile_part_number = "GENERIC_CAPACITOR"
-    else:
+    elif family == "resistor":
         checks = _resistor_checks(component, value, design, evidence)
-        profile_part_number = "GENERIC_RESISTOR"
+    elif family == "inductor":
+        checks = _inductor_checks(component, value, evidence)
+    else:
+        checks = _ferrite_checks(component, value, evidence)
     return ValidationReport(
         refdes=component.refdes,
         component_value=value,
         part_number=component.part_number,
-        profile_part_number=profile_part_number,
+        profile_part_number=_PROFILE_PART_BY_FAMILY[family],
         pin_results=pin_results,
         component_checks=checks,
     )
@@ -68,12 +101,12 @@ def _terminal_connectivity(
     family: PassiveFamily,
     evidence: list[str],
 ) -> list[PinValidation]:
-    label = "capacitor" if family == "capacitor" else "resistor"
+    label = _FAMILY_LABELS[family]
     return [
         PinValidation(
             pin_number=pin.number,
             pin_name=pin.name or f"Terminal {pin.number}",
-            category=f"generic_{label}_terminal",
+            category=f"generic_{family}_terminal",
             status="PASS" if pin.net else "ERROR",
             net=pin.net,
             summary=(
@@ -129,6 +162,48 @@ def _resistor_checks(
         ),
         _package_check(component, "resistor", evidence),
         _resistor_power_check(component, resistance, power_rating, design, evidence),
+    ]
+
+
+def _inductor_checks(
+    component: Component,
+    value: str,
+    evidence: list[str],
+) -> list[ComponentValidation]:
+    inductance = parse_inductance_uh(value)
+    current_rating = parse_current_rating_amps(value)
+    return [
+        _value_check(
+            component,
+            "inductor_value_parse",
+            "Inductance",
+            value,
+            inductance is not None,
+            evidence,
+        ),
+        _package_check(component, "inductor", evidence),
+        _current_rating_token_check(component, "inductor", value, current_rating, evidence),
+    ]
+
+
+def _ferrite_checks(
+    component: Component,
+    value: str,
+    evidence: list[str],
+) -> list[ComponentValidation]:
+    impedance = parse_ferrite_impedance_ohms(value)
+    current_rating = parse_current_rating_amps(value)
+    return [
+        _value_check(
+            component,
+            "ferrite_impedance_parse",
+            "Ferrite impedance",
+            value,
+            impedance is not None,
+            evidence,
+        ),
+        _package_check(component, "ferrite", evidence),
+        _current_rating_token_check(component, "ferrite", value, current_rating, evidence),
     ]
 
 
@@ -188,12 +263,7 @@ def _package_check(
         )
 
     upper = package.upper()
-    conflict = (
-        family == "capacitor"
-        and re.match(r"R\d", upper) is not None
-        or family == "resistor"
-        and re.match(r"C\d", upper) is not None
-    )
+    conflict = _passive_package_conflict(family, upper)
     return ComponentValidation(
         check=f"{family}_package_presence",
         status="WARN" if conflict else "PASS",
@@ -203,6 +273,44 @@ def _package_check(
             if conflict
             else f"Schematic package '{package}' is present for generic {family} review."
         ),
+        evidence=evidence,
+    )
+
+
+def _passive_package_conflict(family: PassiveFamily, upper_package: str) -> bool:
+    conflict_patterns: dict[PassiveFamily, tuple[str, ...]] = {
+        "capacitor": (r"R\d", r"L\d", r"FB\d"),
+        "resistor": (r"C\d", r"L\d", r"FB\d"),
+        "inductor": (r"C\d", r"R\d", r"FB\d"),
+        "ferrite": (r"C\d", r"R\d", r"L\d"),
+    }
+    return any(re.match(pattern, upper_package) for pattern in conflict_patterns[family])
+
+
+def _current_rating_token_check(
+    component: Component,
+    family: Literal["inductor", "ferrite"],
+    value: str,
+    current_rating: ParsedCurrentRating | None,
+    evidence: list[str],
+) -> ComponentValidation:
+    label = _FAMILY_LABELS[family]
+    if current_rating is None:
+        summary = (
+            f"Generic {label} BOM/component value '{value}' has no explicit current-rating "
+            "token; current, ripple, and saturation suitability were not checked."
+        )
+    else:
+        summary = (
+            f"Generic {label} current-rating token {current_rating.token} "
+            f"({current_rating.amps:g} A) was parsed from '{value}'; current, ripple, "
+            "and saturation suitability were not checked without topology/profile evidence."
+        )
+    return ComponentValidation(
+        check=f"{family}_current_rating_token",
+        status="PASS",
+        refdes=component.refdes,
+        summary=summary,
         evidence=evidence,
     )
 
@@ -349,6 +457,7 @@ _CAPACITANCE_RE = re.compile(r"(?i)(\d+(?:\.\d+)?|\.\d+)\s*(PF|NF|UF|µF|ΜF|MF|
 _VOLTAGE_RE = re.compile(r"(?i)(\d+(?:\.\d+)?)\s*V\b")
 _POWER_FRACTION_RE = re.compile(r"(?i)(\d+(?:\.\d+)?)\s*/\s*(\d+(?:\.\d+)?)\s*W\b")
 _POWER_DECIMAL_RE = re.compile(r"(?i)(\d+(?:\.\d+)?)\s*(MW|W)\b")
+_CURRENT_RE = re.compile(r"(?i)(\d+(?:\.\d+)?|\.\d+)\s*(MA|A)\b")
 
 
 def parse_capacitance_f(value: str) -> float | None:
@@ -418,3 +527,36 @@ def parse_power_watts(value: str) -> float | None:
         return None
     magnitude = float(decimal.group(1))
     return magnitude / 1000.0 if decimal.group(2).upper() == "MW" else magnitude
+
+
+def parse_current_rating_amps(value: str) -> ParsedCurrentRating | None:
+    """Parse an explicit passive current-rating token into amps."""
+
+    match = _CURRENT_RE.search(value)
+    if match is None:
+        return None
+    magnitude = float(match.group(1))
+    unit = match.group(2).upper()
+    amps = magnitude / 1000.0 if unit == "MA" else magnitude
+    return ParsedCurrentRating(amps=amps, token=match.group(0).strip())
+
+
+def parse_ferrite_impedance_ohms(value: str) -> ParsedImpedance | None:
+    """Parse an explicit ferrite impedance token without decoding MPN strings."""
+
+    for raw_token in re.split(r"[\s,;/@()]+", value.strip()):
+        token = raw_token.strip()
+        if not token:
+            continue
+        normalized = token.upper().replace("Ω", "R").replace("OHM", "R")
+
+        match = re.fullmatch(r"(\d+(?:\.\d+)?|\.\d+)R", normalized)
+        if match:
+            return ParsedImpedance(ohms=float(match.group(1)), token=token)
+
+        match = re.fullmatch(r"(\d+)R(\d+)", normalized)
+        if match:
+            whole, fraction = match.groups()
+            return ParsedImpedance(ohms=float(f"{whole}.{fraction}"), token=token)
+
+    return None

@@ -3656,3 +3656,37 @@ has no button role, tab stop, border, background, or pointer cursor.
 For an interview demo, visible affordances are part of correctness. If something
 looks clickable, it should be clickable; if an evidence token is clickable, it
 must land on the exact audited evidence for the active component.
+
+## 2026-06-06 — Generic passive coverage must also update advisory reports
+
+**Symptom**
+
+Workstream A added generic inductor and ferrite validation, but the existing
+`recommend-next-family` logic only skipped `matched` profile rows. That would
+let a newly validated `generic_passive` inductor/ferrite row still appear in
+the next-family advisory as an uncovered gap.
+
+**Root cause**
+
+Resistors and capacitors were already excluded by family, so the advisory code
+had never needed to distinguish "profile matched" from "deterministic
+validation already ran." Once inductor/ferrite moved into generic passive
+coverage, family exclusion alone was no longer enough.
+
+**Fix**
+
+Extended `generic_passive` to cover inductors and ferrite beads conservatively:
+two-terminal connectivity, value/package checks, explicit current-token parsing
+when present, and explicit no-topology/no-saturation-margin wording. The
+advisory report now skips any row with a `ValidationReport`, and document
+candidates treat inductor/ferrite as generic passive families instead of
+datasheet-profile backfill targets. The `motor_sensor_controller` fixture moved
+from `validated=47 / manual=19` to `validated=55 / manual=11`; next-family now
+ranks only diode and unknown, not inductor/ferrite.
+
+**Takeaway**
+
+Coverage analytics must follow validation truth, not only profile-match status.
+Generic light coverage is still L1 deterministic work once it emits a
+`ValidationReport`, and the next-family queue should not ask for the same rows
+again.

@@ -232,6 +232,8 @@ ComponentNotFound(
 
 **v5.41 (public demo packaging closeout)**: 当前公开 demo 入口已经从普通静态 validator page 切到 `design-validator-ui --ai-snapshot` 的离线 Copilot workbench。`docs/hardware-demo.html` 是同一条 mixed controller fixture 的最新生成物：25 components / 16 validated rows / BOM matched=25 / PASS-WARN-ERROR=4-9-3 / 9 manual rows。16 个 L1 rows 要分开讲：U1/U12/U3/U8 是 profile-backed targets，另外 12 个是 generic passive checks，用于 light deterministic coverage，不等同于深度 datasheet review。Copilot panel 内置审计过的 snapshot trace：`run_component_validation` 是 L1 deterministic，L78 evidence-chain smoke 是 L2 grounded，`U999` 这类 unknown refdes 会显示为 `⟨?U999⟩`。README quickstart、GitHub Pages workbench、`docs/demo.md/html`、JD alignment 和 product intro 都按这个口径同步；不要再把旧的 4 validated / 21 manual HTML 当作当前 demo。
 
+**v5.42 (generic inductor/ferrite Workstream A)**: 通用被动件 coverage 从电容/电阻扩到电感和磁珠，但边界保持很窄：只检查两端连接、BOM/component value 可解析性、封装字段存在性，并在看见显式 current token 时记录 token；不做 buck 拓扑判断、不推断磁珠阻抗编码、不检查纹波/饱和/EMI 充分性。`mixed_controller_power_stage` CLI smoke 从 25 components / 16 validated / 9 manual 移到 17 validated / 8 manual；`motor_sensor_controller` 从 validated=47 / manual=19 移到 validated=55 / manual=11，`recommend-next-family` 不再把已 generic validated 的 inductor/ferrite row 排回队列，只剩 diode 和 unknown。公开 demo HTML 需要在 Workstream D 统一重生成后再把 v5.41 的页面数字改成新数字。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？

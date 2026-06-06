@@ -150,7 +150,7 @@ def test_fake_chat_summarizes_project_topology() -> None:
         assert "拓扑摘要只基于解析后的原理图/netlist" in response.answer
         assert "25 个器件" in response.answer
         assert "21 条网络" in response.answer
-        assert "PASS/WARN/ERROR=4/9/3" in response.answer
+        assert "PASS/WARN/ERROR=5/9/3" in response.answer
         assert response.trace
         assert response.trace[0].tool == "summarize_project_topology"
         assert response.trace[0].summary == "components=25, nets=21"

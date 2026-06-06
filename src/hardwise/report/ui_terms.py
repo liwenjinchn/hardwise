@@ -38,9 +38,22 @@ FAMILY_LABELS = {
     "unknown": "未知",
 }
 
+GENERIC_PASSIVE_TERM_LABELS = {
+    "capacitor": "电容",
+    "resistor": "电阻",
+    "inductor": "电感",
+    "ferrite bead": "磁珠",
+    "Capacitance": "电容值",
+    "Resistance": "电阻值",
+    "Inductance": "电感值",
+    "Ferrite impedance": "磁珠阻抗",
+}
+
 PROFILE_PART_LABELS = {
     "GENERIC_CAPACITOR": "通用电容检查",
     "GENERIC_RESISTOR": "通用电阻检查",
+    "GENERIC_INDUCTOR": "通用电感检查",
+    "GENERIC_FERRITE": "通用磁珠检查",
 }
 
 PIN_CATEGORY_LABELS = {
@@ -54,6 +67,8 @@ PIN_CATEGORY_LABELS = {
     "feedback": "反馈",
     "gate_output": "栅极输出",
     "generic_capacitor_terminal": "通用电容端子",
+    "generic_ferrite_terminal": "通用磁珠端子",
+    "generic_inductor_terminal": "通用电感端子",
     "generic_resistor_terminal": "通用电阻端子",
     "gpio": "GPIO",
     "ground": "地",
@@ -94,6 +109,12 @@ CHECK_LABELS = {
     "i2c_mux_reset": "I2C mux 复位脚",
     "i2c_mux_upstream_bus": "I2C mux 上游总线",
     "i2c_mux_vdd": "I2C mux VDD",
+    "ferrite_current_rating_token": "磁珠电流 token",
+    "ferrite_impedance_parse": "磁珠阻抗解析",
+    "ferrite_package_presence": "磁珠封装字段",
+    "inductor_current_rating_token": "电感电流 token",
+    "inductor_package_presence": "电感封装字段",
+    "inductor_value_parse": "电感值解析",
     "led_current_limit": "LED 限流",
     "led_indicator_polarity": "LED 极性",
     "mcu_boot0": "MCU BOOT0 默认状态",
@@ -303,6 +324,10 @@ VALIDATION_SUMMARY_LABELS = {
     ),
     "Generic capacitor terminal is not connected in the schematic/netlist.": "通用电容端子在原理图/netlist 中未连接。",
     "Generic resistor terminal is not connected in the schematic/netlist.": "通用电阻端子在原理图/netlist 中未连接。",
+    "Generic inductor terminal is not connected in the schematic/netlist.": "通用电感端子在原理图/netlist 中未连接。",
+    "Generic ferrite bead terminal is not connected in the schematic/netlist.": (
+        "通用磁珠端子在原理图/netlist 中未连接。"
+    ),
 }
 
 RECOMMENDED_TOPOLOGY_LABELS = {
@@ -664,16 +689,31 @@ _VALIDATION_PATTERNS = [
         lambda match: f"MCU BOOT0 网络 {match.group(1)} 有确定性的默认低电平状态。",
     ),
     (
-        re.compile(r"Generic (capacitor|resistor) terminal is connected to ([^.]+)\."),
-        lambda match: f"通用{'电容' if match.group(1) == 'capacitor' else '电阻'}端子已连接到 {match.group(2)}。",
+        re.compile(r"Generic (capacitor|resistor|inductor|ferrite bead) terminal is connected to ([^.]+)\."),
+        lambda match: (
+            f"通用{GENERIC_PASSIVE_TERM_LABELS[match.group(1)]}端子已连接到 "
+            f"{match.group(2)}。"
+        ),
     ),
     (
-        re.compile(r"(Capacitance|Resistance) value was parsed from BOM/component value '([^']+)'\."),
-        lambda match: f"{'电容值' if match.group(1) == 'Capacitance' else '电阻值'}已从 BOM/器件值 '{match.group(2)}' 解析。",
+        re.compile(
+            r"(Capacitance|Resistance|Inductance|Ferrite impedance) value was parsed "
+            r"from BOM/component value '([^']+)'\."
+        ),
+        lambda match: (
+            f"{GENERIC_PASSIVE_TERM_LABELS[match.group(1)]}已从 BOM/器件值 "
+            f"'{match.group(2)}' 解析。"
+        ),
     ),
     (
-        re.compile(r"(Capacitance|Resistance) value could not be parsed deterministically from '([^']+)'\."),
-        lambda match: f"{'电容值' if match.group(1) == 'Capacitance' else '电阻值'}无法从 '{match.group(2)}' 确定性解析。",
+        re.compile(
+            r"(Capacitance|Resistance|Inductance|Ferrite impedance) value could not "
+            r"be parsed deterministically from '([^']+)'\."
+        ),
+        lambda match: (
+            f"{GENERIC_PASSIVE_TERM_LABELS[match.group(1)]}无法从 "
+            f"'{match.group(2)}' 确定性解析。"
+        ),
     ),
     (
         re.compile(r"Capacitor rated voltage ([^ ]+) V was parsed from '([^']+)'\."),
@@ -684,11 +724,46 @@ _VALIDATION_PATTERNS = [
         lambda match: f"无法从 '{match.group(1)}' 确定性解析电容额定电压。",
     ),
     (
-        re.compile(r"Generic (capacitor|resistor) check has no schematic package field to inspect\."),
-        lambda match: f"通用{'电容' if match.group(1) == 'capacitor' else '电阻'}检查没有可读取的原理图封装字段。",
+        re.compile(
+            r"Generic (capacitor|resistor|inductor|ferrite bead) check has no "
+            r"schematic package field to inspect\."
+        ),
+        lambda match: (
+            f"通用{GENERIC_PASSIVE_TERM_LABELS[match.group(1)]}检查没有可读取的"
+            "原理图封装字段。"
+        ),
     ),
     (
-        re.compile(r"Schematic package '([^']+)' is present for generic (capacitor|resistor) review\."),
-        lambda match: f"原理图封装 '{match.group(1)}' 已用于通用{'电容' if match.group(2) == 'capacitor' else '电阻'}检查。",
+        re.compile(
+            r"Schematic package '([^']+)' is present for generic "
+            r"(capacitor|resistor|inductor|ferrite bead) review\."
+        ),
+        lambda match: (
+            f"原理图封装 '{match.group(1)}' 已用于通用"
+            f"{GENERIC_PASSIVE_TERM_LABELS[match.group(2)]}检查。"
+        ),
+    ),
+    (
+        re.compile(
+            r"Generic (inductor|ferrite bead) BOM/component value '([^']+)' has no "
+            r"explicit current-rating token; current, ripple, and saturation "
+            r"suitability were not checked\."
+        ),
+        lambda match: (
+            f"通用{GENERIC_PASSIVE_TERM_LABELS[match.group(1)]} BOM/器件值 "
+            f"'{match.group(2)}' 没有显式电流额定 token；未检查电流、纹波和饱和适用性。"
+        ),
+    ),
+    (
+        re.compile(
+            r"Generic (inductor|ferrite bead) current-rating token ([^ ]+) "
+            r"\(([^)]+) A\) was parsed from '([^']+)'; current, ripple, and "
+            r"saturation suitability were not checked without topology/profile evidence\."
+        ),
+        lambda match: (
+            f"已从 '{match.group(4)}' 解析出通用"
+            f"{GENERIC_PASSIVE_TERM_LABELS[match.group(1)]}电流额定 token "
+            f"{match.group(2)}（{match.group(3)} A）；没有拓扑/档案证据时不检查电流、纹波和饱和适用性。"
+        ),
     ),
 ]

@@ -148,7 +148,7 @@ def build_family_coverage_report(index_path: Path) -> FamilyCoverageReport:
     skipped_covered = 0
 
     for row in index.rows:
-        if row.match_status == "matched":
+        if row.match_status == "matched" or row.validation is not None:
             skipped_covered += 1
             continue
         family = refdes_family.get(row.refdes, "unknown")

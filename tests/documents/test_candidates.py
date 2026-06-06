@@ -98,6 +98,24 @@ def test_document_candidates_can_filter_by_family(tmp_path: Path) -> None:
     assert [row.mpn for row in report.candidates] == ["JMTK3005A"]
 
 
+def test_document_candidates_skip_generic_inductor_and_ferrite_families(
+    tmp_path: Path,
+) -> None:
+    index_path = _write_index(
+        tmp_path,
+        groups=[
+            _group("gap-inductor", ["L1"], "inductor", "IND-10UH", "no_result"),
+            _group("gap-ferrite", ["FB1"], "ferrite", "BLM18PG121SN1", "no_result"),
+            _group("gap-diode", ["D1"], "diode", "BAV99", "no_result"),
+        ],
+    )
+
+    report = build_document_candidate_report(index_path)
+
+    assert report.skipped_passive == 2
+    assert [row.mpn for row in report.candidates] == ["BAV99"]
+
+
 def _write_index(tmp_path: Path, *, groups: list[dict]) -> Path:
     refdes = [refdes for group in groups for refdes in group["refdes"]]
     path = tmp_path / "project-index.json"
