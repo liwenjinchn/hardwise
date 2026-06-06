@@ -236,6 +236,8 @@ ComponentNotFound(
 
 **v5.43 (PE537BA P-channel MOSFET Workstream B)**: `PE537BA` 从“只有 document coverage”补成 reviewed public mirror profile，仍复用已有 MOSFET validator，不新增板级规则。profile 记录 NIKOSEM PE537BA 第 1 页支撑的 PDFN 3x3P pin groups、`VDS=30 V`、`VGS=±25 V`、`ID=33 A`，并声明 `recommended.topology_family="mosfet"` / `polarity="p_channel"`。关键测试是 P-channel 高边形态：source 在 `P12V`，gate 在 `P3V3` 时 Vgs = -8.7 V，PASS；drain/load 网无法静态推断时 Vds 仍 WARN，不假设 source 或 drain 是 ground。真实 mainboard 的 11 个 PE537BA row 仍需 Workstream C 在有本地输入路径时复跑确认。
 
+**v5.44 (closeout pressure-test rerun)**: Workstream C 复跑两个真实板 pressure test，并只提交小摘要 `docs/closeout_pressure_summary.md`，不提交大 HTML/JSON 或本地输入路径。Switch board 是 4010 components / BOM matched 4010 / validated 3794 / manual 216 / PASS-WARN-ERROR 3663-125-6，比 closeout baseline 多 56 个 validated，全部来自 18 个 generic inductor + 38 个 generic ferrite。Mainboard 是 8180 components / BOM matched 7248 / validated 6847 / manual 1333 / PASS-WARN-ERROR 3921-2926-0，比 closeout baseline 多 95 个 validated，来自 41 generic inductor + 43 generic ferrite + 11 PE537BA WARN rows。`recommend-next-family` 现在不再把 inductor/ferrite 排回队列；Switch 剩 IC/unknown/diode，mainboard 剩 unknown/IC/diode。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？
