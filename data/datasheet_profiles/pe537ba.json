@@ -1,0 +1,100 @@
+{
+  "part_number": "PE537BA",
+  "part_number_aliases": [],
+  "review_status": "ready",
+  "description": "30V P-channel enhancement-mode MOSFET, PDFN 3x3P",
+  "abs_max": {
+    "vds": 30.0,
+    "vgs": 25.0,
+    "id": 33.0,
+    "idm_pulsed": 100.0,
+    "power_dissipation": 16.7
+  },
+  "recommended": {
+    "topology_family": "mosfet",
+    "polarity": "p_channel"
+  },
+  "pin_function": {
+    "1": "Source",
+    "2": "Source",
+    "3": "Source",
+    "4": "Gate",
+    "5": "Drain",
+    "6": "Drain",
+    "7": "Drain",
+    "8": "Drain"
+  },
+  "pins": [
+    {
+      "number": "4",
+      "name": "Gate",
+      "schematic_pin_aliases": [
+        "G"
+      ],
+      "category": "analog_input",
+      "function": "Gate control input; Vgs is measured to the source terminal.",
+      "limits": {},
+      "recommended_topology": [
+        "Drive within the +/-25 V gate-source absolute maximum rating."
+      ],
+      "evidence": [
+        "datasheet:pe537ba.pdf#p1"
+      ]
+    },
+    {
+      "number": "1",
+      "name": "Source",
+      "schematic_pin_aliases": [
+        "2",
+        "3",
+        "S"
+      ],
+      "category": "switch_node",
+      "function": "Source terminal group and Vgs/Vds reference node for the P-channel MOSFET.",
+      "limits": {},
+      "recommended_topology": [
+        "Use as the MOSFET source reference, not implicitly as ground."
+      ],
+      "evidence": [
+        "datasheet:pe537ba.pdf#p1"
+      ]
+    },
+    {
+      "number": "5",
+      "name": "Drain",
+      "schematic_pin_aliases": [
+        "6",
+        "7",
+        "8",
+        "D"
+      ],
+      "category": "switch_output",
+      "function": "Drain terminal group of the P-channel MOSFET.",
+      "limits": {},
+      "recommended_topology": [
+        "Keep drain-source stress within the 30 V maximum rating."
+      ],
+      "evidence": [
+        "datasheet:pe537ba.pdf#p1"
+      ]
+    }
+  ],
+  "evidence": {
+    "abs_max.vds": "datasheet:pe537ba.pdf#p1",
+    "abs_max.vgs": "datasheet:pe537ba.pdf#p1",
+    "abs_max.id": "datasheet:pe537ba.pdf#p1",
+    "abs_max.idm_pulsed": "datasheet:pe537ba.pdf#p1",
+    "abs_max.power_dissipation": "datasheet:pe537ba.pdf#p1",
+    "pin_function.1": "datasheet:pe537ba.pdf#p1",
+    "pin_function.2": "datasheet:pe537ba.pdf#p1",
+    "pin_function.3": "datasheet:pe537ba.pdf#p1",
+    "pin_function.4": "datasheet:pe537ba.pdf#p1",
+    "pin_function.5": "datasheet:pe537ba.pdf#p1",
+    "pin_function.6": "datasheet:pe537ba.pdf#p1",
+    "pin_function.7": "datasheet:pe537ba.pdf#p1",
+    "pin_function.8": "datasheet:pe537ba.pdf#p1"
+  },
+  "extracted_at": "2026-06-06T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-pe537ba-public-nikosem-mirror",
+  "schema_version": "v2"
+}

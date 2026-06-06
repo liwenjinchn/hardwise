@@ -234,6 +234,8 @@ ComponentNotFound(
 
 **v5.42 (generic inductor/ferrite Workstream A)**: 通用被动件 coverage 从电容/电阻扩到电感和磁珠，但边界保持很窄：只检查两端连接、BOM/component value 可解析性、封装字段存在性，并在看见显式 current token 时记录 token；不做 buck 拓扑判断、不推断磁珠阻抗编码、不检查纹波/饱和/EMI 充分性。`mixed_controller_power_stage` CLI smoke 从 25 components / 16 validated / 9 manual 移到 17 validated / 8 manual；`motor_sensor_controller` 从 validated=47 / manual=19 移到 validated=55 / manual=11，`recommend-next-family` 不再把已 generic validated 的 inductor/ferrite row 排回队列，只剩 diode 和 unknown。公开 demo HTML 需要在 Workstream D 统一重生成后再把 v5.41 的页面数字改成新数字。
 
+**v5.43 (PE537BA P-channel MOSFET Workstream B)**: `PE537BA` 从“只有 document coverage”补成 reviewed public mirror profile，仍复用已有 MOSFET validator，不新增板级规则。profile 记录 NIKOSEM PE537BA 第 1 页支撑的 PDFN 3x3P pin groups、`VDS=30 V`、`VGS=±25 V`、`ID=33 A`，并声明 `recommended.topology_family="mosfet"` / `polarity="p_channel"`。关键测试是 P-channel 高边形态：source 在 `P12V`，gate 在 `P3V3` 时 Vgs = -8.7 V，PASS；drain/load 网无法静态推断时 Vds 仍 WARN，不假设 source 或 drain 是 ground。真实 mainboard 的 11 个 PE537BA row 仍需 Workstream C 在有本地输入路径时复跑确认。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？

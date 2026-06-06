@@ -718,8 +718,8 @@ $END
     )
 
     assert result.exit_code == 0, result.output
-    assert "validated=2" in result.output
-    assert "PASS/WARN/ERROR=2/0/0" in result.output
+    assert "validated=3" in result.output
+    assert "PASS/WARN/ERROR=2/1/0" in result.output
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"refdes": "PQ10"' in index_payload
@@ -729,7 +729,9 @@ $END
     assert '"refdes": "PQ9"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/ln2312lt1g.json"' in index_payload
     assert '"refdes": "Q13"' in index_payload
-    assert "pe537ba.json" not in index_payload
+    assert '"profile_path": "data/datasheet_profiles/pe537ba.json"' in index_payload
+    assert '"profile_part_number": "PE537BA"' in index_payload
+    assert "Vds cannot be statically inferred" in index_payload
     assert '"document_source": "doc:docs.csv#line3"' in index_payload
     assert '"document_source": "doc:docs.csv#line4"' in index_payload
 

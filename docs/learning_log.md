@@ -3690,3 +3690,35 @@ Coverage analytics must follow validation truth, not only profile-match status.
 Generic light coverage is still L1 deterministic work once it emits a
 `ValidationReport`, and the next-family queue should not ask for the same rows
 again.
+
+## 2026-06-06 — P-channel MOSFET profiles still use source-referenced Vgs
+
+**Symptom**
+
+Workstream B needed to move `PE537BA` from document coverage into deterministic
+MOSFET validation without adding a board-specific rule. The tempting shortcut
+was to treat it as another low-side FET and let source default to ground.
+
+**Root cause**
+
+`PE537BA` is a P-channel PDFN device. In the public-safe fixture shape, source
+pins sit on a 12 V rail, gate is driven below source, and drain may be a load
+net with no statically inferable voltage. A gate-to-ground check would be the
+same MOSFET bug the N-channel high-side tests already guarded against.
+
+**Fix**
+
+Added `data/datasheet_profiles/pe537ba.json` as a reviewed public mirror
+profile with `recommended.topology_family="mosfet"` and `polarity="p_channel"`.
+The existing MOSFET validator is reused unchanged: Vgs is `gate - source`, Vds
+uses drain-source magnitude, and unknown drain/load voltage stays WARN. The
+profile stores only NIKOSEM mirror page facts checked in this slice:
+PDFN 3x3P pin groups, `VDS=30 V`, `VGS=+/-25 V`, `ID=33 A`,
+`IDM=100 A`, and `PD=16.7 W`.
+
+**Takeaway**
+
+P-channel support does not require a new board rule, but it does require keeping
+the source terminal as the voltage reference. Public mirror evidence is usable
+for this MVP profile only when every copied rating is checked against the page,
+not inferred from similar vendor variants.
