@@ -2,9 +2,17 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-> A guardrailed design-validator workbench for public hardware projects: five trust mechanisms, L1/L2/L3 evidence tiers, registry-verified refdes, and deterministic validation.
+> A trusted pre-layout schematic-review workbench for public hardware projects:
+> review queues, evidence-backed findings, registry-verified refdes, and
+> deterministic validation.
 
-Hardwise is a two-week portfolio MVP for the **pre-layout design-validation** node in hardware R&D. It does not claim that an LLM can independently judge a complete hardware design. It proves a narrower and more important engineering loop: parse a public EDA project, build a component index, run deterministic validation rules, force every surfaced refdes through the parsed registry, attach evidence tokens to every finding, and let the agent answer schematic questions only through structured tools.
+Hardwise is a two-week portfolio MVP for the **pre-layout schematic-review**
+node in hardware R&D. It does not claim that an LLM can independently judge a
+complete hardware design. It proves a narrower and more useful engineering loop:
+import a public schematic project or schematic netlist+BOM, build a trusted
+component registry, run deterministic review checks, separate hard findings from
+manual/profile gaps, attach evidence tokens, and let the agent explain only
+tool-backed facts.
 
 Architecture is inspired by [Wrench Board](https://github.com/Junkz3/wrench-board) (Anthropic *Build with Opus 4.7* hackathon, 2nd place, April 2026). Design ideas only, no code copied.
 
@@ -20,6 +28,7 @@ GitHub shows HTML files as source. Open the rendered GitHub Pages demos for the 
 
 - **Product intro:** [https://liwenjinchn.github.io/hardwise/product-intro.html](https://liwenjinchn.github.io/hardwise/product-intro.html)
 - **Offline Copilot workbench:** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
+- **MVP definition:** [`docs/mvp_definition.md`](docs/mvp_definition.md)
 - **Technical snapshot:** [`docs/demo.html`](docs/demo.html)
 - **Short read:** [`docs/demo.md`](docs/demo.md)
 - **Recording script:** [`docs/demo_recording_script.md`](docs/demo_recording_script.md)
@@ -32,9 +41,39 @@ uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001
 uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --ai-snapshot --output /tmp/hardwise-copilot-workbench.html
 ```
 
+## MVP product loop
+
+Hardwise is shaped around the review meeting before Layout handoff:
+
+```text
+import schematic/netlist+BOM
+  -> build registry-verified component table
+  -> run deterministic checks and profile validators
+  -> split output into Must Review / Manual Gap / Passed
+  -> explain findings through tool-backed Copilot traces
+  -> export a review feedback list with evidence
+```
+
+The workbench should answer the reviewer's first questions before it teaches the
+architecture: what needs attention, what is only a manual gap, what passed, and
+which source token supports each row. See [`docs/mvp_definition.md`](docs/mvp_definition.md)
+for the durable MVP boundary: user problem, core flow, page structure, scope,
+non-goals, and acceptance criteria.
+
 ## What the MVP proves
 
-Phase 4 is framed around **five trust mechanisms** and visible **L1/L2/L3 trust tiers**. The two demo tracks are public and complementary; they are not one board pretending to cover every command surface.
+The current implementation proves this review loop through **five trust mechanisms**
+and visible **L1/L2/L3 trust tiers**. The two demo tracks are public and
+complementary; they are not one board pretending to cover every command surface.
+
+Action labels in the product map to the trust tiers:
+
+| Review action | Meaning | Trust tier |
+|---|---|---|
+| **Must Review** | Deterministic ERROR/WARN or high-value checklist finding that should be discussed before Layout. | Usually L1 |
+| **Manual Gap** | No ready profile, no retrieval evidence, or not enough schematic context; keep it visible for reviewer judgement. | L3 |
+| **Passed** | Deterministic check completed without an issue. | L1 |
+| **Evidence Question** | Copilot can cite a page-level datasheet hit for inspection, but it does not create a hard validator verdict. | L2 |
 
 | Mechanism | What it proves in the demo |
 |---|---|
