@@ -1,8 +1,23 @@
-# Hardwise Phase 4 + C5 Demo — 五机制 / 三层 trust / 90 秒阅读版
+# Hardwise MVP Demo — pre-Layout review workbench / 90 秒阅读版
 
-Hardwise 是一个面向硬件研发 pre-Layout 设计验证节点的本地工作台。当前 Phase 4 + C5 的头条不是“又补了几个 validator”，而是：
+Hardwise 是一个面向硬件研发 pre-Layout 原理图评审节点的本地工作台。当前 MVP 的头条不是“又补了几个 validator”，而是：
 
-> 五大 trust 机制，把 Agent 输出压进 L1/L2/L3 分层；两个公开输入轨负责展示这条主干的不同侧面。
+> 导入公开原理图或 schematic netlist+BOM，生成 reviewer 能直接使用的 review queue：Must Review、Manual Gap、Passed、Evidence。五大 trust 机制和 L1/L2/L3 分层是这条工作流的安全边界。
+
+产品闭环：
+
+```text
+导入设计 -> 建立 registry-verified 台账 -> 跑确定性检查
+  -> 分成 Must Review / Manual Gap / Passed
+  -> Copilot 只解释工具证据 -> 导出 feedback list
+```
+
+当前 demo 不假装“一块板跑完所有命令”：仓库里没有同时具备 KiCad 工程和 Allegro netlist+BOM 的同一块公开板。诚实口径是同一条 review workbench 和 trust architecture，两个公开输入轨：
+
+- **KiCad hero track**：`pic_programmer` 展示 registry-verified refdes、DS001/L78 evidence token、真实 L78 ingest/retrieve smoke、Refdes Guard 和 agent 工具 discipline。
+- **Allegro workbench track**：`mixed_controller_power_stage` 展示项目级 `design-validator-ui --ai-snapshot`，一次显示 17 个 L1 validated rows 和 8 个 no-local-profile/manual rows；其中 4 个是 profile-backed targets，13 个是 generic passive checks。
+
+## Trust boundary
 
 五大机制：
 
@@ -21,11 +36,6 @@ Trust 分层：
 | **L1 deterministic** | Python rule / validator 决定 PASS/WARN/ERROR。模型只能解释结构化结果。 | `run_component_validation`、workbench validated rows。 |
 | **L2 grounded** | 本轮 datasheet search 返回了带 `source_pdf + page` 的检索证据，供 reviewer 核对。 | L78 snapshot trace：`datasheet:l78.pdf#p4`。 |
 | **L3 manual** | 没有 ready profile 或没有检索证据，保持人工确认。 | no-profile/manual rows、无 vector hit 的 datasheet 问答。 |
-
-当前 demo 不假装“一块板跑完所有命令”：仓库里没有同时具备 KiCad 工程和 Allegro netlist+BOM 的同一块公开板。诚实口径是同一条 trust architecture，两个公开输入轨：
-
-- **KiCad hero track**：`pic_programmer` 展示 registry-verified refdes、DS001/L78 evidence token、真实 L78 ingest/retrieve smoke、Refdes Guard 和 agent 工具 discipline。
-- **Allegro workbench track**：`mixed_controller_power_stage` 展示项目级 `design-validator-ui`，一次显示 4 个已验证器件和 21 个 no-profile/manual 行。
 
 Coverage loop 是支撑材料：C3/C4 已证明 ranking 可以驱动多个 family 从 L3/manual 进入 L1 deterministic，但主叙事不是“覆盖率又涨了”，而是“模型被工程事实、证据链和 tier 边界约束住”。
 
@@ -100,7 +110,7 @@ uv run hardwise design-validator-ui \
 
 ```text
 design-validator-ui: /tmp/hardwise-phase4-workbench.html
-(25 components, validated=4, BOM matched=25, PASS/WARN/ERROR=1/0/3, manual=21)
+(25 components, validated=17, BOM matched=25, PASS/WARN/ERROR=5/9/3, manual=8)
 validation-index-json: /tmp/hardwise-phase4-index.json (25 rows)
 ```
 
@@ -113,7 +123,7 @@ Evidence: datasheet:l78.pdf#p4
 
 普通 workbench 器件的 datasheet 问题如果没有配置 vector store，仍显示 `L3 manual` 并回退到 reviewed profile / validation evidence；这不会改变任何 L1 PASS/WARN/ERROR。
 
-四个 validated targets：
+四个 profile-backed targets 仍是录屏主角；另外 13 个 generic capacitor/resistor/inductor rows 作为 light deterministic coverage 展示在工作台里，不包装成深度 datasheet review：
 
 | Refdes | Profile | Status | What it shows |
 |---|---|---|---|
@@ -134,13 +144,15 @@ Evidence: datasheet:l78.pdf#p4
 
 | File | Phase 4 handling |
 |---|---|
-| `docs/demo.md`, `docs/demo.html` | 当前 Phase 4 + C5 技术快照：五大机制 + L1/L2/L3 trust 分层；两条公开输入轨作为支撑证据。 |
+| `docs/mvp_definition.md` | 当前 MVP 边界：用户问题、核心流程、页面结构、范围、非目标、验收标准。 |
+| `docs/demo.md`, `docs/demo.html` | 当前 MVP 技术证据：review workbench 闭环 + 五大机制 + L1/L2/L3 trust 分层；两条公开输入轨作为支撑证据。 |
 | `docs/evidence_chain_audit.md` | L78 live retrieval smoke 与 C4 reviewed profile token 的边界说明。 |
-| `docs/index.html` | 作为当前阅读入口刷新，优先指向 Phase 4 demo。 |
-| `docs/hardware-demo.html` | 保留为 Allegro workbench 互补视图；不是 KiCad agent track。 |
+| `docs/index.html` | 作为当前阅读入口刷新，优先指向产品介绍页和 MVP 定义。 |
+| `docs/hardware-demo.html` | 当前离线 Copilot workbench 展示页；不是 KiCad agent track。 |
+| `docs/docs_inventory.md` | 当前/参考/历史/计划文档清单；新会话先用它判断该读哪份。 |
 | `docs/interview_narrative.*`, `docs/midpoint_review.*` | 面试讲稿 / 历史收束材料；当前口径以本页、README、`interview_qa.md` 和 evidence audit 为准。 |
 | `docs/PLAN.html` | 阅读版路线图；source of truth 仍是 `docs/PLAN.md`。 |
 
 ## 面试时可以这样讲
 
-> Hardwise 的重点不是让模型“独立评审一块板”，而是把模型放进硬件事实边界里：五大 trust 机制先固定输出边界，L1/L2/L3 再区分 deterministic truth、retrieval-grounded trace 和 manual review。KiCad 轨证明 refdes guard、L78 检索证据链和 agent tool discipline；Allegro 轨证明同一套 deterministic validation truth 可以渲染成项目级工作台。C3/C4 coverage loop 证明这套主干能持续吃掉 manual rows，但它是支撑材料，不是主角。
+> Hardwise 的重点不是让模型“独立评审一块板”，而是把模型放进硬件事实边界里：五大 trust 机制先固定输出边界，L1/L2/L3 再区分 deterministic truth、retrieval-grounded trace 和 manual review。KiCad 轨证明 refdes guard、L78 检索证据链和 agent tool discipline；Allegro 轨证明同一套 deterministic validation truth 可以渲染成项目级工作台。Coverage loop 证明这套主干能持续吃掉 manual rows，但它是支撑材料，不是主角。

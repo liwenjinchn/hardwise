@@ -200,7 +200,7 @@ def _generic_passive_families(bom: Bom) -> dict[str, PassiveFamily]:
     families: dict[str, PassiveFamily] = {}
     for item in bom.items:
         family = normalize_bom_item_identity(item).suggested_family
-        if family in {"capacitor", "resistor"}:
+        if family in {"capacitor", "resistor", "inductor", "ferrite"}:
             for refdes in item.refdes_list:
                 families[refdes] = family
     return families

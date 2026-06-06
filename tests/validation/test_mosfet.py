@@ -283,3 +283,71 @@ Q1,1,L2N7002KLT1G,LRC,L2N7002KLT1G
     assert vgs.status == "PASS"
     assert "gate 3.3 V - source 0 V" in vgs.summary
     assert vgs.evidence == ["datasheet:l2n7002klt1g.pdf#p1"]
+
+
+def test_pe537ba_profile_matches_public_pdfn_pinout() -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/pe537ba.json"))
+
+    assert profile.review_status == "ready"
+    assert profile.part_number == "PE537BA"
+    assert profile.recommended["topology_family"] == "mosfet"
+    assert profile.recommended["polarity"] == "p_channel"
+    assert profile.abs_max["vds"] == 30.0
+    assert profile.abs_max["vgs"] == 25.0
+    assert profile.abs_max["id"] == 33.0
+    assert profile.abs_max["idm_pulsed"] == 100.0
+    assert profile.abs_max["power_dissipation"] == 16.7
+    assert profile.pin_function == {
+        "1": "Source",
+        "2": "Source",
+        "3": "Source",
+        "4": "Gate",
+        "5": "Drain",
+        "6": "Drain",
+        "7": "Drain",
+        "8": "Drain",
+    }
+    assert profile.pin_by_number("4").name == "Gate"
+    assert profile.pin_by_number("1").name == "Source"
+    assert profile.pin_by_number("5").name == "Drain"
+    assert profile.evidence["pin_function.4"] == "datasheet:pe537ba.pdf#p1"
+    assert profile.evidence["abs_max.vds"] == "datasheet:pe537ba.pdf#p1"
+    assert profile.evidence["abs_max.vgs"] == "datasheet:pe537ba.pdf#p1"
+
+
+def test_pe537ba_p_channel_highside_warns_when_drain_voltage_unknown(tmp_path) -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/pe537ba.json"))
+    netlist_content = """$PACKAGES
+  ! 'PDFN33' ! PE537BA ; Q13
+$NETS
+  'P12V' ; Q13.1, Q13.2, Q13.3
+  'P3V3' ; Q13.4
+  'LOAD' ; Q13.5, Q13.6, Q13.7, Q13.8
+$END
+"""
+    (tmp_path / "pe.net").write_text(netlist_content)
+    bom_content = """Reference,Quantity,Value,Manufacturer,MPN
+Q13,1,PE537BA,NIKO-SEM,PE537BA
+"""
+    (tmp_path / "pe_bom.csv").write_text(bom_content)
+
+    netlist = parse_allegro_netlist(tmp_path / "pe.net")
+    bom = parse_bom(tmp_path / "pe_bom.csv")
+    design = build_design_from_netlist(netlist)
+    design = apply_bom_to_design(design, match_bom_to_design(bom, design))
+
+    results = validate_component_against_profile(design.components["Q13"], profile, design)
+
+    assert results.status == "WARN"
+    assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in results.pin_results] == [
+        ("4", "Gate", "P3V3", "PASS"),
+        ("1", "Source", "P12V", "PASS"),
+        ("5", "Drain", "LOAD", "PASS"),
+    ]
+    vgs = next(check for check in results.component_checks if check.check == "mosfet_vgs_rating")
+    vds = next(check for check in results.component_checks if check.check == "mosfet_vds_rating")
+    assert vgs.status == "PASS"
+    assert "gate 3.3 V - source 12 V" in vgs.summary
+    assert vgs.evidence == ["datasheet:pe537ba.pdf#p1"]
+    assert vds.status == "WARN"
+    assert "Not assuming ground" in vds.summary

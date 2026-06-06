@@ -3545,3 +3545,273 @@ A closeout smoke is not busywork: it proves coverage moved by a named public
 profile group and keeps the remaining manual work visible. After a profile
 slice, the next-family advisory should be read as a review queue, not as
 permission to promote the next part without public document evidence.
+
+## 2026-06-05 — Public demo packaging must point to the strongest audited artifact
+
+**Symptom**
+
+The browser preview opened a generated `/tmp` workbench without the Copilot
+snapshot and with the old mixed-controller counts:
+
+```text
+25 components
+validated=4
+PASS/WARN/ERROR=1/0/3
+manual=21
+```
+
+That made the demo look half-finished even though the current CLI could already
+render the stronger offline Copilot workbench.
+
+**Root cause**
+
+The implementation and the public reading layer had drifted apart. The latest
+`design-validator-ui --ai-snapshot` output had 16 validated rows and a baked
+Copilot panel, but README / GitHub Pages / demo docs were still easy to read as
+the older static validator surface. `docs/index.html` also linked to
+`docs/submission/` files, but that directory is intentionally gitignored and
+therefore not a reliable public Pages entry.
+
+**Fix**
+
+Regenerated `docs/hardware-demo.html` with `--ai-snapshot` and updated the
+public docs around that artifact:
+
+```text
+25 components
+BOM matched=25
+validated rows=16
+PASS/WARN/ERROR=4/9/3
+manual/no-local-profile rows=9
+```
+
+The README quickstart now includes both the KiCad review command and the
+Allegro Copilot workbench command. The public docs explicitly distinguish the
+4 profile-backed targets from 12 generic passive checks, and `docs/index.html`
+now treats `docs/submission/` as local-only rather than linking ignored files.
+
+**Takeaway**
+
+For a portfolio demo, correctness includes routing. The public entry point must
+open the strongest audited artifact, and the counts must say what kind of
+coverage they represent. Generic passive rows are light deterministic coverage,
+not deep datasheet validation; ignored local submission files should not appear
+as public Pages links.
+
+## 2026-06-05 — Demo UI must separate audit keys from reader-facing labels
+
+**Symptom**
+
+`docs/hardware-demo.html` still exposed internal strings such as
+`GENERIC_CAPACITOR`, `power_input`, `recommended.*`, `component_checks`, `mpn`,
+`ready`, and `+N more`. The validation was stronger, but the visible page read
+like an implementation dump rather than an interview-ready tool.
+
+**Root cause**
+
+The renderer reused deterministic profile/check keys directly in visible table
+cells. Those keys are useful audit metadata, but the UI did not distinguish
+machine-readable facts from reader-facing labels.
+
+**Fix**
+
+Added shared display helpers in `src/hardwise/report/ui_terms.py` for profile
+parts, pin categories, check names, profile claim keys, review status, and
+extraction source. The workbench now renders Chinese labels while preserving
+raw keys/tokens in tooltips, generated JSON, and evidence chips. Evidence chips
+remain visible/copyable links and scroll to the current component evidence
+section.
+
+**Takeaway**
+
+For demo artifacts, provenance should stay raw where it proves the claim, but
+internal enum names should not be the main reading surface. Keep audit tokens
+visible; translate structural labels.
+
+## 2026-06-05 — Workbench affordances must match actual interaction
+
+**Symptom**
+
+The hardware demo page made the strongest validation path hard to notice: the
+validation rail appeared below the component index, the Copilot scope note was
+styled too much like a clickable module, and evidence chips were visible tokens
+but did not point to the current component's evidence section.
+
+**Root cause**
+
+The renderer treated all panel blocks as equal visual cards and used generic
+anchors such as `#evidence-details` inside a multi-component page where real
+section IDs are scoped by refdes, for example `#U12-evidence-details`.
+
+**Fix**
+
+Moved the validation rail above the component rail, changed the Copilot scope
+copy into a plain non-interactive note, and made evidence chips render
+refdes-scoped links while preserving raw token text. Browser QA confirmed that
+U12 evidence links scroll to the U12 evidence section and that the Copilot guide
+has no button role, tab stop, border, background, or pointer cursor.
+
+**Takeaway**
+
+For an interview demo, visible affordances are part of correctness. If something
+looks clickable, it should be clickable; if an evidence token is clickable, it
+must land on the exact audited evidence for the active component.
+
+## 2026-06-06 — Generic passive coverage must also update advisory reports
+
+**Symptom**
+
+Workstream A added generic inductor and ferrite validation, but the existing
+`recommend-next-family` logic only skipped `matched` profile rows. That would
+let a newly validated `generic_passive` inductor/ferrite row still appear in
+the next-family advisory as an uncovered gap.
+
+**Root cause**
+
+Resistors and capacitors were already excluded by family, so the advisory code
+had never needed to distinguish "profile matched" from "deterministic
+validation already ran." Once inductor/ferrite moved into generic passive
+coverage, family exclusion alone was no longer enough.
+
+**Fix**
+
+Extended `generic_passive` to cover inductors and ferrite beads conservatively:
+two-terminal connectivity, value/package checks, explicit current-token parsing
+when present, and explicit no-topology/no-saturation-margin wording. The
+advisory report now skips any row with a `ValidationReport`, and document
+candidates treat inductor/ferrite as generic passive families instead of
+datasheet-profile backfill targets. The `motor_sensor_controller` fixture moved
+from `validated=47 / manual=19` to `validated=55 / manual=11`; next-family now
+ranks only diode and unknown, not inductor/ferrite.
+
+**Takeaway**
+
+Coverage analytics must follow validation truth, not only profile-match status.
+Generic light coverage is still L1 deterministic work once it emits a
+`ValidationReport`, and the next-family queue should not ask for the same rows
+again.
+
+## 2026-06-06 — P-channel MOSFET profiles still use source-referenced Vgs
+
+**Symptom**
+
+Workstream B needed to move `PE537BA` from document coverage into deterministic
+MOSFET validation without adding a board-specific rule. The tempting shortcut
+was to treat it as another low-side FET and let source default to ground.
+
+**Root cause**
+
+`PE537BA` is a P-channel PDFN device. In the public-safe fixture shape, source
+pins sit on a 12 V rail, gate is driven below source, and drain may be a load
+net with no statically inferable voltage. A gate-to-ground check would be the
+same MOSFET bug the N-channel high-side tests already guarded against.
+
+**Fix**
+
+Added `data/datasheet_profiles/pe537ba.json` as a reviewed public mirror
+profile with `recommended.topology_family="mosfet"` and `polarity="p_channel"`.
+The existing MOSFET validator is reused unchanged: Vgs is `gate - source`, Vds
+uses drain-source magnitude, and unknown drain/load voltage stays WARN. The
+profile stores only NIKOSEM mirror page facts checked in this slice:
+PDFN 3x3P pin groups, `VDS=30 V`, `VGS=+/-25 V`, `ID=33 A`,
+`IDM=100 A`, and `PD=16.7 W`.
+
+**Takeaway**
+
+P-channel support does not require a new board rule, but it does require keeping
+the source terminal as the voltage reference. Public mirror evidence is usable
+for this MVP profile only when every copied rating is checked against the page,
+not inferred from similar vendor variants.
+
+## 2026-06-06 — Public demo numbers must be regenerated after coverage slices
+
+**Symptom**
+
+Workstream A moved the mixed controller fixture from 16 to 17 validated rows,
+but README, the GitHub Pages demo docs, the product intro, and the recording
+script still described the old 16 L1 rows / 9 manual rows snapshot.
+
+**Root cause**
+
+The generated workbench and the prose entry points are both public artifacts.
+When a conservative generic validator changes project-level counts, stale prose
+can make the demo look less reproducible than the CLI even when the code is
+correct.
+
+**Fix**
+
+Regenerated the offline Copilot workbench and synchronized the public narrative
+around the measured output: 25 components, 17 validated rows, BOM matched=25,
+PASS/WARN/ERROR=5/9/3, and 8 manual/no-local-profile rows. The docs now state
+that the 17 L1 rows are 4 profile-backed targets plus 13 generic passive checks,
+and keep Switch/mainboard results as pressure-test evidence linked through
+`docs/closeout_pressure_summary.md`.
+
+**Takeaway**
+
+Demo counts are part of the evidence chain. Treat documentation closeout like a
+verification step: rerun the command, copy the measured output, and preserve the
+boundary between primary demo and pressure-test coverage.
+
+## 2026-06-06 — Wide detail tables need section-level overflow containment
+
+**Symptom**
+
+Browser smoke found that `docs/hardware-demo.html` looked correct on desktop,
+but at a 390 px mobile viewport the page-level `documentElement.scrollWidth`
+was 610 px. The main culprit was not the visible layout summary; it was wide
+detail tables in component report sections.
+
+**Root cause**
+
+The tables were already inside `.table-section{overflow:auto}`, but the table's
+min-content width was still counted in the document-level horizontal overflow.
+The closed Copilot panel could also sit offscreen on mobile because it used
+`translateX(100%)` instead of being removed from layout.
+
+**Fix**
+
+The generated multi-validator workbench now hides page-level horizontal
+overflow, clips each report `.section`, and keeps `.table-section` as the
+internal scroll container. The Copilot panel is `display:none` on mobile until
+opened, then switches back to grid. Browser smoke confirmed no page-level
+horizontal overflow on desktop or 390 px mobile, while wide tables still have
+their own internal scroll where needed.
+
+**Takeaway**
+
+For generated report UIs, table overflow has to be contained at both the table
+wrapper and the surrounding section. A hidden off-canvas panel can also count as
+page width on mobile even when visually "closed."
+
+## 2026-06-06 — Docs inventory should also catch stale local links
+
+**Symptom**
+
+Workstream E reorganized the public reading path, and local link validation
+found that `docs/index.html` still linked to two old report HTML files under
+`reports/` that are not present in the current repository checkout.
+
+**Root cause**
+
+The reading index had accumulated historical report links from an earlier demo
+packaging phase. Because those report artifacts were generated locally rather
+than kept as current GitHub Pages entries, the index looked more complete than
+the repo actually was. A follow-up inventory coverage check also tripped on an
+ignored local `.DS_Store` file, which confirmed the check should operate on
+tracked repository docs rather than every filesystem artifact under `docs/`.
+
+**Fix**
+
+Added `docs/docs_inventory.md` as the canonical map of current, reference,
+historical, staged-plan, and asset docs. Updated `docs/index.html` to lead with
+the current public path and replaced the broken report section with existing
+reference docs: architecture, PLAN reading view, and learning log. The coverage
+check now uses the Git-tracked docs set, so local OS metadata cannot become a
+false missing inventory row.
+
+**Takeaway**
+
+Documentation inventory is not only taxonomy; it is link hygiene. A public
+index should link to committed, current artifacts or clearly describe local
+generated outputs without pretending they are Pages entries.

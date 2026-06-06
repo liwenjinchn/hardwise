@@ -147,10 +147,10 @@ def test_fake_chat_summarizes_project_topology() -> None:
             ChatRequest(question="这张板大概有哪些已验证风险和待补 profile?", selected_refdes="U8")
         )
 
-        assert "拓扑摘要只基于 schematic/netlist" in response.answer
+        assert "拓扑摘要只基于解析后的原理图/netlist" in response.answer
         assert "25 个器件" in response.answer
         assert "21 条网络" in response.answer
-        assert "PASS/WARN/ERROR=4/9/3" in response.answer
+        assert "PASS/WARN/ERROR=5/9/3" in response.answer
         assert response.trace
         assert response.trace[0].tool == "summarize_project_topology"
         assert response.trace[0].summary == "components=25, nets=21"
@@ -188,7 +188,7 @@ def test_fake_chat_document_tool_fails_closed_without_index() -> None:
             ChatRequest(question="这个 U12 有公开资料吗?", selected_refdes="U12")
         )
 
-        assert "没有配置公开 document index" in response.answer
+        assert "没有配置公开资料索引" in response.answer
         assert [trace.tool for trace in response.trace] == ["get_component_documents"]
         assert response.trace[0].summary == "status=not_configured"
         assert response.trace[0].trust_tier == "l3"
@@ -203,7 +203,7 @@ def test_fake_chat_uses_document_summary_for_gap_question(tmp_path: Path) -> Non
 
         response = service.ask(ChatRequest(question="还有哪些 datasheet 缺口?"))
 
-        assert "资料覆盖来自已配置的公开 document index" in response.answer
+        assert "资料覆盖来自已配置的公开资料索引" in response.answer
         assert "no_result=" in response.answer
         assert [trace.tool for trace in response.trace] == ["summarize_document_coverage"]
         assert response.trace[0].summary.startswith("groups=")
@@ -236,8 +236,9 @@ def test_snapshot_responses_include_l2_grounded_datasheet_smoke() -> None:
         responses = build_snapshot_responses(context)
 
         response = responses[C5_L2_SNAPSHOT_QUESTION]
-        assert "l78.pdf" in response.answer
-        assert "35 V" in response.answer
+        assert "l78.pdf 第 4 页" in response.answer
+        assert "VI 输入耐压为 35 V" in response.answer
+        assert "Absolute maximum ratings table" not in response.answer
         assert [trace.tool for trace in response.trace] == ["search_datasheet"]
         assert response.trace[0].summary == "hits=1"
         assert response.trace[0].evidence == ["datasheet:l78.pdf#p4"]

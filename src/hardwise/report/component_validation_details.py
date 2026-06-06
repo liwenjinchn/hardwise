@@ -117,7 +117,7 @@ def schematic_connection_path(
         rendered = [f"{refdes}.{number}" for refdes, number in shown]
         remaining = len(neighbors) - len(shown)
         if remaining:
-            rendered.append(f"+{remaining} more")
+            rendered.append(f"+{remaining} 处")
         segments.append(" / ".join(rendered))
     segments.append(endpoint)
     return " -> ".join(segments)
@@ -144,7 +144,7 @@ def trust_label_html(tier: TrustTier) -> str:
     return f'<span class="trust trust-{tier}" title="{escape(label)}">{escape(display)}</span>'
 
 
-def evidence_chips_html(tokens: list[str]) -> str:
+def evidence_chips_html(tokens: list[str], *, refdes: str | None = None) -> str:
     """Render copyable/searchable source tokens as compact HTML chips."""
 
     if not tokens:
@@ -152,11 +152,45 @@ def evidence_chips_html(tokens: list[str]) -> str:
     chips = []
     for token in tokens:
         source = token.split(":", 1)[0] if ":" in token else "source"
+        href = _evidence_href(token, refdes=refdes)
+        title = _evidence_title(token)
         chips.append(
-            '<span class="evidence-chip" '
-            f'data-source="{escape(source)}">{escape(token)}</span>'
+            '<a class="evidence-chip" '
+            f'data-source="{escape(source)}" '
+            f'data-evidence-token="{escape(token)}" '
+            f'href="{escape(href)}" title="{escape(title)}">{escape(token)}</a>'
         )
     return " ".join(chips)
+
+
+def _evidence_href(token: str, *, refdes: str | None = None) -> str:
+    """Return a safe in-page or external href for a visible evidence token."""
+
+    if token.startswith(("http://", "https://")):
+        return token
+    if token.startswith("datasheet:"):
+        return f"#{refdes}-evidence-details" if refdes else "#evidence-details"
+    if token.startswith(("bom:", "doc:")):
+        return "#component-index"
+    if token.startswith("sch:"):
+        return f"#{refdes}-connection-path" if refdes else "#connection-path"
+    return f"#{refdes}-evidence-details" if refdes else "#evidence-details"
+
+
+def _evidence_title(token: str) -> str:
+    """Return a concise explanation for evidence-token chips."""
+
+    if token.startswith("datasheet:"):
+        return "数据手册页码来源 token；点击跳到当前器件的证据详情，并复制 token。"
+    if token.startswith("bom:"):
+        return "BOM 行来源 token；点击跳到器件/覆盖清单，并复制 token。"
+    if token.startswith("doc:"):
+        return "本地公开资料索引 token；点击跳到器件/覆盖清单，并复制 token。"
+    if token.startswith("sch:"):
+        return "原理图拓扑来源 token；点击跳到连接路径，并复制 token。"
+    if token.startswith(("http://", "https://")):
+        return "打开外部来源链接。"
+    return "证据 token；点击复制。"
 
 
 def evidence_gap_chip(

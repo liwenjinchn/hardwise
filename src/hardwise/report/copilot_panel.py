@@ -40,22 +40,24 @@ def render_copilot_panel(
     return f"""
   <style>{COPILOT_STYLE}</style>
   <div class="ai-root" data-ai-root>
-    <button class="ai-fab" type="button" data-ai-open aria-label="Open Hardwise AI">AI</button>
-    <aside class="ai-panel" data-ai-panel aria-label="Hardwise AI panel">
+    <button class="ai-fab" type="button" data-ai-open aria-label="打开 Hardwise 助手">AI</button>
+    <aside class="ai-panel" data-ai-panel aria-label="Hardwise 助手">
       <header class="ai-panel-head">
         <div>
-          <h2>Hardwise AI</h2>
+          <h2>Hardwise 助手</h2>
           <p>{escape(label)} · 位号防护 / 证据链</p>
         </div>
-        <button class="ai-close" type="button" data-ai-close aria-label="Close">x</button>
+        <button class="ai-close" type="button" data-ai-close aria-label="关闭">x</button>
       </header>
       <div class="ai-suggest" data-ai-suggest></div>
-      <section class="ai-stream" data-ai-stream aria-live="polite">
-        <div class="ai-msg assistant"><p>可以询问选中器件、验证证据，或查询某个位号是否在网表/BOM 中存在。</p></div>
-      </section>
+      <div class="ai-guide" aria-label="可询问范围">
+        <strong>可询问范围</strong>
+        <span>选中器件、验证证据、资料缺口，或某个位号是否存在。</span>
+      </div>
+      <section class="ai-stream" data-ai-stream aria-live="polite"></section>
       <div class="ai-compose">
         <form data-ai-form>
-          <input class="ai-input" data-ai-input type="text" placeholder="问 Hardwise AI..." autocomplete="off">
+          <input class="ai-input" data-ai-input type="text" placeholder="问 Hardwise 助手..." autocomplete="off">
           <button class="ai-send" type="submit" aria-label="发送">&gt;</button>
         </form>
         <div class="ai-mode">{escape(label)}</div>

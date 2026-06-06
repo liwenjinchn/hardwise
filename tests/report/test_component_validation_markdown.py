@@ -42,17 +42,19 @@ def test_render_component_validation_markdown() -> None:
         design=design,
     )
 
-    assert "# Hardwise Component Validation - U1" in md
-    assert "| Trust tier | L1 deterministic |" in md
-    assert "| Overall status | PASS |" in md
-    assert "| Pin PASS/WARN/ERROR | 3 / 0 / 0 |" in md
-    assert "Single-component schematic pin validation only" in md
-    assert "does not parse PCB layout, boardview" in md
-    assert "### Pin Consistency" in md
-    assert "| Pin count | 3 | 3 | PASS |" in md
-    assert "## 5. Evidence Details" in md
-    assert "| abs_max | tj | 125 | `datasheet:l78.pdf#p4` |" in md
-    assert "### Profile Evidence Ledger" in md
-    assert "| 1 | VI | power_input | +12V | PASS |" in md
-    assert "| 1 | VI | power_input | +12V | +12V -> U1-1 |" in md
+    assert "# Hardwise 器件验证报告 - U1" in md
+    assert "| 可信度 | L1 deterministic |" in md
+    assert "| 综合判定 | PASS |" in md
+    assert "| 引脚 PASS/WARN/ERROR | 3 / 0 / 0 |" in md
+    assert "单器件原理图引脚与外围/拓扑验证" in md
+    assert "不解析 PCB layout、boardview/板图" in md
+    assert "### 引脚一致性" in md
+    assert "| 引脚数量 | 3 | 3 | PASS |" in md
+    assert "## 5. 证据详情" in md
+    assert "| 绝对最大额定 | 结温 | 125 | `datasheet:l78.pdf#p4` |" in md
+    assert "### 器件档案证据账本" in md
+    assert "| 1 | VI | 电源输入 | +12V | PASS |" in md
+    assert "| 1 | VI | 电源输入 | +12V | +12V -> U1-1 |" in md
     assert "`datasheet:l78.pdf#p4`" in md
+    assert "power_input" not in md
+    assert "Input net voltage" not in md

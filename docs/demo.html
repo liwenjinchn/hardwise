@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hardwise Phase 4 + C5 Trust Demo</title>
+  <title>Hardwise MVP 原理图评审工作台 Demo</title>
   <style>
     :root {
       --ink: #17201d;
@@ -136,38 +136,38 @@
   <main>
     <header class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Hardwise / Phase 4 + C5 closeout</p>
-        <h1>Five mechanisms, three trust tiers</h1>
-        <p class="lead">Hardwise 的头条不是“让模型更会说”，而是把硬件 Agent 输出压进五个 trust 机制和 L1/L2/L3 分层。KiCad 与 Allegro 两条公开输入轨负责展示同一条主干的不同侧面。</p>
+        <p class="eyebrow">Hardwise / MVP 原理图评审工作台</p>
+        <h1>进 Layout 前，先把风险排成队</h1>
+        <p class="lead">Hardwise 的头条不是“让模型更会说”，而是把公开原理图或 schematic netlist+BOM 变成评审者能直接使用的队列：必须评审、人工补证、已通过和证据。五个 trust 机制与 L1/L2/L3 分层是这条工作流的安全边界。</p>
       </div>
       <div class="summary" aria-label="phase 4 metrics">
-        <div class="metric"><span>Trust mechanisms</span><strong>5</strong><code>guard, ledger, memory, routing, cache</code></div>
-        <div class="metric"><span>Trust tiers</span><strong>L1/L2/L3</strong><code>deterministic / grounded / manual</code></div>
-        <div class="metric"><span>KiCad review</span><strong>29</strong><code>findings on pic_programmer</code></div>
-        <div class="metric"><span>Workbench</span><strong>4</strong><code>validated targets / 25 components</code></div>
+        <div class="metric"><span>评审动作</span><strong>3</strong><code>必须评审 / 人工补证 / 已通过</code></div>
+        <div class="metric"><span>证据分层</span><strong>L1/L2/L3</strong><code>确定性 / 有页码证据 / 人工确认</code></div>
+        <div class="metric"><span>KiCad 评审</span><strong>29</strong><code>pic_programmer findings</code></div>
+        <div class="metric"><span>工作台</span><strong>17</strong><code>L1 rows / 25 components</code></div>
       </div>
     </header>
 
     <section class="section">
-      <h2>Five Mechanisms</h2>
+      <h2>可信边界</h2>
       <div class="chain" aria-label="five trust mechanisms">
-        <div><span>01</span><b>Refdes Guard</b><p>用户可见位号必须来自 KiCad registry 或 Allegro netlist/BOM identity。</p></div>
-        <div><span>02</span><b>Evidence Ledger</b><p>finding 没有 source token 就不能进入最终报告。</p></div>
-        <div><span>03</span><b>Sleep Consolidator</b><p>重复问题先进入人工审核候选规则，不自动污染规则库。</p></div>
-        <div><span>04</span><b>Tiered Routing</b><p>模型按 fast / normal / deep env slot 选择，代码不写死 vendor model。</p></div>
-        <div><span>05</span><b>Prompt Caching</b><p>静态 agent prompt 可缓存，并有实测 cache-read 命中。</p></div>
+        <div><span>01</span><b>位号护栏</b><p>用户可见位号必须来自 KiCad registry 或 Allegro netlist/BOM identity。</p></div>
+        <div><span>02</span><b>证据账本</b><p>finding 没有 source token 就不能进入最终报告。</p></div>
+        <div><span>03</span><b>规则候选池</b><p>重复问题先进入人工审核候选规则，不自动污染规则库。</p></div>
+        <div><span>04</span><b>模型分层路由</b><p>模型按 fast / normal / deep env slot 选择，代码不写死 vendor model。</p></div>
+        <div><span>05</span><b>Prompt 缓存</b><p>静态 agent prompt 可缓存，并有实测 cache-read 命中。</p></div>
       </div>
     </section>
 
     <section class="section">
-      <h2>L1 / L2 / L3 Trust Tiers</h2>
+      <h2>L1 / L2 / L3 证据分层</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Tier</th><th>Meaning</th><th>Visible proof in C5</th></tr></thead>
+          <thead><tr><th>层级</th><th>含义</th><th>当前可见证据</th></tr></thead>
           <tbody>
-            <tr><td><b>L1 deterministic</b></td><td>Python rule / validator 决定 PASS/WARN/ERROR；模型只解释结构化结果。</td><td><code>run_component_validation</code> 和 workbench validated rows。</td></tr>
-            <tr><td><b>L2 grounded</b></td><td>本轮 datasheet search 返回带 <code>source_pdf + page</code> 的检索证据，供 reviewer 核验；不是逐句 entailment。</td><td>L78 snapshot trace 显示 <code>datasheet:l78.pdf#p4</code>。</td></tr>
-            <tr><td><b>L3 manual</b></td><td>没有 ready profile 或没有 retrieval evidence，系统保持人工确认。</td><td>no-profile/manual rows；无 vector hit 的 datasheet question。</td></tr>
+            <tr><td><b>L1 确定性</b></td><td>Python rule / validator 决定 PASS/WARN/ERROR；模型只解释结构化结果。</td><td><code>run_component_validation</code> 和工作台 validated rows。</td></tr>
+            <tr><td><b>L2 有页码证据</b></td><td>本轮 datasheet search 返回带 <code>source_pdf + page</code> 的检索证据，供 reviewer 核验；不是逐句语义证明。</td><td>L78 快照 trace 显示 <code>datasheet:l78.pdf#p4</code>。</td></tr>
+            <tr><td><b>L3 人工确认</b></td><td>没有 ready profile 或没有 retrieval evidence，系统保持人工确认。</td><td>no-profile/manual rows；无 vector hit 的 datasheet 问答。</td></tr>
           </tbody>
         </table>
       </div>
@@ -175,8 +175,8 @@
 
     <section class="section band" aria-label="demo tracks">
       <article class="track">
-        <div class="tagrow"><span class="tag">Hero track</span><span class="tag">KiCad</span><span class="tag">No API gate</span></div>
-        <h3>pic_programmer: agent/review evidence</h3>
+        <div class="tagrow"><span class="tag">主证据轨</span><span class="tag">KiCad</span><span class="tag">不需要 API key</span></div>
+        <h3>pic_programmer：agent / review / evidence 闭环</h3>
         <p>运行 R001/R002/R003/DS001，U3 的 L7805 finding 带 reviewed profile token <code>datasheet:l78.pdf#p4</code>。L78 另有 <code>ingest -> retrieve -> ask --vector</code> smoke，能从 <code>search_datasheet</code> 引到 <code>l78.pdf p4</code>。</p>
         <pre><code>uv run hardwise review \
   data/projects/pic_programmer \
@@ -185,15 +185,15 @@
   --output /tmp/hardwise-phase4-review.md
 
 # output
-29 findings, 121 components reviewed
+29 条 finding，121 个 component 已评审
 U3 / DS001 -> datasheet:l78.pdf#p4</code></pre>
-        <p style="margin-top:14px">Evidence audit: <code>query-datasheet "absolute maximum input voltage"</code> top-1 是 <code>[l78.pdf p4 part=L7805]</code>；<code>ask --vector</code> trace 显示 <code>search_datasheet -> hits</code> 和 <code>get_component(U3) -> found</code>。C4 其它 profile token 是 reviewed public profile evidence，不等于每个 PDF 都已 live retrieval。</p>
+        <p style="margin-top:14px">证据链 audit：<code>query-datasheet "absolute maximum input voltage"</code> top-1 是 <code>[l78.pdf p4 part=L7805]</code>；<code>ask --vector</code> trace 显示 <code>search_datasheet -> hits</code> 和 <code>get_component(U3) -> found</code>。C4 其它 profile token 是 reviewed public profile evidence，不等于每个 PDF 都已 live retrieval。</p>
       </article>
 
       <article class="track">
-        <div class="tagrow"><span class="tag">Complementary track</span><span class="tag">Allegro</span><span class="tag">Static workbench</span></div>
-        <h3>mixed_controller_power_stage: UI workbench</h3>
-        <p>同一套 deterministic validation truth 渲染成 HTML：U1 PASS，U12/U3/U8 ERROR，其余 21 个器件透明显示 no-profile/manual。C5 的离线 Copilot snapshot 还烤进一个 L78 evidence-chain smoke，展示 L2 grounded trace。</p>
+        <div class="tagrow"><span class="tag">工作台轨</span><span class="tag">Allegro</span><span class="tag">离线 Copilot</span></div>
+        <h3>mixed_controller_power_stage：真实工作台界面</h3>
+        <p>同一套 deterministic validation truth 渲染成 HTML：U1 PASS，U12/U3/U8 ERROR，generic capacitors/resistors/inductor 进入 light deterministic coverage，其余 8 个器件透明显示 no-local-profile/manual。C5 的离线 Copilot snapshot 还烤进一个 L78 evidence-chain smoke，展示 L2 grounded trace。</p>
         <pre><code>uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
@@ -203,32 +203,37 @@ U3 / DS001 -> datasheet:l78.pdf#p4</code></pre>
   --index-json /tmp/hardwise-phase4-index.json
 
 # output
-25 components, validated=4
-PASS/WARN/ERROR=1/0/3, manual=21</code></pre>
-        <p style="margin-top:14px">C5 snapshot trace: <code>Trust: L2 grounded</code> + <code>datasheet:l78.pdf#p4</code> when the seeded L78 search hit is present; ordinary datasheet questions without vector evidence remain <code>L3 manual</code>.</p>
+25 components, validated=17
+PASS/WARN/ERROR=5/9/3, manual=8</code></pre>
+        <p style="margin-top:14px">C5 快照 trace：当 seeded L78 search hit 存在时，显示 <code>Trust: L2 grounded</code> + <code>datasheet:l78.pdf#p4</code>；普通 datasheet 问题如果没有向量证据，保持 <code>L3 manual</code>。</p>
       </article>
     </section>
 
     <section class="section">
-      <h2>Validated Targets</h2>
+      <h2>90 秒演示该看什么</h2>
+      <p>Workbench 的 17 个 L1 rows = 4 个 profile-backed targets + 13 个 generic passive checks；generic passive 是轻量确定性覆盖，不是深度 datasheet review。</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Track</th><th>Object</th><th>Status</th><th>Evidence / point</th></tr></thead>
+          <thead><tr><th>轨道</th><th>对象</th><th>状态</th><th>证据 / 讲点</th></tr></thead>
           <tbody>
-            <tr><td>KiCad</td><td>U3 / L7805 / DS001</td><td>reviewer_to_confirm</td><td><code>datasheet:l78.pdf#p4</code>; Vin abs max is reviewed, applied Vin still needs human confirmation.</td></tr>
-            <tr><td>Agent bridge test</td><td>run_component_validation(refdes)</td><td class="status-pass">PASS path covered</td><td><code>tests/agent/test_validation_bridge.py</code> proves Runner dispatches to validator with FakeAnthropic, no API key.</td></tr>
-            <tr><td>C5 trace tier</td><td>L78 evidence-chain smoke</td><td class="status-pass">L2 grounded</td><td><code>search_datasheet</code> trace carries <code>datasheet:l78.pdf#p4</code>; no-hit searches stay L3 manual.</td></tr>
-            <tr><td>Allegro</td><td>U1 / L7805</td><td class="status-pass">PASS</td><td>L78 profile pin checks include <code>datasheet:l78.pdf#p3/#p4/#p6</code>.</td></tr>
-            <tr><td>Allegro</td><td>U12 / XL1509</td><td class="status-error">ERROR</td><td>D5 is not Schottky-style; L1 is below profile inductor range.</td></tr>
-            <tr><td>Allegro</td><td>U3 / EG2132</td><td class="status-error">ERROR</td><td>Bootstrap diode rating is too low for the 24 V-class path.</td></tr>
-            <tr><td>Allegro</td><td>U8 / STM32G030</td><td class="status-error">ERROR</td><td>SWDIO/SWCLK are swapped in the fixture.</td></tr>
+            <tr><td>KiCad</td><td>U3 / L7805 / DS001</td><td>reviewer_to_confirm</td><td><code>datasheet:l78.pdf#p4</code>；Vin abs max 已有 reviewed evidence，但实际 Vin 仍需人工确认。</td></tr>
+            <tr><td>Agent bridge test</td><td>run_component_validation(refdes)</td><td class="status-pass">PASS path covered</td><td><code>tests/agent/test_validation_bridge.py</code> 证明 Runner 能派发到 validator，无需 API key。</td></tr>
+            <tr><td>C5 trace tier</td><td>L78 evidence-chain smoke</td><td class="status-pass">L2 grounded</td><td><code>search_datasheet</code> trace 带 <code>datasheet:l78.pdf#p4</code>；没有命中就保持 L3 manual。</td></tr>
+            <tr><td>Allegro</td><td>U1 / L7805</td><td class="status-pass">PASS</td><td>L78 profile pin checks 包含 <code>datasheet:l78.pdf#p3/#p4/#p6</code>。</td></tr>
+            <tr><td>Allegro</td><td>U12 / XL1509</td><td class="status-error">ERROR</td><td>D5 不是 Schottky-style；L1 低于 profile 的电感范围。</td></tr>
+            <tr><td>Allegro</td><td>U3 / EG2132</td><td class="status-error">ERROR</td><td>自举二极管额定值低于 24 V-class 路径需求。</td></tr>
+            <tr><td>Allegro</td><td>U8 / STM32G030</td><td class="status-error">ERROR</td><td>fixture 中 SWDIO/SWCLK 接反。</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
     <section class="section note">
-      <p><b>Boundary:</b> C3/C4 coverage ranking is supporting material, not the headline. The headline is the trust architecture: five mechanisms, L1/L2/L3 evidence tiers, registry-verified objects, deterministic validators, and structured tools. Phase 4 does not add PCB/boardview, placement/routing, simulation, PLM, supplier/lifecycle/pricing, hosted app state, or company-internal hardware data.</p>
+      <p><b>边界：</b>coverage ranking 是支撑材料，不是主角。主角是 review workflow：registry-verified 对象、确定性 validator、evidence token、可见 manual gap，以及结构化 Copilot 工具。MVP 不包含 PCB/boardview、placement/routing、仿真、PLM、supplier/lifecycle/pricing、hosted app state 或公司内部硬件数据。</p>
+    </section>
+
+    <section class="section note">
+      <p><b>文档入口：</b>如果你不确定该读哪份文档，先看 <code>docs/docs_inventory.html</code>。当前公开路径是 README → 产品介绍页 → 离线工作台 → MVP 定义 → 本技术 Demo → Evidence Chain Audit。</p>
     </section>
   </main>
 </body>

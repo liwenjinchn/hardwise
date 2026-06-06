@@ -123,6 +123,25 @@ def test_family_report_orders_by_impact_and_marks_unmapped_families(
     assert report.recommendations[1].recommended_action == "triage_for_new_validator"
 
 
+def test_family_report_skips_generic_validated_passives(tmp_path: Path) -> None:
+    index_path = _write_index(
+        tmp_path,
+        rows=[
+            _row("L1", "generic_passive", validation=_validation("L1", "GENERIC_INDUCTOR")),
+            _row("D1", "no_result"),
+        ],
+        groups=[
+            _group("inductor-bank", ["L1"], "inductor", "6.8uH"),
+            _group("diode-bank", ["D1"], "diode", "BAV99"),
+        ],
+    )
+
+    report = build_family_coverage_report(index_path)
+
+    assert report.skipped_covered == 1
+    assert [item.suggested_family for item in report.recommendations] == ["diode"]
+
+
 def test_render_family_coverage_markdown_is_advisory(tmp_path: Path) -> None:
     index_path = _write_index(
         tmp_path,
@@ -164,14 +183,35 @@ def _write_index(tmp_path: Path, *, rows: list[dict], groups: list[dict]) -> Pat
     return path
 
 
-def _row(refdes: str, match_status: str) -> dict:
-    return {
+def _row(refdes: str, match_status: str, *, validation: dict | None = None) -> dict:
+    row = {
         "refdes": refdes,
         "bom_value": "",
         "part_number": "",
         "manufacturer": "Fixture",
         "match_status": match_status,
         "reason": "fixture",
+    }
+    if validation is not None:
+        row["validation"] = validation
+    return row
+
+
+def _validation(refdes: str, profile_part_number: str) -> dict:
+    return {
+        "refdes": refdes,
+        "component_value": "fixture",
+        "profile_part_number": profile_part_number,
+        "pin_results": [
+            {
+                "pin_number": "1",
+                "pin_name": "Terminal 1",
+                "category": "generic_inductor_terminal",
+                "status": "PASS",
+                "summary": "fixture",
+            }
+        ],
+        "component_checks": [],
     }
 
 

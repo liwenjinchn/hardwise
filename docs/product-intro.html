@@ -259,20 +259,20 @@
       <nav class="nav" aria-label="页面导航">
         <a class="brand" href="./product-intro.html"><span class="mark">⌁</span><span>Hardwise</span></a>
         <div class="nav-links">
-          <a href="#value">能力</a>
-          <a href="#demo">问答</a>
+          <a href="#value">流程</a>
+          <a href="#demo">评审会</a>
           <a href="./demo.html">技术 Demo</a>
         </div>
       </nav>
 
       <div class="hero-inner">
         <div class="copy">
-          <span class="eyebrow">五机制 / 三层 trust / 本地设计验证器</span>
-          <h1>先分层信任，再让 Agent 说话。</h1>
-          <p class="lead">Hardwise 把硬件 Agent 输出压进五大 trust 机制和 L1/L2/L3 分层：L1 是确定性验证，L2 是页码级检索证据，L3 保持人工确认。模型只解释结构化结果，不自由编位号或证据。</p>
+          <span class="eyebrow">pre-Layout schematic review workbench</span>
+          <h1>进 Layout 前，把评审风险排成队。</h1>
+          <p class="lead">Hardwise 导入公开原理图或 netlist+BOM，生成 review queue：哪些必须看、哪些缺证据、哪些已通过。Agent 只解释工具查到的证据，不自由编位号、pin 或 datasheet 结论。</p>
           <div class="actions">
-            <a class="button primary" href="./demo.html">看五机制 Demo</a>
-            <a class="button" href="./hardware-demo.html">打开真实工作台</a>
+            <a class="button primary" href="./hardware-demo.html">打开 AI 工作台</a>
+            <a class="button" href="./demo.html">看技术证据</a>
           </div>
         </div>
 
@@ -280,14 +280,14 @@
           <div class="mock-card" aria-label="Hardwise 设计验证器产品介绍卡片">
             <div class="mock-top">
               <div class="mock-brand"><span class="mark">⌁</span><span>Hardwise</span></div>
-              <span class="mock-pill">Allegro/BOM demo</span>
+              <span class="mock-pill">review queue</span>
             </div>
             <div class="mock-body">
               <div class="mock-rail">
-                <span>顶部摘要</span>
-                <span>器件列表</span>
-                <span>验证区</span>
-                <span>报告详情</span>
+                <span>Must Review</span>
+                <span>Manual Gap</span>
+                <span>Passed</span>
+                <span>Feedback List</span>
               </div>
               <div class="mock-schematic" aria-hidden="true">
                 <span class="wire w1"></span>
@@ -299,60 +299,60 @@
                 <span class="part r11">U8 SWD</span>
               </div>
               <div class="mock-review">
-                <h3>工作区</h3>
-                <div class="finding-row"><b>器件列表</b><em>25 rows</em></div>
-                <div class="finding-row"><b>验证区</b><em>4 validated</em></div>
-                <div class="finding-row"><b>报告详情</b><em>issue-first</em></div>
+                <h3>评审队列</h3>
+                <div class="finding-row"><b>Must Review</b><em>3 error</em></div>
+                <div class="finding-row"><b>Manual Gap</b><em>8 rows</em></div>
+                <div class="finding-row"><b>Evidence</b><em>tokens</em></div>
               </div>
             </div>
           </div>
           <div class="metrics" aria-label="样例工程结果">
-            <div class="metric"><strong>5</strong><span>个 trust 机制</span></div>
-            <div class="metric"><strong>L1/L2/L3</strong><span>信任分层</span></div>
+            <div class="metric"><strong>25</strong><span>components indexed</span></div>
+            <div class="metric"><strong>8</strong><span>manual gaps visible</span></div>
             <div class="metric"><strong>29</strong><span>KiCad findings</span></div>
-            <div class="metric"><strong>4</strong><span>L1 validated targets</span></div>
+            <div class="metric"><strong>17</strong><span>L1 rows</span></div>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="value" class="section" aria-label="核心能力">
-      <h2 class="section-title">不是泛泛聊天，而是把输出压进五个机制和三层信任。</h2>
+    <section id="value" class="section" aria-label="核心流程">
+      <h2 class="section-title">MVP 不追求全自动判板，而是把评审动作变得可追溯。</h2>
       <div class="cards">
         <article class="card">
           <div class="icon">01</div>
-          <h2>五个机制锁边界</h2>
-          <p>Refdes Guard、Evidence Ledger、Sleep Consolidator、Tiered Routing 和 Prompt Caching 分别约束位号、证据、规则演化、模型选择和长上下文成本。</p>
+          <h2>先建可信台账</h2>
+          <p>从公开 EDA 工程或 schematic netlist+BOM 建立 refdes、pin、net 和 BOM identity。用户看见的位号必须来自 parsed registry。</p>
         </article>
         <article class="card">
           <div class="icon">02</div>
-          <h2>三层 trust 标证据</h2>
-          <p>L1 deterministic 才能给 PASS/WARN/ERROR；L2 grounded 只表示本轮有页码级 retrieval；L3 manual 明确留给 reviewer。</p>
+          <h2>再排 review queue</h2>
+          <p>确定性规则和 validator 产出 Must Review / Passed；缺 profile 或证据不足的对象进入 Manual Gap，不被伪装成硬结论。</p>
         </article>
         <article class="card">
           <div class="icon">03</div>
-          <h2>两条公开轨支撑</h2>
-          <p>KiCad 轨证明 agent/review/evidence guard；Allegro 轨证明项目级 workbench 和多 family validator，全程不用公司内部硬件数据。</p>
+          <h2>最后带证据讨论</h2>
+          <p>每条 finding 带 source token；Copilot 展示工具 trace 和 trust tier，只解释已有证据，不替代 reviewer 的接受/拒绝判断。</p>
         </article>
       </div>
     </section>
 
-    <section id="demo" class="section demo" aria-label="问答示例">
+    <section id="demo" class="section demo" aria-label="评审会示例">
       <aside class="panel">
-        <h2>面试时可以这样讲</h2>
-        <p>先讲五大机制和 L1/L2/L3，再展示输入、输出和边界：哪些判断已经 deterministic，哪些问题仍然是 manual/no-profile。</p>
+        <h2>评审会上怎么用</h2>
+        <p>先看 Must Review，再看 Manual Gap，最后用证据 token 和 Copilot trace 解释每个条目为什么存在、是否应该接受。</p>
       </aside>
       <div class="panel chat">
-        <div class="bubble"><b>面试官</b>它怎么发现 U12 的问题？</div>
-        <div class="bubble answer"><b>Hardwise</b>先匹配 XL1509 profile，再从 netlist 看到 OUTPUT 接 D5 和 L1，确定 D5=1N4007W 不是 Schottky-style，L1=6.8uH 低于推荐范围。</div>
-        <div class="bubble"><b>面试官</b>它是不是自动评审全 BOM？</div>
-        <div class="bubble answer"><b>Hardwise</b>不是。当前只验证有本地 profile 的 4 个器件；其余 21 个在 project index 中显式显示为 no_profile/manual。</div>
+        <div class="bubble"><b>Reviewer</b>U12 为什么排在 Must Review？</div>
+        <div class="bubble answer"><b>Hardwise</b>确定性 validator 看到 XL1509 的 OUTPUT 路径接到 D5 和 L1：D5=1N4007W 不是 Schottky-style，L1=6.8uH 低于 profile 范围。结论是 L1 deterministic。</div>
+        <div class="bubble"><b>Reviewer</b>剩下 8 个 manual row 是失败吗？</div>
+        <div class="bubble answer"><b>Hardwise</b>不是。它们是 no-local-profile/manual gap：当前没有足够证据给 PASS/WARN/ERROR，所以留在人工确认区，而不是让模型猜。</div>
       </div>
     </section>
 
     <div class="footer-note">
-      <strong>从 trust 分层到可追溯验证报告</strong>
-      <span>技术 demo 展示五大机制和证据 tier；硬件展示页直接打开当前生成的静态工作台。</span>
+      <strong>从 review queue 到可 close 的反馈表</strong>
+      <span>工作台面向评审动作；技术 demo 解释背后的五大机制和 L1/L2/L3 证据边界。</span>
     </div>
   </main>
 </body>

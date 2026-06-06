@@ -2,9 +2,17 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-> A guardrailed design-validator workbench for public hardware projects: five trust mechanisms, L1/L2/L3 evidence tiers, registry-verified refdes, and deterministic validation.
+> A trusted pre-layout schematic-review workbench for public hardware projects:
+> review queues, evidence-backed findings, registry-verified refdes, and
+> deterministic validation.
 
-Hardwise is a two-week portfolio MVP for the **pre-layout design-validation** node in hardware R&D. It does not claim that an LLM can independently judge a complete hardware design. It proves a narrower and more important engineering loop: parse a public EDA project, build a component index, run deterministic validation rules, force every surfaced refdes through the parsed registry, attach evidence tokens to every finding, and let the agent answer schematic questions only through structured tools.
+Hardwise is a two-week portfolio MVP for the **pre-layout schematic-review**
+node in hardware R&D. It does not claim that an LLM can independently judge a
+complete hardware design. It proves a narrower and more useful engineering loop:
+import a public schematic project or schematic netlist+BOM, build a trusted
+component registry, run deterministic review checks, separate hard findings from
+manual/profile gaps, attach evidence tokens, and let the agent explain only
+tool-backed facts.
 
 Architecture is inspired by [Wrench Board](https://github.com/Junkz3/wrench-board) (Anthropic *Build with Opus 4.7* hackathon, 2nd place, April 2026). Design ideas only, no code copied.
 
@@ -18,15 +26,58 @@ If you only have 90 seconds, start here:
 
 GitHub shows HTML files as source. Open the rendered GitHub Pages demos for the intended reading view:
 
+- **Reading index:** [https://liwenjinchn.github.io/hardwise/](https://liwenjinchn.github.io/hardwise/)
 - **Product intro:** [https://liwenjinchn.github.io/hardwise/product-intro.html](https://liwenjinchn.github.io/hardwise/product-intro.html)
-- **Hardware demo:** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
-- **Technical snapshot:** [`docs/demo.html`](docs/demo.html)
-- **Short read:** [`docs/demo.md`](docs/demo.md)
-- **Reproduce locally:** `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component`
+- **Offline Copilot workbench:** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
+- **MVP definition:** [https://liwenjinchn.github.io/hardwise/mvp_definition.html](https://liwenjinchn.github.io/hardwise/mvp_definition.html)
+- **Technical snapshot:** [https://liwenjinchn.github.io/hardwise/demo.html](https://liwenjinchn.github.io/hardwise/demo.html)
+- **Recording script:** [https://liwenjinchn.github.io/hardwise/demo_recording_script.html](https://liwenjinchn.github.io/hardwise/demo_recording_script.html)
+- **Docs inventory:** [https://liwenjinchn.github.io/hardwise/docs_inventory.html](https://liwenjinchn.github.io/hardwise/docs_inventory.html)
+
+Local quickstart:
+
+```bash
+uv sync
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --output /tmp/hardwise-review.md
+uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --ai-snapshot --output /tmp/hardwise-copilot-workbench.html
+```
+
+## MVP product loop
+
+Hardwise is shaped around the review meeting before Layout handoff:
+
+```text
+import schematic/netlist+BOM
+  -> build registry-verified component table
+  -> run deterministic checks and profile validators
+  -> split output into Must Review / Manual Gap / Passed
+  -> explain findings through tool-backed Copilot traces
+  -> export a review feedback list with evidence
+```
+
+The workbench should answer the reviewer's first questions before it teaches the
+architecture: what needs attention, what is only a manual gap, what passed, and
+which source token supports each row. See [`docs/mvp_definition.md`](docs/mvp_definition.md)
+for the durable MVP boundary: user problem, core flow, page structure, scope,
+non-goals, and acceptance criteria.
+
+If you are unsure whether a document is current or historical, use
+[`docs/docs_inventory.md`](docs/docs_inventory.md) as the reading map.
 
 ## What the MVP proves
 
-Phase 4 is framed around **five trust mechanisms** and visible **L1/L2/L3 trust tiers**. The two demo tracks are public and complementary; they are not one board pretending to cover every command surface.
+The current implementation proves this review loop through **five trust mechanisms**
+and visible **L1/L2/L3 trust tiers**. The two demo tracks are public and
+complementary; they are not one board pretending to cover every command surface.
+
+Action labels in the product map to the trust tiers:
+
+| Review action | Meaning | Trust tier |
+|---|---|---|
+| **Must Review** | Deterministic ERROR/WARN or high-value checklist finding that should be discussed before Layout. | Usually L1 |
+| **Manual Gap** | No ready profile, no retrieval evidence, or not enough schematic context; keep it visible for reviewer judgement. | L3 |
+| **Passed** | Deterministic check completed without an issue. | L1 |
+| **Evidence Question** | Copilot can cite a page-level datasheet hit for inspection, but it does not create a hard validator verdict. | L2 |
 
 | Mechanism | What it proves in the demo |
 |---|---|
@@ -42,7 +93,7 @@ Phase 4 is framed around **five trust mechanisms** and visible **L1/L2/L3 trust 
 | **L2 grounded** | A datasheet search turn surfaced page-level retrieval evidence for reviewer inspection. This is not sentence-level entailment. | C5 L78 Copilot trace: `datasheet:l78.pdf#p4`. |
 | **L3 manual** | No ready profile or no retrieval evidence is present; the system keeps the row/question in human-review territory. | No-profile workbench rows, no-hit datasheet questions. |
 
-The C3/C4 coverage loop is supporting evidence: C3 ranks profile gaps, and C4 moves selected groups from L3/manual rows into L1 deterministic rows. That proves the loop is repeatable, but the headline remains trust: the model is bounded by registry objects, evidence tokens, deterministic validators, and structured tool returns.
+The coverage loop is supporting evidence: Hardwise ranks profile gaps, then moves selected public-evidence groups from L3/manual rows into L1 deterministic rows one family at a time. That proves the loop is repeatable, but the headline remains trust: the model is bounded by registry objects, evidence tokens, deterministic validators, and structured tool returns.
 
 The KiCad track proves the agent/review/evidence path:
 
@@ -69,14 +120,17 @@ The Allegro track proves the static project workbench:
 uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
-  --output reports/controller-design-validator.html \
+  --ai-snapshot \
+  --output reports/controller-workbench.html \
   --index-output reports/controller-design-validator-index.md \
   --index-json reports/controller-design-validator-index.json
 ```
 
-That path auto-matches public datasheet profiles by BOM identity and writes a single static HTML workbench with a top summary, component list, validation section, and report detail. What the workbench proves is the deterministic trust path, not a coverage count: U1/L7805 repeats the L78 evidence path in the workbench, while U12/XL1509, U3/EG2132, and U8/STM32G030 show deterministic topology/debug-interface errors. The current controller fixture reports 25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, and 21 manual/no-profile rows. If a project has zero local profile matches, the same command still emits a coverage/gap workbench plus optional markdown / JSON index sidecars instead of inventing validation results.
+That path auto-matches public datasheet profiles by BOM identity and writes a single static HTML workbench with a top summary, grouped component list, validation section, report detail, and baked Copilot panel. What the workbench proves is the deterministic trust path, not a coverage trophy: U1/L7805 repeats the L78 evidence path in the workbench, while U12/XL1509, U3/EG2132, and U8/STM32G030 show deterministic topology/debug-interface errors. The mixed controller fixture reports 25 components, 17 validated rows, BOM matched=25, PASS/WARN/ERROR = 5/9/3, and 8 manual/no-local-profile rows. The 17 L1 rows are 4 profile-backed targets plus 13 generic passive checks; the passive checks are light deterministic coverage for explicit BOM/netlist facts, not deep datasheet review. If a project has zero local profile matches, the same command still emits a coverage/gap workbench plus optional markdown / JSON index sidecars instead of inventing validation results.
 
-The same Allegro workbench can render an optional Copilot panel. `design-validator-ui --ai-snapshot` bakes audited offline chat transcripts into the single HTML file (no server, no API key); `serve-workbench` runs a local FastAPI server whose `--fake-ai` mode drives the real agent loop with a deterministic fake client, and whose real mode talks to any Anthropic-format endpoint configured in `.env`. Every panel answer runs the same five-tool Runner and the same Refdes Guard, so an unknown refdes such as `U999` is wrapped as `⟨?U999⟩` rather than fabricated.
+Real-board imports are pressure tests and coverage-planning evidence, not the primary public demo. The closeout rerun reports Switch board 4010 components / 3794 validated / 216 manual / PASS/WARN/ERROR = 3663/125/6, and mainboard 8180 components / 7248 BOM matched / 6847 validated / 1333 manual / PASS/WARN/ERROR = 3921/2926/0. See [`docs/closeout_pressure_summary.md`](docs/closeout_pressure_summary.md); the movement came from conservative generic inductor/ferrite coverage plus the reviewed PE537BA P-MOS profile, not from a full-board automatic correctness claim.
+
+`design-validator-ui --ai-snapshot` bakes audited offline chat transcripts into the single HTML file (no server, no API key); `serve-workbench` runs a local FastAPI server whose `--fake-ai` mode drives the real agent loop with a deterministic fake client, and whose real mode talks to any Anthropic-format endpoint configured in `.env`. Every panel answer runs the same five-tool Runner and the same Refdes Guard, so an unknown refdes such as `U999` is wrapped as `⟨?U999⟩` rather than fabricated.
 
 For repeated component families, Hardwise can draft `needs_review` profile
 skeletons from reusable archetypes such as `74x165_piso_16pin`. See

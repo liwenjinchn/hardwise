@@ -32,11 +32,15 @@ def test_report_validator_ui_writes_html(tmp_path: Path) -> None:
     assert "(3 components, selected=U1, PASS, PASS/WARN/ERROR=3/0/0)" in result.output
 
     html = output.read_text(encoding="utf-8")
-    assert "<title>Hardwise Validator UI - l78_regulator</title>" in html
-    assert "Component index" in html
+    assert "<title>Hardwise 原理图检验工具 - l78_regulator</title>" in html
+    assert "器件索引" in html
     assert "U1" in html
-    assert "Download report" in html
+    assert "下载报告" in html
+    assert "Hardwise / 原理图检验工具" in html
+    assert "电源输入" in html
     assert "boardview" in html
+    assert "Download report" not in html
+    assert "Component index" not in html
 
 
 def test_report_validator_ui_writes_xl1509_dcdc_checks(tmp_path: Path) -> None:
@@ -60,14 +64,15 @@ def test_report_validator_ui_writes_xl1509_dcdc_checks(tmp_path: Path) -> None:
     assert "selected=U12, ERROR" in result.output
 
     html = output.read_text(encoding="utf-8")
-    assert "Hardwise Validator UI - xl1509_buck" in html
+    assert "Hardwise 原理图检验工具 - xl1509_buck" in html
     assert "U12" in html
     assert "ERROR" in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
-    assert "buck_freewheel_diode" in html
-    assert "buck_inductor" in html
-    assert ".brd, boardview, placement, routing, PCB geometry" in html
+    assert "Buck 续流二极管" in html
+    assert "Buck 电感" in html
+    assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
+    assert "not a Schottky-style diode family" not in html
 
 
 def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: Path) -> None:
@@ -94,6 +99,7 @@ def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: 
     html = output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
     assert 'class="left-stack" aria-label="器件与验证摘要"' in html
+    assert html.index('aria-label="验证"') < html.index('aria-label="器件"')
     assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
@@ -180,7 +186,7 @@ def test_report_validator_ui_batch_writes_eg2132_gate_driver_checks(
     assert "外围/拓扑检查" in html
     assert "gate_driver_bootstrap" in html
     assert "MBRA210LT3G" in html
-    assert "below required 24 V" in html
+    assert "低于所需 24 V" in html
     assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
@@ -213,8 +219,8 @@ def test_report_validator_ui_batch_writes_stm32_mcu_checks(
     assert "外围/拓扑检查" in html
     assert "mcu_swdio" in html
     assert "mcu_swclk" in html
-    assert "SWDIO is connected to SWCLK" in html
-    assert "SWCLK is connected to SWDIO" in html
+    assert "MCU SWDIO 连接到了 SWCLK，期望连接到 SWDIO" in html
+    assert "MCU SWCLK 连接到了 SWDIO，期望连接到 SWCLK" in html
     assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
@@ -279,8 +285,8 @@ def test_report_validator_ui_batch_writes_mixed_controller_manifest(
     html = output.read_text(encoding="utf-8")
     assert 'data-select-ref="U8"' in html
     assert '<article class="panel" data-panel="U8">' in html
-    assert "SWDIO is connected to SWCLK" in html
-    assert "SWCLK is connected to SWDIO" in html
+    assert "MCU SWDIO 连接到了 SWCLK，期望连接到 SWDIO" in html
+    assert "MCU SWCLK 连接到了 SWDIO，期望连接到 SWCLK" in html
     assert "MBRA210LT3G" in html
 
 
@@ -339,9 +345,9 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
 
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
-    assert "validated=12" in result.output
-    assert "PASS/WARN/ERROR=4/6/2" in result.output
-    assert "manual=6" in result.output
+    assert "validated=13" in result.output
+    assert "PASS/WARN/ERROR=5/6/2" in result.output
+    assert "manual=5" in result.output
 
     html = html_output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
@@ -356,14 +362,16 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     assert "MBRA210LT3G" in html
     assert "GENERIC_CAPACITOR" in html
     assert "GENERIC_RESISTOR" in html
+    assert "GENERIC_INDUCTOR" in html
 
     index_text = index_output.read_text(encoding="utf-8")
     assert "# Hardwise Design Validator - mixed_power_stage" in index_text
-    assert "| Validated components | 12 |" in index_text
-    assert "| PASS / WARN / ERROR | 4 / 6 / 2 |" in index_text
+    assert "| Validated components | 13 |" in index_text
+    assert "| PASS / WARN / ERROR | 5 / 6 / 2 |" in index_text
     assert "Static schematic-side design validator" in index_text
     assert "`GENERIC_CAPACITOR`" in index_text
     assert "`GENERIC_RESISTOR`" in index_text
+    assert "`GENERIC_INDUCTOR`" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"components_in_design": 18' in index_payload
@@ -395,15 +403,16 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
 
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
-    assert "validated=16" in result.output
-    assert "PASS/WARN/ERROR=4/9/3" in result.output
-    assert "manual=9" in result.output
+    assert "validated=17" in result.output
+    assert "PASS/WARN/ERROR=5/9/3" in result.output
+    assert "manual=8" in result.output
 
     html = html_output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
+    assert html.index('aria-label="验证"') < html.index('aria-label="器件"')
     assert 'data-select-ref="U8"' in html
-    assert "SWDIO is connected to SWCLK" in html
-    assert "SWCLK is connected to SWDIO" in html
+    assert "MCU SWDIO 连接到了 SWCLK，期望连接到 SWDIO" in html
+    assert "MCU SWCLK 连接到了 SWDIO，期望连接到 SWCLK" in html
     for section in (
         "model-check",
         "pin-summary",
@@ -418,15 +427,19 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert "6. 综合总结" in html
     assert "L1 确定性" in html
     assert "evidence-chip" in html
+    assert "data-evidence-token" in html
+    assert 'href="#U8-evidence-details"' in html
+    assert 'id="U8-evidence-details"' in html
     assert "recommended.swd" in html
     assert "datasheet:stm32g030.pdf#p33" in html
     assert "外围/拓扑检查" in html
 
     index_text = index_output.read_text(encoding="utf-8")
-    assert "| Validated components | 16 |" in index_text
-    assert "| PASS / WARN / ERROR | 4 / 9 / 3 |" in index_text
+    assert "| Validated components | 17 |" in index_text
+    assert "| PASS / WARN / ERROR | 5 / 9 / 3 |" in index_text
     assert "STM32G030C8T6" in index_text
     assert "`GENERIC_CAPACITOR`" in index_text
+    assert "`GENERIC_INDUCTOR`" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"components_in_design": 25' in index_payload
@@ -455,13 +468,17 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     assert "data-ai-root" in html
     assert "hardwise-copilot-config" in html
     assert "离线审计快照" in html
+    assert "ai-guide" in html
+    assert '<div class="ai-msg assistant"><p>可以询问选中器件' not in html
     assert "run_component_validation" in html
     assert "search_datasheet" in html
-    assert "Guard wraps" in html
-    assert "Trust" in html
+    assert "位号防护" in html
+    assert "防护包裹次数" in html
+    assert "可信度" in html
+    assert "证据 token" in html
     assert "L2 grounded" in html
     assert "datasheet:l78.pdf#p4" in html
-    assert "Show regulator datasheet evidence-chain smoke" in html
+    assert "查看 L7805 输入耐压的数据手册证据链" in html
     assert "没有配置向量数据手册搜索" in html
     assert "⟨?U999⟩" in html
 
@@ -481,7 +498,7 @@ def test_serve_workbench_fake_ai_dry_run_does_not_require_api_key() -> None:
     assert result.exit_code == 0, result.output
     assert "serve-workbench:" in result.output
     assert "mode=fake" in result.output
-    assert "validated=16" in result.output
+    assert "validated=17" in result.output
 
 
 def test_serve_workbench_fake_ai_dry_run_accepts_document_index(tmp_path: Path) -> None:
@@ -544,11 +561,12 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
 
     assert result.exit_code == 0, result.output
     assert "document-index: data/document_indexes/power_v1_docs.csv" in result.output
-    assert "validated=1" in result.output
-    assert "PASS/WARN/ERROR=1/0/0" in result.output
+    assert "validated=2" in result.output
+    assert "PASS/WARN/ERROR=2/0/0" in result.output
 
     html = html_output.read_text(encoding="utf-8")
     assert "MPQ8626 public MPS product page and datasheet" in html
+    assert "GENERIC_INDUCTOR" in html
     assert 'data-section="model-check"' in html
     assert 'data-section="final-summary"' in html
     assert "doc:power_v1_docs.csv#line" in html
@@ -559,7 +577,8 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
     assert "## Component Group Coverage" in index_text
     assert "MPQ8626 public MPS product page and datasheet" in index_text
     assert "`doc:power_v1_docs.csv#line" in index_text
-    assert "| Validated components | 1 |" in index_text
+    assert "| Validated components | 2 |" in index_text
+    assert "`GENERIC_INDUCTOR`" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"component_groups"' in index_payload
@@ -606,7 +625,7 @@ def test_mpq8626_html_chunks_feed_needs_review_profile_draft(
         ],
     )
     assert result.exit_code == 0, result.output
-    assert "validated=1" in result.output
+    assert "validated=2" in result.output
 
     result = CliRunner().invoke(
         app,
@@ -699,8 +718,8 @@ $END
     )
 
     assert result.exit_code == 0, result.output
-    assert "validated=2" in result.output
-    assert "PASS/WARN/ERROR=2/0/0" in result.output
+    assert "validated=3" in result.output
+    assert "PASS/WARN/ERROR=2/1/0" in result.output
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"refdes": "PQ10"' in index_payload
@@ -710,7 +729,9 @@ $END
     assert '"refdes": "PQ9"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/ln2312lt1g.json"' in index_payload
     assert '"refdes": "Q13"' in index_payload
-    assert "pe537ba.json" not in index_payload
+    assert '"profile_path": "data/datasheet_profiles/pe537ba.json"' in index_payload
+    assert '"profile_part_number": "PE537BA"' in index_payload
+    assert "Vds cannot be statically inferred" in index_payload
     assert '"document_source": "doc:docs.csv#line3"' in index_payload
     assert '"document_source": "doc:docs.csv#line4"' in index_payload
 
@@ -826,8 +847,8 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0, result.output
     assert "66 components" in result.output
-    assert "validated=47" in result.output
-    assert "manual=19" in result.output
+    assert "validated=55" in result.output
+    assert "manual=11" in result.output
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"refdes": "D10"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/ltst-c190kgkt.json"' in index_payload
@@ -848,12 +869,14 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert "next-family:" in result.output
-    assert "families=4" in result.output
+    assert "families=2" in result.output
     assert "try_existing=1" in result.output
-    assert "triage_new=3" in result.output
+    assert "triage_new=1" in result.output
     text = output.read_text(encoding="utf-8")
-    assert "| inductor | 5 | 2 | 2.5 | - | 6.8uH, 10uH" in text
     assert "| diode | 1 | 1 | 0.8 | diode | BAV99" in text
+    assert "| unknown | 2 | 2 | 0.6 | - | ABM8-8.000MHZ, ECS-2520MV" in text
+    assert "| inductor |" not in text
+    assert "| ferrite |" not in text
     assert "LTST-C190KGKT" not in text
     assert "MMBT3904" not in text
     assert "SMBJ24CA" not in text

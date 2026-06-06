@@ -2,9 +2,15 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-> 面向公开硬件项目的设计验证工作台：五大 trust 机制、L1/L2/L3 证据分层、registry-verified 位号和确定性验证。
+> 面向公开硬件项目的 pre-Layout 原理图评审工作台：review queue、证据化
+> finding、registry-verified 位号和确定性验证。
 
-Hardwise 是一个两周完成的作品集 MVP，锚定硬件研发里的 **pre-layout 设计验证 / 原理图评审** 节点。它不声称大模型已经能独立判断完整硬件设计，而是证明一个更窄、更关键的工程闭环：解析公开 EDA 工程，运行确定性规则和 family validator，把所有输出位号压到 parsed registry 里校验，给每条 finding 挂证据 token，再让 Agent 通过工具回答器件、脚位和验证结果。
+Hardwise 是一个两周完成的作品集 MVP，锚定硬件研发里的
+**pre-layout 原理图评审** 节点。它不声称大模型已经能独立判断完整硬件
+设计，而是证明一个更窄、更有用的工程闭环：导入公开原理图工程或
+schematic netlist+BOM，建立可信 component registry，运行确定性 review
+检查，把硬 finding 和 manual/profile gap 分开，给每条结论挂 evidence
+token，再让 Agent 只解释工具查到的事实。
 
 架构灵感来自 [Wrench Board](https://github.com/Junkz3/wrench-board)（Anthropic *Build with Opus 4.7* hackathon，2026 年 4 月第二名）。只借鉴设计思路，不复制代码。
 
@@ -18,15 +24,56 @@ Hardwise 是一个两周完成的作品集 MVP，锚定硬件研发里的 **pre-
 
 GitHub 会把 HTML 文件显示成源码。请打开渲染后的 GitHub Pages 阅读页：
 
+- **阅读索引：** [https://liwenjinchn.github.io/hardwise/](https://liwenjinchn.github.io/hardwise/)
 - **产品介绍页：** [https://liwenjinchn.github.io/hardwise/product-intro.html](https://liwenjinchn.github.io/hardwise/product-intro.html)
-- **硬件评审展示页：** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
-- **技术机制快照：** [`docs/demo.html`](docs/demo.html)
-- **90 秒文字版：** [`docs/demo.md`](docs/demo.md)
-- **本地复现：** `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component`
+- **离线 Copilot 工作台：** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
+- **MVP 定义：** [https://liwenjinchn.github.io/hardwise/mvp_definition.html](https://liwenjinchn.github.io/hardwise/mvp_definition.html)
+- **技术机制快照：** [https://liwenjinchn.github.io/hardwise/demo.html](https://liwenjinchn.github.io/hardwise/demo.html)
+- **录屏脚本：** [https://liwenjinchn.github.io/hardwise/demo_recording_script.html](https://liwenjinchn.github.io/hardwise/demo_recording_script.html)
+- **文档清单：** [https://liwenjinchn.github.io/hardwise/docs_inventory.html](https://liwenjinchn.github.io/hardwise/docs_inventory.html)
+
+本地 quickstart：
+
+```bash
+uv sync
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --output /tmp/hardwise-review.md
+uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --ai-snapshot --output /tmp/hardwise-copilot-workbench.html
+```
+
+## MVP 产品闭环
+
+Hardwise 围绕 Layout handoff 前的原理图评审会组织：
+
+```text
+导入原理图 / netlist+BOM
+  -> 建立 registry-verified 器件台账
+  -> 运行确定性规则和器件档案 validator
+  -> 分成 Must Review / Manual Gap / Passed
+  -> 用带工具 trace 的 Copilot 解释证据
+  -> 导出可逐项 close 的 review feedback list
+```
+
+工作台第一屏应该先回答 reviewer 的问题，而不是先讲架构：哪些项需要评审，
+哪些只是 manual gap，哪些已经 pass，每一行由哪个 source token 支撑。
+稳定边界见 [`docs/mvp_definition.md`](docs/mvp_definition.md)：用户问题、
+核心流程、页面结构、MVP 范围、非目标和验收标准。
+如果不确定某份文档是当前口径还是历史材料，先看
+[`docs/docs_inventory.md`](docs/docs_inventory.md)。
 
 ## 这个 MVP 证明了什么
 
-Phase 4 的当前口径是 **五大 trust 机制 + L1/L2/L3 信任分层**。两条 demo 轨都是公开输入，互相补位；它不是假装同一块公开板覆盖所有命令。
+当前实现通过 **五大 trust 机制 + L1/L2/L3 信任分层** 证明这条 review
+闭环。两条 demo 轨都是公开输入，互相补位；它不是假装同一块公开板覆盖
+所有命令。
+
+产品动作和 trust tier 的关系：
+
+| Review 动作 | 含义 | Trust tier |
+|---|---|---|
+| **Must Review** | 确定性 ERROR/WARN 或高价值 checklist finding，进 Layout 前应该讨论。 | 通常 L1 |
+| **Manual Gap** | 没有 ready profile、没有检索证据或原理图上下文不足，明确留给 reviewer。 | L3 |
+| **Passed** | 确定性检查完成且未发现问题。 | L1 |
+| **Evidence Question** | Copilot 可以引用页码级 datasheet hit 供核验，但不生成硬 validator 结论。 | L2 |
 
 | 机制 | demo 中证明什么 |
 |---|---|
@@ -42,7 +89,7 @@ Phase 4 的当前口径是 **五大 trust 机制 + L1/L2/L3 信任分层**。两
 | **L2 grounded** | 某次 datasheet search turn 真的带回页码级检索证据，供 reviewer 核验；它不是逐句 NLP 证明。 | C5 L78 Copilot trace：`datasheet:l78.pdf#p4`。 |
 | **L3 manual** | 没有 ready profile 或没有 retrieval evidence，系统把问题留在人工确认区。 | no-profile workbench rows、无检索命中的 datasheet question。 |
 
-C3/C4 的 coverage loop 是支撑材料：C3 给 profile gap 排序，C4 把选中的 L3/manual group 推进到 L1 deterministic rows。它证明这条产品闭环可重复，但主角仍然是 trust：模型被 registry object、evidence token、deterministic validator 和 tool returns 约束住。
+Coverage loop 是支撑材料：Hardwise 先给 profile gap 排序，再按 family 把有公开证据的 L3/manual group 推进到 L1 deterministic rows。它证明这条产品闭环可重复，但主角仍然是 trust：模型被 registry object、evidence token、deterministic validator 和 tool returns 约束住。
 
 KiCad 轨证明 agent / review / evidence 路径：
 
@@ -70,12 +117,15 @@ Allegro 轨证明静态项目工作台：
 uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
-  --output reports/controller-design-validator.html \
+  --ai-snapshot \
+  --output reports/controller-workbench.html \
   --index-output reports/controller-design-validator-index.md \
   --index-json reports/controller-design-validator-index.json
 ```
 
-当前 mixed controller fixture 输出 **25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, 21 manual/no-profile rows**。U1/L7805 重复 L78 evidence path；U12/XL1509、U3/EG2132、U8/STM32G030 展示确定性 topology / debug-interface 错误。
+mixed controller fixture 输出 **25 components, 17 validated rows, BOM matched=25, PASS/WARN/ERROR = 5/9/3, 8 manual/no-local-profile rows**。17 个 L1 rows 包括 4 个 profile-backed targets 和 13 个 generic passive checks；generic passive 只覆盖 BOM/netlist 里的显式轻量事实，不等同于深度 datasheet review。U1/L7805 重复 L78 evidence path；U12/XL1509、U3/EG2132、U8/STM32G030 展示确定性 topology / debug-interface 错误。
+
+真实板导入只是 pressure test 和 coverage-planning evidence，不是主公开 demo。收口复跑结果是：Switch board 4010 components / 3794 validated / 216 manual / PASS/WARN/ERROR = 3663/125/6；mainboard 8180 components / 7248 BOM matched / 6847 validated / 1333 manual / PASS/WARN/ERROR = 3921/2926/0。见 [`docs/closeout_pressure_summary.md`](docs/closeout_pressure_summary.md)；这次提升来自保守的 generic inductor/ferrite coverage 和 reviewed PE537BA P-MOS profile，不代表整板自动正确性判断。
 
 同一个 Allegro 工作台可以渲染一个可选的 Copilot 面板。`design-validator-ui --ai-snapshot` 把已审计的离线问答烘焙进单文件 HTML（无服务、无 key）；`serve-workbench` 起一个本地 FastAPI 服务，`--fake-ai` 模式用确定性的假 client 驱动真实 agent loop，真模型模式则连接 `.env` 里配置的任意 Anthropic-format endpoint。每条面板回答都跑同一套五工具 Runner 和同一个 Refdes Guard，所以像 `U999` 这种不存在的位号会被包成 `⟨?U999⟩` 而不是被编造出来。
 

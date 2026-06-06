@@ -93,16 +93,6 @@ def render_project_workbench(
       </header>
       <section class="workspace">
         <div class="left-stack" aria-label="器件与验证摘要">
-          <aside class="rail" aria-label="器件">
-            <div class="rail-head">
-              <div class="section-title">
-                <h2>器件</h2>
-                <span class="count">{rail_count}</span>
-              </div>
-              <input class="filter" data-filter placeholder="按位号过滤..." type="search">
-            </div>
-            <div class="table-wrap">{_rail_table(components, validated, active_refdes, index, bom_report)}</div>
-          </aside>
           <aside class="verify" aria-label="验证">
             <div class="verify-head">
               <div class="section-title">
@@ -112,6 +102,16 @@ def render_project_workbench(
               <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
             </div>
             <div class="verified-list">{_verify_list(ordered, active_refdes, index)}</div>
+          </aside>
+          <aside class="rail" aria-label="器件">
+            <div class="rail-head">
+              <div class="section-title">
+                <h2>器件</h2>
+                <span class="count">{rail_count}</span>
+              </div>
+              <input class="filter" data-filter placeholder="按位号过滤..." type="search">
+            </div>
+            <div class="table-wrap">{_rail_table(components, validated, active_refdes, index, bom_report)}</div>
           </aside>
         </div>
         <section class="detail" aria-label="验证报告">
@@ -162,7 +162,7 @@ def _component_table(
             f'<td class="ref">{escape(component.refdes)}</td>'
             f"<td>{escape(component.value or '-')}</td>"
             f"<td>{escape(component.part_number or component.value or '-')}"
-            f'<span class="sub">{len(component.pins)} pins · {escape(status)}</span>'
+            f'<span class="sub">{len(component.pins)} 引脚 · {escape(status_label(status))}</span>'
             f"{_row_trust(item)}</td>"
             f'<td><span class="status {status_class}">{escape(status_label(status))}</span>'
             f"{_row_reason(row)}</td>"
@@ -190,7 +190,7 @@ def _row_status(
 def _row_reason(row: ProjectValidationRow | None) -> str:
     if row is None or not row.reason:
         return ""
-    return f'<span class="sub">{escape(row.reason)}</span>'
+    return f'<span class="sub">{escape(reason_label(row.reason))}</span>'
 
 
 def _row_trust(item: ValidatorUiResult | None) -> str:
@@ -212,11 +212,11 @@ def _verify_list(
     active_refdes: str,
     index: ProjectValidationIndex,
 ) -> str:
-    cards = [_coverage_summary(index)]
     if results:
-        cards.append(_validated_cards(results, active_refdes))
+        cards = [_validated_cards(results, active_refdes)]
     else:
-        cards.append(_gap_group_cards(profile_gap_groups(index)))
+        cards = [_gap_group_cards(profile_gap_groups(index))]
+    cards.append(_coverage_summary(index))
     return "".join(cards)
 
 
