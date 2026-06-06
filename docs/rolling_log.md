@@ -8,6 +8,21 @@
 
 ---
 
+## Active weekend closeout handoff
+
+**Trigger**: The current `codex/mvp-review-workbench-scope` branch needs to be
+continued from another computer and closed into a resume/demo-ready state.
+
+**Where it lands**: [`docs/weekend_closeout_plan.md`](weekend_closeout_plan.md)
+tracks the short execution plan. Measured facts should move into README/demo
+docs only after the implementation and pressure-test reruns are complete.
+
+**What to build**: Generic inductor/ferrite validation, optional PE537BA MOSFET
+profile completion, real-board summary artifacts, documentation/demo refresh,
+verification, and branch push.
+
+---
+
 ## Constrained LLM validator roadmap — staged after Copilot workbench
 
 **Trigger**: The Allegro Copilot workbench (`serve-workbench` plus
