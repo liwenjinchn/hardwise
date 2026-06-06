@@ -19,10 +19,18 @@ Hardwise 是一个两周完成的作品集 MVP，锚定硬件研发里的 **pre-
 GitHub 会把 HTML 文件显示成源码。请打开渲染后的 GitHub Pages 阅读页：
 
 - **产品介绍页：** [https://liwenjinchn.github.io/hardwise/product-intro.html](https://liwenjinchn.github.io/hardwise/product-intro.html)
-- **硬件评审展示页：** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
+- **离线 Copilot 工作台：** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
 - **技术机制快照：** [`docs/demo.html`](docs/demo.html)
 - **90 秒文字版：** [`docs/demo.md`](docs/demo.md)
-- **本地复现：** `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component`
+- **录屏脚本：** [`docs/demo_recording_script.md`](docs/demo_recording_script.md)
+
+本地 quickstart：
+
+```bash
+uv sync
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --output /tmp/hardwise-review.md
+uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --ai-snapshot --output /tmp/hardwise-copilot-workbench.html
+```
 
 ## 这个 MVP 证明了什么
 
@@ -70,12 +78,13 @@ Allegro 轨证明静态项目工作台：
 uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
-  --output reports/controller-design-validator.html \
+  --ai-snapshot \
+  --output reports/controller-workbench.html \
   --index-output reports/controller-design-validator-index.md \
   --index-json reports/controller-design-validator-index.json
 ```
 
-当前 mixed controller fixture 输出 **25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, 21 manual/no-profile rows**。U1/L7805 重复 L78 evidence path；U12/XL1509、U3/EG2132、U8/STM32G030 展示确定性 topology / debug-interface 错误。
+mixed controller fixture 输出 **25 components, 16 validated rows, BOM matched=25, PASS/WARN/ERROR = 4/9/3, 9 manual/no-local-profile rows**。16 个 L1 rows 包括 4 个 profile-backed targets 和 12 个 generic passive checks；generic passive 是 light deterministic coverage，不等同于深度 datasheet review。U1/L7805 重复 L78 evidence path；U12/XL1509、U3/EG2132、U8/STM32G030 展示确定性 topology / debug-interface 错误。
 
 同一个 Allegro 工作台可以渲染一个可选的 Copilot 面板。`design-validator-ui --ai-snapshot` 把已审计的离线问答烘焙进单文件 HTML（无服务、无 key）；`serve-workbench` 起一个本地 FastAPI 服务，`--fake-ai` 模式用确定性的假 client 驱动真实 agent loop，真模型模式则连接 `.env` 里配置的任意 Anthropic-format endpoint。每条面板回答都跑同一套五工具 Runner 和同一个 Refdes Guard，所以像 `U999` 这种不存在的位号会被包成 `⟨?U999⟩` 而不是被编造出来。
 

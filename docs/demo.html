@@ -144,7 +144,7 @@
         <div class="metric"><span>Trust mechanisms</span><strong>5</strong><code>guard, ledger, memory, routing, cache</code></div>
         <div class="metric"><span>Trust tiers</span><strong>L1/L2/L3</strong><code>deterministic / grounded / manual</code></div>
         <div class="metric"><span>KiCad review</span><strong>29</strong><code>findings on pic_programmer</code></div>
-        <div class="metric"><span>Workbench</span><strong>4</strong><code>validated targets / 25 components</code></div>
+        <div class="metric"><span>Workbench</span><strong>16</strong><code>L1 rows / 25 components</code></div>
       </div>
     </header>
 
@@ -191,9 +191,9 @@ U3 / DS001 -> datasheet:l78.pdf#p4</code></pre>
       </article>
 
       <article class="track">
-        <div class="tagrow"><span class="tag">Complementary track</span><span class="tag">Allegro</span><span class="tag">Static workbench</span></div>
+        <div class="tagrow"><span class="tag">Complementary track</span><span class="tag">Allegro</span><span class="tag">Offline Copilot</span></div>
         <h3>mixed_controller_power_stage: UI workbench</h3>
-        <p>同一套 deterministic validation truth 渲染成 HTML：U1 PASS，U12/U3/U8 ERROR，其余 21 个器件透明显示 no-profile/manual。C5 的离线 Copilot snapshot 还烤进一个 L78 evidence-chain smoke，展示 L2 grounded trace。</p>
+        <p>同一套 deterministic validation truth 渲染成 HTML：U1 PASS，U12/U3/U8 ERROR，generic capacitors/resistors 进入 light deterministic coverage，其余 9 个器件透明显示 no-local-profile/manual。C5 的离线 Copilot snapshot 还烤进一个 L78 evidence-chain smoke，展示 L2 grounded trace。</p>
         <pre><code>uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
@@ -203,14 +203,15 @@ U3 / DS001 -> datasheet:l78.pdf#p4</code></pre>
   --index-json /tmp/hardwise-phase4-index.json
 
 # output
-25 components, validated=4
-PASS/WARN/ERROR=1/0/3, manual=21</code></pre>
+25 components, validated=16
+PASS/WARN/ERROR=4/9/3, manual=9</code></pre>
         <p style="margin-top:14px">C5 snapshot trace: <code>Trust: L2 grounded</code> + <code>datasheet:l78.pdf#p4</code> when the seeded L78 search hit is present; ordinary datasheet questions without vector evidence remain <code>L3 manual</code>.</p>
       </article>
     </section>
 
     <section class="section">
       <h2>Validated Targets</h2>
+      <p>Workbench 的 16 个 L1 rows = 4 个 profile-backed targets + 12 个 generic passive checks；generic passive 是轻量确定性覆盖，不是深度 datasheet review。</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Track</th><th>Object</th><th>Status</th><th>Evidence / point</th></tr></thead>

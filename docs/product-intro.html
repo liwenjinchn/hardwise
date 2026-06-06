@@ -301,7 +301,7 @@
               <div class="mock-review">
                 <h3>工作区</h3>
                 <div class="finding-row"><b>器件列表</b><em>25 rows</em></div>
-                <div class="finding-row"><b>验证区</b><em>4 validated</em></div>
+                <div class="finding-row"><b>验证区</b><em>16 L1 rows</em></div>
                 <div class="finding-row"><b>报告详情</b><em>issue-first</em></div>
               </div>
             </div>
@@ -310,7 +310,7 @@
             <div class="metric"><strong>5</strong><span>个 trust 机制</span></div>
             <div class="metric"><strong>L1/L2/L3</strong><span>信任分层</span></div>
             <div class="metric"><strong>29</strong><span>KiCad findings</span></div>
-            <div class="metric"><strong>4</strong><span>L1 validated targets</span></div>
+            <div class="metric"><strong>16</strong><span>L1 rows</span></div>
           </div>
         </div>
       </div>
@@ -332,7 +332,7 @@
         <article class="card">
           <div class="icon">03</div>
           <h2>两条公开轨支撑</h2>
-          <p>KiCad 轨证明 agent/review/evidence guard；Allegro 轨证明项目级 workbench 和多 family validator，全程不用公司内部硬件数据。</p>
+          <p>KiCad 轨证明 agent/review/evidence guard；Allegro 轨证明项目级 workbench、离线 Copilot trace 和多 family validator，全程不用公司内部硬件数据。</p>
         </article>
       </div>
     </section>
@@ -346,13 +346,13 @@
         <div class="bubble"><b>面试官</b>它怎么发现 U12 的问题？</div>
         <div class="bubble answer"><b>Hardwise</b>先匹配 XL1509 profile，再从 netlist 看到 OUTPUT 接 D5 和 L1，确定 D5=1N4007W 不是 Schottky-style，L1=6.8uH 低于推荐范围。</div>
         <div class="bubble"><b>面试官</b>它是不是自动评审全 BOM？</div>
-        <div class="bubble answer"><b>Hardwise</b>不是。当前只验证有本地 profile 的 4 个器件；其余 21 个在 project index 中显式显示为 no_profile/manual。</div>
+        <div class="bubble answer"><b>Hardwise</b>不是。这张 demo 的 16 个 L1 rows 里只有 4 个是 profile-backed targets，另外 12 个是 generic passive checks；剩余 9 个保持 no-local-profile/manual。</div>
       </div>
     </section>
 
     <div class="footer-note">
       <strong>从 trust 分层到可追溯验证报告</strong>
-      <span>技术 demo 展示五大机制和证据 tier；硬件展示页直接打开当前生成的静态工作台。</span>
+      <span>技术 demo 展示五大机制和证据 tier；硬件展示页直接打开离线 Copilot 工作台。</span>
     </div>
   </main>
 </body>

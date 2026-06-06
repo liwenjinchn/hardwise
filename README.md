@@ -19,10 +19,18 @@ If you only have 90 seconds, start here:
 GitHub shows HTML files as source. Open the rendered GitHub Pages demos for the intended reading view:
 
 - **Product intro:** [https://liwenjinchn.github.io/hardwise/product-intro.html](https://liwenjinchn.github.io/hardwise/product-intro.html)
-- **Hardware demo:** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
+- **Offline Copilot workbench:** [https://liwenjinchn.github.io/hardwise/hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
 - **Technical snapshot:** [`docs/demo.html`](docs/demo.html)
 - **Short read:** [`docs/demo.md`](docs/demo.md)
-- **Reproduce locally:** `uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component`
+- **Recording script:** [`docs/demo_recording_script.md`](docs/demo_recording_script.md)
+
+Local quickstart:
+
+```bash
+uv sync
+uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --output /tmp/hardwise-review.md
+uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --ai-snapshot --output /tmp/hardwise-copilot-workbench.html
+```
 
 ## What the MVP proves
 
@@ -69,14 +77,15 @@ The Allegro track proves the static project workbench:
 uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
-  --output reports/controller-design-validator.html \
+  --ai-snapshot \
+  --output reports/controller-workbench.html \
   --index-output reports/controller-design-validator-index.md \
   --index-json reports/controller-design-validator-index.json
 ```
 
-That path auto-matches public datasheet profiles by BOM identity and writes a single static HTML workbench with a top summary, component list, validation section, and report detail. What the workbench proves is the deterministic trust path, not a coverage count: U1/L7805 repeats the L78 evidence path in the workbench, while U12/XL1509, U3/EG2132, and U8/STM32G030 show deterministic topology/debug-interface errors. The current controller fixture reports 25 components, 4 validated targets, PASS/WARN/ERROR = 1/0/3, and 21 manual/no-profile rows. If a project has zero local profile matches, the same command still emits a coverage/gap workbench plus optional markdown / JSON index sidecars instead of inventing validation results.
+That path auto-matches public datasheet profiles by BOM identity and writes a single static HTML workbench with a top summary, grouped component list, validation section, report detail, and baked Copilot panel. What the workbench proves is the deterministic trust path, not a coverage trophy: U1/L7805 repeats the L78 evidence path in the workbench, while U12/XL1509, U3/EG2132, and U8/STM32G030 show deterministic topology/debug-interface errors. The mixed controller fixture reports 25 components, 16 validated rows, BOM matched=25, PASS/WARN/ERROR = 4/9/3, and 9 manual/no-local-profile rows. The 16 L1 rows are 4 profile-backed targets plus 12 generic passive checks; the passive checks are light deterministic coverage, not deep datasheet review. If a project has zero local profile matches, the same command still emits a coverage/gap workbench plus optional markdown / JSON index sidecars instead of inventing validation results.
 
-The same Allegro workbench can render an optional Copilot panel. `design-validator-ui --ai-snapshot` bakes audited offline chat transcripts into the single HTML file (no server, no API key); `serve-workbench` runs a local FastAPI server whose `--fake-ai` mode drives the real agent loop with a deterministic fake client, and whose real mode talks to any Anthropic-format endpoint configured in `.env`. Every panel answer runs the same five-tool Runner and the same Refdes Guard, so an unknown refdes such as `U999` is wrapped as `⟨?U999⟩` rather than fabricated.
+`design-validator-ui --ai-snapshot` bakes audited offline chat transcripts into the single HTML file (no server, no API key); `serve-workbench` runs a local FastAPI server whose `--fake-ai` mode drives the real agent loop with a deterministic fake client, and whose real mode talks to any Anthropic-format endpoint configured in `.env`. Every panel answer runs the same five-tool Runner and the same Refdes Guard, so an unknown refdes such as `U999` is wrapped as `⟨?U999⟩` rather than fabricated.
 
 For repeated component families, Hardwise can draft `needs_review` profile
 skeletons from reusable archetypes such as `74x165_piso_16pin`. See
