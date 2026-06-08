@@ -70,26 +70,55 @@ class EvidenceView(BaseModel):
     label: str
 
 
+class ComponentTaskCounts(BaseModel):
+    """Task counts scoped to one component."""
+
+    total: int = 0
+    error: int = 0
+    warn: int = 0
+    manual: int = 0
+    pass_count: int = 0
+
+
 class ReviewQueueItem(BaseModel):
     """One row in the SPA review queue."""
 
     refdes: str
+    value: str = ""
+    part_number: str = ""
+    manufacturer: str = ""
+    package: str = ""
     title: str
     subtitle: str
     status: str
     status_label: str
     status_group: StatusGroup
+    deterministic_status: str
+    deterministic_status_label: str
+    deterministic_status_group: StatusGroup
     trust_tier: TrustTier
     issue_count: int
     evidence_count: int
     risk_hint_count: int = 0
+    task_count: int = 0
+    task_counts: "ComponentTaskCounts" = Field(default_factory=lambda: ComponentTaskCounts())
+    task_ids: list[str] = Field(default_factory=list)
+    top_task_id: str | None = None
+    profile_status: str = ""
+    profile_path: str | None = None
+    document_status: str = "not_configured"
 
 
 class ReviewTask(BaseModel):
     """One finding-first review task in the SPA workflow."""
 
     id: str
+    stable_key: str
     refdes: str
+    kind: str
+    check: str | None = None
+    pin_number: str | None = None
+    subject: str | None = None
     status: str
     status_label: str
     status_group: StatusGroup
@@ -109,6 +138,38 @@ class ReviewTaskCounts(BaseModel):
     warn: int
     manual: int
     pass_count: int
+
+
+class BomView(BaseModel):
+    """BOM identity shown in detail and prep packet views."""
+
+    value: str = ""
+    part_number: str = ""
+    manufacturer: str = ""
+    description: str = ""
+    source: str = ""
+    item_number: str | None = None
+    source_line: int | None = None
+
+
+class ProfileView(BaseModel):
+    """Profile match metadata for one component."""
+
+    status: str = ""
+    reason: str = ""
+    path: str | None = None
+    part_number: str = ""
+
+
+class DocumentCoverageView(BaseModel):
+    """Document-index coverage for one component's BOM identity."""
+
+    status: str = "not_configured"
+    title: str | None = None
+    url: str | None = None
+    source: str | None = None
+    candidates: int = 0
+    reason: str = ""
 
 
 class PinView(BaseModel):
@@ -205,6 +266,26 @@ class ComponentDetail(BaseModel):
     checks: list[CheckView] = Field(default_factory=list)
     evidence_chain: list[EvidenceChainItem] = Field(default_factory=list)
     risk_hints: list[RiskHintView] = Field(default_factory=list)
+    tasks: list[ReviewTask] = Field(default_factory=list)
+    task_counts: ComponentTaskCounts = Field(default_factory=ComponentTaskCounts)
+    bom: BomView | None = None
+    profile: ProfileView | None = None
+    document: DocumentCoverageView | None = None
+
+
+class ReviewPrepPacket(BaseModel):
+    """One component's review-prep packet for export and human handoff."""
+
+    schema_version: str = "hardwise.prep_packet.v1"
+    project: WorkbenchProject
+    scope: str = "schematic_review_prep"
+    component: ComponentDetail
+    tasks: list[ReviewTask]
+    pins: list[PinView]
+    checks: list[CheckView]
+    risk_hints: RiskHintsView
+    evidence: list[EvidenceView]
+    guardrails: list[str] = Field(default_factory=list)
 
 
 class WorkbenchState(BaseModel):
@@ -229,6 +310,93 @@ class ComponentMiss(BaseModel):
     closest_matches: list[str] = Field(default_factory=list)
 
 
+def build_review_prep_packet(context: WorkbenchContext, refdes: str) -> ReviewPrepPacket | ComponentMiss:
+    """Build one component's review-prep packet from backend-owned facts."""
+
+    detail = build_component_detail(context, refdes)
+    if isinstance(detail, ComponentMiss):
+        return detail
+    evidence = _dedupe_evidence(
+        [
+            *[token for pin in detail.pins for token in pin.evidence],
+            *[token for check in detail.checks for token in check.evidence],
+            *[token for task in detail.tasks for item in task.evidence_chain for token in item.evidence],
+            *[hint.source for hint in detail.risk_hints if hint.source is not None],
+        ]
+    )
+    return ReviewPrepPacket(
+        project=_project_view(context),
+        component=detail,
+        tasks=detail.tasks,
+        pins=detail.pins,
+        checks=detail.checks,
+        risk_hints=_component_risk_hints_view(context.risk_hints, detail.refdes),
+        evidence=evidence,
+        guardrails=[
+            "Refdes Guard：所有位号必须来自解析后的 EDA 注册表。",
+            "Evidence Ledger：结论只展示后端事实、规则和 evidence token。",
+            "外部 risk hints 仅作为人工线索，不改变 deterministic PASS/WARN/ERROR。",
+            "Prep Packet 是评审准备资料，不替代硬件工程师最终签核。",
+        ],
+    )
+
+
+def render_review_prep_packet_markdown(packet: ReviewPrepPacket) -> str:
+    """Render markdown from the JSON packet so both formats stay consistent."""
+
+    component = packet.component
+    lines = [
+        f"# Hardwise 评审准备包 · {component.refdes}",
+        "",
+        f"- 项目：{packet.project.name}",
+        f"- 范围：{packet.scope}",
+        f"- 器件：{component.value}",
+        f"- MPN：{component.part_number or '-'}",
+        f"- 厂商：{component.manufacturer or '-'}",
+        f"- 封装：{component.package or '-'}",
+        f"- 当前结论：{component.status_label} / {component.trust_tier.upper()}",
+        f"- BOM 来源：{component.bom.source if component.bom else '-'}",
+        f"- 器件档案：{component.profile.path if component.profile and component.profile.path else '未匹配'}",
+        f"- 文档索引：{component.document.status if component.document else 'not_configured'}",
+        "",
+        "## 待审查任务",
+    ]
+    if packet.tasks:
+        for task in packet.tasks:
+            lines.extend(
+                [
+                    f"- **{task.id}** `{task.kind}` {task.status_label}：{task.title}",
+                    f"  - 建议动作：{task.recommended_action}",
+                    f"  - 稳定键：`{task.stable_key}`",
+                ]
+            )
+    else:
+        lines.append("- 当前组件没有进入 finding 队列。")
+
+    lines.extend(["", "## Evidence Tokens"])
+    if packet.evidence:
+        for evidence in packet.evidence:
+            lines.append(f"- `{evidence.token}` · {evidence.label} · {evidence.trust_tier.upper()}")
+    else:
+        lines.append("- 无 evidence token。")
+
+    lines.extend(["", "## 外部提示"])
+    if packet.risk_hints.accepted:
+        for hint in packet.risk_hints.accepted:
+            wrap = f"；已包装位号 {hint.wrapped_refdes_count}" if hint.wrapped_refdes_count else ""
+            lines.append(f"- {hint.refdes} · {hint.title}{wrap}：{hint.body}")
+    else:
+        lines.append("- 当前组件没有已锚定的外部提示。")
+    if packet.risk_hints.rejected:
+        rejected = ", ".join(f"{item.reason} × {item.count}" for item in packet.risk_hints.rejected)
+        lines.append(f"- 已拒绝提示汇总：{rejected}")
+
+    lines.extend(["", "## Guardrails"])
+    lines.extend(f"- {item}" for item in packet.guardrails)
+    lines.append("")
+    return "\n".join(lines)
+
+
 def build_workbench_state(
     context: WorkbenchContext,
     *,
@@ -239,23 +407,23 @@ def build_workbench_state(
     rows_by_refdes = {row.refdes: row for row in context.index.rows}
     risk_counts = _risk_hint_counts(context.risk_hints)
     components = sorted(context.design.components.values(), key=lambda item: sort_refdes_key(item.refdes))
+    review_tasks = build_review_tasks(context)
+    tasks_by_refdes = _tasks_by_refdes(review_tasks)
     totals = context.index.totals
     queue = [
-        _queue_item(component, rows_by_refdes.get(component.refdes), risk_counts.get(component.refdes, 0))
+        _queue_item(
+            component,
+            rows_by_refdes.get(component.refdes),
+            risk_counts.get(component.refdes, 0),
+            tasks_by_refdes.get(component.refdes, []),
+            _document_view(context, component.refdes).status,
+        )
         for component in components
     ]
     queue.sort(key=lambda item: (_status_rank(item.status_group), sort_refdes_key(item.refdes)))
-    review_tasks = build_review_tasks(context)
 
     return WorkbenchState(
-        project=WorkbenchProject(
-            name=context.project_name,
-            generated_at=context.generated_at,
-            netlist_source=str(context.netlist_source),
-            netlist_type=context.netlist_type,
-            bom_source=str(context.bom.source_file),
-            profiles_dir=context.index.profiles_dir,
-        ),
+        project=_project_view(context),
         summary=WorkbenchSummary(
             components=context.index.components_in_design,
             bom_matched=context.index.bom_matched,
@@ -270,7 +438,7 @@ def build_workbench_state(
             document_index_enabled=context.document_report is not None,
             risk_hints_enabled=context.risk_hints.source_path is not None,
         ),
-        selected_refdes=_default_task_refdes(review_tasks) or _default_refdes(queue),
+        selected_refdes=_default_refdes(queue) or _default_task_refdes(review_tasks),
         queue=queue,
         review_tasks=review_tasks,
         task_counts=_review_task_counts(review_tasks),
@@ -299,6 +467,10 @@ def build_component_detail(context: WorkbenchContext, refdes: str) -> ComponentD
         for hint in context.risk_hints.accepted
         if hint.refdes == component.refdes
     ]
+    tasks = _tasks_by_refdes(build_review_tasks(context)).get(component.refdes, [])
+    bom = _bom_view(context, component.refdes)
+    profile = _profile_view(row, validation)
+    document = _document_view(context, component.refdes)
 
     return ComponentDetail(
         refdes=component.refdes,
@@ -317,6 +489,11 @@ def build_component_detail(context: WorkbenchContext, refdes: str) -> ComponentD
         checks=_check_views(validation),
         evidence_chain=_evidence_chain(component, validation, risk_hints),
         risk_hints=risk_hints,
+        tasks=tasks,
+        task_counts=_component_task_counts(tasks),
+        bom=bom,
+        profile=profile,
+        document=document,
     )
 
 
@@ -384,22 +561,40 @@ def _queue_item(
     component: Component,
     row: ProjectValidationRow | None,
     risk_hint_count: int,
+    tasks: list[ReviewTask],
+    document_status: str,
 ) -> ReviewQueueItem:
     validation = row.validation if row else None
-    status = validation.status if validation else (row.match_status if row else "manual_needed")
+    deterministic_status = validation.status if validation else (row.match_status if row else "manual_needed")
+    status = _attention_status(deterministic_status, tasks)
     issues = _issue_count(validation)
     evidence_count = len(_dedupe(_validation_evidence(validation)))
+    task_counts = _component_task_counts(tasks)
     return ReviewQueueItem(
         refdes=component.refdes,
+        value=component.value or "",
+        part_number=component.part_number or (row.part_number if row else ""),
+        manufacturer=component.manufacturer or (row.manufacturer if row else ""),
+        package=component.package or "",
         title=_queue_title(component, row, validation),
         subtitle=component.part_number or component.value or row.bom_value if row else component.value or "-",
         status=status,
         status_label=status_label(status),
         status_group=_status_group(status),
+        deterministic_status=deterministic_status,
+        deterministic_status_label=status_label(deterministic_status),
+        deterministic_status_group=_status_group(deterministic_status),
         trust_tier=_trust_for_row(row),
         issue_count=issues,
         evidence_count=evidence_count,
         risk_hint_count=risk_hint_count,
+        task_count=task_counts.total,
+        task_counts=task_counts,
+        task_ids=[task.id for task in tasks],
+        top_task_id=tasks[0].id if tasks else None,
+        profile_status=row.match_status if row else "manual_needed",
+        profile_path=row.profile_path if row else None,
+        document_status=document_status,
     )
 
 
@@ -507,6 +702,9 @@ def _component_check_tasks(
         tasks.append(
             _task(
                 refdes=row.refdes,
+                kind="component_check",
+                check=check.check,
+                subject=check.refdes or check.check,
                 status=check.status,
                 trust_tier="l1",
                 title=validation_summary_label(check.summary),
@@ -555,6 +753,10 @@ def _pin_check_tasks(row: ProjectValidationRow, validation: ValidationReport) ->
         tasks.append(
             _task(
                 refdes=row.refdes,
+                kind="pin_check",
+                check="pin_connection_rule",
+                pin_number=pin.pin_number,
+                subject=f"{row.refdes}.{pin.pin_number}",
                 status=pin.status,
                 trust_tier="l1",
                 title=title,
@@ -600,6 +802,8 @@ def _manual_gap_task(row: ProjectValidationRow) -> ReviewTask:
     title = reason_label(row.reason) if row.reason else "待人工补器件档案"
     return _task(
         refdes=row.refdes,
+        kind="manual_gap",
+        subject=row.refdes,
         status=row.match_status,
         trust_tier="l3",
         title=title,
@@ -633,6 +837,8 @@ def _risk_hint_task(hint: RiskHint) -> ReviewTask:
     evidence = _evidence_views([hint.source] if hint.source else [], "l3")
     return _task(
         refdes=hint.refdes,
+        kind="risk_hint",
+        subject=hint.title,
         status=hint.severity or "external_hint",
         trust_tier="l3",
         title=f"外部提示 · {hint.title}",
@@ -656,6 +862,8 @@ def _cleared_task(row: ProjectValidationRow, validation: ValidationReport) -> Re
     evidence = _evidence_views(_validation_evidence(validation), "l1")
     return _task(
         refdes=row.refdes,
+        kind="cleared_summary",
+        subject=row.refdes,
         status="PASS",
         trust_tier="l1",
         title=f"{row.refdes} 已通过当前确定性检查",
@@ -686,6 +894,10 @@ def _cleared_task(row: ProjectValidationRow, validation: ValidationReport) -> Re
 def _task(
     *,
     refdes: str,
+    kind: str,
+    check: str | None = None,
+    pin_number: str | None = None,
+    subject: str | None = None,
     status: str,
     trust_tier: TrustTier,
     title: str,
@@ -698,7 +910,19 @@ def _task(
     group = _status_group(status)
     return ReviewTask(
         id="F-000",
+        stable_key=_task_stable_key(
+            kind=kind,
+            refdes=refdes,
+            check=check,
+            pin_number=pin_number,
+            subject=subject,
+            title=title,
+        ),
         refdes=refdes,
+        kind=kind,
+        check=check,
+        pin_number=pin_number,
+        subject=subject,
         status=status,
         status_label=status_label(status),
         status_group=group,
@@ -761,6 +985,132 @@ def _risk_hint_counts(report: RiskHintReport) -> dict[str, int]:
     for hint in report.accepted:
         counts[hint.refdes] = counts.get(hint.refdes, 0) + 1
     return counts
+
+
+def _project_view(context: WorkbenchContext) -> WorkbenchProject:
+    return WorkbenchProject(
+        name=context.project_name,
+        generated_at=context.generated_at,
+        netlist_source=str(context.netlist_source),
+        netlist_type=context.netlist_type,
+        bom_source=str(context.bom.source_file),
+        profiles_dir=context.index.profiles_dir,
+    )
+
+
+def _tasks_by_refdes(tasks: list[ReviewTask]) -> dict[str, list[ReviewTask]]:
+    grouped: dict[str, list[ReviewTask]] = {}
+    for task in tasks:
+        grouped.setdefault(task.refdes, []).append(task)
+    return grouped
+
+
+def _bom_view(context: WorkbenchContext, refdes: str) -> BomView | None:
+    row = context.bom_report.rows_by_refdes.get(refdes)
+    if row is None:
+        return None
+    return BomView(
+        value=row.value or "",
+        part_number=row.part_number or "",
+        manufacturer=row.manufacturer or "",
+        description=row.description or "",
+        source=f"{row.source_file}#line{row.source_line}",
+        item_number=row.item_number,
+        source_line=row.source_line,
+    )
+
+
+def _profile_view(
+    row: ProjectValidationRow | None,
+    validation: ValidationReport | None,
+) -> ProfileView | None:
+    if row is None:
+        return None
+    return ProfileView(
+        status=row.match_status,
+        reason=reason_label(row.reason) if row.reason else "",
+        path=row.profile_path,
+        part_number=validation.profile_part_number if validation else "",
+    )
+
+
+def _document_view(context: WorkbenchContext, refdes: str) -> DocumentCoverageView:
+    if context.document_report is None:
+        return DocumentCoverageView(status="not_configured", reason="No document index was provided.")
+    group = next((item for item in context.index.component_groups if refdes in item.refdes), None)
+    if group is None:
+        return DocumentCoverageView(
+            status="manual_needed",
+            reason="No BOM/document group matched this refdes.",
+        )
+    return DocumentCoverageView(
+        status=group.document_status,
+        title=group.document_title,
+        url=group.document_url,
+        source=group.document_source,
+        candidates=group.document_candidates,
+        reason=group.document_reason,
+    )
+
+
+def _component_risk_hints_view(report: RiskHintReport, refdes: str) -> RiskHintsView:
+    accepted = [item for item in report.accepted if item.refdes == refdes]
+    reasons = Counter(item.reason for item in report.rejected)
+    return RiskHintsView(
+        external_status="loaded" if report.source_path else "not_configured",
+        count=len(accepted),
+        accepted_external_count=len(accepted),
+        rejected_external_count=report.rejected_count,
+        wrapped_refdes_count=sum(item.wrapped_refdes_count for item in accepted),
+        accepted=[_risk_hint_view(item) for item in accepted],
+        rejected=[
+            RejectedRiskHintSummary(reason=reason, count=count)
+            for reason, count in sorted(reasons.items())
+        ],
+    )
+
+
+def _attention_status(deterministic_status: str, tasks: list[ReviewTask]) -> str:
+    if any(task.status_group == "error" for task in tasks):
+        return "ERROR"
+    if any(task.status_group == "warn" for task in tasks):
+        return "WARN"
+    if any(task.status_group == "manual" for task in tasks):
+        return "manual_needed"
+    return deterministic_status
+
+
+def _task_stable_key(
+    *,
+    kind: str,
+    refdes: str,
+    check: str | None,
+    pin_number: str | None,
+    subject: str | None,
+    title: str,
+) -> str:
+    parts = [kind, refdes, check or "-", pin_number or "-", subject or title]
+    return "|".join(part.replace("|", "/") for part in parts)
+
+
+def _component_task_counts(tasks: list[ReviewTask]) -> ComponentTaskCounts:
+    return ComponentTaskCounts(
+        total=len(tasks),
+        error=sum(item.status_group == "error" for item in tasks),
+        warn=sum(item.status_group == "warn" for item in tasks),
+        manual=sum(item.status_group == "manual" for item in tasks),
+        pass_count=sum(item.status_group == "pass" for item in tasks),
+    )
+
+
+def _dedupe_evidence(items: list[EvidenceView]) -> list[EvidenceView]:
+    seen: set[str] = set()
+    deduped: list[EvidenceView] = []
+    for item in items:
+        if item.token not in seen:
+            seen.add(item.token)
+            deduped.append(item)
+    return deduped
 
 
 def _validation_evidence(validation: ValidationReport | None) -> list[str]:

@@ -1,4 +1,11 @@
-import type { ChatMessage, ChatResponse, ComponentDetail, ImportResponse, WorkbenchState } from "./types";
+import type {
+  ChatMessage,
+  ChatResponse,
+  ComponentDetail,
+  ImportResponse,
+  ReviewPrepPacket,
+  WorkbenchState
+} from "./types";
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const isFormData = init?.body instanceof FormData;
@@ -24,6 +31,23 @@ export function fetchWorkbenchState(): Promise<WorkbenchState> {
 
 export function fetchComponentDetail(refdes: string): Promise<ComponentDetail> {
   return requestJson<ComponentDetail>(`/api/workbench/components/${encodeURIComponent(refdes)}`);
+}
+
+export function fetchPrepPacket(refdes: string): Promise<ReviewPrepPacket> {
+  return requestJson<ReviewPrepPacket>(
+    `/api/workbench/components/${encodeURIComponent(refdes)}/prep-packet?format=json`
+  );
+}
+
+export async function fetchPrepPacketMarkdown(refdes: string): Promise<string> {
+  const response = await fetch(
+    `/api/workbench/components/${encodeURIComponent(refdes)}/prep-packet?format=markdown`
+  );
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(body || `${response.status} ${response.statusText}`);
+  }
+  return response.text();
 }
 
 export function askCopilot(

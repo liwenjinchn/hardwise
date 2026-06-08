@@ -3848,3 +3848,33 @@ validator output.
 Analytics surfaces should sit downstream of reviewed artifacts. They can measure
 coverage, regression health, and evidence discipline, but they must not become
 another hardware verdict path.
+
+## 2026-06-09 — Workbench SPA smoke needs component-level contracts
+
+**Symptom**
+
+The Review UI looked visually closer to the prototype after styling work, but
+the main queue still behaved like a finding log: repeated refdes rows made the
+three-column workspace feel busy and made browser smoke harder to assert.
+
+**Root cause**
+
+The frontend was reading `review_tasks` directly as the Review navigation model.
+That forced the UI to infer component-level state from finding text and ids,
+instead of receiving backend-owned component summaries and per-component task
+metadata.
+
+**Fix**
+
+Extended the workbench DTO with component task counts, stable task semantics,
+and a per-component prep packet. The SPA Review page now uses `state.queue` for
+one row per refdes while keeping `review_tasks` as the Findings register and
+evidence source. Browser smoke also uses `localhost` for the in-app browser when
+`127.0.0.1` navigation is blocked, and the frontend build is run after ensuring
+the Vite workspace dependencies are installed.
+
+**Takeaway**
+
+Review navigation should be component-first; finding-first data belongs in the
+register and evidence rail. Put that contract in the backend DTO so the UI does
+not reverse-engineer hardware semantics from display copy.

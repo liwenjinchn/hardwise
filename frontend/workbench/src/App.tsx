@@ -24,6 +24,7 @@ import {
   askCopilot,
   exportWorkbench,
   fetchComponentDetail,
+  fetchPrepPacketMarkdown,
   fetchWorkbenchState,
   importWorkbench
 } from "./api";
@@ -35,6 +36,7 @@ import type {
   EvidenceChainItem,
   EvidenceView,
   ImportResponse,
+  ReviewQueueItem,
   ReviewTask,
   RiskHintsView,
   StatusGroup,
@@ -45,20 +47,20 @@ import type {
 type ViewId = "import" | "parse" | "review" | "copilot" | "findings" | "export";
 
 const NAV_ITEMS: Array<{ id: ViewId; label: string }> = [
-  { id: "import", label: "Import" },
-  { id: "parse", label: "Parse" },
-  { id: "review", label: "Review" },
-  { id: "copilot", label: "Copilot" },
-  { id: "findings", label: "Findings" },
-  { id: "export", label: "Export" }
+  { id: "import", label: "导入" },
+  { id: "parse", label: "解析" },
+  { id: "review", label: "审查" },
+  { id: "copilot", label: "AI 助手" },
+  { id: "findings", label: "问题清单" },
+  { id: "export", label: "导出" }
 ];
 
 const FILTERS: Array<{ id: "all" | StatusGroup; label: string; hint: string }> = [
-  { id: "all", label: "全部", hint: "所有 finding" },
-  { id: "error", label: "必须处理", hint: "ERROR" },
-  { id: "warn", label: "需要复核", hint: "WARN" },
-  { id: "manual", label: "人工线索", hint: "缺档案/外部提示" },
-  { id: "pass", label: "已通过", hint: "PASS" }
+  { id: "all", label: "全部待看", hint: "所有被标记的器件" },
+  { id: "error", label: "必须修", hint: "会阻塞签核的问题" },
+  { id: "warn", label: "看证据", hint: "有引用的建议项" },
+  { id: "manual", label: "人工判断", hint: "数据无法自动确认" },
+  { id: "pass", label: "已通过", hint: "检查已满足" }
 ];
 
 const TRUST_LABEL: Record<TrustTier, string> = {
@@ -82,10 +84,12 @@ function App() {
   const [resolvedTaskIds, setResolvedTaskIds] = useState<Set<string>>(new Set());
 
   const applyState = (payload: WorkbenchState) => {
-    const firstTask = payload.review_tasks[0] ?? null;
+    const firstComponent = payload.queue[0] ?? null;
+    const selected = payload.selected_refdes ?? firstComponent?.refdes ?? payload.review_tasks[0]?.refdes ?? null;
+    const firstTask = payload.review_tasks.find((item) => item.refdes === selected) ?? payload.review_tasks[0] ?? null;
     setState(payload);
     setSelectedTaskId(firstTask?.id ?? null);
-    setSelectedRefdes(payload.selected_refdes ?? firstTask?.refdes ?? payload.queue[0]?.refdes ?? null);
+    setSelectedRefdes(selected);
     setResolvedTaskIds(new Set());
   };
 
@@ -112,25 +116,52 @@ function App() {
       .finally(() => setDetailLoading(false));
   }, [selectedRefdes]);
 
+  const selectedComponentTasks = useMemo(() => {
+    if (!state || !selectedRefdes) return [];
+    return state.review_tasks.filter((item) => item.refdes === selectedRefdes);
+  }, [selectedRefdes, state]);
+
   const selectedTask = useMemo(() => {
     if (!state) return null;
-    return state.review_tasks.find((item) => item.id === selectedTaskId) ?? state.review_tasks[0] ?? null;
-  }, [selectedTaskId, state]);
+    return (
+      selectedComponentTasks.find((item) => item.id === selectedTaskId) ??
+      selectedComponentTasks[0] ??
+      null
+    );
+  }, [selectedComponentTasks, selectedTaskId, state]);
 
-  const filteredTasks = useMemo(() => {
+  const filteredComponents = useMemo(() => {
     if (!state) return [];
     const needle = query.trim().toLowerCase();
-    return state.review_tasks.filter((item) => {
+    return state.queue.filter((item) => {
       const filterMatch = filter === "all" || item.status_group === filter;
       const queryMatch =
         !needle ||
-        item.id.toLowerCase().includes(needle) ||
         item.refdes.toLowerCase().includes(needle) ||
+        item.subtitle.toLowerCase().includes(needle) ||
         item.title.toLowerCase().includes(needle) ||
-        item.body.toLowerCase().includes(needle);
+        item.value.toLowerCase().includes(needle) ||
+        item.part_number.toLowerCase().includes(needle);
       return filterMatch && queryMatch;
     });
   }, [filter, query, state]);
+
+  const componentCounts = useMemo(() => {
+    const counts: Record<"all" | StatusGroup, number> = { all: 0, error: 0, warn: 0, manual: 0, pass: 0 };
+    if (!state) return counts;
+    counts.all = state.queue.length;
+    for (const item of state.queue) counts[item.status_group] += 1;
+    return counts;
+  }, [state]);
+
+  const pickComponent = (component: ReviewQueueItem) => {
+    const firstTaskId =
+      component.top_task_id ??
+      state?.review_tasks.find((item) => item.refdes === component.refdes)?.id ??
+      null;
+    setSelectedRefdes(component.refdes);
+    setSelectedTaskId(firstTaskId);
+  };
 
   const pickTask = (task: ReviewTask) => {
     setSelectedTaskId(task.id);
@@ -178,18 +209,24 @@ function App() {
       {view === "review" && (
         <section className="workspace" aria-label="Hardwise 三栏审查工作台">
           <TaskQueueColumn
-            items={filteredTasks}
-            allItems={state.review_tasks}
-            counts={state.task_counts}
-            selectedTaskId={selectedTask?.id ?? null}
+            items={filteredComponents}
+            allItems={state.queue}
+            counts={componentCounts}
+            selectedRefdes={selectedRefdes}
             filter={filter}
             query={query}
             onFilter={setFilter}
             onQuery={setQuery}
-            onPick={pickTask}
+            onPick={pickComponent}
           />
           <DetailColumn detail={detail} loading={detailLoading} onAsk={() => setView("copilot")} />
-          <EvidenceColumn task={selectedTask} detail={detail} riskHints={state.risk_hint_details} />
+          <EvidenceColumn
+            tasks={selectedComponentTasks}
+            selectedTaskId={selectedTask?.id ?? null}
+            onPickTask={setSelectedTaskId}
+            detail={detail}
+            riskHints={state.risk_hint_details}
+          />
         </section>
       )}
       {view === "copilot" && (
@@ -225,6 +262,7 @@ function Header({
   onNavigate: (view: ViewId) => void;
 }) {
   const { summary } = state;
+  const reviewComponentCount = state.queue.filter((item) => item.status_group !== "pass").length || state.queue.length;
   const capabilityText = [
     state.capabilities.chat ? "Copilot 可用" : "Copilot 关闭",
     state.capabilities.datasheet_search_enabled ? "向量检索开启" : "向量检索关闭",
@@ -250,7 +288,7 @@ function Header({
             onClick={() => onNavigate(item.id)}
           >
             {item.label}
-            {item.id === "review" && <span className="pip">{state.task_counts.total}</span>}
+            {item.id === "review" && <span className="pip">{reviewComponentCount}</span>}
             {item.id === "findings" && <span className="pip">{state.task_counts.error + state.task_counts.warn}</span>}
           </button>
         ))}
@@ -426,30 +464,22 @@ function ParseView({
 }
 
 function TaskQueueColumn(props: {
-  items: ReviewTask[];
-  allItems: ReviewTask[];
-  counts: WorkbenchState["task_counts"];
-  selectedTaskId: string | null;
+  items: ReviewQueueItem[];
+  allItems: ReviewQueueItem[];
+  counts: Record<"all" | StatusGroup, number>;
+  selectedRefdes: string | null;
   filter: "all" | StatusGroup;
   query: string;
   onFilter: (value: "all" | StatusGroup) => void;
   onQuery: (value: string) => void;
-  onPick: (task: ReviewTask) => void;
+  onPick: (component: ReviewQueueItem) => void;
 }) {
-  const counts: Record<"all" | StatusGroup, number> = {
-    all: props.counts.total,
-    error: props.counts.error,
-    warn: props.counts.warn,
-    manual: props.counts.manual,
-    pass: props.counts.pass_count
-  };
-
   return (
     <aside className="panel queue-panel">
       <div className="panel-head">
         <div>
-          <span className="eyebrow">队列</span>
-          <h2>审查任务</h2>
+          <span className="eyebrow">Review Queue</span>
+          <h2>组件审查队列</h2>
         </div>
         <span className="count">{props.items.length}/{props.allItems.length}</span>
       </div>
@@ -464,7 +494,7 @@ function TaskQueueColumn(props: {
             <Filter size={13} />
             <span>{item.label}</span>
             <small>{item.hint}</small>
-            <b>{counts[item.id]}</b>
+            <b>{props.counts[item.id]}</b>
           </button>
         ))}
       </div>
@@ -473,32 +503,32 @@ function TaskQueueColumn(props: {
         <input
           value={props.query}
           onChange={(event) => props.onQuery(event.target.value)}
-          placeholder="搜索 F-001、refdes、结论..."
+          placeholder="按位号、器件、网络筛选..."
         />
       </label>
       <div className="queue-list">
         {props.items.map((item) => (
           <button
             type="button"
-            key={item.id}
+            key={item.refdes}
             className={`queue-row ${item.status_group} ${
-              props.selectedTaskId === item.id ? "selected" : ""
+              props.selectedRefdes === item.refdes ? "selected" : ""
             }`}
             onClick={() => props.onPick(item)}
           >
             <span className="refdes">{item.refdes}</span>
             <span className="queue-copy">
-              <strong>{item.id} · {formatSummary(item.title)}</strong>
-              <small>{formatSummary(item.body)}</small>
+              <strong>{formatSummary(item.title)}</strong>
+              <small>{queueSubtitle(item)}</small>
               <span className="row-badges">
-                <StatusBadge group={item.status_group} label={item.status_label} />
+                <StatusBadge group={item.status_group} label={attentionLabel(item.status_group)} />
                 <TrustBadge tier={item.trust_tier} />
-                {item.source_classes.map((source) => (
-                  <span className="hint-badge" key={source}>{sourceLabel(source)}</span>
-                ))}
               </span>
             </span>
-            <span className="queue-counts">{countTaskEvidence(item)} 证据 · {item.evidence_chain.length} 节点</span>
+            <span className="queue-side">
+              <b>{item.task_count > 0 ? `${item.task_count} 项` : "通过"}</b>
+              <small>{item.top_task_id ?? "cleared"}</small>
+            </span>
           </button>
         ))}
       </div>
@@ -515,6 +545,39 @@ function DetailColumn({
   loading: boolean;
   onAsk: () => void;
 }) {
+  const [prepPreview, setPrepPreview] = useState("");
+  const [prepBusy, setPrepBusy] = useState(false);
+  const [prepError, setPrepError] = useState("");
+
+  useEffect(() => {
+    setPrepPreview("");
+    setPrepError("");
+  }, [detail?.refdes]);
+
+  const loadPrepPacket = async (download: boolean) => {
+    if (!detail || prepBusy) return;
+    setPrepBusy(true);
+    setPrepError("");
+    try {
+      const markdown = await fetchPrepPacketMarkdown(detail.refdes);
+      if (download) {
+        const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `hardwise-prep-${detail.refdes}.md`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      } else {
+        setPrepPreview(markdown);
+      }
+    } catch (err) {
+      setPrepError(err instanceof Error ? err.message : "准备包生成失败");
+    } finally {
+      setPrepBusy(false);
+    }
+  };
+
   if (loading) {
     return (
       <section className="panel detail-panel empty-panel">
@@ -528,7 +591,7 @@ function DetailColumn({
     return (
       <section className="panel detail-panel empty-panel">
         <FileSearch size={32} />
-        <p>请选择一个 finding 查看器件详情。</p>
+        <p>请选择一个器件查看审查详情。</p>
       </section>
     );
   }
@@ -563,8 +626,29 @@ function DetailColumn({
         <InfoCell label="厂商" value={detail.manufacturer || "-"} />
         <InfoCell label="封装" value={detail.package || "-"} />
         <InfoCell label="器件档案" value={detail.profile_part_number || "待补"} />
+        <InfoCell label="BOM 来源" value={detail.bom?.source || "-"} />
+        <InfoCell label="档案状态" value={profileStatusLabel(detail.profile?.status || detail.match_status)} />
+        <InfoCell label="文档索引" value={documentStatusLabel(detail.document?.status || "not_configured")} />
+        <InfoCell label="任务数" value={`${detail.task_counts.total} 项`} />
       </div>
       {detail.match_reason && <p className="scope-note">{formatSummary(detail.match_reason)}</p>}
+      <section className="prep-actions" aria-label="评审准备包">
+        <div>
+          <span className="eyebrow">Prep Packet</span>
+          <strong>评审准备包</strong>
+          <p>把当前器件身份、BOM/profile/document 状态、tasks、risk hints 和 evidence 汇总成可交接资料。</p>
+        </div>
+        <button className="icon-text-btn" type="button" onClick={() => void loadPrepPacket(false)} disabled={prepBusy}>
+          {prepBusy ? <Loader2 className="spin" size={14} /> : <FileSearch size={14} />}
+          预览
+        </button>
+        <button className="icon-text-btn" type="button" onClick={() => void loadPrepPacket(true)} disabled={prepBusy}>
+          <Download size={14} />
+          下载 MD
+        </button>
+      </section>
+      {prepError && <p className="form-error detail-error">{prepError}</p>}
+      {prepPreview && <pre className="prep-preview">{prepPreview}</pre>}
       <section className="detail-section">
         <div className="section-title">
           <h3>引脚 / 网络表</h3>
@@ -580,7 +664,7 @@ function DetailColumn({
               <span className="mono">{pin.number}</span>
               <span>{pin.name}</span>
               <span className="mono net-name">{pin.net || "-"}</span>
-              <span>{pin.status ? <StatusBadge group={statusGroup(pin.status)} label={pin.status} /> : "-"}</span>
+              <span>{pin.status ? <StatusBadge group={statusGroup(pin.status)} label={pinStatusLabel(pin.status)} /> : "-"}</span>
             </div>
           ))}
         </div>
@@ -602,55 +686,98 @@ function DetailColumn({
 }
 
 function EvidenceColumn({
-  task,
+  tasks,
+  selectedTaskId,
+  onPickTask,
   detail,
   riskHints
 }: {
-  task: ReviewTask | null;
+  tasks: ReviewTask[];
+  selectedTaskId: string | null;
+  onPickTask: (taskId: string) => void;
   detail: ComponentDetail | null;
   riskHints: RiskHintsView;
 }) {
-  const chain = task?.evidence_chain ?? detail?.evidence_chain ?? [];
+  const selected = tasks.find((task) => task.id === selectedTaskId) ?? tasks[0] ?? null;
   return (
     <aside className="panel evidence-panel">
       <div className="panel-head">
         <div>
-          <span className="eyebrow">证据来源</span>
-          <h2>证据链</h2>
+          <span className="eyebrow">Evidence Chain</span>
+          <h2>{detail ? `${detail.refdes} 证据链` : "证据链"}</h2>
         </div>
         <Link2 size={17} />
       </div>
-      {task && (
-        <div className="task-brief">
-          <span className="eyebrow">{task.id} · {task.refdes}</span>
-          <strong>{formatSummary(task.title)}</strong>
-          <p>{formatSummary(task.body)}</p>
-          <div className="guard-note">
-            <ShieldCheck size={15} />
-            <span>
-              <b>How this was reached · {TRUST_LABEL[task.trust_tier]}.</b>
-              {" "}结论只来自后端事实、规则和 evidence token，外部提示保持只读人工线索。
-            </span>
-          </div>
-          <div className="recommended-action">
-            <b>建议动作</b>
-            <span>{formatSummary(task.recommended_action)}</span>
-          </div>
-        </div>
-      )}
-      {chain.length === 0 ? (
+      {!detail ? (
         <div className="empty-panel compact">
           <CircleHelp size={28} />
-          <p>选择 finding 后显示 chain of custody。</p>
+          <p>选择一个器件后显示 chain of custody。</p>
+        </div>
+      ) : tasks.length === 0 ? (
+        <div className="empty-panel compact">
+          <CircleHelp size={28} />
+          <p>当前器件没有 finding，显示组件级证据摘要。</p>
+          <div className="evidence-list component-summary-chain">
+            {detail.evidence_chain.map((item, index) => (
+              <EvidenceCard item={item} key={`${item.kind}-${index}`} />
+            ))}
+          </div>
         </div>
       ) : (
-        <div className="evidence-list">
-          {chain.map((item, index) => (
-            <EvidenceCard item={item} key={`${item.kind}-${index}`} />
+        <div className="finding-chain">
+          <div className="task-tabs" aria-label="当前器件 findings">
+            {tasks.map((task) => (
+              <button
+                type="button"
+                key={task.id}
+                className={task.id === selected?.id ? "active" : ""}
+                onClick={() => onPickTask(task.id)}
+              >
+                <span className="mono">{task.id}</span>
+                <StatusBadge group={task.status_group} label={attentionLabel(task.status_group)} />
+              </button>
+            ))}
+          </div>
+          {tasks.map((task) => (
+            <article
+              className={`evi-finding ${task.status_group} ${task.id === selected?.id ? "selected" : ""}`}
+              key={task.id}
+              onClick={() => onPickTask(task.id)}
+            >
+              <div className="task-brief">
+                <div className="finding-meta">
+                  <span className="eyebrow">{task.id} · {taskKindLabel(task.kind)} · {task.refdes}</span>
+                  <StatusBadge group={task.status_group} label={attentionLabel(task.status_group)} />
+                  <TrustBadge tier={task.trust_tier} />
+                </div>
+                <strong>{formatSummary(task.title)}</strong>
+                <p>{formatSummary(task.body)}</p>
+                <div className="guard-note">
+                  <ShieldCheck size={15} />
+                  <span>
+                    <b>How this was reached · {TRUST_LABEL[task.trust_tier]}.</b>
+                    {" "}结论只来自后端事实、规则和 evidence token；外部提示保持只读人工线索。
+                  </span>
+                </div>
+              </div>
+              <div className="evidence-list">
+                {task.evidence_chain.length === 0 ? (
+                  <p className="muted">该 finding 没有可展示 evidence node。</p>
+                ) : (
+                  task.evidence_chain.map((item, index) => (
+                    <EvidenceCard item={item} key={`${task.id}-${item.kind}-${index}`} />
+                  ))
+                )}
+              </div>
+              <div className="recommended-action">
+                <b>建议动作</b>
+                <span>{formatSummary(task.recommended_action)}</span>
+              </div>
+            </article>
           ))}
         </div>
       )}
-      <RiskHintsPanel riskHints={riskHints} selectedRefdes={detail?.refdes ?? task?.refdes ?? null} />
+      <RiskHintsPanel riskHints={riskHints} selectedRefdes={detail?.refdes ?? null} />
     </aside>
   );
 }
@@ -1007,11 +1134,76 @@ function StatusIcon({ group }: { group: StatusGroup }) {
   return <AlertTriangle size={15} />;
 }
 
+function attentionLabel(group: StatusGroup): string {
+  const labels: Record<StatusGroup, string> = {
+    error: "必须修",
+    warn: "看证据",
+    manual: "人工判断",
+    pass: "已通过"
+  };
+  return labels[group];
+}
+
 function statusGroup(status: string): StatusGroup {
   if (status === "ERROR") return "error";
   if (status === "WARN") return "warn";
   if (status === "PASS") return "pass";
   return "manual";
+}
+
+function pinStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    ERROR: "必须修",
+    WARN: "看证据",
+    PASS: "通过",
+    manual_needed: "人工判断",
+    profile_missing: "待补档案",
+    bom_missing: "BOM 缺失"
+  };
+  return labels[status] ?? statusLabelFromRaw(status);
+}
+
+function statusLabelFromRaw(status: string): string {
+  return status
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function profileStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    ok: "已匹配",
+    exact: "已匹配",
+    ambiguous: "需确认",
+    not_found: "未匹配",
+    manual_needed: "待补档案",
+    profile_missing: "待补档案"
+  };
+  return labels[status] ?? statusLabelFromRaw(status || "unknown");
+}
+
+function documentStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    matched: "已索引",
+    loaded: "已索引",
+    not_configured: "未配置",
+    not_found: "未找到",
+    unknown: "未知"
+  };
+  return labels[status] ?? statusLabelFromRaw(status || "unknown");
+}
+
+function queueSubtitle(item: ReviewQueueItem): string {
+  const identity = [
+    item.part_number || item.value || "无 MPN",
+    item.manufacturer,
+    item.package
+  ].filter(Boolean).join(" · ");
+  const cues = [
+    `${item.evidence_count} 条证据`,
+    item.risk_hint_count ? `${item.risk_hint_count} 条外部提示` : "",
+    documentStatusLabel(item.document_status)
+  ].filter(Boolean).join(" / ");
+  return `${identity}${cues ? ` · ${cues}` : ""}`;
 }
 
 function countTaskEvidence(task: ReviewTask): number {
@@ -1074,6 +1266,17 @@ function chainKindLabel(kind: string): string {
     design_rule: "设计规则",
     datasheet_or_profile: "资料证据",
     external_hint: "外部线索"
+  };
+  return labels[kind] ?? kind;
+}
+
+function taskKindLabel(kind: string): string {
+  const labels: Record<string, string> = {
+    component_check: "组件检查",
+    pin_check: "引脚检查",
+    manual_gap: "人工缺口",
+    external_risk_hint: "外部线索",
+    cleared: "已通过"
   };
   return labels[kind] ?? kind;
 }

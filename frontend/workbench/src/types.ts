@@ -40,20 +40,39 @@ export interface EvidenceView {
 
 export interface ReviewQueueItem {
   refdes: string;
+  value: string;
+  part_number: string;
+  manufacturer: string;
+  package: string;
   title: string;
   subtitle: string;
   status: string;
   status_label: string;
   status_group: StatusGroup;
+  deterministic_status: string;
+  deterministic_status_label: string;
+  deterministic_status_group: StatusGroup;
   trust_tier: TrustTier;
   issue_count: number;
   evidence_count: number;
   risk_hint_count: number;
+  task_count: number;
+  task_counts: ReviewTaskCounts;
+  task_ids: string[];
+  top_task_id?: string | null;
+  profile_status: string;
+  profile_path?: string | null;
+  document_status: string;
 }
 
 export interface ReviewTask {
   id: string;
+  stable_key: string;
   refdes: string;
+  kind: string;
+  check?: string | null;
+  pin_number?: string | null;
+  subject?: string | null;
   status: string;
   status_label: string;
   status_group: StatusGroup;
@@ -134,6 +153,32 @@ export interface RiskHintsSummary {
   rejected_external_count: number;
 }
 
+export interface BomView {
+  value: string;
+  part_number: string;
+  manufacturer: string;
+  description: string;
+  source: string;
+  item_number?: string | null;
+  source_line?: number | null;
+}
+
+export interface ProfileView {
+  status: string;
+  reason: string;
+  path?: string | null;
+  part_number: string;
+}
+
+export interface DocumentCoverageView {
+  status: string;
+  title?: string | null;
+  url?: string | null;
+  source?: string | null;
+  candidates: number;
+  reason: string;
+}
+
 export interface WorkbenchState {
   project: WorkbenchProject;
   summary: WorkbenchSummary;
@@ -171,6 +216,24 @@ export interface ComponentDetail {
   checks: CheckView[];
   evidence_chain: EvidenceChainItem[];
   risk_hints: RiskHintView[];
+  tasks: ReviewTask[];
+  task_counts: ReviewTaskCounts;
+  bom?: BomView | null;
+  profile?: ProfileView | null;
+  document?: DocumentCoverageView | null;
+}
+
+export interface ReviewPrepPacket {
+  schema_version: string;
+  project: WorkbenchProject;
+  scope: string;
+  component: ComponentDetail;
+  tasks: ReviewTask[];
+  pins: PinView[];
+  checks: CheckView[];
+  risk_hints: RiskHintsView;
+  evidence: EvidenceView[];
+  guardrails: string[];
 }
 
 export interface EvidenceClassification {

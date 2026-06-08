@@ -23,10 +23,12 @@ from hardwise.workbench.context import (
 )
 from hardwise.workbench.view_model import (
     ComponentMiss,
+    build_review_prep_packet,
     build_component_detail,
     build_review_tasks,
     build_risk_hints_summary,
     build_workbench_state,
+    render_review_prep_packet_markdown,
 )
 
 STATIC_DIR = Path(__file__).with_name("static")
@@ -101,6 +103,35 @@ def create_workbench_app(
         if isinstance(detail, ComponentMiss):
             return JSONResponse(status_code=404, content=detail.model_dump())
         return detail.model_dump()
+
+    @app.get("/api/workbench/components/{refdes}/prep-packet")
+    def component_prep_packet(
+        refdes: str,
+        format: Literal["json", "markdown"] = Query("json"),
+    ) -> Response:
+        context = current_context["value"]
+        packet = build_review_prep_packet(context, refdes)
+        if isinstance(packet, ComponentMiss):
+            return JSONResponse(status_code=404, content=packet.model_dump())
+        filename_refdes = refdes.upper()
+        if format == "markdown":
+            return Response(
+                content=render_review_prep_packet_markdown(packet),
+                media_type="text/markdown; charset=utf-8",
+                headers={
+                    "Content-Disposition": (
+                        f'attachment; filename="hardwise-prep-{filename_refdes}.md"'
+                    )
+                },
+            )
+        return JSONResponse(
+            content=packet.model_dump(mode="json"),
+            headers={
+                "Content-Disposition": (
+                    f'attachment; filename="hardwise-prep-{filename_refdes}.json"'
+                )
+            },
+        )
 
     @app.post("/api/workbench/import")
     def import_workbench(
