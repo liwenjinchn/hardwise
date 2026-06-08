@@ -1240,6 +1240,11 @@ def design_validator_ui(
             "Adds grouped document coverage; no live supplier lookup."
         ),
     ),
+    risk_hints_json: Path | None = typer.Option(
+        None,
+        "--risk-hints-json",
+        help="Optional external risk-hints JSON anchored to registry-verified refdes.",
+    ),
     manual_limit: int = typer.Option(
         50,
         "--manual-limit",
@@ -1272,6 +1277,7 @@ def design_validator_ui(
             bom_path=bom_path,
             profiles=profiles,
             document_index=document_index,
+            risk_hints_json=risk_hints_json,
         )
     except ProfileCandidateError as e:
         typer.echo(f"error: profile candidate generation failed: {e}", err=True)
@@ -1307,6 +1313,7 @@ def design_validator_ui(
         bom_report=context.bom_report,
         generated_at=context.index.generated_at,
         copilot_html=copilot_html,
+        risk_hints=context.risk_hints if context.risk_hints.source_path else None,
     )
     output.write_text(html, encoding="utf-8")
 
@@ -1328,6 +1335,12 @@ def design_validator_ui(
             f"document-index: {display_path(context.document_report.document_index_file)} "
             f"(matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
             f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']})"
+        )
+    if context.risk_hints.source_path is not None:
+        typer.echo(
+            "risk-hints: loaded "
+            f"(accepted={context.risk_hints.accepted_count}, "
+            f"rejected={context.risk_hints.rejected_count})"
         )
     if context.resolved_bom.auto_selected:
         parseable_count = sum(
@@ -1397,6 +1410,11 @@ def serve_workbench(
             "Enables document-coverage Copilot tools; no live supplier lookup."
         ),
     ),
+    risk_hints_json: Path | None = typer.Option(
+        None,
+        "--risk-hints-json",
+        help="Optional external risk-hints JSON anchored to registry-verified refdes.",
+    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
@@ -1422,6 +1440,7 @@ def serve_workbench(
             bom_path=bom_path,
             profiles=profiles,
             document_index=document_index,
+            risk_hints_json=risk_hints_json,
         )
         collection = None
         if use_vector:
@@ -1449,19 +1468,31 @@ def serve_workbench(
             f"on matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
             f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']}"
         )
+    risk_hints_state = "not_configured"
+    if context.risk_hints.source_path is not None:
+        risk_hints_state = (
+            "loaded "
+            f"accepted={context.risk_hints.accepted_count}, "
+            f"rejected={context.risk_hints.rejected_count}"
+        )
     typer.echo(
         f"serve-workbench: {url} "
         f"({context.index.components_in_design} components, "
         f"validated={len(context.index.validated_rows)}, "
         f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'}, "
-        f"document-index={document_state})"
+        f"document-index={document_state}, risk-hints={risk_hints_state})"
     )
     if dry_run:
         return
 
     import uvicorn
 
-    app_obj = create_workbench_app(context, chat_service)
+    app_obj = create_workbench_app(
+        context,
+        chat_service,
+        profiles=profiles,
+        document_index=document_index,
+    )
     uvicorn.run(app_obj, host=host, port=port)
 
 
@@ -1764,6 +1795,80 @@ def draft_datasheet_profile(
         f"{', archetype=' + archetype if archetype else ''}"
         f"{', evidence_chunks=on' if evidence_chunks else ''})"
     )
+
+
+@app.command(name="trust-dashboard")
+def trust_dashboard(
+    eval_summary: Path = typer.Option(
+        Path("reports/eval/eval-summary.json"),
+        "--eval-summary",
+        help="Eval Pack summary JSON produced by `hardwise eval`.",
+    ),
+    validation_index: Path | None = typer.Option(
+        None,
+        "--validation-index",
+        help="Project validation index JSON produced by `design-validator-ui --index-json`.",
+    ),
+    trace: Path | None = typer.Option(
+        None,
+        "--trace",
+        help="Optional review trace JSONL or workbench ChatResponse JSON/JSON array.",
+    ),
+    comparison: Path | None = typer.Option(
+        None,
+        "--comparison",
+        help="Optional eval comparison JSON produced by `hardwise eval --baseline`.",
+    ),
+    output: Path = typer.Option(
+        Path("reports/trust-dashboard.html"),
+        "--output",
+        "-o",
+        help="Output static HTML dashboard path.",
+    ),
+    json_output: Path | None = typer.Option(
+        None,
+        "--json-output",
+        help="Optional JSON summary output path.",
+    ),
+) -> None:
+    """Render a static Trust & Coverage dashboard from machine-readable artifacts."""
+    import json
+
+    from hardwise.analytics.trust_dashboard import (
+        TrustDashboardError,
+        build_trust_dashboard_summary,
+    )
+    from hardwise.analytics.trust_dashboard_html import render_trust_dashboard_html
+
+    try:
+        summary = build_trust_dashboard_summary(
+            eval_summary_path=eval_summary,
+            validation_index_path=validation_index,
+            trace_path=trace,
+            comparison_path=comparison,
+        )
+    except TrustDashboardError as e:
+        typer.echo(f"error: trust dashboard failed: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(render_trust_dashboard_html(summary), encoding="utf-8")
+    if json_output is not None:
+        json_output.parent.mkdir(parents=True, exist_ok=True)
+        json_output.write_text(
+            json.dumps(summary.model_dump(mode="json"), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+    validation_state = summary.validation_coverage.source.status
+    trace_state = summary.trace_health.source.status
+    typer.echo(
+        f"trust-dashboard: {output} "
+        f"(eval={summary.eval_health.projects_passed}/{summary.eval_health.projects_total}, "
+        f"validation={validation_state}, trace={trace_state})"
+    )
+    if json_output is not None:
+        typer.echo(f"trust-dashboard-json: {json_output}")
 
 
 @app.command(name="eval")

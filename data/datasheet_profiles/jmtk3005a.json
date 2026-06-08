@@ -1,0 +1,81 @@
+{
+  "part_number": "JMTK3005A",
+  "part_number_aliases": [],
+  "review_status": "ready",
+  "description": "30 V, 100 A N-channel enhancement-mode power MOSFET, TO-252-3L/DPAK",
+  "abs_max": {
+    "vds": 30.0,
+    "vgs": 20.0,
+    "id": 100.0,
+    "id_tc_100c": 63.0,
+    "idm_pulsed": 400.0,
+    "single_pulsed_avalanche_energy": 110.0,
+    "power_dissipation": 52.0
+  },
+  "recommended": {
+    "topology_family": "mosfet",
+    "polarity": "n_channel",
+    "rds_on_max_10v": 0.0044,
+    "rds_on_max_4v5": 0.0074,
+    "vgs_threshold_min": 1.0,
+    "vgs_threshold_typ": 1.6,
+    "vgs_threshold_max": 2.1
+  },
+  "pin_function": {
+    "1": "Gate",
+    "2": "Drain",
+    "3": "Source"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "Gate",
+      "schematic_pin_aliases": ["G"],
+      "category": "analog_input",
+      "function": "Gate control input; Vgs is measured to the source terminal.",
+      "limits": {},
+      "recommended_topology": ["Drive within the +/-20 V gate-source absolute maximum rating."],
+      "evidence": ["datasheet:jmtk3005a.pdf#p1"]
+    },
+    {
+      "number": "2",
+      "name": "Drain",
+      "schematic_pin_aliases": ["D"],
+      "category": "switch_output",
+      "function": "Drain terminal and TO-252 tab connection for the power current path.",
+      "limits": {},
+      "recommended_topology": ["Keep drain-source stress within the 30 V maximum rating."],
+      "evidence": ["datasheet:jmtk3005a.pdf#p1"]
+    },
+    {
+      "number": "3",
+      "name": "Source",
+      "schematic_pin_aliases": ["S"],
+      "category": "switch_node",
+      "function": "Source terminal and Vgs/Vds reference node.",
+      "limits": {},
+      "recommended_topology": ["Use as the MOSFET source reference, not implicitly as ground."],
+      "evidence": ["datasheet:jmtk3005a.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "abs_max.vds": "datasheet:jmtk3005a.pdf#p1",
+    "abs_max.vgs": "datasheet:jmtk3005a.pdf#p1",
+    "abs_max.id": "datasheet:jmtk3005a.pdf#p1",
+    "abs_max.id_tc_100c": "datasheet:jmtk3005a.pdf#p1",
+    "abs_max.idm_pulsed": "datasheet:jmtk3005a.pdf#p1",
+    "abs_max.single_pulsed_avalanche_energy": "datasheet:jmtk3005a.pdf#p1",
+    "abs_max.power_dissipation": "datasheet:jmtk3005a.pdf#p1",
+    "recommended.rds_on_max_10v": "datasheet:jmtk3005a.pdf#p1",
+    "recommended.rds_on_max_4v5": "datasheet:jmtk3005a.pdf#p1",
+    "recommended.vgs_threshold_min": "datasheet:jmtk3005a.pdf#p2",
+    "recommended.vgs_threshold_typ": "datasheet:jmtk3005a.pdf#p2",
+    "recommended.vgs_threshold_max": "datasheet:jmtk3005a.pdf#p2",
+    "pin_function.1": "datasheet:jmtk3005a.pdf#p1",
+    "pin_function.2": "datasheet:jmtk3005a.pdf#p1",
+    "pin_function.3": "datasheet:jmtk3005a.pdf#p1"
+  },
+  "extracted_at": "2026-06-08T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-jmtk3005a-public-pdf",
+  "schema_version": "v2"
+}

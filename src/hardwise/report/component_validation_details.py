@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from html import escape
 
+from hardwise.guards.evidence_class import EvidenceClassification, classify_evidence_token
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.trust import TRUST_LABELS, TrustTier, trust_label_text
@@ -17,6 +18,7 @@ __all__ = [
     "trust_label_text",
     "trust_label_html",
     "evidence_chips_html",
+    "evidence_source_label",
     "evidence_gap_chip",
     "build_pin_consistency",
     "schematic_connection_path",
@@ -153,14 +155,36 @@ def evidence_chips_html(tokens: list[str], *, refdes: str | None = None) -> str:
     for token in tokens:
         source = token.split(":", 1)[0] if ":" in token else "source"
         href = _evidence_href(token, refdes=refdes)
-        title = _evidence_title(token)
+        classification = classify_evidence_token(token)
+        label = _evidence_source_label(classification)
+        title = _evidence_title(token, classification)
+        local_source_attr = (
+            f' data-evidence-local-source="{escape(classification.local_source)}"'
+            if classification.local_source
+            else ""
+        )
         chips.append(
             '<a class="evidence-chip" '
             f'data-source="{escape(source)}" '
+            f'data-evidence-source-class="{escape(classification.source_class)}" '
+            f'data-evidence-audit-status="{escape(classification.audit_status)}" '
             f'data-evidence-token="{escape(token)}" '
-            f'href="{escape(href)}" title="{escape(title)}">{escape(token)}</a>'
+            f'href="{escape(href)}" title="{escape(title)}"{local_source_attr}>'
+            f'{escape(token)} <span class="evidence-source-class">{escape(label)}</span></a>'
         )
     return " ".join(chips)
+
+
+def evidence_source_label(token: str) -> str:
+    """Return the display source class for one evidence token."""
+
+    return _evidence_source_label(classify_evidence_token(token))
+
+
+def _evidence_source_label(classification: EvidenceClassification) -> str:
+    if classification.audit_status != "ok":
+        return f"{classification.source_class}/{classification.audit_status}"
+    return classification.source_class
 
 
 def _evidence_href(token: str, *, refdes: str | None = None) -> str:
@@ -177,20 +201,25 @@ def _evidence_href(token: str, *, refdes: str | None = None) -> str:
     return f"#{refdes}-evidence-details" if refdes else "#evidence-details"
 
 
-def _evidence_title(token: str) -> str:
+def _evidence_title(token: str, classification: EvidenceClassification) -> str:
     """Return a concise explanation for evidence-token chips."""
 
     if token.startswith("datasheet:"):
-        return "数据手册页码来源 token；点击跳到当前器件的证据详情，并复制 token。"
-    if token.startswith("bom:"):
-        return "BOM 行来源 token；点击跳到器件/覆盖清单，并复制 token。"
-    if token.startswith("doc:"):
-        return "本地公开资料索引 token；点击跳到器件/覆盖清单，并复制 token。"
-    if token.startswith("sch:"):
-        return "原理图拓扑来源 token；点击跳到连接路径，并复制 token。"
-    if token.startswith(("http://", "https://")):
-        return "打开外部来源链接。"
-    return "证据 token；点击复制。"
+        title = "数据手册页码来源 token；点击跳到当前器件的证据详情，并复制 token。"
+    elif token.startswith("bom:"):
+        title = "BOM 行来源 token；点击跳到器件/覆盖清单，并复制 token。"
+    elif token.startswith("doc:"):
+        title = "本地公开资料索引 token；点击跳到器件/覆盖清单，并复制 token。"
+    elif token.startswith("sch:"):
+        title = "原理图拓扑来源 token；点击跳到连接路径，并复制 token。"
+    elif token.startswith(("http://", "https://")):
+        title = "打开外部来源链接。"
+    else:
+        title = "证据 token；点击复制。"
+    return (
+        f"{title} source_class={classification.source_class}; "
+        f"audit_status={classification.audit_status}; {classification.reason}"
+    )
 
 
 def evidence_gap_chip(

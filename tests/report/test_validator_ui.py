@@ -37,6 +37,7 @@ def test_render_validator_ui_includes_index_detail_and_scope() -> None:
     design = apply_bom_to_design(design, bom_report)
     profile = DatasheetProfile.load(Path("data/datasheet_profiles/l78.json"))
     validation = validate_component_against_profile(design.components["U1"], profile, design)
+    validation.pin_results[0].evidence.append("doc:docs.csv#line2")
 
     html = render(
         design,
@@ -59,6 +60,11 @@ def test_render_validator_ui_includes_index_detail_and_scope() -> None:
     assert "L1 确定性" in html
     assert "evidence-chip" in html
     assert 'data-evidence-token="datasheet:l78.pdf#p4"' in html
+    assert 'data-evidence-source-class="reviewed_profile"' in html
+    assert 'data-evidence-audit-status="missing_local_source"' in html
+    assert "reviewed_profile/missing_local_source" in html
+    assert 'data-evidence-token="doc:docs.csv#line2"' in html
+    assert 'data-evidence-source-class="document_index"' in html
     assert 'href="#evidence-details"' in html
     assert 'id="evidence-details"' in html
     assert "datasheet:l78.pdf#p4" in html
@@ -145,6 +151,9 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert "L1 确定性" in html
     assert "evidence-chip" in html
     assert 'data-evidence-token="datasheet:xl1509.pdf#p9"' in html
+    assert 'data-evidence-source-class="reviewed_profile"' in html
+    assert 'data-evidence-audit-status="missing_local_source"' in html
+    assert "reviewed_profile/missing_local_source" in html
     assert 'href="#U12-evidence-details"' in html
     assert 'id="U12-evidence-details"' in html
     assert "+24V" in html

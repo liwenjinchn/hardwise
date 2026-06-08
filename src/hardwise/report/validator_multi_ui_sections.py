@@ -608,7 +608,7 @@ def _profile_fact_table(profile: DatasheetProfile | None, *, refdes: str | None 
         return ""
     rows = [
         '<div class="section-head inline-head"><h4>结构化规格</h4></div>',
-        "<table><thead><tr><th>分组</th><th>键</th><th>值</th><th>证据</th></tr></thead><tbody>",
+        "<table><thead><tr><th>分组</th><th>键</th><th>值</th><th>证据 / 来源</th></tr></thead><tbody>",
     ]
     for group, facts in (("abs_max", profile.abs_max), ("recommended", profile.recommended)):
         if not facts:
@@ -638,7 +638,7 @@ def _profile_fact_table_with_gaps(
         return ""
     rows = [
         '<div class="section-head inline-head"><h4>结构化规格</h4></div>',
-        "<table><thead><tr><th>分组</th><th>键</th><th>值</th><th>证据</th></tr></thead><tbody>",
+        "<table><thead><tr><th>分组</th><th>键</th><th>值</th><th>证据 / 来源</th></tr></thead><tbody>",
     ]
     for group, facts in (("abs_max", profile.abs_max), ("recommended", profile.recommended)):
         if not facts:
@@ -671,7 +671,7 @@ def _profile_pin_detail_table(
         return ""
     rows = [
         '<div class="section-head inline-head"><h4>器件档案引脚细节</h4></div>',
-        "<table><thead><tr><th>引脚</th><th>名称</th><th>限制</th><th>推荐连接</th><th>证据</th></tr></thead><tbody>",
+        "<table><thead><tr><th>引脚</th><th>名称</th><th>限制</th><th>推荐连接</th><th>证据 / 来源</th></tr></thead><tbody>",
     ]
     for pin in profile.pins:
         rows.append(
@@ -692,7 +692,7 @@ def _profile_evidence_table(profile: DatasheetProfile | None, *, refdes: str | N
         return ""
     rows = [
         '<div class="section-head inline-head"><h4>器件档案证据账本</h4></div>',
-        "<table><thead><tr><th>声明键</th><th>来源 token</th></tr></thead><tbody>",
+        "<table><thead><tr><th>声明键</th><th>来源 token / 分类</th></tr></thead><tbody>",
     ]
     if not profile.evidence:
         rows.append("<tr><td>-</td><td>-</td></tr>")

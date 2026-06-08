@@ -10,13 +10,12 @@
 </head>
 <body>
   <main class="shell">
-    <p class="kicker">60-90 second demo script</p>
+    <p class="kicker">90 second demo script</p>
     <h1>Hardwise Demo 录屏脚本</h1>
-    <p class="lead">主线只讲 trust architecture：模型不能自由评审硬件，必须被 EDA registry、evidence token、deterministic validator 和 Refdes Guard 约束住。coverage 数字只当支撑材料。</p>
+    <p class="lead">主线只讲 <code>design-validator-ui --ai-snapshot</code> 离线 workbench：模型不能自由评审硬件，必须被 EDA registry、evidence token、deterministic validator 和 Refdes Guard 约束住。KiCad review/ask 只作为证据链复现附录。</p>
 
     <h2>录屏前准备</h2>
     <pre><code>uv sync
-uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --output /tmp/hardwise-review.md
 uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
@@ -24,19 +23,26 @@ uv run hardwise design-validator-ui \
   --output /tmp/hardwise-copilot-workbench.html</code></pre>
 
     <h2>分镜</h2>
-    <div class="step"><div class="num">01</div><div><b>README 开场，10 秒</b><p>Hardwise 不是让 LLM 自由判断硬件，而是一个 pre-Layout 原理图评审工作台。模型只能通过结构化工具拿到 EDA registry、netlist 和 evidence token，输出再经过 Refdes Guard。</p></div></div>
-    <div class="step"><div class="num">02</div><div><b>工作台摘要，15 秒</b><p>指顶部指标：25 components、17 L1 rows、PASS/WARN/ERROR=5/9/3。强调 17 个 L1 rows 包括 4 个 profile-backed targets 和 13 个 generic passive checks，剩余 8 个保持 manual/no-local-profile。</p></div></div>
-    <div class="step"><div class="num">03</div><div><b>确定性问题，20 秒</b><p>点 U12，展示 buck 错误。这个 ERROR 不是模型意见，而是 deterministic validator 从网表和 XL1509 profile 得到的结论。</p></div></div>
-    <div class="step"><div class="num">04</div><div><b>Copilot trace，20 秒</b><p>打开右下角 AI 按钮，点已烘焙问题。展示 tool trace：<code>run_component_validation</code> 是 L1 deterministic，证据 token 必须可见。</p></div></div>
-    <div class="step"><div class="num">05</div><div><b>Refdes Guard，15 秒</b><p>点“板上有没有 U999?”。不存在的位号不会被模型编造成器件，最终显示会把它包成 <code>⟨?U999⟩</code>。</p></div></div>
-    <div class="step"><div class="num">06</div><div><b>收束，10 秒</b><p>只做 schematic-side review，只用公开输入，不做 PCB layout、boardview、PLM、供应商、价格库存，也不碰公司内部硬件数据。</p></div></div>
+    <div class="step"><div class="num">01</div><div><b>项目摘要，10 秒</b><p>指顶部指标：25 components、22 L1 rows、PASS-WARN-ERROR=5/13/4、3 manual/no-local-profile。Hardwise 消费导出的 netlist/PST+BOM，生成 pre-Layout review workbench；这不是实时 EDA 插件。</p></div></div>
+    <div class="step"><div class="num">02</div><div><b>Must Review，10 秒</b><p>指 Must Review 队列。工作台先回答评审会最关心的问题：哪些条目必须在 Layout handoff 前看，哪些只是 manual gap，哪些已经 deterministic pass。</p></div></div>
+    <div class="step"><div class="num">03</div><div><b>U12 deterministic ERROR，18 秒</b><p>点 U12，展示 XL1509 buck 错误。这个 ERROR 不是模型意见，而是 deterministic validator 从网表和 profile 得到的结论：<code>L1=6.8uH</code> 低于最小值，<code>D5=1N4007W</code> 不是 Schottky-style freewheel diode。</p></div></div>
+    <div class="step"><div class="num">04</div><div><b>Copilot trace，18 秒</b><p>打开右下角 Hardwise 助手，点已烘焙问题并展开 Evidence / Tool trace。<code>run_component_validation</code> 是 L1 deterministic，证据 token 必须可见、可复制。</p></div></div>
+    <div class="step"><div class="num">05</div><div><b>U999 wrapped，12 秒</b><p>点“板上有没有 U999?”。不存在的位号不会被模型编造成器件，工具返回 <code>found=false</code>，最终显示会把它包成 <code>⟨?U999⟩</code>。</p></div></div>
+    <div class="step"><div class="num">06</div><div><b>L78 evidence token，12 秒</b><p>点 L78 evidence 问题或 U1/L7805 trace，停在 <code>datasheet:l78.pdf#p4</code>。L78 是 L2 grounded evidence：有页码级 token 供 reviewer 核对，但不会自动升级成模型自由判断。</p></div></div>
+    <div class="step"><div class="num">07</div><div><b>收束，10 秒</b><p>只做 schematic-side review，只用公开输入，不做 PCB layout、boardview、PLM、供应商、价格库存，也不碰公司内部硬件数据。</p></div></div>
+
+    <h2>证据链复现附录</h2>
+    <pre><code>uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003,DS001 --report-style component --output /tmp/hardwise-review.md
+uv run hardwise ask data/projects/pic_programmer "What is U999?"
+uv run hardwise ingest-datasheet data/datasheets/l78.pdf --part-ref L7805 --persist-dir /tmp/hardwise-evidence-audit
+uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3 --persist-dir /tmp/hardwise-evidence-audit</code></pre>
 
     <h2>不要这么说</h2>
     <ul class="dont">
       <li>不说“模型独立验证整块板”。</li>
       <li>不说 generic passive checks 是深度 datasheet review。</li>
-      <li>不说所有 profile token 都经过 live vector retrieval。</li>
-      <li>不暗示覆盖 PCB geometry、layout、routing、supplier status、lifecycle 或 PLM。</li>
+      <li>不说所有 profile token 都经过 live vector retrieval。只有 staged and queried 的 PDF 才能说成 live retrieval。</li>
+      <li>不暗示覆盖 PCB geometry、layout、routing、supplier status、lifecycle、PLM 或实时 EDA 插件。</li>
     </ul>
 
     <div class="nav">

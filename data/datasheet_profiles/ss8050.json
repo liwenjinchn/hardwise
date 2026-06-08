@@ -1,0 +1,66 @@
+{
+  "part_number": "SS8050",
+  "part_number_aliases": [],
+  "review_status": "ready",
+  "description": "NPN epitaxial silicon transistor, TO-92-3",
+  "abs_max": {
+    "vceo": 25.0,
+    "vcbo": 40.0,
+    "vebo": 6.0,
+    "ic": 1.5,
+    "power_dissipation": 1.0,
+    "tj": 150.0
+  },
+  "recommended": {
+    "topology_family": "bjt",
+    "polarity": "npn"
+  },
+  "pin_function": {
+    "1": "Emitter",
+    "2": "Base",
+    "3": "Collector"
+  },
+  "pins": [
+    {
+      "number": "1",
+      "name": "Emitter",
+      "category": "switch_node",
+      "function": "Emitter terminal; Vbe and Vce reference node for the first NPN validator.",
+      "limits": {},
+      "recommended_topology": ["Use as the emitter reference, not implicitly as ground."],
+      "evidence": ["datasheet:ss8050-d.pdf#p1"]
+    },
+    {
+      "number": "2",
+      "name": "Base",
+      "category": "analog_input",
+      "function": "Base control input; Vbe is measured against the emitter, not ground.",
+      "limits": {},
+      "recommended_topology": ["Keep reverse base-emitter voltage within the 6 V VEBO rating."],
+      "evidence": ["datasheet:ss8050-d.pdf#p1"]
+    },
+    {
+      "number": "3",
+      "name": "Collector",
+      "category": "switch_output",
+      "function": "Collector terminal for the switched current path.",
+      "limits": {},
+      "recommended_topology": ["Keep collector-emitter stress within the 25 V VCEO rating."],
+      "evidence": ["datasheet:ss8050-d.pdf#p1"]
+    }
+  ],
+  "evidence": {
+    "abs_max.vceo": "datasheet:ss8050-d.pdf#p1",
+    "abs_max.vcbo": "datasheet:ss8050-d.pdf#p1",
+    "abs_max.vebo": "datasheet:ss8050-d.pdf#p1",
+    "abs_max.ic": "datasheet:ss8050-d.pdf#p1",
+    "abs_max.power_dissipation": "datasheet:ss8050-d.pdf#p1",
+    "abs_max.tj": "datasheet:ss8050-d.pdf#p1",
+    "pin_function.1": "datasheet:ss8050-d.pdf#p1",
+    "pin_function.2": "datasheet:ss8050-d.pdf#p1",
+    "pin_function.3": "datasheet:ss8050-d.pdf#p1"
+  },
+  "extracted_at": "2026-06-08T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-ss8050-public-pdf",
+  "schema_version": "v2"
+}

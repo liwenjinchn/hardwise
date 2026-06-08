@@ -9,6 +9,7 @@ build/
 dist/
 .pytest_cache/
 .ruff_cache/
+node_modules/
 
 # Env / secrets — .env MUST stay local
 .env

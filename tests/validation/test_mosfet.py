@@ -351,3 +351,51 @@ Q13,1,PE537BA,NIKO-SEM,PE537BA
     assert vgs.evidence == ["datasheet:pe537ba.pdf#p1"]
     assert vds.status == "WARN"
     assert "Not assuming ground" in vds.summary
+
+
+def test_jmtk3005a_profile_matches_public_to252_pinout() -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/jmtk3005a.json"))
+
+    assert profile.review_status == "ready"
+    assert profile.part_number == "JMTK3005A"
+    assert profile.recommended["topology_family"] == "mosfet"
+    assert profile.recommended["polarity"] == "n_channel"
+    assert profile.abs_max["vds"] == 30.0
+    assert profile.abs_max["vgs"] == 20.0
+    assert profile.abs_max["id"] == 100.0
+    assert profile.abs_max["idm_pulsed"] == 400.0
+    assert profile.pin_function == {"1": "Gate", "2": "Drain", "3": "Source"}
+    assert profile.pin_by_number("1").schematic_pin_aliases == ["G"]
+    assert profile.pin_by_number("2").schematic_pin_aliases == ["D"]
+    assert profile.pin_by_number("3").schematic_pin_aliases == ["S"]
+    assert profile.evidence["pin_function.1"] == "datasheet:jmtk3005a.pdf#p1"
+    assert profile.evidence["abs_max.vds"] == "datasheet:jmtk3005a.pdf#p1"
+    assert profile.evidence["abs_max.vgs"] == "datasheet:jmtk3005a.pdf#p1"
+
+
+def test_jmtk3005a_controller_stage_uses_existing_mosfet_rules() -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/jmtk3005a.json"))
+    design = _design(
+        "mixed_controller_power_stage.net",
+        "mixed_controller_power_stage_bom.csv",
+    )
+
+    q1_results = validate_component_against_profile(design.components["Q1"], profile, design)
+    q2_results = validate_component_against_profile(design.components["Q2"], profile, design)
+
+    assert q1_results.status == "WARN"
+    assert q2_results.status == "WARN"
+    assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in q1_results.pin_results] == [
+        ("1", "Gate", "HO_GATE_Q", "PASS"),
+        ("2", "Drain", "+24V", "PASS"),
+        ("3", "Source", "PHASE_U", "PASS"),
+    ]
+    assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in q2_results.pin_results] == [
+        ("1", "Gate", "LO_GATE_Q", "PASS"),
+        ("2", "Drain", "PHASE_U", "PASS"),
+        ("3", "Source", "GND", "PASS"),
+    ]
+    q1_checks = {check.check: check for check in q1_results.component_checks}
+    assert q1_checks["mosfet_vgs_rating"].status == "WARN"
+    assert q1_checks["mosfet_vgs_rating"].evidence == ["datasheet:jmtk3005a.pdf#p1"]
+    assert q1_checks["mosfet_vds_rating"].status == "WARN"

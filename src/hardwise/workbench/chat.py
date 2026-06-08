@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from hardwise.agent.prompts import WORKBENCH_SYSTEM_PROMPT
 from hardwise.agent.router import ModelRouter, Tier
 from hardwise.agent.runner import RunResult, Runner, ToolCallTrace
+from hardwise.guards.evidence_class import EvidenceClassification, classify_evidence_tokens
 from hardwise.guards.refdes import sanitize_text
 from hardwise.report.ui_terms import check_label, validation_summary_label
 from hardwise.trust import TrustTier, trust_label_text
@@ -47,6 +48,7 @@ class EvidenceTrace(BaseModel):
     summary: str
     status: str | None = None
     evidence: list[str] = Field(default_factory=list)
+    evidence_classification: list[EvidenceClassification] = Field(default_factory=list)
     wrapped: int = 0
     trust_tier: TrustTier | None = None
     trust_label: str | None = None
@@ -508,12 +510,17 @@ class WorkbenchChatService:
         evidence = trace.evidence or _row_evidence(row)
         status = row.status if row is not None else None
         trust_tier = trace.trust_tier
+        live_tokens = evidence if trace.name == "search_datasheet" else []
         return EvidenceTrace(
             tool=trace.name,
             input=trace.input,
             summary=trace.output_summary,
             status=status,
             evidence=evidence,
+            evidence_classification=classify_evidence_tokens(
+                evidence,
+                live_retrieved_tokens=live_tokens,
+            ),
             wrapped=trace.wrapped,
             trust_tier=trust_tier,
             trust_label=trust_label_text(trust_tier) if trust_tier else None,

@@ -3815,3 +3815,36 @@ false missing inventory row.
 Documentation inventory is not only taxonomy; it is link hygiene. A public
 index should link to committed, current artifacts or clearly describe local
 generated outputs without pretending they are Pages entries.
+
+## 2026-06-09 — Trust dashboard should consume artifacts, not rerun workflows
+
+**Symptom**
+
+The planned Trust & Coverage dashboard needed eval, validation coverage, and
+trace metrics, but those facts already existed in separate machine-readable
+artifacts. A tempting implementation would have rerun eval or parsed generated
+HTML to recover numbers.
+
+**Root cause**
+
+`eval-summary.json`, `design-validator-ui --index-json`, and `trace.jsonl` have
+different trust boundaries. Rerunning commands inside the dashboard would clone
+repos or regenerate reports as a side effect, while parsing HTML would make the
+analytics layer depend on presentation markup instead of source data.
+
+**Fix**
+
+Added a read-only `trust-dashboard` command that requires an eval summary and
+optionally consumes validation index JSON, eval comparison JSON, and review or
+workbench trace JSON/JSONL. Missing optional inputs render as unavailable
+sections instead of failing the dashboard. Product Design audit also caught that
+the 90-second workbench's long project name clipped on a 390 px viewport because
+underscored names do not naturally wrap; the fix adds `overflow-wrap:anywhere`
+and `word-break:break-word` to the workbench `h1` styling without changing any
+validator output.
+
+**Takeaway**
+
+Analytics surfaces should sit downstream of reviewed artifacts. They can measure
+coverage, regression health, and evidence discipline, but they must not become
+another hardware verdict path.
