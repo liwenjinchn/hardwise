@@ -476,6 +476,9 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     assert "防护包裹次数" in html
     assert "可信度" in html
     assert "证据 token" in html
+    assert "证据来源" in html
+    assert "本轮检索" in html
+    assert "已审 profile" in html
     assert "L2 grounded" in html
     assert "datasheet:l78.pdf#p4" in html
     assert "查看 L7805 输入耐压的数据手册证据链" in html

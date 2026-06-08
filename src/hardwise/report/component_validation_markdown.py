@@ -8,6 +8,7 @@ from hardwise.ir.profile import DatasheetProfile, ProfileValue
 from hardwise.ir.types import Component, Design
 from hardwise.report.component_validation_details import (
     build_pin_consistency,
+    evidence_source_label,
     profile_has_thermal_or_package_evidence,
     schematic_connection_path,
     trust_label_text,
@@ -78,7 +79,7 @@ def render(
     lines.extend(_render_summary(report))
     lines.append("## 引脚验证明细")
     lines.append("")
-    lines.append("| 引脚 | 名称 | 类别 | 网络 | 结论 | 说明 | 证据 |")
+    lines.append("| 引脚 | 名称 | 类别 | 网络 | 结论 | 说明 | 证据 / 来源 |")
     lines.append("|---|---|---|---|---|---|---|")
     for pin in report.pin_results:
         lines.append(
@@ -148,7 +149,7 @@ def _render_pin_function_connectivity(
     design: Design | None,
 ) -> list[str]:
     lines = ["## 3. 连接路径", ""]
-    lines.append("| 引脚 | 名称 | 类别 | 网络 | 原理图连接路径 | 证据 |")
+    lines.append("| 引脚 | 名称 | 类别 | 网络 | 原理图连接路径 | 证据 / 来源 |")
     lines.append("|---|---|---|---|---|---|")
     for pin in pins:
         path = (
@@ -194,7 +195,7 @@ def _render_pin_consistency(
 
 def _render_compliance_checks(report: ValidationReport) -> list[str]:
     lines = ["## 4. 合规矩阵", ""]
-    lines.append("| 检查项 | 位号 | 结论 | 说明 | 证据 |")
+    lines.append("| 检查项 | 位号 | 结论 | 说明 | 证据 / 来源 |")
     lines.append("|---|---|---|---|---|")
     for pin in report.pin_results:
         lines.append(
@@ -232,7 +233,7 @@ def _render_evidence_details(
 
     lines.append("### 结构化规格")
     lines.append("")
-    lines.append("| 分组 | 键 | 值 | 证据 |")
+    lines.append("| 分组 | 键 | 值 | 证据 / 来源 |")
     lines.append("|---|---|---|---|")
     for group, facts in (("abs_max", profile.abs_max), ("recommended", profile.recommended)):
         if not facts:
@@ -250,7 +251,7 @@ def _render_evidence_details(
 
     lines.append("### 器件档案引脚细节")
     lines.append("")
-    lines.append("| 引脚 | 名称 | 限制 | 推荐连接 | 证据 |")
+    lines.append("| 引脚 | 名称 | 限制 | 推荐连接 | 证据 / 来源 |")
     lines.append("|---|---|---|---|---|")
     for pin in profile.pins:
         lines.append(
@@ -262,12 +263,14 @@ def _render_evidence_details(
 
     lines.append("### 器件档案证据账本")
     lines.append("")
-    lines.append("| 声明 | 来源 token |")
+    lines.append("| 声明 | 来源 token / 分类 |")
     lines.append("|---|---|")
     if not profile.evidence:
         lines.append("| - | - |")
     for key, token in sorted(profile.evidence.items()):
-        lines.append(f"| {_escape_pipe(profile_claim_label(key))} | `{token}` |")
+        lines.append(
+            f"| {_escape_pipe(profile_claim_label(key))} | {_evidence_cell([token])} |"
+        )
     lines.append("")
 
     if profile_has_thermal_or_package_evidence(profile):
@@ -302,7 +305,7 @@ def _render_summary(report: ValidationReport) -> list[str]:
 def _evidence_cell(tokens: list[str]) -> str:
     if not tokens:
         return "-"
-    return ", ".join(f"`{token}`" for token in tokens)
+    return ", ".join(f"`{token}` ({evidence_source_label(token)})" for token in tokens)
 
 
 def _format_mapping(values: dict[str, ProfileValue]) -> str:

@@ -73,6 +73,7 @@ tr.selected{background:#eef4ef}
 .pin-table th,.pin-table td{font-size:13px}
 .evidence code,.net code,.evidence-chip{display:inline-block;margin:0 4px 4px 0;padding:3px 5px;background:#edf3f0;font-family:var(--mono);font-size:12px}
 .evidence-chip{border:1px solid #cad8d1;color:#27483d}
+.evidence-source-class{display:inline-block;margin-left:5px;padding-left:5px;border-left:1px solid #cad8d1;color:var(--muted);font-size:10px}
 .trust{display:inline-flex;align-items:center;min-height:24px;padding:3px 7px;border:1px solid currentColor;font-family:var(--mono);font-size:11px;font-weight:800;white-space:nowrap}
 .trust-l1{color:var(--pass)}.trust-l2{color:var(--blue)}.trust-l3{color:var(--blue)}
 .scope{margin:0 0 16px;padding:14px 16px;border-left:5px solid var(--rail);background:#f7f5ee;color:#3d4742}

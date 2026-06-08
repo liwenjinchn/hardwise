@@ -33,6 +33,7 @@ def test_render_component_validation_markdown() -> None:
         source_eda="allegro_netlist",
     )
     report = validate_component_against_profile(component, profile, design)
+    report.pin_results[0].evidence.append("doc:docs.csv#line2")
 
     md = render(
         report,
@@ -51,7 +52,9 @@ def test_render_component_validation_markdown() -> None:
     assert "### 引脚一致性" in md
     assert "| 引脚数量 | 3 | 3 | PASS |" in md
     assert "## 5. 证据详情" in md
-    assert "| 绝对最大额定 | 结温 | 125 | `datasheet:l78.pdf#p4` |" in md
+    assert "| 绝对最大额定 | 结温 | 125 | `datasheet:l78.pdf#p4` (reviewed_profile" in md
+    assert "missing_local_source" in md
+    assert "`doc:docs.csv#line2` (document_index)" in md
     assert "### 器件档案证据账本" in md
     assert "| 1 | VI | 电源输入 | +12V | PASS |" in md
     assert "| 1 | VI | 电源输入 | +12V | +12V -> U1-1 |" in md
