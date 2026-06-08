@@ -240,6 +240,8 @@ ComponentNotFound(
 
 **v5.45 (Workstream D public narrative sync)**: README、GitHub Pages 入口、`docs/demo.md/html`、product intro、JD alignment、recording script 和 `docs/hardware-demo.html` 都同步到当前 mixed controller smoke：25 components / 17 validated rows / BOM matched=25 / PASS-WARN-ERROR=5-9-3 / 8 manual rows。17 个 L1 rows = U1/U12/U3/U8 四个 profile-backed targets + 13 个 generic passive checks，其中新增的 L1 是 `L1=6.8uH` 的 `GENERIC_INDUCTOR` light coverage；它不改变 U12 buck topology ERROR 的 profile-backed 结论。真实 Switch/mainboard 数字只作为 pressure-test summary 链接到 `docs/closeout_pressure_summary.md`，不发布大板 HTML，也不把 coverage 数字包装成整板自动正确性。
 
+**v5.46 (Trust & Coverage dashboard)**: 新增 `trust-dashboard`，把已有 machine-readable artifacts 汇总成静态 analytics 面：`eval-summary.json` 是必需输入，`design-validator-ui --index-json`、`eval-comparison.json`、`trace.jsonl` / workbench `ChatResponse` JSON 是可选输入。它只读这些 JSON/JSONL，不解析 HTML、不自动跑 eval、不启动 agent，也不改变任何 validator truth。页面显示 eval health、guardrail health、validation coverage、profile gaps、document coverage 和 L1/L2/L3 trace counts；缺少 validation index 或 trace 时降级展示 unavailable。讲法要准：这是 regression / coverage / evidence discipline dashboard，不是专家准确率 benchmark，也不是新的硬件判定器。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？
