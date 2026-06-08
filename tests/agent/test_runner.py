@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from hardwise.adapters.base import BoardRegistry, ComponentRecord, NcPinRecord
+from hardwise.agent.prompts import SYSTEM_PROMPT
 from hardwise.agent.router import ModelRouter
 from hardwise.agent.runner import Runner
 from hardwise.store.relational import create_store, populate_from_registry
@@ -156,6 +157,22 @@ def test_runner_text_only_returns_text() -> None:
     assert result.output_tokens == 50
     assert result.stopped_at_cap is False
     assert len(client.messages.calls) == 1
+
+
+def test_runner_first_create_call_uses_cacheable_system_blocks() -> None:
+    runner, client = _build_runner([FakeResponse(content=[FakeTextBlock(text="done")])])
+
+    runner.run("hello")
+
+    system = client.messages.calls[0]["system"]
+    assert isinstance(system, list)
+    assert system == [
+        {
+            "type": "text",
+            "text": SYSTEM_PROMPT,
+            "cache_control": {"type": "ephemeral"},
+        }
+    ]
 
 
 def test_runner_single_tool_use_dispatches_then_text() -> None:
@@ -357,14 +374,24 @@ def test_runner_token_accounting_sums_across_iterations() -> None:
         [
             FakeResponse(
                 content=[FakeToolUseBlock(id="t1", name="get_component", input={"refdes": "U3"})],
-                usage=FakeUsage(input_tokens=200, output_tokens=80),
+                usage=FakeUsage(
+                    input_tokens=200,
+                    output_tokens=80,
+                    cache_creation_input_tokens=12,
+                ),
             ),
             FakeResponse(
                 content=[FakeTextBlock(text="done")],
-                usage=FakeUsage(input_tokens=300, output_tokens=20),
+                usage=FakeUsage(
+                    input_tokens=300,
+                    output_tokens=20,
+                    cache_read_input_tokens=34,
+                ),
             ),
         ]
     )
     result = runner.run("U3?")
     assert result.input_tokens == 500
     assert result.output_tokens == 100
+    assert result.cache_creation_tokens == 12
+    assert result.cache_read_tokens == 34

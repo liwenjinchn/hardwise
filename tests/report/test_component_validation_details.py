@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from hardwise.report.component_validation_details import (
     _fact_has_evidence,
+    evidence_chips_html,
     evidence_gap_chip,
+    evidence_source_label,
 )
 
 
@@ -46,3 +48,21 @@ def test_first_segment_match_requires_nonempty_token() -> None:
     # An evidence key present but with an empty token must not count as coverage.
     evidence = {"recommended.inductor": ""}
     assert not _fact_has_evidence("recommended.inductor_min_uh", evidence)
+
+
+def test_evidence_chip_keeps_token_attrs_and_shows_source_class() -> None:
+    html = evidence_chips_html(["pdf:missing.pdf#p7", "doc:docs.csv#line2"])
+
+    assert 'data-source="pdf"' in html
+    assert 'data-evidence-token="pdf:missing.pdf#p7"' in html
+    assert 'data-evidence-source-class="reviewed_profile"' in html
+    assert 'data-evidence-audit-status="missing_local_source"' in html
+    assert "reviewed_profile/missing_local_source" in html
+    assert 'data-source="doc"' in html
+    assert 'data-evidence-token="doc:docs.csv#line2"' in html
+    assert 'data-evidence-source-class="document_index"' in html
+    assert "document_index" in html
+
+
+def test_evidence_source_label_reports_document_index() -> None:
+    assert evidence_source_label("doc:docs.csv#line2") == "document_index"

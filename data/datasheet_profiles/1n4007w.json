@@ -1,0 +1,57 @@
+{
+  "part_number": "1N4007W",
+  "review_status": "ready",
+  "description": "1000 V, 1 A surface-mount general-purpose silicon rectifier, SOD-123F(L)",
+  "abs_max": {
+    "reverse_voltage": 1000.0,
+    "rms_reverse_voltage": 700.0,
+    "dc_blocking_voltage": 1000.0,
+    "average_forward_current": 1.0,
+    "peak_forward_surge_current": 30.0,
+    "junction_temperature_max": 150.0
+  },
+  "recommended": {
+    "topology_family": "diode",
+    "diode_role": "general_purpose_rectifier",
+    "forward_voltage_max_1a": 1.1
+  },
+  "pin_function": {
+    "1": "Cathode",
+    "2": "Anode"
+  },
+  "pins": [
+    {
+      "name": "Cathode",
+      "number": "1",
+      "category": "switch_node",
+      "function": "Cathode terminal for the SOD-123F(L) surface-mount rectifier.",
+      "evidence": [
+        "datasheet:rectron_1n4001w-1n4007w.pdf#p1"
+      ]
+    },
+    {
+      "name": "Anode",
+      "number": "2",
+      "category": "switch_node",
+      "function": "Anode terminal for the SOD-123F(L) surface-mount rectifier.",
+      "evidence": [
+        "datasheet:rectron_1n4001w-1n4007w.pdf#p1"
+      ]
+    }
+  ],
+  "evidence": {
+    "abs_max.reverse_voltage": "datasheet:rectron_1n4001w-1n4007w.pdf#p1",
+    "abs_max.rms_reverse_voltage": "datasheet:rectron_1n4001w-1n4007w.pdf#p1",
+    "abs_max.dc_blocking_voltage": "datasheet:rectron_1n4001w-1n4007w.pdf#p1",
+    "abs_max.average_forward_current": "datasheet:rectron_1n4001w-1n4007w.pdf#p1",
+    "abs_max.peak_forward_surge_current": "datasheet:rectron_1n4001w-1n4007w.pdf#p1",
+    "abs_max.junction_temperature_max": "datasheet:rectron_1n4001w-1n4007w.pdf#p1",
+    "recommended.diode_role": "datasheet:rectron_1n4001w-1n4007w.pdf#p1",
+    "recommended.forward_voltage_max_1a": "datasheet:rectron_1n4001w-1n4007w.pdf#p1",
+    "pin_function.1": "datasheet:rectron_1n4001w-1n4007w.pdf#p1",
+    "pin_function.2": "datasheet:rectron_1n4001w-1n4007w.pdf#p1"
+  },
+  "extracted_at": "2026-06-08T00:00:00+08:00",
+  "extracted_model": "manual-profile-v1-diode-next-family",
+  "schema_version": "v2"
+}

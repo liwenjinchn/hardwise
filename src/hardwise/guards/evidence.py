@@ -9,6 +9,13 @@ reaching the report — they are unsupported claims by definition.
 from __future__ import annotations
 
 from hardwise.checklist.finding import Finding
+from hardwise.guards.evidence_class import (
+    EvidenceAuditStatus,
+    EvidenceClassification,
+    EvidenceSourceClass,
+    classify_evidence_token,
+    classify_evidence_tokens,
+)
 
 
 def strip_unsupported(findings: list[Finding]) -> tuple[list[Finding], int]:
@@ -17,3 +24,13 @@ def strip_unsupported(findings: list[Finding]) -> tuple[list[Finding], int]:
     kept = [f for f in findings if f.evidence_tokens]
     dropped = len(findings) - len(kept)
     return kept, dropped
+
+
+__all__ = [
+    "EvidenceAuditStatus",
+    "EvidenceClassification",
+    "EvidenceSourceClass",
+    "classify_evidence_token",
+    "classify_evidence_tokens",
+    "strip_unsupported",
+]

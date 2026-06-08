@@ -38,6 +38,11 @@ def test_build_workbench_context_populates_relational_store_from_registry() -> N
         assert len(rows) == context.index.components_in_design
         profile_backed = {row.refdes for row in context.index.validated_rows if row.profile_path}
         assert profile_backed == {
+            "D1",
+            "D5",
+            "Q1",
+            "Q12",
+            "Q2",
             "U1",
             "U12",
             "U3",
@@ -46,7 +51,7 @@ def test_build_workbench_context_populates_relational_store_from_registry() -> N
         assert {"C1", "C2", "R1", "R2"} <= {
             row.refdes for row in context.index.validated_rows
         }
-        assert set(context.validation_targets) == {"U1", "U12", "U3", "U8"}
+        assert set(context.validation_targets) == profile_backed
     finally:
         context.session.close()
 

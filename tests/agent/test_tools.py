@@ -287,9 +287,9 @@ def test_summarize_project_topology_returns_bounded_fact_inventory() -> None:
         assert result.component_count == 25
         assert result.net_count == 21
         assert result.bom_matched == 25
-        assert result.validated_count == 17
-        assert result.manual_count == 8
-        assert result.validation_totals == {"PASS": 5, "WARN": 9, "ERROR": 3}
+        assert result.validated_count == 22
+        assert result.manual_count == 3
+        assert result.validation_totals == {"PASS": 5, "WARN": 13, "ERROR": 4}
         assert any(hit.net_name == "+3V3" for hit in result.power_like_nets)
         assert any(hit.net_name == "SWDIO" for hit in result.interface_like_nets)
         assert any(hit.net_name == "NRST" for hit in result.control_like_nets)

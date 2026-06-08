@@ -95,6 +95,9 @@ def test_fake_chat_reports_datasheet_search_unavailable_and_uses_validation() ->
         assert response.trace[1].status == "ERROR"
         assert response.trace[1].trust_tier == "l1"
         assert response.trace[1].trust_label == "L1 deterministic"
+        assert {item.source_class for item in response.trace[1].evidence_classification} == {
+            "reviewed_profile"
+        }
     finally:
         context.session.close()
 
@@ -116,6 +119,9 @@ def test_fake_chat_drives_component_topology_tool() -> None:
         assert response.trace[0].trust_tier == "l1"
         assert response.trace[0].trust_label == "L1 deterministic"
         assert "datasheet:stm32g030.pdf#p33" in response.trace[0].evidence
+        assert {item.source_class for item in response.trace[0].evidence_classification} == {
+            "reviewed_profile"
+        }
     finally:
         context.session.close()
 
@@ -150,7 +156,7 @@ def test_fake_chat_summarizes_project_topology() -> None:
         assert "拓扑摘要只基于解析后的原理图/netlist" in response.answer
         assert "25 个器件" in response.answer
         assert "21 条网络" in response.answer
-        assert "PASS/WARN/ERROR=5/9/3" in response.answer
+        assert "PASS/WARN/ERROR=5/13/4" in response.answer
         assert response.trace
         assert response.trace[0].tool == "summarize_project_topology"
         assert response.trace[0].summary == "components=25, nets=21"
@@ -173,6 +179,9 @@ def test_fake_chat_uses_document_tool_for_component_coverage(tmp_path: Path) -> 
         assert [trace.tool for trace in response.trace] == ["get_component_documents"]
         assert response.trace[0].summary == "status=matched"
         assert response.trace[0].evidence == ["doc:docs.csv#line2"]
+        assert [item.source_class for item in response.trace[0].evidence_classification] == [
+            "document_index"
+        ]
         assert response.trace[0].trust_tier == "l1"
         assert response.trace[0].trust_label == "L1 deterministic"
     finally:
@@ -242,6 +251,9 @@ def test_snapshot_responses_include_l2_grounded_datasheet_smoke() -> None:
         assert [trace.tool for trace in response.trace] == ["search_datasheet"]
         assert response.trace[0].summary == "hits=1"
         assert response.trace[0].evidence == ["datasheet:l78.pdf#p4"]
+        assert [item.source_class for item in response.trace[0].evidence_classification] == [
+            "live_retrieved"
+        ]
         assert response.trace[0].trust_tier == "l2"
         assert response.trace[0].trust_label == "L2 grounded"
         assert C5_L2_SNAPSHOT_QUESTION in responses["__fallback__"].suggestions

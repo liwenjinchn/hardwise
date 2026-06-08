@@ -182,6 +182,43 @@ R_LOAD,1,1K,Fixture,RES-1K
     assert "base 0.7 V - emitter 0 V" in checks["bjt_vebo_rating"].summary
 
 
+def test_ss8050_profile_matches_public_to92_pinout() -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/ss8050.json"))
+
+    assert profile.review_status == "ready"
+    assert profile.part_number == "SS8050"
+    assert profile.recommended["topology_family"] == "bjt"
+    assert profile.recommended["polarity"] == "npn"
+    assert profile.abs_max["vceo"] == 25.0
+    assert profile.abs_max["vcbo"] == 40.0
+    assert profile.abs_max["vebo"] == 6.0
+    assert profile.abs_max["ic"] == 1.5
+    assert profile.pin_function == {"1": "Emitter", "2": "Base", "3": "Collector"}
+    assert profile.evidence["pin_function.1"] == "datasheet:ss8050-d.pdf#p1"
+    assert profile.evidence["abs_max.vceo"] == "datasheet:ss8050-d.pdf#p1"
+    assert profile.evidence["abs_max.vebo"] == "datasheet:ss8050-d.pdf#p1"
+
+
+def test_ss8050_controller_stage_moves_to_l1_and_flags_missing_emitter() -> None:
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/ss8050.json"))
+    design = _design(
+        "mixed_controller_power_stage.net",
+        "mixed_controller_power_stage_bom.csv",
+    )
+
+    results = validate_component_against_profile(design.components["Q12"], profile, design)
+
+    assert results.status == "ERROR"
+    assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in results.pin_results] == [
+        ("1", "Emitter", None, "ERROR"),
+        ("2", "Base", "+24V_EN", "PASS"),
+        ("3", "Collector", "GND", "PASS"),
+    ]
+    emitter = next(check for check in results.component_checks if check.check == "bjt_emitter_connectivity")
+    assert emitter.status == "ERROR"
+    assert "emitter pin is not connected" in emitter.summary
+
+
 def _design_from_text(tmp_path: Path, netlist_content: str, bom_content: str):
     netlist_path = tmp_path / "test.net"
     netlist_path.write_text(netlist_content)

@@ -24,15 +24,16 @@ def test_suggest_profile_candidates_matches_mixed_regulators() -> None:
     report = suggest_profile_candidates(bom, Path("data/datasheet_profiles"))
 
     assert report.counts_by_status == {
-        "matched": 2,
-        "no_result": 8,
+        "matched": 4,
+        "no_result": 6,
         "ambiguous": 0,
         "manual_needed": 0,
     }
     matches = {candidate.refdes: candidate for candidate in report.candidates}
     assert matches["U1"].profile == Path("data/datasheet_profiles/l78.json")
     assert matches["U12"].profile == Path("data/datasheet_profiles/xl1509.json")
-    assert matches["D5"].match_status == "no_result"
+    assert matches["D5"].profile == Path("data/datasheet_profiles/1n4007w.json")
+    assert matches["Q12"].profile == Path("data/datasheet_profiles/ss8050.json")
 
 
 def test_suggest_profile_candidates_matches_profile_aliases(tmp_path: Path) -> None:

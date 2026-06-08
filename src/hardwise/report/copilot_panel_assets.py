@@ -112,6 +112,17 @@ COPILOT_SCRIPT = """
     l2: 'L2 有出处',
     l3: 'L3 人工确认'
   };
+  const evidenceClassLabels = {
+    live_retrieved: '本轮检索证据',
+    reviewed_profile: '已审 profile 证据',
+    document_index: '资料索引证据',
+    design_source: '设计来源证据',
+    unknown: '未知证据来源'
+  };
+  const auditStatusLabels = {
+    ok: '可定位',
+    missing_local_source: '本地源缺失'
+  };
   const traceSummaryLabel = (text) => {
     const value = String(text || '');
     if (value === 'skipped: vector store not configured') return '已跳过：未配置向量数据手册库';
@@ -124,6 +135,15 @@ COPILOT_SCRIPT = """
     if (value.startsWith('components=')) return value.replace('components=', '器件数：').replace(', nets=', '，网络数：');
     if (value.startsWith('groups=')) return value.replace('groups=', '分组数：');
     return value;
+  };
+  const evidenceClassSummary = (items) => {
+    const classifications = items || [];
+    if (!classifications.length) return '-';
+    return classifications.map((item) => {
+      const source = evidenceClassLabels[item.source_class] || item.source_class || '未知来源';
+      const audit = auditStatusLabels[item.audit_status] || item.audit_status || '';
+      return audit && audit !== '可定位' ? `${source} / ${audit}` : source;
+    }).join('；');
   };
   const evidenceTargetId = (token, section) => {
     const value = String(token || '');
@@ -263,6 +283,11 @@ COPILOT_SCRIPT = """
       const trust = item.trust_label || item.trust_tier || '-';
       row.appendChild(traceField('可信度', trustLabels[trust] || trust, '可信度'));
       row.appendChild(traceField('证据', evidenceChips(item.evidence), '证据 token'));
+      row.appendChild(traceField(
+        '证据来源分类',
+        evidenceClassSummary(item.evidence_classification),
+        '只说明证据来自本轮检索、已审 profile、资料索引或本地源审计；不是电气硬判定'
+      ));
       row.appendChild(traceField('位号防护', String(item.wrapped || 0), '防护包裹次数'));
       const inputText = document.createElement('span');
       inputText.textContent = traceInputLabel(item.tool, item.input);
