@@ -24,6 +24,8 @@ Built with AI assistance. All design decisions and final code are reviewed and o
 
 If you only have 90 seconds, start here:
 
+- **1-minute demo video:** [hardwise-demo.mp4](https://github.com/liwenjinchn/hardwise/releases/download/demo-video/hardwise-demo.mp4)
+
 GitHub shows HTML files as source. Open the rendered GitHub Pages demos for the intended reading view:
 
 - **Reading index:** [https://liwenjinchn.github.io/hardwise/](https://liwenjinchn.github.io/hardwise/)
