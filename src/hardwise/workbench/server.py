@@ -49,6 +49,7 @@ def create_workbench_app(
             bom_report=context.bom_report,
             generated_at=context.generated_at,
             copilot_html=copilot_html,
+            risk_hints=context.risk_hints if context.risk_hints.source_path else None,
         )
 
     @app.get("/api/workbench/state")

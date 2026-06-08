@@ -1313,6 +1313,7 @@ def design_validator_ui(
         bom_report=context.bom_report,
         generated_at=context.index.generated_at,
         copilot_html=copilot_html,
+        risk_hints=context.risk_hints if context.risk_hints.source_path else None,
     )
     output.write_text(html, encoding="utf-8")
 

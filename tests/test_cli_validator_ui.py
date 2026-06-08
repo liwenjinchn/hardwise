@@ -417,6 +417,12 @@ def test_design_validator_ui_prints_risk_hints_counts(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert "risk-hints: loaded (accepted=1, rejected=1)" in result.output
+    html = html_output.read_text(encoding="utf-8")
+    assert "外部提示附录" in html
+    assert "Review input" in html
+    assert "Check U1 margin." in html
+    assert "已跳过 1 条无法安全锚定的外部提示。" in html
+    assert "Bad anchor" not in html
 
 
 def test_design_validator_ui_bad_risk_hints_json_exits_cleanly(tmp_path: Path) -> None:
