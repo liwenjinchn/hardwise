@@ -85,6 +85,32 @@ class ReviewQueueItem(BaseModel):
     risk_hint_count: int = 0
 
 
+class ReviewTask(BaseModel):
+    """One finding-first review task in the SPA workflow."""
+
+    id: str
+    refdes: str
+    status: str
+    status_label: str
+    status_group: StatusGroup
+    trust_tier: TrustTier
+    title: str
+    body: str
+    recommended_action: str
+    source_classes: list[str] = Field(default_factory=list)
+    evidence_chain: list["EvidenceChainItem"] = Field(default_factory=list)
+
+
+class ReviewTaskCounts(BaseModel):
+    """Stable task counts for filter chips and export summaries."""
+
+    total: int
+    error: int
+    warn: int
+    manual: int
+    pass_count: int
+
+
 class PinView(BaseModel):
     """Pin/net detail shown in the component panel."""
 
@@ -189,6 +215,8 @@ class WorkbenchState(BaseModel):
     capabilities: WorkbenchCapabilities
     selected_refdes: str | None
     queue: list[ReviewQueueItem]
+    review_tasks: list[ReviewTask]
+    task_counts: ReviewTaskCounts
     risk_hints: RiskHintsSummary
     risk_hint_details: RiskHintsView
 
@@ -217,6 +245,7 @@ def build_workbench_state(
         for component in components
     ]
     queue.sort(key=lambda item: (_status_rank(item.status_group), sort_refdes_key(item.refdes)))
+    review_tasks = build_review_tasks(context)
 
     return WorkbenchState(
         project=WorkbenchProject(
@@ -241,8 +270,10 @@ def build_workbench_state(
             document_index_enabled=context.document_report is not None,
             risk_hints_enabled=context.risk_hints.source_path is not None,
         ),
-        selected_refdes=_default_refdes(queue),
+        selected_refdes=_default_task_refdes(review_tasks) or _default_refdes(queue),
         queue=queue,
+        review_tasks=review_tasks,
+        task_counts=_review_task_counts(review_tasks),
         risk_hints=build_risk_hints_summary(context.risk_hints),
         risk_hint_details=build_risk_hints_view(context.risk_hints),
     )
@@ -287,6 +318,37 @@ def build_component_detail(context: WorkbenchContext, refdes: str) -> ComponentD
         evidence_chain=_evidence_chain(component, validation, risk_hints),
         risk_hints=risk_hints,
     )
+
+
+def build_review_tasks(context: WorkbenchContext) -> list[ReviewTask]:
+    """Build finding-first tasks without changing deterministic validation facts."""
+
+    tasks: list[ReviewTask] = []
+    for row in context.index.rows:
+        component = context.design.components.get(row.refdes)
+        if component is None:
+            continue
+        validation = row.validation
+        if validation is None:
+            tasks.append(_manual_gap_task(row))
+            continue
+        finding_tasks = [
+            *_component_check_tasks(row, validation),
+            *_pin_check_tasks(row, validation),
+        ]
+        if finding_tasks:
+            tasks.extend(finding_tasks)
+        elif validation.status == "PASS":
+            tasks.append(_cleared_task(row, validation))
+
+    for hint in context.risk_hints.accepted:
+        tasks.append(_risk_hint_task(hint))
+
+    tasks.sort(key=lambda item: (_status_rank(item.status_group), sort_refdes_key(item.refdes), item.title))
+    return [
+        item.model_copy(update={"id": f"F-{index:03d}"})
+        for index, item in enumerate(tasks, start=1)
+    ]
 
 
 def build_risk_hints_view(report: RiskHintReport) -> RiskHintsView:
@@ -433,6 +495,231 @@ def _evidence_chain(
     return chain
 
 
+def _component_check_tasks(
+    row: ProjectValidationRow,
+    validation: ValidationReport,
+) -> list[ReviewTask]:
+    tasks: list[ReviewTask] = []
+    for check in validation.component_checks:
+        if check.status == "PASS":
+            continue
+        evidence = _evidence_views(check.evidence, "l1")
+        tasks.append(
+            _task(
+                refdes=row.refdes,
+                status=check.status,
+                trust_tier="l1",
+                title=validation_summary_label(check.summary),
+                body=f"{check.check}: {validation_summary_label(check.summary)}",
+                recommended_action=_recommended_action(check.status, check.summary),
+                chain=[
+                    EvidenceChainItem(
+                        kind="netlist_trace",
+                        title="网表上下文",
+                        body=f"{row.refdes} 的组件级规则触发于当前网表/BOM 事实。",
+                        status=check.status,
+                        status_group=_status_group(check.status),
+                        trust_tier="l1",
+                    ),
+                    EvidenceChainItem(
+                        kind="design_rule",
+                        title=check.check,
+                        body=validation_summary_label(check.summary),
+                        status=check.status,
+                        status_group=_status_group(check.status),
+                        trust_tier="l1",
+                        evidence=[item for item in evidence if item.source_class == "design_source"],
+                    ),
+                    EvidenceChainItem(
+                        kind="datasheet_or_profile",
+                        title="档案 / 数据手册证据",
+                        body="这些 evidence token 来自已审本地档案、资料索引或本轮检索结果。",
+                        status=check.status,
+                        status_group=_status_group(check.status),
+                        trust_tier="l1",
+                        evidence=[item for item in evidence if item.source_class != "design_source"],
+                    ),
+                ],
+            )
+        )
+    return tasks
+
+
+def _pin_check_tasks(row: ProjectValidationRow, validation: ValidationReport) -> list[ReviewTask]:
+    tasks: list[ReviewTask] = []
+    for pin in validation.pin_results:
+        if pin.status == "PASS":
+            continue
+        evidence = _evidence_views(pin.evidence, "l1")
+        title = f"引脚 {pin.pin_number} · {validation_summary_label(pin.summary)}"
+        tasks.append(
+            _task(
+                refdes=row.refdes,
+                status=pin.status,
+                trust_tier="l1",
+                title=title,
+                body=(
+                    f"{pin.pin_name} 连接到 {pin.net or '未命名网络'}；"
+                    f"{validation_summary_label(pin.summary)}"
+                ),
+                recommended_action=_recommended_action(pin.status, pin.summary),
+                chain=[
+                    EvidenceChainItem(
+                        kind="netlist_trace",
+                        title=f"{row.refdes}.{pin.pin_number} · {pin.pin_name}",
+                        body=f"网络：{pin.net or '-'}；类别：{pin.category}。",
+                        status=pin.status,
+                        status_group=_status_group(pin.status),
+                        trust_tier="l1",
+                    ),
+                    EvidenceChainItem(
+                        kind="design_rule",
+                        title="引脚连接规则",
+                        body=validation_summary_label(pin.summary),
+                        status=pin.status,
+                        status_group=_status_group(pin.status),
+                        trust_tier="l1",
+                        evidence=[item for item in evidence if item.source_class == "design_source"],
+                    ),
+                    EvidenceChainItem(
+                        kind="datasheet_or_profile",
+                        title="档案 / 数据手册证据",
+                        body="这些 evidence token 来自已审本地档案、资料索引或本轮检索结果。",
+                        status=pin.status,
+                        status_group=_status_group(pin.status),
+                        trust_tier="l1",
+                        evidence=[item for item in evidence if item.source_class != "design_source"],
+                    ),
+                ],
+            )
+        )
+    return tasks
+
+
+def _manual_gap_task(row: ProjectValidationRow) -> ReviewTask:
+    title = reason_label(row.reason) if row.reason else "待人工补器件档案"
+    return _task(
+        refdes=row.refdes,
+        status=row.match_status,
+        trust_tier="l3",
+        title=title,
+        body=(
+            f"{row.refdes} 暂未进入确定性验证。"
+            f" BOM 身份：{row.part_number or row.bom_value or '-'}。"
+        ),
+        recommended_action="补充公开数据手册档案，或由 reviewer 手工确认后再进入 sign-off。",
+        chain=[
+            EvidenceChainItem(
+                kind="netlist_trace",
+                title="网表中存在该 refdes",
+                body=f"{row.refdes} 已在解析后的设计注册表中确认，但没有可运行的本地验证档案。",
+                status=row.match_status,
+                status_group="manual",
+                trust_tier="l3",
+            ),
+            EvidenceChainItem(
+                kind="datasheet_or_profile",
+                title="本地档案缺口",
+                body=title,
+                status=row.match_status,
+                status_group="manual",
+                trust_tier="l3",
+            ),
+        ],
+    )
+
+
+def _risk_hint_task(hint: RiskHint) -> ReviewTask:
+    evidence = _evidence_views([hint.source] if hint.source else [], "l3")
+    return _task(
+        refdes=hint.refdes,
+        status=hint.severity or "external_hint",
+        trust_tier="l3",
+        title=f"外部提示 · {hint.title}",
+        body=hint.body,
+        recommended_action="作为 reviewer 线索读取；需要人工确认，不改变确定性 PASS/WARN/ERROR。",
+        chain=[
+            EvidenceChainItem(
+                kind="external_hint",
+                title=hint.title,
+                body=hint.body,
+                status=hint.severity or "external_hint",
+                status_group="manual",
+                trust_tier="l3",
+                evidence=evidence,
+            )
+        ],
+    )
+
+
+def _cleared_task(row: ProjectValidationRow, validation: ValidationReport) -> ReviewTask:
+    evidence = _evidence_views(_validation_evidence(validation), "l1")
+    return _task(
+        refdes=row.refdes,
+        status="PASS",
+        trust_tier="l1",
+        title=f"{row.refdes} 已通过当前确定性检查",
+        body="该器件的已配置规则没有发现 WARN/ERROR；这不是全板电气保证，只是当前规则覆盖下的 cleared summary。",
+        recommended_action="保留 evidence token，后续只在规格、连接或器件档案变化时重新审查。",
+        chain=[
+            EvidenceChainItem(
+                kind="design_rule",
+                title="确定性检查已通过",
+                body="组件级和引脚级规则均未产生 WARN/ERROR。",
+                status="PASS",
+                status_group="pass",
+                trust_tier="l1",
+            ),
+            EvidenceChainItem(
+                kind="datasheet_or_profile",
+                title="档案 / 数据手册证据",
+                body="这些 evidence token 支撑本次 cleared summary。",
+                status="PASS",
+                status_group="pass",
+                trust_tier="l1",
+                evidence=evidence,
+            ),
+        ],
+    )
+
+
+def _task(
+    *,
+    refdes: str,
+    status: str,
+    trust_tier: TrustTier,
+    title: str,
+    body: str,
+    recommended_action: str,
+    chain: list[EvidenceChainItem],
+) -> ReviewTask:
+    evidence = [token for item in chain for token in item.evidence]
+    source_classes = _dedupe([item.source_class for item in evidence])
+    group = _status_group(status)
+    return ReviewTask(
+        id="F-000",
+        refdes=refdes,
+        status=status,
+        status_label=status_label(status),
+        status_group=group,
+        trust_tier=trust_tier,
+        title=title,
+        body=body,
+        recommended_action=recommended_action,
+        source_classes=source_classes,
+        evidence_chain=chain,
+    )
+
+
+def _recommended_action(status: str, summary: str) -> str:
+    clean = validation_summary_label(summary)
+    if status == "ERROR":
+        return f"进入 Layout handoff 前处理：{clean}"
+    if status == "WARN":
+        return f"复核使用条件或补充证据：{clean}"
+    return "保持当前连接和器件档案；若设计输入变化则重新验证。"
+
+
 def _check_chain_item(check: ComponentValidation) -> EvidenceChainItem:
     return EvidenceChainItem(
         kind="component_check",
@@ -547,6 +834,20 @@ def _issue_count(validation: ValidationReport | None) -> int:
 
 def _default_refdes(queue: list[ReviewQueueItem]) -> str | None:
     return queue[0].refdes if queue else None
+
+
+def _default_task_refdes(tasks: list[ReviewTask]) -> str | None:
+    return tasks[0].refdes if tasks else None
+
+
+def _review_task_counts(tasks: list[ReviewTask]) -> ReviewTaskCounts:
+    return ReviewTaskCounts(
+        total=len(tasks),
+        error=sum(item.status_group == "error" for item in tasks),
+        warn=sum(item.status_group == "warn" for item in tasks),
+        manual=sum(item.status_group == "manual" for item in tasks),
+        pass_count=sum(item.status_group == "pass" for item in tasks),
+    )
 
 
 def _dedupe(tokens: list[str]) -> list[str]:

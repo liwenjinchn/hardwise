@@ -51,6 +51,28 @@ export interface ReviewQueueItem {
   risk_hint_count: number;
 }
 
+export interface ReviewTask {
+  id: string;
+  refdes: string;
+  status: string;
+  status_label: string;
+  status_group: StatusGroup;
+  trust_tier: TrustTier;
+  title: string;
+  body: string;
+  recommended_action: string;
+  source_classes: string[];
+  evidence_chain: EvidenceChainItem[];
+}
+
+export interface ReviewTaskCounts {
+  total: number;
+  error: number;
+  warn: number;
+  manual: number;
+  pass_count: number;
+}
+
 export interface PinView {
   number: string;
   name: string;
@@ -118,8 +140,18 @@ export interface WorkbenchState {
   capabilities: WorkbenchCapabilities;
   selected_refdes?: string | null;
   queue: ReviewQueueItem[];
+  review_tasks: ReviewTask[];
+  task_counts: ReviewTaskCounts;
   risk_hints: RiskHintsSummary;
   risk_hint_details: RiskHintsView;
+}
+
+export interface ImportResponse {
+  ok: boolean;
+  project: WorkbenchProject;
+  summary: WorkbenchSummary;
+  selected_refdes?: string | null;
+  task_counts: ReviewTaskCounts;
 }
 
 export interface ComponentDetail {

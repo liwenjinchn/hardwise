@@ -1,19 +1,31 @@
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Bot,
   CheckCircle2,
   CircleHelp,
+  Download,
   ExternalLink,
+  FileArchive,
   FileSearch,
+  FileUp,
   Filter,
   Link2,
   Loader2,
   MessageSquare,
+  PackageCheck,
+  Play,
   Search,
-  ShieldCheck
+  ShieldCheck,
+  UploadCloud
 } from "lucide-react";
-import { askCopilot, fetchComponentDetail, fetchWorkbenchState } from "./api";
+import {
+  askCopilot,
+  exportWorkbench,
+  fetchComponentDetail,
+  fetchWorkbenchState,
+  importWorkbench
+} from "./api";
 import type {
   ChatMessage,
   ChatResponse,
@@ -21,15 +33,27 @@ import type {
   ComponentDetail,
   EvidenceChainItem,
   EvidenceView,
-  ReviewQueueItem,
+  ImportResponse,
+  ReviewTask,
   RiskHintsView,
   StatusGroup,
   TrustTier,
   WorkbenchState
 } from "./types";
 
+type ViewId = "import" | "parse" | "review" | "copilot" | "findings" | "export";
+
+const NAV_ITEMS: Array<{ id: ViewId; label: string }> = [
+  { id: "import", label: "Import" },
+  { id: "parse", label: "Parse" },
+  { id: "review", label: "Review" },
+  { id: "copilot", label: "Copilot" },
+  { id: "findings", label: "Findings" },
+  { id: "export", label: "Export" }
+];
+
 const FILTERS: Array<{ id: "all" | StatusGroup; label: string; hint: string }> = [
-  { id: "all", label: "全部", hint: "所有器件" },
+  { id: "all", label: "全部", hint: "所有 finding" },
   { id: "error", label: "必须处理", hint: "ERROR" },
   { id: "warn", label: "需要复核", hint: "WARN" },
   { id: "manual", label: "人工线索", hint: "缺档案/外部提示" },
@@ -44,26 +68,42 @@ const TRUST_LABEL: Record<TrustTier, string> = {
 
 function App() {
   const [state, setState] = useState<WorkbenchState | null>(null);
+  const [view, setView] = useState<ViewId>("review");
   const [selectedRefdes, setSelectedRefdes] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ComponentDetail | null>(null);
   const [filter, setFilter] = useState<"all" | StatusGroup>("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
+  const [parseResult, setParseResult] = useState<ImportResponse | null>(null);
+  const [resolvedTaskIds, setResolvedTaskIds] = useState<Set<string>>(new Set());
+
+  const applyState = (payload: WorkbenchState) => {
+    const firstTask = payload.review_tasks[0] ?? null;
+    setState(payload);
+    setSelectedTaskId(firstTask?.id ?? null);
+    setSelectedRefdes(payload.selected_refdes ?? firstTask?.refdes ?? payload.queue[0]?.refdes ?? null);
+    setResolvedTaskIds(new Set());
+  };
+
+  const loadState = async () => {
+    const payload = await fetchWorkbenchState();
+    applyState(payload);
+  };
 
   useEffect(() => {
-    fetchWorkbenchState()
-      .then((payload) => {
-        setState(payload);
-        setSelectedRefdes(payload.selected_refdes ?? payload.queue[0]?.refdes ?? null);
-      })
+    loadState()
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    if (!selectedRefdes) return;
+    if (!selectedRefdes) {
+      setDetail(null);
+      return;
+    }
     setDetailLoading(true);
     fetchComponentDetail(selectedRefdes)
       .then(setDetail)
@@ -71,19 +111,42 @@ function App() {
       .finally(() => setDetailLoading(false));
   }, [selectedRefdes]);
 
-  const filteredQueue = useMemo(() => {
+  const selectedTask = useMemo(() => {
+    if (!state) return null;
+    return state.review_tasks.find((item) => item.id === selectedTaskId) ?? state.review_tasks[0] ?? null;
+  }, [selectedTaskId, state]);
+
+  const filteredTasks = useMemo(() => {
     if (!state) return [];
     const needle = query.trim().toLowerCase();
-    return state.queue.filter((item) => {
+    return state.review_tasks.filter((item) => {
       const filterMatch = filter === "all" || item.status_group === filter;
       const queryMatch =
         !needle ||
+        item.id.toLowerCase().includes(needle) ||
         item.refdes.toLowerCase().includes(needle) ||
         item.title.toLowerCase().includes(needle) ||
-        item.subtitle.toLowerCase().includes(needle);
+        item.body.toLowerCase().includes(needle);
       return filterMatch && queryMatch;
     });
   }, [filter, query, state]);
+
+  const pickTask = (task: ReviewTask) => {
+    setSelectedTaskId(task.id);
+    setSelectedRefdes(task.refdes);
+  };
+
+  const openTask = (task: ReviewTask, nextView: ViewId = "review") => {
+    pickTask(task);
+    setView(nextView);
+  };
+
+  const handleImportComplete = async (result: ImportResponse) => {
+    setParseResult(result);
+    setView("parse");
+    await loadState();
+    window.setTimeout(() => setView("review"), 950);
+  };
 
   if (loading) {
     return (
@@ -106,27 +169,60 @@ function App() {
 
   return (
     <main className="app-shell">
-      <Header state={state} />
-      <section className="workspace" aria-label="Hardwise 三栏审查工作台">
-        <QueueColumn
-          items={filteredQueue}
-          allItems={state.queue}
-          selectedRefdes={selectedRefdes}
-          filter={filter}
-          query={query}
-          onFilter={setFilter}
-          onQuery={setQuery}
-          onPick={setSelectedRefdes}
+      <Header state={state} currentView={view} onNavigate={setView} />
+      {view === "import" && (
+        <ImportView state={state} onImported={(result) => void handleImportComplete(result)} />
+      )}
+      {view === "parse" && <ParseView state={state} parseResult={parseResult} />}
+      {view === "review" && (
+        <section className="workspace" aria-label="Hardwise 三栏审查工作台">
+          <TaskQueueColumn
+            items={filteredTasks}
+            allItems={state.review_tasks}
+            counts={state.task_counts}
+            selectedTaskId={selectedTask?.id ?? null}
+            filter={filter}
+            query={query}
+            onFilter={setFilter}
+            onQuery={setQuery}
+            onPick={pickTask}
+          />
+          <DetailColumn detail={detail} loading={detailLoading} onAsk={() => setView("copilot")} />
+          <EvidenceColumn task={selectedTask} detail={detail} riskHints={state.risk_hint_details} />
+        </section>
+      )}
+      {view === "copilot" && (
+        <CopilotPanel state={state} selectedRefdes={selectedRefdes} className="copilot-full" />
+      )}
+      {view === "findings" && (
+        <FindingsView
+          tasks={state.review_tasks}
+          resolvedTaskIds={resolvedTaskIds}
+          onToggleResolved={(taskId) => {
+            setResolvedTaskIds((current) => {
+              const next = new Set(current);
+              if (next.has(taskId)) next.delete(taskId);
+              else next.add(taskId);
+              return next;
+            });
+          }}
+          onOpenTask={openTask}
         />
-        <DetailColumn detail={detail} loading={detailLoading} />
-        <EvidenceColumn detail={detail} riskHints={state.risk_hint_details} />
-      </section>
-      <CopilotPanel state={state} selectedRefdes={selectedRefdes} />
+      )}
+      {view === "export" && <ExportView state={state} />}
     </main>
   );
 }
 
-function Header({ state }: { state: WorkbenchState }) {
+function Header({
+  state,
+  currentView,
+  onNavigate
+}: {
+  state: WorkbenchState;
+  currentView: ViewId;
+  onNavigate: (view: ViewId) => void;
+}) {
   const { summary } = state;
   const capabilityText = [
     state.capabilities.chat ? "Copilot 可用" : "Copilot 关闭",
@@ -147,6 +243,20 @@ function Header({ state }: { state: WorkbenchState }) {
           <p>{state.project.name}</p>
         </div>
       </div>
+      <nav className="flow-nav" aria-label="工作流导航">
+        {NAV_ITEMS.map((item) => (
+          <button
+            type="button"
+            key={item.id}
+            className={currentView === item.id ? "active" : ""}
+            onClick={() => onNavigate(item.id)}
+          >
+            {item.label}
+            {item.id === "review" && <b>{state.task_counts.total}</b>}
+            {item.id === "findings" && <b>{state.task_counts.error + state.task_counts.warn}</b>}
+          </button>
+        ))}
+      </nav>
       <div className="top-meta">
         <Metric label="器件" value={summary.components} />
         <Metric label="已验证" value={summary.validated} />
@@ -177,36 +287,170 @@ function Metric({ label, value, tone }: { label: string; value: number; tone?: S
   );
 }
 
-function QueueColumn(props: {
-  items: ReviewQueueItem[];
-  allItems: ReviewQueueItem[];
-  selectedRefdes: string | null;
+function ImportView({
+  state,
+  onImported
+}: {
+  state: WorkbenchState;
+  onImported: (result: ImportResponse) => void;
+}) {
+  const [netlist, setNetlist] = useState<File | null>(null);
+  const [bom, setBom] = useState<File | null>(null);
+  const [riskHints, setRiskHints] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!netlist || busy) {
+      setError("请选择 netlist/PST 文件。");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const result = await importWorkbench({ netlist, bom, riskHints });
+      onImported(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "导入失败");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="flow-page import-page">
+      <div className="flow-copy">
+        <span className="eyebrow">Import</span>
+        <h2>上传 netlist / BOM，重建当前工作台</h2>
+        <p>
+          文件只写入本进程临时目录。上传成功后后端会重新运行
+          WorkbenchContext，浏览器进入 Parse 动画，再回到 Review。
+        </p>
+      </div>
+      <form className="upload-board" onSubmit={(event) => void submit(event)}>
+        <UploadSlot
+          icon={<UploadCloud size={20} />}
+          label="netlist / PST"
+          required
+          file={netlist}
+          accept=".net,.dat,.txt,.pst"
+          onPick={setNetlist}
+        />
+        <UploadSlot
+          icon={<FileArchive size={20} />}
+          label="BOM CSV"
+          file={bom}
+          accept=".csv,.tsv,.txt"
+          onPick={setBom}
+        />
+        <UploadSlot
+          icon={<FileUp size={20} />}
+          label="risk hints JSON"
+          file={riskHints}
+          accept=".json"
+          onPick={setRiskHints}
+        />
+        {error && <p className="form-error">{error}</p>}
+        <button className="primary-action" type="submit" disabled={busy}>
+          {busy ? <Loader2 className="spin" size={16} /> : <Play size={16} />}
+          {busy ? "正在导入" : "导入并解析"}
+        </button>
+      </form>
+      <div className="current-snapshot">
+        <span className="eyebrow">当前工作台</span>
+        <strong>{state.summary.components} components</strong>
+        <p>
+          已验证 {state.summary.validated}，PASS/WARN/ERROR=
+          {state.summary.pass_count}/{state.summary.warn_count}/{state.summary.error_count}，
+          manual={state.summary.manual}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function UploadSlot(props: {
+  icon: ReactNode;
+  label: string;
+  required?: boolean;
+  file: File | null;
+  accept: string;
+  onPick: (file: File | null) => void;
+}) {
+  return (
+    <label className="upload-slot">
+      <span>{props.icon}</span>
+      <strong>{props.label}{props.required ? " *" : ""}</strong>
+      <small>{props.file?.name ?? "选择文件"}</small>
+      <input
+        type="file"
+        accept={props.accept}
+        onChange={(event) => props.onPick(event.target.files?.[0] ?? null)}
+      />
+    </label>
+  );
+}
+
+function ParseView({
+  state,
+  parseResult
+}: {
+  state: WorkbenchState;
+  parseResult: ImportResponse | null;
+}) {
+  const summary = parseResult?.summary ?? state.summary;
+  const steps = [
+    ["解析网表", `${summary.components} 个器件进入注册表`],
+    ["匹配 BOM", `${summary.bom_matched} 个 refdes 已锚定`],
+    ["运行确定性验证", `PASS/WARN/ERROR=${summary.pass_count}/${summary.warn_count}/${summary.error_count}`],
+    ["生成 finding", `${parseResult?.task_counts.total ?? state.task_counts.total} 个任务已排队`]
+  ];
+  return (
+    <section className="flow-page parse-page">
+      <div className="flow-copy">
+        <span className="eyebrow">Parse</span>
+        <h2>重建证据工作台</h2>
+        <p>这里只展示真实后端结果的解析过程；状态数字来自刚刚生成的 WorkbenchContext。</p>
+      </div>
+      <div className="parse-rail">
+        {steps.map(([title, body], index) => (
+          <article className="parse-step" key={title} style={{ animationDelay: `${index * 120}ms` }}>
+            <CheckCircle2 size={18} />
+            <strong>{title}</strong>
+            <p>{body}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TaskQueueColumn(props: {
+  items: ReviewTask[];
+  allItems: ReviewTask[];
+  counts: WorkbenchState["task_counts"];
+  selectedTaskId: string | null;
   filter: "all" | StatusGroup;
   query: string;
   onFilter: (value: "all" | StatusGroup) => void;
   onQuery: (value: string) => void;
-  onPick: (refdes: string) => void;
+  onPick: (task: ReviewTask) => void;
 }) {
-  const counts = useMemo(() => {
-    const base: Record<"all" | StatusGroup, number> = {
-      all: props.allItems.length,
-      error: 0,
-      warn: 0,
-      manual: 0,
-      pass: 0
-    };
-    props.allItems.forEach((item) => {
-      base[item.status_group] += 1;
-    });
-    return base;
-  }, [props.allItems]);
+  const counts: Record<"all" | StatusGroup, number> = {
+    all: props.counts.total,
+    error: props.counts.error,
+    warn: props.counts.warn,
+    manual: props.counts.manual,
+    pass: props.counts.pass_count
+  };
 
   return (
     <aside className="panel queue-panel">
       <div className="panel-head">
         <div>
           <span className="eyebrow">队列</span>
-          <h2>审查队列</h2>
+          <h2>审查任务</h2>
         </div>
         <span className="count">{props.items.length}/{props.allItems.length}</span>
       </div>
@@ -230,30 +474,32 @@ function QueueColumn(props: {
         <input
           value={props.query}
           onChange={(event) => props.onQuery(event.target.value)}
-          placeholder="搜索 refdes、器件、结论..."
+          placeholder="搜索 F-001、refdes、结论..."
         />
       </label>
       <div className="queue-list">
         {props.items.map((item) => (
           <button
             type="button"
-            key={item.refdes}
+            key={item.id}
             className={`queue-row ${item.status_group} ${
-              props.selectedRefdes === item.refdes ? "selected" : ""
+              props.selectedTaskId === item.id ? "selected" : ""
             }`}
-            onClick={() => props.onPick(item.refdes)}
+            onClick={() => props.onPick(item)}
           >
             <span className="refdes">{item.refdes}</span>
             <span className="queue-copy">
-              <strong>{formatSummary(item.title)}</strong>
-              <small>{item.subtitle}</small>
+              <strong>{item.id} · {formatSummary(item.title)}</strong>
+              <small>{formatSummary(item.body)}</small>
               <span className="row-badges">
                 <StatusBadge group={item.status_group} label={item.status_label} />
                 <TrustBadge tier={item.trust_tier} />
-                {item.risk_hint_count > 0 && <span className="hint-badge">外部提示 {item.risk_hint_count}</span>}
+                {item.source_classes.map((source) => (
+                  <span className="hint-badge" key={source}>{sourceLabel(source)}</span>
+                ))}
               </span>
             </span>
-            <span className="queue-counts">{item.issue_count} 问题 · {item.evidence_count} 证据</span>
+            <span className="queue-counts">{countTaskEvidence(item)} 证据 · {item.evidence_chain.length} 节点</span>
           </button>
         ))}
       </div>
@@ -261,7 +507,15 @@ function QueueColumn(props: {
   );
 }
 
-function DetailColumn({ detail, loading }: { detail: ComponentDetail | null; loading: boolean }) {
+function DetailColumn({
+  detail,
+  loading,
+  onAsk
+}: {
+  detail: ComponentDetail | null;
+  loading: boolean;
+  onAsk: () => void;
+}) {
   if (loading) {
     return (
       <section className="panel detail-panel empty-panel">
@@ -275,7 +529,7 @@ function DetailColumn({ detail, loading }: { detail: ComponentDetail | null; loa
     return (
       <section className="panel detail-panel empty-panel">
         <FileSearch size={32} />
-        <p>请选择一个 refdes 查看详情。</p>
+        <p>请选择一个 finding 查看器件详情。</p>
       </section>
     );
   }
@@ -291,6 +545,10 @@ function DetailColumn({ detail, loading }: { detail: ComponentDetail | null; loa
         <div className="title-actions">
           <StatusBadge group={detail.status_group} label={detail.status_label} />
           <TrustBadge tier={detail.trust_tier} />
+          <button className="icon-text-btn" type="button" onClick={onAsk}>
+            <Bot size={14} />
+            问 Copilot
+          </button>
         </div>
       </div>
       <div className="identity-grid">
@@ -315,7 +573,7 @@ function DetailColumn({ detail, loading }: { detail: ComponentDetail | null; loa
               <span className="mono">{pin.number}</span>
               <span>{pin.name}</span>
               <span className="mono net-name">{pin.net || "-"}</span>
-              <span>{pin.status ? <StatusBadge group={statusGroup(pin.status)} label={pin.status} /> : "—"}</span>
+              <span>{pin.status ? <StatusBadge group={statusGroup(pin.status)} label={pin.status} /> : "-"}</span>
             </div>
           ))}
         </div>
@@ -337,12 +595,15 @@ function DetailColumn({ detail, loading }: { detail: ComponentDetail | null; loa
 }
 
 function EvidenceColumn({
+  task,
   detail,
   riskHints
 }: {
+  task: ReviewTask | null;
   detail: ComponentDetail | null;
   riskHints: RiskHintsView;
 }) {
+  const chain = task?.evidence_chain ?? detail?.evidence_chain ?? [];
   return (
     <aside className="panel evidence-panel">
       <div className="panel-head">
@@ -352,27 +613,43 @@ function EvidenceColumn({
         </div>
         <Link2 size={17} />
       </div>
-      {!detail ? (
+      {task && (
+        <div className="task-brief">
+          <span className="eyebrow">{task.id} · {task.refdes}</span>
+          <strong>{formatSummary(task.title)}</strong>
+          <p>{formatSummary(task.body)}</p>
+          <div className="recommended-action">
+            <b>建议动作</b>
+            <span>{formatSummary(task.recommended_action)}</span>
+          </div>
+        </div>
+      )}
+      {chain.length === 0 ? (
         <div className="empty-panel compact">
           <CircleHelp size={28} />
-          <p>选择器件后显示证据来源、可信层级和外部提示。</p>
+          <p>选择 finding 后显示 chain of custody。</p>
         </div>
       ) : (
         <div className="evidence-list">
-          {detail.evidence_chain.map((item, index) => (
+          {chain.map((item, index) => (
             <EvidenceCard item={item} key={`${item.kind}-${index}`} />
           ))}
-          {detail.evidence_chain.length === 0 && (
-            <p className="muted">没有可展示证据；如果这是硬判断，应回到后端补 evidence token。</p>
-          )}
         </div>
       )}
-      <RiskHintsPanel riskHints={riskHints} selectedRefdes={detail?.refdes ?? null} />
+      <RiskHintsPanel riskHints={riskHints} selectedRefdes={detail?.refdes ?? task?.refdes ?? null} />
     </aside>
   );
 }
 
-function CopilotPanel({ state, selectedRefdes }: { state: WorkbenchState; selectedRefdes: string | null }) {
+function CopilotPanel({
+  state,
+  selectedRefdes,
+  className = ""
+}: {
+  state: WorkbenchState;
+  selectedRefdes: string | null;
+  className?: string;
+}) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [lastResponse, setLastResponse] = useState<ChatResponse | null>(null);
@@ -399,19 +676,19 @@ function CopilotPanel({ state, selectedRefdes }: { state: WorkbenchState; select
   };
 
   return (
-    <section className="copilot">
+    <section className={`copilot ${className}`}>
       <div className="copilot-head">
         <Bot size={18} />
         <strong>Copilot</strong>
         <span>{state.capabilities.datasheet_search_enabled ? "向量检索已启用" : "未启用向量检索"}</span>
       </div>
       <div className="suggestions">
-        {(lastResponse?.suggestions ?? [`这个 ${selectedRefdes ?? "器件"} 为什么是 ERROR/WARN?`, "板上有没有 U999?"]).slice(0, 3).map((item) => (
-          <button type="button" key={item} onClick={() => send(item)}>{item}</button>
+        {(lastResponse?.suggestions ?? [`这个 ${selectedRefdes ?? "器件"} 为什么是 ERROR/WARN?`, "板上有没有 U999?"]).slice(0, 4).map((item) => (
+          <button type="button" key={item} onClick={() => void send(item)}>{item}</button>
         ))}
       </div>
       <div className="chat-stream">
-        {messages.slice(-4).map((message, index) => (
+        {messages.map((message, index) => (
           <p className={`chat-msg ${message.role}`} key={`${message.role}-${index}`}>{message.content}</p>
         ))}
         {lastResponse?.trace?.length ? (
@@ -442,6 +719,118 @@ function CopilotPanel({ state, selectedRefdes }: { state: WorkbenchState; select
         />
         <button type="submit" disabled={busy}>{busy ? "处理中" : "发送"}</button>
       </form>
+    </section>
+  );
+}
+
+function FindingsView({
+  tasks,
+  resolvedTaskIds,
+  onToggleResolved,
+  onOpenTask
+}: {
+  tasks: ReviewTask[];
+  resolvedTaskIds: Set<string>;
+  onToggleResolved: (taskId: string) => void;
+  onOpenTask: (task: ReviewTask, view?: ViewId) => void;
+}) {
+  return (
+    <section className="flow-page findings-page">
+      <div className="flow-copy">
+        <span className="eyebrow">Findings</span>
+        <h2>全部任务登记册</h2>
+        <p>resolved 是当前浏览器本地状态，不回写 deterministic 结论。</p>
+      </div>
+      <div className="findings-list">
+        {tasks.map((task) => {
+          const resolved = resolvedTaskIds.has(task.id);
+          return (
+            <article className={`finding-row ${task.status_group} ${resolved ? "resolved" : ""}`} key={task.id}>
+              <div>
+                <span className="eyebrow">{task.id} · {task.refdes}</span>
+                <strong>{formatSummary(task.title)}</strong>
+                <p>{formatSummary(task.recommended_action)}</p>
+              </div>
+              <StatusBadge group={resolved ? "pass" : task.status_group} label={resolved ? "本地已处理" : task.status_label} />
+              <button type="button" onClick={() => onOpenTask(task)}>查看</button>
+              <button type="button" onClick={() => onOpenTask(task, "copilot")}>问 Copilot</button>
+              <button type="button" onClick={() => onToggleResolved(task.id)}>
+                {resolved ? "重新打开" : "标记处理"}
+              </button>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function ExportView({ state }: { state: WorkbenchState }) {
+  const [format, setFormat] = useState<"json" | "csv" | "annotations">("json");
+  const [preview, setPreview] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadPreview = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const body = await exportWorkbench(format);
+      setPreview(format === "json" ? JSON.stringify(JSON.parse(body), null, 2) : body);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "导出失败");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const download = () => {
+    if (!preview) return;
+    const extension = format === "json" ? "json" : format === "csv" ? "csv" : "txt";
+    const blob = new Blob([preview], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `hardwise-${format}.${extension}`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <section className="flow-page export-page">
+      <div className="flow-copy">
+        <span className="eyebrow">Export</span>
+        <h2>导出当前审查状态</h2>
+        <p>
+          输出来自真实后端接口：{state.review_tasks.length} 个 finding，
+          不包含 API key 或浏览器聊天密钥。
+        </p>
+      </div>
+      <div className="export-controls">
+        {(["json", "csv", "annotations"] as const).map((item) => (
+          <button
+            type="button"
+            className={format === item ? "active" : ""}
+            key={item}
+            onClick={() => {
+              setFormat(item);
+              setPreview("");
+            }}
+          >
+            {item}
+          </button>
+        ))}
+        <button className="primary-action" type="button" onClick={() => void loadPreview()} disabled={busy}>
+          {busy ? <Loader2 className="spin" size={16} /> : <PackageCheck size={16} />}
+          生成预览
+        </button>
+        <button type="button" onClick={download} disabled={!preview}>
+          <Download size={15} />
+          下载
+        </button>
+      </div>
+      {error && <p className="form-error">{error}</p>}
+      <pre className="export-preview">{preview || "选择格式后生成预览。"}</pre>
     </section>
   );
 }
@@ -556,6 +945,21 @@ function statusGroup(status: string): StatusGroup {
   return "manual";
 }
 
+function countTaskEvidence(task: ReviewTask): number {
+  return task.evidence_chain.reduce((count, item) => count + item.evidence.length, 0);
+}
+
+function sourceLabel(sourceClass: string): string {
+  const labels: Record<string, string> = {
+    live_retrieved: "本轮检索",
+    reviewed_profile: "已审档案",
+    document_index: "资料索引",
+    design_source: "设计来源",
+    unknown: "未知来源"
+  };
+  return labels[sourceClass] ?? sourceClass;
+}
+
 const SUMMARY_REPLACEMENTS: Array<[RegExp, string]> = [
   [/Exactly one local profile part_number matched this BOM identity\./g, "已唯一匹配本地器件档案。"],
   [/BJT emitter pin is not connected\./g, "BJT 发射极未连接。"],
@@ -586,7 +990,11 @@ function chainKindLabel(kind: string): string {
     component_check: "组件规则",
     pin_check: "引脚规则",
     manual_gap: "人工缺口",
-    external_risk_hint: "外部线索"
+    external_risk_hint: "外部线索",
+    netlist_trace: "网表追踪",
+    design_rule: "设计规则",
+    datasheet_or_profile: "资料证据",
+    external_hint: "外部线索"
   };
   return labels[kind] ?? kind;
 }

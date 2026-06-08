@@ -1487,7 +1487,12 @@ def serve_workbench(
 
     import uvicorn
 
-    app_obj = create_workbench_app(context, chat_service)
+    app_obj = create_workbench_app(
+        context,
+        chat_service,
+        profiles=profiles,
+        document_index=document_index,
+    )
     uvicorn.run(app_obj, host=host, port=port)
 
 

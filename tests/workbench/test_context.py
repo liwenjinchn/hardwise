@@ -204,6 +204,32 @@ def test_workbench_state_exposes_spa_queue_and_risk_hint_details(tmp_path: Path)
         context.session.close()
 
 
+def test_workbench_state_exposes_finding_first_review_tasks() -> None:
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        payload = client.get("/api/workbench/state").json()
+
+        tasks = payload["review_tasks"]
+        assert tasks[0]["id"] == "F-001"
+        assert {task["refdes"] for task in tasks} >= {"U12", "U8", "Q12"}
+        assert payload["task_counts"]["total"] == len(tasks)
+        assert payload["task_counts"]["error"] >= 3
+        first_task = tasks[0]
+        assert first_task["evidence_chain"]
+        assert {
+            item["kind"] for item in first_task["evidence_chain"]
+        } & {"netlist_trace", "design_rule", "datasheet_or_profile"}
+    finally:
+        context.session.close()
+
+
 def test_workbench_component_detail_exposes_evidence_classification() -> None:
     context = build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
@@ -233,6 +259,104 @@ def test_workbench_component_detail_exposes_evidence_classification() -> None:
         assert miss.json()["closest_matches"]
     finally:
         context.session.close()
+
+
+def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/l78_regulator.net"),
+        bom_path=Path("tests/fixtures/allegro/l78_regulator_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+    app = create_workbench_app(context, DummyChatService())  # type: ignore[arg-type]
+    client = TestClient(app)
+
+    try:
+        with (
+            Path("tests/fixtures/allegro/mixed_controller_power_stage.net").open("rb") as netlist,
+            Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv").open("rb") as bom,
+        ):
+            response = client.post(
+                "/api/workbench/import",
+                files={
+                    "netlist": ("mixed_controller_power_stage.net", netlist, "text/plain"),
+                    "bom": ("mixed_controller_power_stage_bom.csv", bom, "text/csv"),
+                },
+            )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["summary"] == {
+            "components": 25,
+            "bom_matched": 25,
+            "validated": 22,
+            "manual": 3,
+            "pass_count": 5,
+            "warn_count": 13,
+            "error_count": 4,
+        }
+        assert client.get("/api/workbench/state").json()["summary"]["components"] == 25
+    finally:
+        app.state.workbench_context["value"].session.close()
+
+
+def test_workbench_import_failure_keeps_previous_state(tmp_path: Path) -> None:
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+    app = create_workbench_app(context, DummyChatService())  # type: ignore[arg-type]
+    client = TestClient(app)
+    bad_hints = tmp_path / "bad-risk-hints.json"
+    bad_hints.write_text('{"hints": [', encoding="utf-8")
+
+    try:
+        before = client.get("/api/workbench/state").json()["summary"]
+        with (
+            Path("tests/fixtures/allegro/l78_regulator.net").open("rb") as netlist,
+            bad_hints.open("rb") as risk_hints,
+        ):
+            response = client.post(
+                "/api/workbench/import",
+                files={
+                    "netlist": ("l78_regulator.net", netlist, "text/plain"),
+                    "risk_hints_json": ("bad-risk-hints.json", risk_hints, "application/json"),
+                },
+            )
+
+        assert response.status_code == 400
+        assert "import failed" in response.json()["detail"]
+        assert client.get("/api/workbench/state").json()["summary"] == before
+    finally:
+        app.state.workbench_context["value"].session.close()
+
+
+def test_workbench_export_endpoints_return_safe_downloads() -> None:
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+    app = create_workbench_app(context, DummyChatService())  # type: ignore[arg-type]
+    client = TestClient(app)
+
+    try:
+        json_response = client.get("/api/workbench/export?format=json")
+        csv_response = client.get("/api/workbench/export?format=csv")
+        annotations_response = client.get("/api/workbench/export?format=annotations")
+
+        assert json_response.status_code == 200
+        assert json_response.json()["review_tasks"][0]["id"] == "F-001"
+        assert "F-001" in csv_response.text
+        assert "recommended_action" in csv_response.text
+        assert "Hardwise EDA annotation export" in annotations_response.text
+        combined = json_response.text + csv_response.text + annotations_response.text
+        assert "ANTHROPIC_API_KEY" not in combined
+        assert "sk-" not in combined
+    finally:
+        app.state.workbench_context["value"].session.close()
 
 
 def test_build_workbench_context_matches_public_mpn_from_value_with_internal_pn(

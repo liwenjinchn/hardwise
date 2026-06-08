@@ -1,12 +1,15 @@
-import type { ChatMessage, ChatResponse, ComponentDetail, WorkbenchState } from "./types";
+import type { ChatMessage, ChatResponse, ComponentDetail, ImportResponse, WorkbenchState } from "./types";
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const isFormData = init?.body instanceof FormData;
   const response = await fetch(url, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {})
-    }
+    headers: isFormData
+      ? init?.headers
+      : {
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {})
+        }
   });
   if (!response.ok) {
     const body = await response.text();
@@ -36,4 +39,28 @@ export function askCopilot(
       history
     })
   });
+}
+
+export function importWorkbench(files: {
+  netlist: File;
+  bom?: File | null;
+  riskHints?: File | null;
+}): Promise<ImportResponse> {
+  const body = new FormData();
+  body.append("netlist", files.netlist);
+  if (files.bom) body.append("bom", files.bom);
+  if (files.riskHints) body.append("risk_hints_json", files.riskHints);
+  return requestJson<ImportResponse>("/api/workbench/import", {
+    method: "POST",
+    body
+  });
+}
+
+export async function exportWorkbench(format: "json" | "csv" | "annotations"): Promise<string> {
+  const response = await fetch(`/api/workbench/export?format=${encodeURIComponent(format)}`);
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(body || `${response.status} ${response.statusText}`);
+  }
+  return response.text();
 }
