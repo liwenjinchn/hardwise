@@ -10,6 +10,7 @@ from hardwise.bom.types import BomMatchReport, sort_refdes_key
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.report.component_validation_details import trust_label_html
+from hardwise.report.validator_project_risk_hints import render_project_risk_hints
 from hardwise.report.validator_multi_ui import (
     ValidatorUiResult,
     _detail_panels,
@@ -30,6 +31,7 @@ from hardwise.validation.project_index import (
     ProjectValidationRow,
     profile_gap_groups,
 )
+from hardwise.validation.risk_hints import RiskHintReport
 
 GAP_ROW_LIMIT = 50
 
@@ -43,6 +45,7 @@ def render_project_workbench(
     bom_report: BomMatchReport | None = None,
     generated_at: str = "",
     copilot_html: str = "",
+    risk_hints: RiskHintReport | None = None,
 ) -> str:
     """Return a static project workbench for validated and no-profile rows."""
 
@@ -115,7 +118,7 @@ def render_project_workbench(
           </aside>
         </div>
         <section class="detail" aria-label="验证报告">
-          {_detail_area(design, ordered, active_refdes, generated_at, index)}
+          {_detail_area(design, ordered, active_refdes, generated_at, index, risk_hints)}
         </section>
       </section>
     </section>
@@ -270,10 +273,15 @@ def _detail_area(
     active_refdes: str,
     generated_at: str,
     index: ProjectValidationIndex,
+    risk_hints: RiskHintReport | None,
 ) -> str:
     if results:
-        return _detail_panels(design, results, active_refdes, generated_at)
-    return _coverage_detail(index, generated_at)
+        detail = _detail_panels(design, results, active_refdes, generated_at)
+    else:
+        detail = _coverage_detail(index, generated_at)
+    if risk_hints is None:
+        return detail
+    return detail + render_project_risk_hints(risk_hints, design)
 
 
 def _coverage_detail(index: ProjectValidationIndex, generated_at: str) -> str:
