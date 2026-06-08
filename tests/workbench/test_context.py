@@ -15,6 +15,16 @@ from hardwise.workbench.context import (
 )
 
 
+class DummyChatService:
+    datasheet_search_enabled = False
+
+    def fallback_response(self, _message: str, _selected: str | None) -> object:
+        raise AssertionError("state/detail endpoints should not render chat")
+
+    def ask(self, _request: object) -> object:
+        raise AssertionError("state/detail endpoints should not call chat")
+
+
 def test_board_registry_from_design_projects_components_into_runner_registry() -> None:
     design, _source, _input_type, _property_count = load_allegro_design(
         Path("tests/fixtures/allegro/l78_regulator.net")
@@ -133,15 +143,6 @@ def test_workbench_state_exposes_risk_hints_summary(tmp_path: Path) -> None:
         generated_at="2026-05-30T00:00:00+00:00",
     )
 
-    class DummyChatService:
-        datasheet_search_enabled = False
-
-        def fallback_response(self, _message: str, _selected: str | None) -> object:
-            raise AssertionError("state endpoint should not render the workbench")
-
-        def ask(self, _request: object) -> object:
-            raise AssertionError("state endpoint should not call chat")
-
     try:
         client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
         response = client.get("/api/workbench/state")
@@ -153,6 +154,83 @@ def test_workbench_state_exposes_risk_hints_summary(tmp_path: Path) -> None:
             "accepted_external_count": 1,
             "rejected_external_count": 1,
         }
+    finally:
+        context.session.close()
+
+
+def test_workbench_state_exposes_spa_queue_and_risk_hint_details(tmp_path: Path) -> None:
+    risk_hints = tmp_path / "risk-hints.json"
+    risk_hints.write_text(
+        """
+        [
+          {"refdes": "U1", "title": "Review input", "body": "Check U1 input margin."},
+          {"refdes": "U999", "title": "Bad anchor", "body": "Rejected."}
+        ]
+        """,
+        encoding="utf-8",
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        risk_hints_json=risk_hints,
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        payload = client.get("/api/workbench/state").json()
+
+        assert payload["summary"] == {
+            "components": 25,
+            "bom_matched": 25,
+            "validated": 22,
+            "manual": 3,
+            "pass_count": 5,
+            "warn_count": 13,
+            "error_count": 4,
+        }
+        assert payload["selected_refdes"] == "Q12"
+        assert {item["refdes"] for item in payload["queue"]} >= {"U12", "U8", "Q12"}
+        assert payload["risk_hints"] == {
+            "external_status": "loaded",
+            "count": 2,
+            "accepted_external_count": 1,
+            "rejected_external_count": 1,
+        }
+        assert payload["risk_hint_details"]["accepted"][0]["refdes"] == "U1"
+        assert payload["risk_hint_details"]["rejected"] == [{"reason": "unknown_refdes", "count": 1}]
+    finally:
+        context.session.close()
+
+
+def test_workbench_component_detail_exposes_evidence_classification() -> None:
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        detail = client.get("/api/workbench/components/U8").json()
+
+        assert detail["refdes"] == "U8"
+        assert detail["status"] == "ERROR"
+        assert detail["trust_tier"] == "l1"
+        evidence = [
+            token
+            for item in detail["evidence_chain"]
+            for token in item["evidence"]
+        ]
+        assert any(item["source_class"] == "reviewed_profile" for item in evidence)
+        assert any(item["token"] == "datasheet:stm32g030.pdf#p33" for item in evidence)
+
+        miss = client.get("/api/workbench/components/U999")
+        assert miss.status_code == 404
+        assert miss.json()["reason"] == "unknown_refdes"
+        assert miss.json()["closest_matches"]
     finally:
         context.session.close()
 
