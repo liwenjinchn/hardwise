@@ -345,9 +345,9 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
 
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
-    assert "validated=13" in result.output
-    assert "PASS/WARN/ERROR=5/6/2" in result.output
-    assert "manual=5" in result.output
+    assert "validated=16" in result.output
+    assert "PASS/WARN/ERROR=5/8/3" in result.output
+    assert "manual=2" in result.output
 
     html = html_output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
@@ -357,7 +357,7 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert 'data-select-ref="U3"' in html
-    assert '<article class="panel active" data-panel="U12">' in html
+    assert '<article class="panel active" data-panel="Q12">' in html
     assert "1N4007W" in html
     assert "MBRA210LT3G" in html
     assert "GENERIC_CAPACITOR" in html
@@ -366,8 +366,8 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
 
     index_text = index_output.read_text(encoding="utf-8")
     assert "# Hardwise Design Validator - mixed_power_stage" in index_text
-    assert "| Validated components | 13 |" in index_text
-    assert "| PASS / WARN / ERROR | 5 / 6 / 2 |" in index_text
+    assert "| Validated components | 16 |" in index_text
+    assert "| PASS / WARN / ERROR | 5 / 8 / 3 |" in index_text
     assert "Static schematic-side design validator" in index_text
     assert "`GENERIC_CAPACITOR`" in index_text
     assert "`GENERIC_RESISTOR`" in index_text
@@ -375,6 +375,10 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"components_in_design": 18' in index_payload
+    assert '"refdes": "Q1"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/jmtk3005a.json"' in index_payload
+    assert '"refdes": "Q12"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/ss8050.json"' in index_payload
     assert '"refdes": "U12"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/xl1509.json"' in index_payload
 
@@ -403,9 +407,9 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
 
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
-    assert "validated=17" in result.output
-    assert "PASS/WARN/ERROR=5/9/3" in result.output
-    assert "manual=8" in result.output
+    assert "validated=20" in result.output
+    assert "PASS/WARN/ERROR=5/11/4" in result.output
+    assert "manual=5" in result.output
 
     html = html_output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
@@ -435,14 +439,20 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert "外围/拓扑检查" in html
 
     index_text = index_output.read_text(encoding="utf-8")
-    assert "| Validated components | 17 |" in index_text
-    assert "| PASS / WARN / ERROR | 5 / 9 / 3 |" in index_text
+    assert "| Validated components | 20 |" in index_text
+    assert "| PASS / WARN / ERROR | 5 / 11 / 4 |" in index_text
     assert "STM32G030C8T6" in index_text
+    assert "JMTK3005A" in index_text
+    assert "SS8050" in index_text
     assert "`GENERIC_CAPACITOR`" in index_text
     assert "`GENERIC_INDUCTOR`" in index_text
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"components_in_design": 25' in index_payload
+    assert '"refdes": "Q1"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/jmtk3005a.json"' in index_payload
+    assert '"refdes": "Q12"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/ss8050.json"' in index_payload
     assert '"refdes": "U8"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/stm32g030c8t6.json"' in index_payload
 
@@ -501,7 +511,7 @@ def test_serve_workbench_fake_ai_dry_run_does_not_require_api_key() -> None:
     assert result.exit_code == 0, result.output
     assert "serve-workbench:" in result.output
     assert "mode=fake" in result.output
-    assert "validated=17" in result.output
+    assert "validated=20" in result.output
 
 
 def test_serve_workbench_fake_ai_dry_run_accepts_document_index(tmp_path: Path) -> None:
@@ -1129,8 +1139,8 @@ def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) ->
 
     assert result.exit_code == 0, result.output
     assert "target-candidates:" in result.output
-    assert "matched=2" in result.output
-    assert "no_result=8" in result.output
+    assert "matched=3" in result.output
+    assert "no_result=7" in result.output
 
     text = output.read_text(encoding="utf-8")
     assert "status: candidate" in text
@@ -1138,6 +1148,8 @@ def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) ->
     assert "profile: data/datasheet_profiles/l78.json" in text
     assert "refdes: U12" in text
     assert "profile: data/datasheet_profiles/xl1509.json" in text
+    assert "refdes: Q12" in text
+    assert "profile: data/datasheet_profiles/ss8050.json" in text
     assert "refdes: D5" in text
     assert "match_status: no_result" in text
 
@@ -1159,11 +1171,14 @@ def test_suggest_validation_targets_matches_eg2132_profile(tmp_path: Path) -> No
     )
 
     assert result.exit_code == 0, result.output
-    assert "matched=1" in result.output
+    assert "matched=3" in result.output
 
     text = output.read_text(encoding="utf-8")
     assert "refdes: U3" in text
     assert "profile: data/datasheet_profiles/eg2132.json" in text
+    assert "refdes: Q1" in text
+    assert "refdes: Q2" in text
+    assert "profile: data/datasheet_profiles/jmtk3005a.json" in text
 
 
 def test_suggest_validation_targets_matches_stm32_profile(tmp_path: Path) -> None:
