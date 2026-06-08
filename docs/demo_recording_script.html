@@ -23,7 +23,7 @@ uv run hardwise design-validator-ui \
   --output /tmp/hardwise-copilot-workbench.html</code></pre>
 
     <h2>分镜</h2>
-    <div class="step"><div class="num">01</div><div><b>项目摘要，10 秒</b><p>指顶部指标：25 components、17 L1 rows、PASS-WARN-ERROR=5/9/3、8 manual/no-local-profile。Hardwise 消费导出的 netlist/PST+BOM，生成 pre-Layout review workbench；这不是实时 EDA 插件。</p></div></div>
+    <div class="step"><div class="num">01</div><div><b>项目摘要，10 秒</b><p>指顶部指标：25 components、22 L1 rows、PASS-WARN-ERROR=5/13/4、3 manual/no-local-profile。Hardwise 消费导出的 netlist/PST+BOM，生成 pre-Layout review workbench；这不是实时 EDA 插件。</p></div></div>
     <div class="step"><div class="num">02</div><div><b>Must Review，10 秒</b><p>指 Must Review 队列。工作台先回答评审会最关心的问题：哪些条目必须在 Layout handoff 前看，哪些只是 manual gap，哪些已经 deterministic pass。</p></div></div>
     <div class="step"><div class="num">03</div><div><b>U12 deterministic ERROR，18 秒</b><p>点 U12，展示 XL1509 buck 错误。这个 ERROR 不是模型意见，而是 deterministic validator 从网表和 profile 得到的结论：<code>L1=6.8uH</code> 低于最小值，<code>D5=1N4007W</code> 不是 Schottky-style freewheel diode。</p></div></div>
     <div class="step"><div class="num">04</div><div><b>Copilot trace，18 秒</b><p>打开右下角 Hardwise 助手，点已烘焙问题并展开 Evidence / Tool trace。<code>run_component_validation</code> 是 L1 deterministic，证据 token 必须可见、可复制。</p></div></div>

@@ -19,7 +19,7 @@ uv run hardwise design-validator-ui \
 
 1. 项目摘要，10 秒
 
-   指顶部指标：25 components、17 L1 rows、PASS-WARN-ERROR=5/9/3、8 manual/no-local-profile。说：Hardwise 消费导出的 netlist/PST+BOM，生成 pre-Layout review workbench；这不是实时 EDA 插件，也不是让模型自由审板。
+   指顶部指标：25 components、22 L1 rows、PASS-WARN-ERROR=5/13/4、3 manual/no-local-profile。说：Hardwise 消费导出的 netlist/PST+BOM，生成 pre-Layout review workbench；这不是实时 EDA 插件，也不是让模型自由审板。
 
 2. Must Review，10 秒
 

@@ -30,7 +30,7 @@ uv run hardwise design-validator-ui \
 
 ```text
 design-validator-ui: /tmp/hardwise-workbench.html
-(25 components, validated=17, BOM matched=25, PASS/WARN/ERROR=5/9/3, manual=8)
+(25 components, validated=22, BOM matched=25, PASS/WARN/ERROR=5/13/4, manual=3)
 validation-index-json: /tmp/hardwise-workbench-index.json (25 rows)
 ```
 

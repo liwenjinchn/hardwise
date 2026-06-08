@@ -122,11 +122,11 @@ report detail, and baked Copilot panel. What the workbench proves is the
 deterministic trust path, not a coverage trophy: U1/L7805 repeats the L78
 evidence path in the workbench, while U12/XL1509, U3/EG2132, and
 U8/STM32G030 show deterministic topology/debug-interface errors. The mixed
-controller fixture reports 25 components, 17 validated rows, BOM matched=25,
-PASS/WARN/ERROR = 5/9/3, and 8 manual/no-local-profile rows. The 17 L1 rows
-are 4 profile-backed targets plus 13 generic passive checks; the passive
-checks are light deterministic coverage for explicit BOM/netlist facts, not
-deep datasheet review.
+controller fixture reports 25 components, 22 validated rows, BOM matched=25,
+PASS/WARN/ERROR = 5/13/4, and 3 manual/no-local-profile rows. The 22 L1 rows
+are 9 profile-backed targets (U1/U12/U3/U8, D1/D5, and Q1/Q2/Q12) plus 13
+generic passive checks; the passive checks are light deterministic coverage
+for explicit BOM/netlist facts, not deep datasheet review.
 
 Use this screen order for the canonical recording:
 
