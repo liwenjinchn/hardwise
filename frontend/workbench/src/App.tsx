@@ -10,6 +10,7 @@ import {
   FileSearch,
   FileUp,
   Filter,
+  Layers3,
   Link2,
   Loader2,
   MessageSquare,
@@ -234,13 +235,10 @@ function Header({
   return (
     <header className="topbar">
       <div className="brand">
-        <div className="brand-mark">
-          <ShieldCheck size={19} />
-        </div>
+        <span className="brand-mark"><ShieldCheck size={15} /></span>
         <div>
-          <span className="product-kicker">SCHEMATIC REVIEW</span>
-          <h1>Hardwise 原理图审查</h1>
-          <p>{state.project.name}</p>
+          <span className="brand-name">Hard<b>wise</b></span>
+          <span className="brand-tag">schematic review</span>
         </div>
       </div>
       <nav className="flow-nav" aria-label="工作流导航">
@@ -252,27 +250,28 @@ function Header({
             onClick={() => onNavigate(item.id)}
           >
             {item.label}
-            {item.id === "review" && <b>{state.task_counts.total}</b>}
-            {item.id === "findings" && <b>{state.task_counts.error + state.task_counts.warn}</b>}
+            {item.id === "review" && <span className="pip">{state.task_counts.total}</span>}
+            {item.id === "findings" && <span className="pip">{state.task_counts.error + state.task_counts.warn}</span>}
           </button>
         ))}
       </nav>
-      <div className="top-meta">
-        <Metric label="器件" value={summary.components} />
-        <Metric label="已验证" value={summary.validated} />
-        <Metric label="待人工" value={summary.manual} />
-        <Metric label="PASS" value={summary.pass_count} tone="pass" />
-        <Metric label="WARN" value={summary.warn_count} tone="warn" />
-        <Metric label="ERROR" value={summary.error_count} tone="error" />
-      </div>
-      <div className="capability-strip" aria-label="工作台能力">
-        {capabilityText.map((item) => (
-          <span key={item}>{item}</span>
-        ))}
-      </div>
-      <div className="source-line">
-        <span>{state.project.netlist_type}</span>
-        <span>{state.project.netlist_source}</span>
+      <div className="topbar-right">
+        <div className="project-pill" title={`${state.project.netlist_type} · ${state.project.netlist_source}`}>
+          <span className="dot" />
+          <span>{state.project.name}</span>
+          <span className="src mono">真实数据</span>
+        </div>
+        <div className="mini-stats" aria-label="当前审查摘要">
+          <Metric label="器件" value={summary.components} />
+          <Metric label="已验证" value={summary.validated} />
+          <Metric label="ERROR" value={summary.error_count} tone="error" />
+          <Metric label="WARN" value={summary.warn_count} tone="warn" />
+        </div>
+        <div className="capability-strip" aria-label="工作台能力">
+          {capabilityText.slice(0, 2).map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
       </div>
     </header>
   );
@@ -536,11 +535,18 @@ function DetailColumn({
 
   return (
     <section className="panel detail-panel">
-      <div className="component-title">
-        <div>
+      <div className="component-title detail-head">
+        <span className="detail-glyph"><Layers3 size={24} /></span>
+        <div className="detail-title">
           <span className="eyebrow">器件详情</span>
           <h2>{detail.refdes}</h2>
           <p>{detail.value}</p>
+          <div className="detail-keyline">
+            <span className="chip mono">{detail.part_number || "无 MPN"}</span>
+            <span className="chip">{detail.package || "无封装"}</span>
+            <span className="chip">{detail.manufacturer || "未知厂商"}</span>
+            <span className="chip mono">{detail.profile_part_number || "待补档案"}</span>
+          </div>
         </div>
         <div className="title-actions">
           <StatusBadge group={detail.status_group} label={detail.status_label} />
@@ -551,6 +557,7 @@ function DetailColumn({
           </button>
         </div>
       </div>
+      <VerdictBanner group={detail.status_group} />
       <div className="identity-grid">
         <InfoCell label="MPN" value={detail.part_number || "-"} />
         <InfoCell label="厂商" value={detail.manufacturer || "-"} />
@@ -618,6 +625,13 @@ function EvidenceColumn({
           <span className="eyebrow">{task.id} · {task.refdes}</span>
           <strong>{formatSummary(task.title)}</strong>
           <p>{formatSummary(task.body)}</p>
+          <div className="guard-note">
+            <ShieldCheck size={15} />
+            <span>
+              <b>How this was reached · {TRUST_LABEL[task.trust_tier]}.</b>
+              {" "}结论只来自后端事实、规则和 evidence token，外部提示保持只读人工线索。
+            </span>
+          </div>
           <div className="recommended-action">
             <b>建议动作</b>
             <span>{formatSummary(task.recommended_action)}</span>
@@ -677,48 +691,84 @@ function CopilotPanel({
 
   return (
     <section className={`copilot ${className}`}>
-      <div className="copilot-head">
-        <Bot size={18} />
-        <strong>Copilot</strong>
-        <span>{state.capabilities.datasheet_search_enabled ? "向量检索已启用" : "未启用向量检索"}</span>
-      </div>
-      <div className="suggestions">
-        {(lastResponse?.suggestions ?? [`这个 ${selectedRefdes ?? "器件"} 为什么是 ERROR/WARN?`, "板上有没有 U999?"]).slice(0, 4).map((item) => (
-          <button type="button" key={item} onClick={() => void send(item)}>{item}</button>
-        ))}
-      </div>
-      <div className="chat-stream">
-        {messages.map((message, index) => (
-          <p className={`chat-msg ${message.role}`} key={`${message.role}-${index}`}>{message.content}</p>
-        ))}
-        {lastResponse?.trace?.length ? (
-          <details className="trace" open>
-            <summary>tool trace · {lastResponse.trace.length}</summary>
-            {lastResponse.trace.map((trace, index) => (
-              <div className="trace-row" key={`${trace.tool}-${index}`}>
-                <strong>{trace.tool}</strong>
-                <span>{trace.trust_label || "可信层级未标注"}</span>
-                <p>{trace.summary}</p>
-                <div className="evidence-tokens">
-                  {trace.evidence_classification.map((item) => (
-                    <span className="token" key={item.token}>{item.token} · {item.source_class}</span>
-                  ))}
+      <div className="cop-main">
+        <div className="cop-thread">
+          <div className="cop-thread-inner">
+            {messages.length === 0 && (
+              <div className="msg ai">
+                <div className="mavatar"><Bot size={17} /></div>
+                <div className="mbody">
+                  <div className="mname">Hardwise Copilot <TrustBadge tier="l1" /></div>
+                  <div className="mtext">
+                    <p>我只基于当前 netlist、规则结果和 evidence token 回答。无法锚定的 refdes 会被 Refdes Guard 包裹。</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {messages.map((message, index) => (
+              <div className={`msg ${message.role === "assistant" ? "ai" : "user"}`} key={`${message.role}-${index}`}>
+                <div className="mavatar">{message.role === "assistant" ? <Bot size={17} /> : "LW"}</div>
+                <div className="mbody">
+                  <div className="mname">{message.role === "assistant" ? "Hardwise Copilot" : "You"}</div>
+                  <div className="mtext"><p>{message.content}</p></div>
                 </div>
               </div>
             ))}
-          </details>
-        ) : null}
-        {error && <p className="chat-error">{error}</p>}
+            {lastResponse?.trace?.length ? (
+              <details className="trace" open>
+                <summary>tool trace · {lastResponse.trace.length}</summary>
+                {lastResponse.trace.map((trace, index) => (
+                  <div className="trace-row toolcall" key={`${trace.tool}-${index}`}>
+                    <div className="tc-h">
+                      <Bot size={13} />
+                      <strong>{trace.tool}</strong>
+                      <span>{trace.trust_label || "可信层级未标注"}</span>
+                    </div>
+                    <p>{trace.summary}</p>
+                    <div className="evidence-tokens">
+                      {trace.evidence_classification.map((item) => (
+                        <span className="token" key={item.token}>{item.token} · {sourceLabel(item.source_class)}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </details>
+            ) : null}
+            {error && <p className="chat-error">{error}</p>}
+          </div>
+        </div>
+        <form className="chat-form composer" onSubmit={(event) => { event.preventDefault(); void send(question); }}>
+          <div className="composer-box">
+            <MessageSquare size={15} />
+            <input
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              placeholder={`询问 ${selectedRefdes ?? "当前器件"}，例如：板上有没有 U999?`}
+            />
+            <button type="submit" disabled={busy}>{busy ? "处理中" : "发送"}</button>
+          </div>
+          <div className="cop-disclaimer">
+            <ShieldCheck size={13} /> 回答必须被 netlist、规则或引用来源锚定；不可验证的问题会被标注。
+          </div>
+        </form>
       </div>
-      <form className="chat-form" onSubmit={(event) => { event.preventDefault(); void send(question); }}>
-        <MessageSquare size={15} />
-        <input
-          value={question}
-          onChange={(event) => setQuestion(event.target.value)}
-          placeholder={`询问 ${selectedRefdes ?? "当前器件"}，例如：板上有没有 U999?`}
-        />
-        <button type="submit" disabled={busy}>{busy ? "处理中" : "发送"}</button>
-      </form>
+      <aside className="cop-side">
+        <div className="eyebrow">Suggested probes</div>
+        <div className="suggestions">
+          {(lastResponse?.suggestions ?? [`这个 ${selectedRefdes ?? "器件"} 为什么是 ERROR/WARN?`, "板上有没有 U999?"]).slice(0, 4).map((item) => (
+            <button type="button" key={item} onClick={() => void send(item)}>
+              <span className="sg-k">probe</span>
+              {item}
+            </button>
+          ))}
+        </div>
+        <div className="eyebrow trust-title">Trust tiers</div>
+        <div className="trust-list">
+          <p><TrustBadge tier="l1" /> 后端确定性规则和 netlist 事实。</p>
+          <p><TrustBadge tier="l2" /> 有引用来源的 grounded evidence。</p>
+          <p><TrustBadge tier="l3" /> 数据不足，交给 reviewer。</p>
+        </div>
+      </aside>
     </section>
   );
 }
@@ -873,14 +923,14 @@ function RiskHintsPanel({ riskHints, selectedRefdes }: { riskHints: RiskHintsVie
 
 function EvidenceCard({ item }: { item: EvidenceChainItem }) {
   return (
-    <article className={`evidence-card ${item.status_group}`}>
-      <div className="card-line">
+    <article className={`evidence-card evi-node ${item.status_group} ${evidenceNodeKind(item)}`}>
+      <div className="card-line en-src">
         <StatusIcon group={item.status_group} />
         <span className="chain-kind">{chainKindLabel(item.kind)}</span>
         <strong>{formatSummary(item.title)}</strong>
         <TrustBadge tier={item.trust_tier} />
       </div>
-      <p>{formatSummary(item.body)}</p>
+      <p className="en-body">{formatSummary(item.body)}</p>
       <div className="evidence-tokens">
         {item.evidence.map((evidence) => <EvidenceToken evidence={evidence} key={evidence.token} />)}
         {item.evidence.length === 0 && <span className="muted">无 evidence token</span>}
@@ -932,6 +982,25 @@ function TrustBadge({ tier }: { tier: TrustTier }) {
   return <span className={`trust-badge ${tier}`}>{TRUST_LABEL[tier]}</span>;
 }
 
+function VerdictBanner({ group }: { group: StatusGroup }) {
+  const copy: Record<StatusGroup, { title: string; body: string }> = {
+    error: { title: "必须处理 · 阻塞项", body: "确定性检查已经失败，进入 layout handoff 前需要处理。" },
+    warn: { title: "需要复核 · 有证据", body: "当前规则给出 WARN，请阅读 evidence token 后确认是否接受。" },
+    manual: { title: "人工确认 · 数据不足", body: "后端没有足够公开档案生成结论，保留为人工线索。" },
+    pass: { title: "已通过 · 当前覆盖", body: "已配置的规则没有发现 WARN/ERROR；这不是全板电气保证。" }
+  };
+  const item = copy[group];
+  return (
+    <div className={`verdict-banner ${group}`}>
+      <span className="vb-icon"><StatusIcon group={group} /></span>
+      <span className="vb-txt">
+        <strong>{item.title}</strong>
+        <small>{item.body}</small>
+      </span>
+    </div>
+  );
+}
+
 function StatusIcon({ group }: { group: StatusGroup }) {
   if (group === "pass") return <CheckCircle2 size={15} />;
   if (group === "manual") return <CircleHelp size={15} />;
@@ -958,6 +1027,16 @@ function sourceLabel(sourceClass: string): string {
     unknown: "未知来源"
   };
   return labels[sourceClass] ?? sourceClass;
+}
+
+function evidenceNodeKind(item: EvidenceChainItem): string {
+  if (item.trust_tier === "l3" || item.kind.includes("external") || item.kind.includes("manual")) {
+    return "manual";
+  }
+  if (item.evidence.some((evidence) => evidence.source_class === "live_retrieved")) {
+    return "grounded";
+  }
+  return "deterministic";
 }
 
 const SUMMARY_REPLACEMENTS: Array<[RegExp, string]> = [
