@@ -128,6 +128,13 @@ function App() {
 
 function Header({ state }: { state: WorkbenchState }) {
   const { summary } = state;
+  const capabilityText = [
+    state.capabilities.chat ? "Copilot 可用" : "Copilot 关闭",
+    state.capabilities.datasheet_search_enabled ? "向量检索开启" : "向量检索关闭",
+    state.capabilities.risk_hints_enabled ? "外部提示已加载" : "外部提示未配置",
+    "Refdes Guard 在线"
+  ];
+
   return (
     <header className="topbar">
       <div className="brand">
@@ -135,6 +142,7 @@ function Header({ state }: { state: WorkbenchState }) {
           <ShieldCheck size={19} />
         </div>
         <div>
+          <span className="product-kicker">SCHEMATIC REVIEW</span>
           <h1>Hardwise 原理图审查</h1>
           <p>{state.project.name}</p>
         </div>
@@ -146,6 +154,11 @@ function Header({ state }: { state: WorkbenchState }) {
         <Metric label="PASS" value={summary.pass_count} tone="pass" />
         <Metric label="WARN" value={summary.warn_count} tone="warn" />
         <Metric label="ERROR" value={summary.error_count} tone="error" />
+      </div>
+      <div className="capability-strip" aria-label="工作台能力">
+        {capabilityText.map((item) => (
+          <span key={item}>{item}</span>
+        ))}
       </div>
       <div className="source-line">
         <span>{state.project.netlist_type}</span>
@@ -232,7 +245,7 @@ function QueueColumn(props: {
           >
             <span className="refdes">{item.refdes}</span>
             <span className="queue-copy">
-              <strong>{item.title}</strong>
+              <strong>{formatSummary(item.title)}</strong>
               <small>{item.subtitle}</small>
               <span className="row-badges">
                 <StatusBadge group={item.status_group} label={item.status_label} />
@@ -240,7 +253,7 @@ function QueueColumn(props: {
                 {item.risk_hint_count > 0 && <span className="hint-badge">外部提示 {item.risk_hint_count}</span>}
               </span>
             </span>
-            <span className="queue-counts">{item.evidence_count} 证据</span>
+            <span className="queue-counts">{item.issue_count} 问题 · {item.evidence_count} 证据</span>
           </button>
         ))}
       </div>
@@ -275,7 +288,10 @@ function DetailColumn({ detail, loading }: { detail: ComponentDetail | null; loa
           <h2>{detail.refdes}</h2>
           <p>{detail.value}</p>
         </div>
-        <StatusBadge group={detail.status_group} label={detail.status_label} />
+        <div className="title-actions">
+          <StatusBadge group={detail.status_group} label={detail.status_label} />
+          <TrustBadge tier={detail.trust_tier} />
+        </div>
       </div>
       <div className="identity-grid">
         <InfoCell label="MPN" value={detail.part_number || "-"} />
@@ -283,7 +299,7 @@ function DetailColumn({ detail, loading }: { detail: ComponentDetail | null; loa
         <InfoCell label="封装" value={detail.package || "-"} />
         <InfoCell label="器件档案" value={detail.profile_part_number || "待补"} />
       </div>
-      {detail.match_reason && <p className="scope-note">{detail.match_reason}</p>}
+      {detail.match_reason && <p className="scope-note">{formatSummary(detail.match_reason)}</p>}
       <section className="detail-section">
         <div className="section-title">
           <h3>引脚 / 网络表</h3>
@@ -436,7 +452,7 @@ function RiskHintsPanel({ riskHints, selectedRefdes }: { riskHints: RiskHintsVie
     <section className="risk-hints">
       <div className="section-title">
         <h3>外部提示 · 只读</h3>
-        <span>accepted {riskHints.accepted_external_count} / rejected {riskHints.rejected_external_count}</span>
+        <span>已接收 {riskHints.accepted_external_count} / 已拒绝 {riskHints.rejected_external_count}</span>
       </div>
       <div className="risk-summary">
         <span>状态：{riskHints.external_status === "loaded" ? "已加载" : "未配置"}</span>
@@ -446,8 +462,8 @@ function RiskHintsPanel({ riskHints, selectedRefdes }: { riskHints: RiskHintsVie
       <p className="scope-note">外部提示只作为人工线索，不改变 PASS/WARN/ERROR 结论。</p>
       {visible.map((hint) => (
         <div className="risk-card" key={`${hint.refdes}-${hint.title}`}>
-          <strong>{hint.refdes} · {hint.title}</strong>
-          <p>{hint.body}</p>
+          <strong>{hint.refdes} · {formatSummary(hint.title)}</strong>
+          <p>{formatSummary(hint.body)}</p>
           {hint.source && <EvidenceToken evidence={hint.source} />}
         </div>
       ))}
@@ -471,10 +487,11 @@ function EvidenceCard({ item }: { item: EvidenceChainItem }) {
     <article className={`evidence-card ${item.status_group}`}>
       <div className="card-line">
         <StatusIcon group={item.status_group} />
-        <strong>{item.title}</strong>
+        <span className="chain-kind">{chainKindLabel(item.kind)}</span>
+        <strong>{formatSummary(item.title)}</strong>
         <TrustBadge tier={item.trust_tier} />
       </div>
-      <p>{item.body}</p>
+      <p>{formatSummary(item.body)}</p>
       <div className="evidence-tokens">
         {item.evidence.map((evidence) => <EvidenceToken evidence={evidence} key={evidence.token} />)}
         {item.evidence.length === 0 && <span className="muted">无 evidence token</span>}
@@ -491,7 +508,7 @@ function CheckCard({ check }: { check: CheckView }) {
         <strong>{check.subject}</strong>
         <StatusBadge group={check.status_group} label={check.status_label} />
       </div>
-      <p>{check.summary}</p>
+      <p>{formatSummary(check.summary)}</p>
       <div className="evidence-tokens">
         {check.evidence.slice(0, 4).map((item) => <EvidenceToken evidence={item} key={item.token} />)}
       </div>
@@ -537,6 +554,41 @@ function statusGroup(status: string): StatusGroup {
   if (status === "WARN") return "warn";
   if (status === "PASS") return "pass";
   return "manual";
+}
+
+const SUMMARY_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/Exactly one local profile part_number matched this BOM identity\./g, "已唯一匹配本地器件档案。"],
+  [/BJT emitter pin is not connected\./g, "BJT 发射极未连接。"],
+  [/BJT emitter pin is not connected; cannot check VEBO\./g, "BJT 发射极未连接，无法检查 VEBO。"],
+  [/BJT emitter pin is not connected; cannot check VCEO\./g, "BJT 发射极未连接，无法检查 VCEO。"],
+  [/BJT collector is connected to ([^.]+)\./g, "BJT 集电极连接到 $1。"],
+  [/BJT base is connected to ([^.]+)\./g, "BJT 基极连接到 $1。"],
+  [/BJT Vebo rating must exceed reverse base-emitter stress\./g, "BJT Vebo 额定值需要覆盖反向基极-发射极应力。"],
+  [/MCU SWDIO is connected to SWCLK, expected SWDIO\./g, "MCU SWDIO 接到了 SWCLK，期望连接到 SWDIO。"],
+  [/No deterministic capacitance value could be parsed from '([^']+)'\./g, "无法从 '$1' 确定性解析电容值。"],
+  [/Diode reverse voltage rating is about ([^,]+), below required ([^.]+)\./g, "二极管反向耐压约 $1，低于所需 $2。"],
+  [/Input network voltage falls within the structured component profile limit\./g, "输入网络电压在结构化器件档案限制内。"],
+  [/Output network voltage falls within the structured component profile limit\./g, "输出网络电压在结构化器件档案限制内。"],
+  [/Pin is tied to an allowed net from the profile\./g, "引脚连接到器件档案允许的网络。"],
+  [/Pin is not connected\./g, "引脚未连接。"],
+  [/status=not_found/g, "状态：未找到"],
+  [/status=ok/g, "状态：通过"]
+];
+
+function formatSummary(text: string): string {
+  return SUMMARY_REPLACEMENTS.reduce((current, [pattern, replacement]) => {
+    return current.replace(pattern, replacement);
+  }, text);
+}
+
+function chainKindLabel(kind: string): string {
+  const labels: Record<string, string> = {
+    component_check: "组件规则",
+    pin_check: "引脚规则",
+    manual_gap: "人工缺口",
+    external_risk_hint: "外部线索"
+  };
+  return labels[kind] ?? kind;
 }
 
 export default App;
