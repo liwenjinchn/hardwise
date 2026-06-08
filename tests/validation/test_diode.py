@@ -54,10 +54,33 @@ def sd103aws_profile() -> DatasheetProfile:
 
 
 @pytest.fixture
+def n4007w_profile() -> DatasheetProfile:
+    """Load 1N4007W general-purpose rectifier profile."""
+    return DatasheetProfile.load(Path("data/datasheet_profiles/1n4007w.json"))
+
+
+@pytest.fixture
+def mbra210lt3g_profile() -> DatasheetProfile:
+    """Load MBRA210LT3G Schottky rectifier profile."""
+    return DatasheetProfile.load(Path("data/datasheet_profiles/mbra210lt3g.json"))
+
+
+@pytest.fixture
 def diode_design():
     """Load diode fixture."""
     netlist = parse_allegro_netlist(Path("tests/fixtures/allegro/ss34_diode.net"))
     bom = parse_bom(Path("tests/fixtures/allegro/ss34_diode_bom.csv"))
+    design = build_design_from_netlist(netlist)
+    return apply_bom_to_design(design, match_bom_to_design(bom, design))
+
+
+@pytest.fixture
+def controller_power_stage_design():
+    """Load mixed controller power-stage fixture."""
+    netlist = parse_allegro_netlist(
+        Path("tests/fixtures/allegro/mixed_controller_power_stage.net")
+    )
+    bom = parse_bom(Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"))
     design = build_design_from_netlist(netlist)
     return apply_bom_to_design(design, match_bom_to_design(bom, design))
 
@@ -275,6 +298,71 @@ D36,1,SD103AWS-7-F,Diodes Inc,SD103AWS-7-F
     )
     assert reverse.status == "PASS"
     assert "within profile maximum 40 V" in reverse.summary
+
+
+def test_1n4007w_profile_matches_public_rectron_limits(n4007w_profile):
+    assert n4007w_profile.review_status == "ready"
+    assert n4007w_profile.recommended["topology_family"] == "diode"
+    assert n4007w_profile.recommended["diode_role"] == "general_purpose_rectifier"
+    assert n4007w_profile.abs_max["reverse_voltage"] == 1000.0
+    assert n4007w_profile.abs_max["average_forward_current"] == 1.0
+    assert n4007w_profile.pin_function == {"1": "Cathode", "2": "Anode"}
+    assert [(pin.number, pin.name) for pin in n4007w_profile.pins] == [
+        ("1", "Cathode"),
+        ("2", "Anode"),
+    ]
+    assert (
+        n4007w_profile.evidence["abs_max.reverse_voltage"]
+        == "datasheet:rectron_1n4001w-1n4007w.pdf#p1"
+    )
+
+
+def test_mbra210lt3g_profile_matches_public_onsemi_limits(mbra210lt3g_profile):
+    assert mbra210lt3g_profile.review_status == "ready"
+    assert mbra210lt3g_profile.recommended["topology_family"] == "diode"
+    assert mbra210lt3g_profile.recommended["diode_role"] == "schottky_rectifier"
+    assert mbra210lt3g_profile.abs_max["reverse_voltage"] == 10.0
+    assert mbra210lt3g_profile.abs_max["average_forward_current"] == 2.0
+    assert mbra210lt3g_profile.pin_function == {"1": "Cathode", "2": "Anode"}
+    assert [(pin.number, pin.name) for pin in mbra210lt3g_profile.pins] == [
+        ("1", "Cathode"),
+        ("2", "Anode"),
+    ]
+    assert (
+        mbra210lt3g_profile.evidence["pin_function.1"]
+        == "datasheet:mbra210lt3-d.pdf#p5"
+    )
+
+
+def test_mixed_controller_diode_profiles_warn_without_topology_claim(
+    n4007w_profile,
+    mbra210lt3g_profile,
+    controller_power_stage_design,
+):
+    profiles = {
+        "D5": n4007w_profile,
+        "D1": mbra210lt3g_profile,
+    }
+
+    for refdes, profile in profiles.items():
+        results = validate_component_against_profile(
+            controller_power_stage_design.components[refdes],
+            profile,
+            controller_power_stage_design,
+        )
+        checks = {check.check: check for check in results.component_checks}
+        summaries = " ".join(check.summary for check in results.component_checks)
+
+        assert results.status == "WARN"
+        assert results.counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
+        assert results.component_counts_by_status == {"PASS": 2, "WARN": 1, "ERROR": 0}
+        assert checks["diode_cathode_connectivity"].status == "PASS"
+        assert checks["diode_anode_connectivity"].status == "PASS"
+        assert checks["diode_reverse_voltage"].status == "WARN"
+        assert "cannot be inferred from cathode/anode net names" in summaries
+        assert "buck" not in summaries.lower()
+        assert "freewheel" not in summaries.lower()
+        assert "topology" not in summaries.lower()
 
 
 def test_bidirectional_tvs_nominal_rail_clamp_passes(tvs_profile, tmp_path):
