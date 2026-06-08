@@ -385,6 +385,8 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     assert '"profile_path": "data/datasheet_profiles/ss8050.json"' in index_payload
     assert '"refdes": "U12"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/xl1509.json"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/1n4007w.json"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/mbra210lt3g.json"' in index_payload
 
 
 def test_design_validator_ui_prints_risk_hints_counts(tmp_path: Path) -> None:
@@ -524,6 +526,13 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert '"profile_path": "data/datasheet_profiles/ss8050.json"' in index_payload
     assert '"refdes": "U8"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/stm32g030c8t6.json"' in index_payload
+    assert '"refdes": "Q1"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/jmtk3005a.json"' in index_payload
+    assert '"refdes": "Q12"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/ss8050.json"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/1n4007w.json"' in index_payload
+    assert '"profile_path": "data/datasheet_profiles/mbra210lt3g.json"' in index_payload
+    assert "BJT emitter pin is not connected" in index_payload
 
 
 def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) -> None:

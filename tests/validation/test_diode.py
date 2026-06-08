@@ -66,21 +66,21 @@ def mbra210lt3g_profile() -> DatasheetProfile:
 
 
 @pytest.fixture
-def diode_design():
-    """Load diode fixture."""
-    netlist = parse_allegro_netlist(Path("tests/fixtures/allegro/ss34_diode.net"))
-    bom = parse_bom(Path("tests/fixtures/allegro/ss34_diode_bom.csv"))
-    design = build_design_from_netlist(netlist)
-    return apply_bom_to_design(design, match_bom_to_design(bom, design))
-
-
-@pytest.fixture
 def controller_power_stage_design():
     """Load mixed controller power-stage fixture."""
     netlist = parse_allegro_netlist(
         Path("tests/fixtures/allegro/mixed_controller_power_stage.net")
     )
     bom = parse_bom(Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"))
+    design = build_design_from_netlist(netlist)
+    return apply_bom_to_design(design, match_bom_to_design(bom, design))
+
+
+@pytest.fixture
+def diode_design():
+    """Load diode fixture."""
+    netlist = parse_allegro_netlist(Path("tests/fixtures/allegro/ss34_diode.net"))
+    bom = parse_bom(Path("tests/fixtures/allegro/ss34_diode_bom.csv"))
     design = build_design_from_netlist(netlist)
     return apply_bom_to_design(design, match_bom_to_design(bom, design))
 
@@ -363,6 +363,7 @@ def test_mixed_controller_diode_profiles_warn_without_topology_claim(
         assert "buck" not in summaries.lower()
         assert "freewheel" not in summaries.lower()
         assert "topology" not in summaries.lower()
+        assert "低于所需 24 V" not in summaries
 
 
 def test_bidirectional_tvs_nominal_rail_clamp_passes(tvs_profile, tmp_path):

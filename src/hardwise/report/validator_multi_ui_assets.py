@@ -11,7 +11,7 @@ main{width:min(1520px,calc(100% - 16px));margin:0 auto;padding:8px 0 18px}
 .topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:22px;align-items:stretch;border-bottom:1px solid var(--line)}
 .brand{padding:18px 24px 16px;border-left:4px solid var(--rail)}
 .eyebrow{margin:0 0 8px;color:var(--muted);font-family:var(--mono);font-size:12px;text-transform:uppercase}
-h1{margin:0;font-family:var(--serif);font-size:34px;line-height:1;letter-spacing:0;font-weight:800}
+h1{margin:0;font-family:var(--serif);font-size:34px;line-height:1;letter-spacing:0;font-weight:800;overflow-wrap:anywhere;word-break:break-word}
 .source{margin:11px 0 0;color:var(--muted);font-family:var(--mono);font-size:12px;overflow-wrap:anywhere}
 .summary{display:grid;grid-template-columns:repeat(7,110px);border-left:1px solid var(--line);background:var(--soft)}
 .metric{padding:17px 14px;border-right:1px solid var(--line)}
