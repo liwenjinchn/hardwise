@@ -11,6 +11,17 @@ from hardwise.workbench.chat import ChatRequest, ChatResponse, WorkbenchChatServ
 from hardwise.workbench.context import WorkbenchContext
 
 
+def risk_hints_state(context: WorkbenchContext) -> dict[str, object]:
+    """Return a compact state summary for externally loaded risk hints."""
+
+    return {
+        "external_status": "loaded" if context.risk_hints.source_path else "not_configured",
+        "count": context.risk_hints.total_count,
+        "accepted_external_count": context.risk_hints.accepted_count,
+        "rejected_external_count": context.risk_hints.rejected_count,
+    }
+
+
 def create_workbench_app(
     context: WorkbenchContext,
     chat_service: WorkbenchChatService,
@@ -48,6 +59,7 @@ def create_workbench_app(
             "validated": len(context.index.validated_rows),
             "selected_refdes": default_refdes(context),
             "datasheet_search_enabled": chat_service.datasheet_search_enabled,
+            "risk_hints": risk_hints_state(context),
         }
 
     @app.post("/api/workbench/chat", response_model=ChatResponse)

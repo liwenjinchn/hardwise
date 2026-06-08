@@ -1240,6 +1240,11 @@ def design_validator_ui(
             "Adds grouped document coverage; no live supplier lookup."
         ),
     ),
+    risk_hints_json: Path | None = typer.Option(
+        None,
+        "--risk-hints-json",
+        help="Optional external risk-hints JSON anchored to registry-verified refdes.",
+    ),
     manual_limit: int = typer.Option(
         50,
         "--manual-limit",
@@ -1272,6 +1277,7 @@ def design_validator_ui(
             bom_path=bom_path,
             profiles=profiles,
             document_index=document_index,
+            risk_hints_json=risk_hints_json,
         )
     except ProfileCandidateError as e:
         typer.echo(f"error: profile candidate generation failed: {e}", err=True)
@@ -1328,6 +1334,12 @@ def design_validator_ui(
             f"document-index: {display_path(context.document_report.document_index_file)} "
             f"(matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
             f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']})"
+        )
+    if context.risk_hints.source_path is not None:
+        typer.echo(
+            "risk-hints: loaded "
+            f"(accepted={context.risk_hints.accepted_count}, "
+            f"rejected={context.risk_hints.rejected_count})"
         )
     if context.resolved_bom.auto_selected:
         parseable_count = sum(
@@ -1397,6 +1409,11 @@ def serve_workbench(
             "Enables document-coverage Copilot tools; no live supplier lookup."
         ),
     ),
+    risk_hints_json: Path | None = typer.Option(
+        None,
+        "--risk-hints-json",
+        help="Optional external risk-hints JSON anchored to registry-verified refdes.",
+    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
@@ -1422,6 +1439,7 @@ def serve_workbench(
             bom_path=bom_path,
             profiles=profiles,
             document_index=document_index,
+            risk_hints_json=risk_hints_json,
         )
         collection = None
         if use_vector:
@@ -1449,12 +1467,19 @@ def serve_workbench(
             f"on matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
             f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']}"
         )
+    risk_hints_state = "not_configured"
+    if context.risk_hints.source_path is not None:
+        risk_hints_state = (
+            "loaded "
+            f"accepted={context.risk_hints.accepted_count}, "
+            f"rejected={context.risk_hints.rejected_count}"
+        )
     typer.echo(
         f"serve-workbench: {url} "
         f"({context.index.components_in_design} components, "
         f"validated={len(context.index.validated_rows)}, "
         f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'}, "
-        f"document-index={document_state})"
+        f"document-index={document_state}, risk-hints={risk_hints_state})"
     )
     if dry_run:
         return

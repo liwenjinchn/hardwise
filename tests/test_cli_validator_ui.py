@@ -387,6 +387,61 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     assert '"profile_path": "data/datasheet_profiles/xl1509.json"' in index_payload
 
 
+def test_design_validator_ui_prints_risk_hints_counts(tmp_path: Path) -> None:
+    html_output = tmp_path / "design-validator.html"
+    risk_hints = tmp_path / "risk-hints.json"
+    risk_hints.write_text(
+        """
+        {
+          "hints": [
+            {"refdes": "U1", "title": "Review input", "body": "Check U1 margin."},
+            {"refdes": "U999", "title": "Bad anchor", "body": "Rejected."}
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--risk-hints-json",
+            str(risk_hints),
+            "--output",
+            str(html_output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "risk-hints: loaded (accepted=1, rejected=1)" in result.output
+
+
+def test_design_validator_ui_bad_risk_hints_json_exits_cleanly(tmp_path: Path) -> None:
+    html_output = tmp_path / "design-validator.html"
+    risk_hints = tmp_path / "bad-risk-hints.json"
+    risk_hints.write_text('{"hints": [', encoding="utf-8")
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--risk-hints-json",
+            str(risk_hints),
+            "--output",
+            str(html_output),
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    assert "risk-hints JSON failed validation" in result.output
+    assert "Traceback" not in result.output
+
+
 def test_design_validator_ui_auto_matches_controller_power_stage(
     tmp_path: Path,
 ) -> None:
@@ -554,6 +609,35 @@ def test_serve_workbench_fake_ai_dry_run_accepts_document_index(tmp_path: Path) 
     assert "serve-workbench:" in result.output
     assert "document-index=on matched=1" in result.output
     assert "no_result=14" in result.output
+
+
+def test_serve_workbench_dry_run_prints_risk_hints_counts(tmp_path: Path) -> None:
+    risk_hints = tmp_path / "risk-hints.json"
+    risk_hints.write_text(
+        """
+        [
+          {"refdes": "U1", "title": "Review input", "body": "Check U1 margin."},
+          {"refdes": "U999", "title": "Bad anchor", "body": "Rejected."}
+        ]
+        """,
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "serve-workbench",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--risk-hints-json",
+            str(risk_hints),
+            "--fake-ai",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "risk-hints=loaded accepted=1, rejected=1" in result.output
 
 
 def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
