@@ -25,6 +25,7 @@ from hardwise.validation.project_index import (
     build_project_validation_index,
     validation_targets_from_candidates,
 )
+from hardwise.validation.risk_hints import RiskHintReport, load_risk_hint_report
 
 
 @dataclass
@@ -40,6 +41,7 @@ class WorkbenchContext:
     resolved_bom: ResolvedBomInput
     candidate_report: ProfileCandidateReport
     document_report: DocumentMatchReport | None
+    risk_hints: RiskHintReport
     validation_targets: dict[str, DatasheetProfile]
     project_name: str
     netlist_source: Path
@@ -112,6 +114,7 @@ def build_workbench_context(
     bom_path: Path | None,
     profiles: Path,
     document_index: Path | None = None,
+    risk_hints_json: Path | None = None,
     generated_at: str | None = None,
 ) -> WorkbenchContext:
     """Build shared deterministic workbench state from Allegro/PST inputs."""
@@ -125,6 +128,14 @@ def build_workbench_context(
     bom = resolved_bom.bom
     bom_report = resolved_bom.bom_report
     design = apply_bom_to_design(design, bom_report)
+    try:
+        risk_hints = (
+            load_risk_hint_report(risk_hints_json, design)
+            if risk_hints_json is not None
+            else RiskHintReport()
+        )
+    except ValueError as exc:
+        raise ValueError(f"risk-hints JSON failed validation: {exc}") from exc
     document_report = (
         match_documents_to_bom(bom, parse_document_index(document_index))
         if document_index is not None
@@ -164,6 +175,7 @@ def build_workbench_context(
         resolved_bom=resolved_bom,
         candidate_report=candidate_report,
         document_report=document_report,
+        risk_hints=risk_hints,
         validation_targets=validation_targets,
         project_name=project_name,
         netlist_source=source,

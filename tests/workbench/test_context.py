@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from fastapi.testclient import TestClient
+
 from hardwise.store.relational import query_components
+from hardwise.workbench.server import create_workbench_app
 from hardwise.workbench.context import (
     board_registry_from_design,
     build_workbench_context,
@@ -61,6 +64,94 @@ def test_build_workbench_context_populates_relational_store_from_registry() -> N
             "U12",
             "U3",
             "U8",
+        }
+        assert context.risk_hints.source_path is None
+        assert context.risk_hints.accepted_count == 0
+        assert context.risk_hints.rejected_count == 0
+    finally:
+        context.session.close()
+
+
+def test_build_workbench_context_loads_risk_hints_and_rejects_unknown_refdes(
+    tmp_path: Path,
+) -> None:
+    risk_hints = tmp_path / "risk-hints.json"
+    risk_hints.write_text(
+        """
+        {
+          "hints": [
+            {
+              "refdes": "U1",
+              "title": "Check regulator margin",
+              "body": "U1 may need more input capacitance."
+            },
+            {
+              "refdes": "U999",
+              "title": "Unknown anchor",
+              "body": "This hint should not be rendered."
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        risk_hints_json=risk_hints,
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        assert context.risk_hints.source_path == str(risk_hints)
+        assert context.risk_hints.accepted_count == 1
+        assert context.risk_hints.rejected_count == 1
+        assert context.risk_hints.accepted[0].refdes == "U1"
+        assert context.risk_hints.rejected[0].reason == "unknown_refdes"
+    finally:
+        context.session.close()
+
+
+def test_workbench_state_exposes_risk_hints_summary(tmp_path: Path) -> None:
+    risk_hints = tmp_path / "risk-hints.json"
+    risk_hints.write_text(
+        """
+        [
+          {"refdes": "U1", "title": "Review input", "body": "Check U1 input margin."},
+          {"refdes": "U999", "title": "Bad anchor", "body": "Rejected."}
+        ]
+        """,
+        encoding="utf-8",
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        risk_hints_json=risk_hints,
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    class DummyChatService:
+        datasheet_search_enabled = False
+
+        def fallback_response(self, _message: str, _selected: str | None) -> object:
+            raise AssertionError("state endpoint should not render the workbench")
+
+        def ask(self, _request: object) -> object:
+            raise AssertionError("state endpoint should not call chat")
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        response = client.get("/api/workbench/state")
+
+        assert response.status_code == 200
+        assert response.json()["risk_hints"] == {
+            "external_status": "loaded",
+            "count": 2,
+            "accepted_external_count": 1,
+            "rejected_external_count": 1,
         }
     finally:
         context.session.close()
