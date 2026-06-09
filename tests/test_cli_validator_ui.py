@@ -553,20 +553,18 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     assert result.exit_code == 0, result.output
     assert "ai-snapshot: enabled" in result.output
     html = html_output.read_text(encoding="utf-8")
-    assert "data-ai-root" in html
-    assert "hardwise-copilot-config" in html
-    assert "离线审计快照" in html
-    assert "ai-guide" in html
+    assert "__HARDWISE_OFFLINE_SNAPSHOT__" in html
+    assert "Hardwise 离线工作台" in html
+    assert "组件审查队列" in html
+    assert "Project Prep Packet" in html
     assert '<div class="ai-msg assistant"><p>可以询问选中器件' not in html
     assert "run_component_validation" in html
     assert "search_datasheet" in html
-    assert "位号防护" in html
-    assert "防护包裹次数" in html
-    assert "可信度" in html
-    assert "证据 token" in html
-    assert "证据来源" in html
+    assert "wrapped_count" in html
+    assert "trust_tier" in html
+    assert "evidence_chain" in html
     assert "本轮检索" in html
-    assert "已审 profile" in html
+    assert "已审档案" in html
     assert "L2 grounded" in html
     assert "datasheet:l78.pdf#p4" in html
     assert "查看 L7805 输入耐压的数据手册证据链" in html

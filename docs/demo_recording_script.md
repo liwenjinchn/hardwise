@@ -1,11 +1,22 @@
 # Hardwise Demo 录屏脚本
 
-目标时长：90 秒。主线只讲 `design-validator-ui --ai-snapshot` 离线 workbench：模型不能自由评审硬件，必须被 EDA registry、evidence token、deterministic validator 和 Refdes Guard 约束住。KiCad `review` / `ask` 只作为证据链复现附录。
+目标时长：90 秒。主线录 `serve-workbench --fake-ai` 启动的本地 workbench：模型不能自由评审硬件，必须被 EDA registry、evidence token、deterministic validator 和 Refdes Guard 约束住。`--fake-ai` 用确定性 fake 模型块，但仍跑真实 Runner + 工具 + Refdes Guard，不需要 API key。`design-validator-ui --ai-snapshot` 生成的 `file://` 静态快照作为无需起服务的离线备份；KiCad `review` / `ask` 只作为证据链复现附录。
 
 ## 录屏前准备
 
 ```bash
 uv sync
+uv run hardwise serve-workbench \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --fake-ai
+```
+
+命令会打印 `serve-workbench: http://127.0.0.1:8765 (...)`，开录前在浏览器打开这个 URL（默认端口 8765，可用 `--port` 改）。浏览器里只保留 README 和 workbench 两个页面，避免录屏时切到无关 tab。
+
+离线备份（reviewer 不便起服务时）：
+
+```bash
 uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
@@ -13,7 +24,7 @@ uv run hardwise design-validator-ui \
   --output /tmp/hardwise-copilot-workbench.html
 ```
 
-开录前打开 `/tmp/hardwise-copilot-workbench.html`。浏览器里只保留 README 和 workbench 两个页面，避免录屏时切到无关 tab。
+直接用 `file://` 打开生成的 HTML，无需起服务、无需 API key（同一份校验真值与 Refdes Guard，复用 SPA 外观和离线快照数据）。
 
 ## 分镜
 
@@ -31,11 +42,11 @@ uv run hardwise design-validator-ui \
 
 4. Copilot trace，18 秒
 
-   打开右下角 Hardwise 助手，点一条已烘焙的问题并展开 Evidence / Tool trace。说：Copilot 的回答来自 structured tools；`run_component_validation` 是 L1 deterministic，证据 token 必须可见、可复制。
+   打开右下角 Hardwise 助手，点一条 suggested 问题（或直接提问），展开 Evidence / Tool trace。说：`--fake-ai` 只产出确定性 `tool_use`/text，回答仍来自真实 Runner 的 structured tools；`run_component_validation` 是 L1 deterministic，证据 token 必须可见、可复制。
 
 5. `U999` wrapped，12 秒
 
-   点 `板上有没有 U999?`。说：不存在的位号不会被模型编造成器件，工具返回 `found=false`，最终显示会把它包成 `⟨?U999⟩`。
+   在 Copilot 输入 `板上有没有 U999?`。说：不存在的位号不会被模型编造成器件，工具返回 `found=false`，最终显示会把它包成 `⟨?U999⟩`。
 
 6. L78 evidence token，12 秒
 

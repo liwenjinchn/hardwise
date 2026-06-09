@@ -379,3 +379,20 @@ export interface ChatResponse {
   suggestions: string[];
   datasheet_search_enabled: boolean;
 }
+
+export interface WorkbenchOfflineSnapshot {
+  schema_version: string;
+  mode: "snapshot";
+  state: WorkbenchState;
+  components: Record<string, ComponentDetail>;
+  component_prep_markdown: Record<string, string>;
+  project_prep_markdown: string;
+  chat_responses: Record<string, ChatResponse>;
+  exports: Record<"json" | "csv" | "annotations", string>;
+}
+
+declare global {
+  interface Window {
+    __HARDWISE_OFFLINE_SNAPSHOT__?: WorkbenchOfflineSnapshot;
+  }
+}

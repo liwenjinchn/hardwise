@@ -1261,10 +1261,9 @@ def design_validator_ui(
         render as render_project_index,
         write_json,
     )
-    from hardwise.report.copilot_panel import render_copilot_panel
     from hardwise.report.validator_project_ui import render_project_workbench
+    from hardwise.report.workbench_spa_snapshot import render_spa_snapshot
     from hardwise.validation import ProfileCandidateError
-    from hardwise.workbench.chat import build_snapshot_responses, default_refdes
     from hardwise.workbench.context import build_workbench_context
 
     if manual_limit < 0:
@@ -1293,28 +1292,18 @@ def design_validator_ui(
     else:
         output.parent.mkdir(parents=True, exist_ok=True)
 
-    copilot_html = ""
     if ai_snapshot:
-        snapshot_responses = build_snapshot_responses(context)
-        fallback = snapshot_responses["__fallback__"]
-        copilot_html = render_copilot_panel(
-            mode="snapshot",
-            selected_refdes=default_refdes(context),
-            suggestions=fallback.suggestions,
-            snapshot_responses=snapshot_responses,
-            datasheet_search_enabled=False,
+        html = render_spa_snapshot(context, datasheet_search_enabled=False)
+    else:
+        html = render_project_workbench(
+            context.design,
+            context.index,
+            project_name=context.project_name,
+            netlist_source=context.netlist_source,
+            bom_report=context.bom_report,
+            generated_at=context.index.generated_at,
+            risk_hints=context.risk_hints if context.risk_hints.source_path else None,
         )
-
-    html = render_project_workbench(
-        context.design,
-        context.index,
-        project_name=context.project_name,
-        netlist_source=context.netlist_source,
-        bom_report=context.bom_report,
-        generated_at=context.index.generated_at,
-        copilot_html=copilot_html,
-        risk_hints=context.risk_hints if context.risk_hints.source_path else None,
-    )
     output.write_text(html, encoding="utf-8")
 
     if index_output is not None:

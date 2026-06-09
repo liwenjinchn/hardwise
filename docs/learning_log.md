@@ -3997,3 +3997,33 @@ build`.
 For the React/Vite workbench, verify via the local server or built static
 bundle. Reserve `file://` smoke checks for the dedicated static HTML export
 path.
+
+## 2026-06-09 — Offline demo must reuse the SPA shell
+
+**Symptom**
+
+After the React workbench visual pass, `serve-workbench --fake-ai` showed the
+new engineering-review sheet, but `docs/hardware-demo.html` and
+`design-validator-ui --ai-snapshot` still used the older Python static renderer.
+The offline public artifact looked like a different product.
+
+**Root cause**
+
+The live path and offline path had split UI implementations. The live path served
+the Vite SPA from `src/hardwise/workbench/static/`, while the offline snapshot
+rendered `validator_project_ui.py` plus the older Copilot panel assets.
+
+**Fix**
+
+Added a SPA offline snapshot renderer. `design-validator-ui --ai-snapshot` now
+embeds the built SPA CSS/JS and a `window.__HARDWISE_OFFLINE_SNAPSHOT__` payload
+containing workbench state, component details, prep-packet markdown, exports, and
+audited chat responses. The frontend API layer reads that snapshot before using
+live `/api/workbench/*` calls. The plain `design-validator-ui` path keeps the
+legacy static renderer for compatibility.
+
+**Takeaway**
+
+When the product UI moves to SPA, public offline demos should reuse the same
+shell and data contract. Otherwise the demo artifact becomes a stale second UI
+that drifts from the real workbench.
