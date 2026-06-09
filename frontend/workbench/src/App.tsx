@@ -9,7 +9,6 @@ import {
   FileArchive,
   FileSearch,
   FileUp,
-  Filter,
   Layers3,
   Link2,
   Loader2,
@@ -201,7 +200,7 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell view-${view}`}>
       <Header state={state} currentView={view} onNavigate={setView} />
       {view === "import" && (
         <ImportView state={state} onImported={(result) => void handleImportComplete(result)} />
@@ -224,6 +223,7 @@ function App() {
           <EvidenceColumn
             tasks={selectedComponentTasks}
             selectedTaskId={selectedTask?.id ?? null}
+            selectedRefdes={selectedRefdes}
             onPickTask={setSelectedTaskId}
             detail={detail}
             riskHints={state.risk_hint_details}
@@ -492,7 +492,7 @@ function TaskQueueColumn(props: {
             onClick={() => props.onFilter(item.id)}
             type="button"
           >
-            <Filter size={13} />
+            <span className={`filter-swatch ${item.id}`} />
             <span>{item.label}</span>
             <small>{item.hint}</small>
             <b>{props.counts[item.id]}</b>
@@ -508,13 +508,14 @@ function TaskQueueColumn(props: {
         />
       </label>
       <div className="queue-list">
-        {props.items.map((item) => (
+        {props.items.map((item, index) => (
           <button
             type="button"
             key={item.refdes}
             className={`queue-row ${item.status_group} ${
               props.selectedRefdes === item.refdes ? "selected" : ""
             }`}
+            style={{ animationDelay: `${Math.min(index, 10) * 16}ms` }}
             onClick={() => props.onPick(item)}
           >
             <span className="refdes">{item.refdes}</span>
@@ -599,89 +600,91 @@ function DetailColumn({
 
   return (
     <section className="panel detail-panel">
-      <div className="component-title detail-head">
-        <span className="detail-glyph"><Layers3 size={24} /></span>
-        <div className="detail-title">
-          <span className="eyebrow">器件详情</span>
-          <h2>{detail.refdes}</h2>
-          <p>{detail.value}</p>
-          <div className="detail-keyline">
-            <span className="chip mono">{detail.part_number || "无 MPN"}</span>
-            <span className="chip">{detail.package || "无封装"}</span>
-            <span className="chip">{detail.manufacturer || "未知厂商"}</span>
-            <span className="chip mono">{detail.profile_part_number || "待补档案"}</span>
+      <div className="detail-scroll" key={detail.refdes}>
+        <div className="component-title detail-head">
+          <span className="detail-glyph"><Layers3 size={24} /></span>
+          <div className="detail-title">
+            <span className="eyebrow">器件详情</span>
+            <h2>{detail.refdes}</h2>
+            <p>{detail.value}</p>
+            <div className="detail-keyline">
+              <span className="chip mono">{detail.part_number || "无 MPN"}</span>
+              <span className="chip">{detail.package || "无封装"}</span>
+              <span className="chip">{detail.manufacturer || "未知厂商"}</span>
+              <span className="chip mono">{detail.profile_part_number || "待补档案"}</span>
+            </div>
+          </div>
+          <div className="title-actions">
+            <StatusBadge group={detail.status_group} label={detail.status_label} />
+            <TrustBadge tier={detail.trust_tier} />
+            <button className="icon-text-btn" type="button" onClick={onAsk}>
+              <Bot size={14} />
+              问 Copilot
+            </button>
           </div>
         </div>
-        <div className="title-actions">
-          <StatusBadge group={detail.status_group} label={detail.status_label} />
-          <TrustBadge tier={detail.trust_tier} />
-          <button className="icon-text-btn" type="button" onClick={onAsk}>
-            <Bot size={14} />
-            问 Copilot
+        <VerdictBanner group={detail.status_group} />
+        <div className="identity-grid">
+          <InfoCell label="MPN" value={detail.part_number || "-"} />
+          <InfoCell label="厂商" value={detail.manufacturer || "-"} />
+          <InfoCell label="封装" value={detail.package || "-"} />
+          <InfoCell label="器件档案" value={detail.profile_part_number || "待补"} />
+          <InfoCell label="BOM 来源" value={detail.bom?.source || "-"} />
+          <InfoCell label="档案状态" value={profileStatusLabel(detail.profile?.status || detail.match_status)} />
+          <InfoCell label="文档索引" value={documentStatusLabel(detail.document?.status || "not_configured")} />
+          <InfoCell label="任务数" value={`${detail.task_counts.total} 项`} />
+        </div>
+        {detail.match_reason && <p className="scope-note">{formatSummary(detail.match_reason)}</p>}
+        <section className="prep-actions" aria-label="评审准备包">
+          <div>
+            <span className="eyebrow">Prep Packet</span>
+            <strong>评审准备包</strong>
+            <p>把当前器件身份、BOM/profile/document 状态、tasks、risk hints 和 evidence 汇总成可交接资料。</p>
+          </div>
+          <button className="icon-text-btn" type="button" onClick={() => void loadPrepPacket(false)} disabled={prepBusy}>
+            {prepBusy ? <Loader2 className="spin" size={14} /> : <FileSearch size={14} />}
+            预览
           </button>
-        </div>
+          <button className="icon-text-btn" type="button" onClick={() => void loadPrepPacket(true)} disabled={prepBusy}>
+            <Download size={14} />
+            下载 MD
+          </button>
+        </section>
+        {prepError && <p className="form-error detail-error">{prepError}</p>}
+        {prepPreview && <pre className="prep-preview">{prepPreview}</pre>}
+        <section className="detail-section">
+          <div className="section-title">
+            <h3>引脚 / 网络表</h3>
+            <span>{detail.pins.length} pins</span>
+          </div>
+          <div className="pin-table">
+            <div className="pin-head">Pin</div>
+            <div className="pin-head">Name</div>
+            <div className="pin-head">Net</div>
+            <div className="pin-head">状态</div>
+            {detail.pins.slice(0, 24).map((pin) => (
+              <div className="pin-row" key={`${pin.number}-${pin.name}`}>
+                <span className="mono">{pin.number}</span>
+                <span>{pin.name}</span>
+                <span className="mono net-name">{pin.net || "-"}</span>
+                <span>{pin.status ? <StatusBadge group={statusGroup(pin.status)} label={pinStatusLabel(pin.status)} /> : "-"}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="detail-section">
+          <div className="section-title">
+            <h3>确定性检查</h3>
+            <span>{detail.checks.length} checks</span>
+          </div>
+          <div className="check-list">
+            {detail.checks.length === 0 && <p className="muted">该器件没有组件级检查，或仍待人工补档案。</p>}
+            {detail.checks.map((check) => (
+              <CheckCard check={check} key={`${check.subject}-${check.summary}`} />
+            ))}
+          </div>
+        </section>
       </div>
-      <VerdictBanner group={detail.status_group} />
-      <div className="identity-grid">
-        <InfoCell label="MPN" value={detail.part_number || "-"} />
-        <InfoCell label="厂商" value={detail.manufacturer || "-"} />
-        <InfoCell label="封装" value={detail.package || "-"} />
-        <InfoCell label="器件档案" value={detail.profile_part_number || "待补"} />
-        <InfoCell label="BOM 来源" value={detail.bom?.source || "-"} />
-        <InfoCell label="档案状态" value={profileStatusLabel(detail.profile?.status || detail.match_status)} />
-        <InfoCell label="文档索引" value={documentStatusLabel(detail.document?.status || "not_configured")} />
-        <InfoCell label="任务数" value={`${detail.task_counts.total} 项`} />
-      </div>
-      {detail.match_reason && <p className="scope-note">{formatSummary(detail.match_reason)}</p>}
-      <section className="prep-actions" aria-label="评审准备包">
-        <div>
-          <span className="eyebrow">Prep Packet</span>
-          <strong>评审准备包</strong>
-          <p>把当前器件身份、BOM/profile/document 状态、tasks、risk hints 和 evidence 汇总成可交接资料。</p>
-        </div>
-        <button className="icon-text-btn" type="button" onClick={() => void loadPrepPacket(false)} disabled={prepBusy}>
-          {prepBusy ? <Loader2 className="spin" size={14} /> : <FileSearch size={14} />}
-          预览
-        </button>
-        <button className="icon-text-btn" type="button" onClick={() => void loadPrepPacket(true)} disabled={prepBusy}>
-          <Download size={14} />
-          下载 MD
-        </button>
-      </section>
-      {prepError && <p className="form-error detail-error">{prepError}</p>}
-      {prepPreview && <pre className="prep-preview">{prepPreview}</pre>}
-      <section className="detail-section">
-        <div className="section-title">
-          <h3>引脚 / 网络表</h3>
-          <span>{detail.pins.length} pins</span>
-        </div>
-        <div className="pin-table">
-          <div className="pin-head">Pin</div>
-          <div className="pin-head">Name</div>
-          <div className="pin-head">Net</div>
-          <div className="pin-head">状态</div>
-          {detail.pins.slice(0, 24).map((pin) => (
-            <div className="pin-row" key={`${pin.number}-${pin.name}`}>
-              <span className="mono">{pin.number}</span>
-              <span>{pin.name}</span>
-              <span className="mono net-name">{pin.net || "-"}</span>
-              <span>{pin.status ? <StatusBadge group={statusGroup(pin.status)} label={pinStatusLabel(pin.status)} /> : "-"}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="detail-section">
-        <div className="section-title">
-          <h3>确定性检查</h3>
-          <span>{detail.checks.length} checks</span>
-        </div>
-        <div className="check-list">
-          {detail.checks.length === 0 && <p className="muted">该器件没有组件级检查，或仍待人工补档案。</p>}
-          {detail.checks.map((check) => (
-            <CheckCard check={check} key={`${check.subject}-${check.summary}`} />
-          ))}
-        </div>
-      </section>
     </section>
   );
 }
@@ -689,27 +692,30 @@ function DetailColumn({
 function EvidenceColumn({
   tasks,
   selectedTaskId,
+  selectedRefdes,
   onPickTask,
   detail,
   riskHints
 }: {
   tasks: ReviewTask[];
   selectedTaskId: string | null;
+  selectedRefdes: string | null;
   onPickTask: (taskId: string) => void;
   detail: ComponentDetail | null;
   riskHints: RiskHintsView;
 }) {
   const selected = tasks.find((task) => task.id === selectedTaskId) ?? tasks[0] ?? null;
+  const chainRefdes = detail?.refdes ?? selectedRefdes;
   return (
     <aside className="panel evidence-panel">
       <div className="panel-head">
         <div>
           <span className="eyebrow">Evidence Chain</span>
-          <h2>{detail ? `${detail.refdes} 证据链` : "证据链"}</h2>
+          <h2>{chainRefdes ? `${chainRefdes} 证据链` : "证据链"}</h2>
         </div>
         <Link2 size={17} />
       </div>
-      {!detail ? (
+      {!chainRefdes ? (
         <div className="empty-panel compact">
           <CircleHelp size={28} />
           <p>选择一个器件后显示 chain of custody。</p>
@@ -719,9 +725,9 @@ function EvidenceColumn({
           <CircleHelp size={28} />
           <p>当前器件没有 finding，显示组件级证据摘要。</p>
           <div className="evidence-list component-summary-chain">
-            {detail.evidence_chain.map((item, index) => (
+            {detail?.evidence_chain.map((item, index) => (
               <EvidenceCard item={item} key={`${item.kind}-${index}`} />
-            ))}
+            )) ?? <p className="muted">正在读取组件级证据摘要...</p>}
           </div>
         </div>
       ) : (
@@ -778,7 +784,7 @@ function EvidenceColumn({
           ))}
         </div>
       )}
-      <RiskHintsPanel riskHints={riskHints} selectedRefdes={detail?.refdes ?? null} />
+      <RiskHintsPanel riskHints={riskHints} selectedRefdes={chainRefdes} />
     </aside>
   );
 }
@@ -1158,7 +1164,13 @@ function StatusBadge({ group, label }: { group: StatusGroup; label: string }) {
 }
 
 function TrustBadge({ tier }: { tier: TrustTier }) {
-  return <span className={`trust-badge ${tier}`}>{TRUST_LABEL[tier]}</span>;
+  const [level, ...labelParts] = TRUST_LABEL[tier].split(" ");
+  return (
+    <span className={`trust-badge ${tier}`}>
+      <span className="trust-level">{level}</span>
+      <span className="trust-name">{labelParts.join(" ")}</span>
+    </span>
+  );
 }
 
 function VerdictBanner({ group }: { group: StatusGroup }) {
@@ -1247,13 +1259,11 @@ function documentStatusLabel(status: string): string {
 function queueSubtitle(item: ReviewQueueItem): string {
   const identity = [
     item.part_number || item.value || "无 MPN",
-    item.manufacturer,
     item.package
   ].filter(Boolean).join(" · ");
   const cues = [
-    `${item.evidence_count} 条证据`,
-    item.risk_hint_count ? `${item.risk_hint_count} 条外部提示` : "",
-    documentStatusLabel(item.document_status)
+    item.evidence_count ? `${item.evidence_count} 条证据` : "",
+    item.risk_hint_count ? `${item.risk_hint_count} 条外部提示` : ""
   ].filter(Boolean).join(" / ");
   return `${identity}${cues ? ` · ${cues}` : ""}`;
 }

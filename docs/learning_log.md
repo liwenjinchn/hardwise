@@ -3971,3 +3971,29 @@ Workbench may safely prefill the reviewer queue from public web search. Approval
 remains explicit: reviewer confirms the public document row, then
 `fetch-approved-documents`, then `draft-datasheet-profile`, then human-reviewed
 `ready` only when facts have page-level evidence.
+
+## 2026-06-09 — Vite source workbench is not a file:// entrypoint
+
+**Symptom**
+
+Opening `frontend/workbench/index.html` directly with `file://` showed a blank
+page even though the built workbench served correctly.
+
+**Root cause**
+
+That file is the Vite development source entry. It expects module resolution and
+asset serving from Vite or the built Hardwise static bundle, so the browser
+cannot load it as a standalone local file.
+
+**Fix**
+
+Use `uv run hardwise serve-workbench ... --fake-ai --port <port>` for the live
+React workbench, or open the generated static bundle under
+`src/hardwise/workbench/static/` after `npm --prefix frontend/workbench run
+build`.
+
+**Takeaway**
+
+For the React/Vite workbench, verify via the local server or built static
+bundle. Reserve `file://` smoke checks for the dedicated static HTML export
+path.
