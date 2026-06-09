@@ -1,4 +1,4 @@
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Bot,
@@ -82,6 +82,7 @@ function App() {
   const [error, setError] = useState("");
   const [parseResult, setParseResult] = useState<ImportResponse | null>(null);
   const [resolvedTaskIds, setResolvedTaskIds] = useState<Set<string>>(new Set());
+  const detailRequestId = useRef(0);
 
   const applyState = (payload: WorkbenchState) => {
     const firstComponent = payload.queue[0] ?? null;
@@ -106,14 +107,23 @@ function App() {
 
   useEffect(() => {
     if (!selectedRefdes) {
+      detailRequestId.current += 1;
       setDetail(null);
       return;
     }
+    const requestId = detailRequestId.current + 1;
+    detailRequestId.current = requestId;
     setDetailLoading(true);
     fetchComponentDetail(selectedRefdes)
-      .then(setDetail)
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setDetailLoading(false));
+      .then((nextDetail) => {
+        if (detailRequestId.current === requestId) setDetail(nextDetail);
+      })
+      .catch((err: Error) => {
+        if (detailRequestId.current === requestId) setError(err.message);
+      })
+      .finally(() => {
+        if (detailRequestId.current === requestId) setDetailLoading(false);
+      });
   }, [selectedRefdes]);
 
   const selectedComponentTasks = useMemo(() => {
@@ -662,7 +672,7 @@ function DetailColumn({
             <div className="pin-head">Name</div>
             <div className="pin-head">Net</div>
             <div className="pin-head">状态</div>
-            {detail.pins.slice(0, 24).map((pin) => (
+            {detail.pins.map((pin) => (
               <div className="pin-row" key={`${pin.number}-${pin.name}`}>
                 <span className="mono">{pin.number}</span>
                 <span>{pin.name}</span>

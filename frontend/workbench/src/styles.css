@@ -2490,3 +2490,93 @@ p {
     grid-column: auto;
   }
 }
+
+@media (max-width: 520px) {
+  .topbar {
+    align-items: stretch;
+  }
+
+  .brand {
+    width: 100%;
+    height: 44px;
+    padding: 0 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand-tag {
+    display: none;
+  }
+
+  .topbar-right {
+    order: 2;
+    width: 100%;
+    flex: 0 0 100%;
+    min-width: 0;
+    height: 42px;
+    padding: 0 10px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .project-pill {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .project-pill .src {
+    display: none;
+  }
+
+  .flow-nav {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .flow-nav button {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 0 12px;
+  }
+
+  .panel-head,
+  .task-brief,
+  .risk-hints {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .filter-grid {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(5, 112px);
+  }
+
+  .task-tabs {
+    max-width: 100%;
+  }
+
+  .detail-scroll {
+    padding: 16px 14px 34px;
+  }
+
+  .detail-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .title-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .prep-actions,
+  .project-prep-card {
+    grid-template-columns: 1fr;
+  }
+
+  .prep-button-row {
+    justify-content: flex-start;
+  }
+}
