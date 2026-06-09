@@ -10,7 +10,14 @@
     <title>Hardwise 工作台</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main style="display:grid;min-height:100vh;place-items:center;background:#f3f1ea;color:#1b2024;font:14px/1.6 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;text-align:center">
+        <div>
+          <strong>Hardwise 工作台 JavaScript 未加载。</strong>
+          <p style="margin:8px 0 0;color:#4a5159">请使用 serve-workbench，或确认 static/assets 与入口文件同目录完整。</p>
+        </div>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
