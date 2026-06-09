@@ -229,7 +229,7 @@ p {
   justify-content: center;
   padding: 0 5px;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 4px;
   background: var(--paper-2);
   color: var(--ink-2);
   font-family: var(--mono);
@@ -259,7 +259,7 @@ p {
   max-width: 360px;
   padding: 4px 6px 4px 12px;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 5px;
   background: var(--paper-2);
   color: var(--ink-2);
   font-size: 12.5px;
@@ -339,7 +339,11 @@ p {
   display: grid;
   height: 100%;
   min-height: 0;
-  grid-template-columns: 340px minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(320px, 340px) minmax(0, 1fr) minmax(340px, 360px);
+  border-top: 1px solid rgba(195, 188, 172, .58);
+  background:
+    linear-gradient(90deg, rgba(27, 32, 36, .035), transparent 20%, transparent 80%, rgba(27, 32, 36, .035)),
+    var(--paper);
   overflow: hidden;
 }
 
@@ -363,7 +367,9 @@ p {
 
 .queue-panel,
 .evidence-panel {
-  background: rgba(236, 233, 223, .42);
+  background:
+    linear-gradient(180deg, rgba(251, 250, 246, .55), rgba(236, 233, 223, .5)),
+    var(--paper-2);
 }
 
 .queue-panel {
@@ -375,7 +381,9 @@ p {
 }
 
 .detail-panel {
-  background: var(--paper);
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, .26), transparent 180px),
+    var(--paper);
   overflow-y: auto;
 }
 
@@ -391,8 +399,10 @@ p {
 
 .panel-head {
   flex: 0 0 auto;
+  min-height: 58px;
   padding: 12px 16px 11px;
   border-bottom: 1px solid var(--line);
+  background: rgba(251, 250, 246, .62);
 }
 
 .panel-head h2 {
@@ -511,25 +521,26 @@ p {
   position: relative;
   display: grid;
   width: 100%;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: 44px minmax(0, 1fr) 54px;
+  gap: 9px;
   align-items: center;
-  min-height: 72px;
-  padding: 10px 11px 10px 14px;
+  min-height: 68px;
+  padding: 9px 10px 9px 13px;
   border: 1px solid var(--line-2);
-  border-radius: var(--r);
+  border-radius: 5px;
   background: var(--panel);
   color: var(--ink);
   text-align: left;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .56);
   transition: border-color .12s, box-shadow .12s, background .12s;
 }
 
 .queue-row::before {
   position: absolute;
-  top: 10px;
-  bottom: 10px;
+  top: 8px;
+  bottom: 8px;
   left: 0;
-  width: 3px;
+  width: 4px;
   border-radius: 0 3px 3px 0;
   content: "";
   background: var(--neutral-line);
@@ -565,7 +576,10 @@ p {
 
 .refdes {
   display: inline-flex;
+  width: 42px;
+  min-height: 28px;
   align-items: center;
+  justify-content: center;
   padding: 1px 6px;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
@@ -589,9 +603,10 @@ p {
 .queue-copy strong {
   display: -webkit-box;
   overflow: hidden;
-  font-size: 12.5px;
-  font-weight: 500;
-  line-height: 1.4;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -601,24 +616,31 @@ p {
   overflow: hidden;
   margin-top: 3px;
   color: var(--ink-3);
-  font-size: 11.5px;
-  line-height: 1.45;
+  font-size: 11px;
+  line-height: 1.4;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
 .queue-side {
   display: grid;
-  min-width: 48px;
+  min-width: 52px;
   justify-items: end;
   gap: 3px;
 }
 
 .queue-side b {
+  min-width: 42px;
+  padding: 2px 5px;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  background: var(--paper-2);
   color: var(--ink);
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
 }
 
 .queue-side small {
@@ -742,19 +764,19 @@ p {
 .detail-head {
   align-items: flex-start;
   gap: 14px;
-  padding: 18px 22px 12px;
+  padding: 17px 22px 12px;
   border-bottom: 0;
   background: transparent;
 }
 
 .detail-glyph {
   display: grid;
-  width: 52px;
-  height: 52px;
+  width: 46px;
+  height: 46px;
   flex: 0 0 auto;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--panel-raise);
   color: var(--ink);
   box-shadow: var(--shadow-sm);
@@ -767,9 +789,9 @@ p {
 .detail-title h2 {
   margin: 0;
   font-family: var(--mono);
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: -.02em;
+  letter-spacing: 0;
   line-height: 1;
 }
 
@@ -792,7 +814,7 @@ p {
   gap: 5px;
   padding: 2px 9px;
   border: 1px solid var(--line-2);
-  border-radius: 20px;
+  border-radius: 4px;
   background: var(--paper-2);
   color: var(--ink-2);
   font-size: 11.5px;
@@ -813,6 +835,7 @@ p {
 
 .icon-text-btn,
 .primary-action,
+.project-prep-card button,
 .export-controls button,
 .finding-row button,
 .chat-form button {
@@ -1388,7 +1411,7 @@ p {
   margin-top: 6px;
   font-size: 24px;
   font-weight: 700;
-  letter-spacing: -.02em;
+  letter-spacing: 0;
 }
 
 .flow-copy p {
@@ -1757,7 +1780,7 @@ p {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  padding: 30px 32px 0;
+  padding: 0;
 }
 
 .export-controls button.active {
@@ -1767,11 +1790,68 @@ p {
 
 .export-preview {
   min-height: 460px;
-  margin: 18px 32px 30px;
+  margin: 0;
   padding: 14px 16px;
   overflow: auto;
   border-radius: var(--r);
   background: #1b2024;
+  color: #d7dbe0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.export-stack {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  padding: 30px 32px;
+}
+
+.project-prep-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background:
+    linear-gradient(90deg, var(--blue-wash), transparent 72%),
+    var(--panel);
+}
+
+.project-prep-card strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 13.5px;
+}
+
+.project-prep-card p {
+  max-width: 70ch;
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.prep-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.project-prep-preview {
+  max-height: 360px;
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: #20252a;
   color: #d7dbe0;
   font-family: var(--mono);
   font-size: 11.5px;

@@ -236,6 +236,56 @@ export interface ReviewPrepPacket {
   guardrails: string[];
 }
 
+export interface ProjectPrepComponentGroup {
+  group_id: string;
+  title: string;
+  refdes: string[];
+  refdes_count: number;
+  refdes_sample: string[];
+  value: string;
+  part_number: string;
+  manufacturer: string;
+  suggested_family: string;
+  profile_status: string;
+  validation_status: string;
+  document_status: string;
+  status_group: StatusGroup;
+  task_count: number;
+}
+
+export interface ProjectPrepFocusArea {
+  area: string;
+  title: string;
+  summary: string;
+  refdes: string[];
+  task_count: number;
+  status_group: StatusGroup;
+  open_questions: string[];
+}
+
+export interface ProjectPrepOpenQuestion {
+  source: string;
+  priority: StatusGroup;
+  refdes?: string | null;
+  question: string;
+}
+
+export interface ProjectReviewPrepPacket {
+  schema_version: string;
+  project: WorkbenchProject;
+  scope: string;
+  summary: WorkbenchSummary;
+  task_counts: ReviewTaskCounts;
+  queue: ReviewQueueItem[];
+  priority_tasks: ReviewTask[];
+  key_component_groups: ProjectPrepComponentGroup[];
+  focus_areas: ProjectPrepFocusArea[];
+  open_questions: ProjectPrepOpenQuestion[];
+  risk_hints: RiskHintsView;
+  evidence: EvidenceView[];
+  guardrails: string[];
+}
+
 export interface EvidenceClassification {
   token: string;
   source_class: string;

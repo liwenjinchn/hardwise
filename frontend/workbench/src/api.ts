@@ -3,6 +3,7 @@ import type {
   ChatResponse,
   ComponentDetail,
   ImportResponse,
+  ProjectReviewPrepPacket,
   ReviewPrepPacket,
   WorkbenchState
 } from "./types";
@@ -43,6 +44,19 @@ export async function fetchPrepPacketMarkdown(refdes: string): Promise<string> {
   const response = await fetch(
     `/api/workbench/components/${encodeURIComponent(refdes)}/prep-packet?format=markdown`
   );
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(body || `${response.status} ${response.statusText}`);
+  }
+  return response.text();
+}
+
+export function fetchProjectPrepPacket(): Promise<ProjectReviewPrepPacket> {
+  return requestJson<ProjectReviewPrepPacket>("/api/workbench/prep-packet?format=json");
+}
+
+export async function fetchProjectPrepPacketMarkdown(): Promise<string> {
+  const response = await fetch("/api/workbench/prep-packet?format=markdown");
   if (!response.ok) {
     const body = await response.text();
     throw new Error(body || `${response.status} ${response.statusText}`);
