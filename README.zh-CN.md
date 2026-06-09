@@ -123,7 +123,7 @@ uv run hardwise design-validator-ui \
   --index-json reports/controller-design-validator-index.json
 ```
 
-mixed controller fixture 输出 **25 components, 17 validated rows, BOM matched=25, PASS/WARN/ERROR = 5/9/3, 8 manual/no-local-profile rows**。17 个 L1 rows 包括 4 个 profile-backed targets 和 13 个 generic passive checks；generic passive 只覆盖 BOM/netlist 里的显式轻量事实，不等同于深度 datasheet review。U1/L7805 重复 L78 evidence path；U12/XL1509、U3/EG2132、U8/STM32G030 展示确定性 topology / debug-interface 错误。
+mixed controller fixture 输出 **25 components, 22 validated rows, BOM matched=25, PASS/WARN/ERROR = 5/13/4, 3 manual/no-local-profile rows**。22 个 L1 rows 包括 9 个 profile-backed targets（U1/U12/U3/U8、D1/D5、Q1/Q2/Q12）和 13 个 generic passive checks；generic passive 只覆盖 BOM/netlist 里的显式轻量事实，不等同于深度 datasheet review。U1/L7805 重复 L78 evidence path；U12/XL1509、U3/EG2132、U8/STM32G030 展示确定性 topology / debug-interface 错误。
 
 真实板导入只是 pressure test 和 coverage-planning evidence，不是主公开 demo。收口复跑结果是：Switch board 4010 components / 3794 validated / 216 manual / PASS/WARN/ERROR = 3663/125/6；mainboard 8180 components / 7248 BOM matched / 6847 validated / 1333 manual / PASS/WARN/ERROR = 3921/2926/0。见 [`docs/closeout_pressure_summary.md`](docs/closeout_pressure_summary.md)；这次提升来自保守的 generic inductor/ferrite coverage 和 reviewed PE537BA P-MOS profile，不代表整板自动正确性判断。
 

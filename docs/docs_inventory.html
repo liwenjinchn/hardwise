@@ -26,6 +26,17 @@
       <a href="./index.html"><b>8. Reading index</b><span class="muted">全部 HTML 入口</span></a>
     </div>
 
+    <h2>Canonical Current Facts</h2>
+    <p class="muted">Keep public-facing docs aligned with <code>README.md</code> and <code>docs/demo.md</code>. Older closeout and interview numbers are historical unless this map says otherwise.</p>
+    <table>
+      <tr><th>Fact</th><th>Current value</th></tr>
+      <tr><td>Components</td><td>25</td></tr>
+      <tr><td>BOM matched</td><td>25</td></tr>
+      <tr><td>Validated rows</td><td>22</td></tr>
+      <tr><td>PASS / WARN / ERROR</td><td>5 / 13 / 4</td></tr>
+      <tr><td>Manual / no-local-profile rows</td><td>3</td></tr>
+    </table>
+
     <h2>Status Key</h2>
     <table>
       <tr><th>Status</th><th>Meaning</th></tr>
@@ -34,7 +45,18 @@
       <tr><td class="tag">handoff</td><td>Active continuation notes for the next local session or another machine.</td></tr>
       <tr><td class="tag">historical_record</td><td>Useful history, but not the current entry path or current numbers.</td></tr>
       <tr><td class="tag">staged_plan</td><td>Planning/spec material kept for traceability, not a public claim.</td></tr>
+      <tr><td class="tag">ai_rules</td><td>Agent operating contract or overlay; not public product narrative.</td></tr>
+      <tr><td class="tag">interview_private</td><td>Recruiting, interview, or social draft material; verify facts against the canonical block before quoting.</td></tr>
       <tr><td class="tag">asset</td><td>Static media used by current pages.</td></tr>
+    </table>
+
+    <h2>Root Docs And Agent Rules</h2>
+    <table>
+      <tr><th>File</th><th>Status</th><th>Use</th></tr>
+      <tr><td><code>README.md</code></td><td class="tag">public_entry</td><td>Canonical English public overview and current fact narrative.</td></tr>
+      <tr><td><code>README.zh-CN.md</code></td><td class="tag">public_entry</td><td>Canonical Chinese public overview.</td></tr>
+      <tr><td><code>AGENTS.md</code></td><td class="tag">ai_rules</td><td>Canonical agent operating contract, hard rules, commands, and scope boundaries.</td></tr>
+      <tr><td><code>CLAUDE.md</code></td><td class="tag">ai_rules</td><td>Short Claude Code overlay that points back to <code>AGENTS.md</code>.</td></tr>
     </table>
 
     <h2>Current Public Pages</h2>
@@ -56,6 +78,16 @@
       <tr><th>File</th><th>Status</th><th>Use</th></tr>
       <tr><td><a href="./workbench_spa_handoff.md">docs/workbench_spa_handoff.md</a></td><td class="tag">handoff</td><td>Continuation guide for the React/Vite workbench visual alignment and feature triage.</td></tr>
       <tr><td><a href="./documentation_cleanup_handoff.md">docs/documentation_cleanup_handoff.md</a></td><td class="tag">handoff</td><td>Continuation guide for AI-first documentation cleanup and context routing.</td></tr>
+    </table>
+
+    <h2>Interview And Draft Material</h2>
+    <table>
+      <tr><th>File</th><th>Status</th><th>Use</th></tr>
+      <tr><td><code>docs/interview_qa.md</code></td><td class="tag">interview_private</td><td>Long-form interview evidence bank; check current facts before quoting.</td></tr>
+      <tr><td><code>docs/hardwise_evolution_narrative.md</code></td><td class="tag">interview_private</td><td>Personal evolution narrative for interviews and posts.</td></tr>
+      <tr><td><code>docs/hardwise_social_drafts.md</code></td><td class="tag">interview_private</td><td>Social/posting drafts; not a source of product truth.</td></tr>
+      <tr><td><code>docs/jd_alignment.md</code></td><td class="tag">interview_private</td><td>Role-alignment support material.</td></tr>
+      <tr><td><code>docs/interview_narrative.md</code></td><td class="tag">interview_private</td><td>Interview script; secondary to README/demo facts.</td></tr>
     </table>
 
     <p class="muted">Markdown files remain the source records in the repository. Public Pages entry links point to HTML so reviewers do not land on raw Markdown text.</p>

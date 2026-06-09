@@ -19,6 +19,20 @@ Use this order for the current public narrative:
 
 `docs/index.html` is the GitHub Pages reading index for these files.
 
+## Canonical Current Facts
+
+For public-facing docs, keep this short fact block aligned with `README.md` and
+`docs/demo.md`. Do not copy older closeout or interview numbers into current
+entry pages.
+
+| Fact | Current value |
+|---|---:|
+| Components | 25 |
+| BOM matched | 25 |
+| Validated rows | 22 |
+| PASS / WARN / ERROR | 5 / 13 / 4 |
+| Manual / no-local-profile rows | 3 |
+
 ## Status Key
 
 | Status | Meaning |
@@ -28,7 +42,18 @@ Use this order for the current public narrative:
 | `handoff` | Active continuation notes for the next local session or another machine. |
 | `historical_record` | Useful history, but not the current entry path or current numbers. |
 | `staged_plan` | Planning/spec material kept for traceability, not a public claim. |
+| `ai_rules` | Agent operating contract or overlay; not public product narrative. |
+| `interview_private` | Recruiting, interview, or social draft material; verify facts against the canonical block before quoting. |
 | `asset` | Static media used by current pages. |
+
+## Root Documents
+
+| File | Status | Current Use |
+|---|---|---|
+| `README.md` | `public_entry` | Canonical English public overview and current fact narrative. |
+| `README.zh-CN.md` | `public_entry` | Canonical Chinese public overview; should match the README current facts. |
+| `AGENTS.md` | `ai_rules` | Canonical agent operating contract, hard rules, commands, and scope boundaries. |
+| `CLAUDE.md` | `ai_rules` | Short Claude Code overlay that points back to `AGENTS.md`; not an independent rulebook. |
 
 ## Inventory
 
@@ -53,18 +78,20 @@ Use this order for the current public narrative:
 | `docs/review_node.md` | `current_reference` | Pre-Layout schematic-review node profile and MVP anchor. |
 | `docs/profile_archetypes.md` | `current_reference` | Reusable `needs_review` profile draft workflow. |
 | `docs/windows.md` | `current_reference` | Windows/PowerShell setup notes and CI boundary. |
-| `docs/PLAN.md` | `current_reference` | Long-term roadmap and decision records. |
+| `docs/PLAN.md` | `current_reference` | Long-term roadmap and decision records; not the current sprint plan. |
 | `docs/PLAN.html` | `current_reference` | Reading view of `docs/PLAN.md`; source of truth remains Markdown. |
-| `docs/interview_qa.md` | `current_reference` | Long-form evidence bank for interviews; not the first public page. |
+| `docs/interview_qa.md` | `interview_private` | Long-form evidence bank for interviews; check current facts before quoting. |
 | `docs/learning_log.md` | `current_reference` | Debugging journal and task-specific lessons. |
-| `docs/rolling_log.md` | `current_reference` | Staged future improvements and deferred work. |
+| `docs/rolling_log.md` | `current_reference` | Staged future improvements and deferred work; candidate ideas are not active scope. |
 | `docs/workbench_spa_handoff.md` | `handoff` | Continuation guide for the React/Vite workbench visual alignment and feature triage. |
 | `docs/documentation_cleanup_handoff.md` | `handoff` | Continuation guide for AI-first documentation cleanup and context routing. |
-| `docs/weekend_closeout_plan.md` | `current_reference` | Active branch closeout checklist; becomes historical after handoff. |
-| `docs/jd_alignment.md` | `historical_record` | Role-alignment support material; keep secondary to public demo docs. |
-| `docs/jd_alignment.html` | `historical_record` | HTML reading view of JD alignment. |
-| `docs/interview_narrative.md` | `historical_record` | Interview script; useful, but current facts live in README/demo/Q&A. |
-| `docs/interview_narrative.html` | `historical_record` | HTML reading view of interview script. |
+| `docs/weekend_closeout_plan.md` | `historical_record` | Completed closeout checklist; keep for traceability, not current instructions. |
+| `docs/jd_alignment.md` | `interview_private` | Role-alignment support material; keep secondary to public demo docs. |
+| `docs/jd_alignment.html` | `interview_private` | HTML reading view of JD alignment. |
+| `docs/interview_narrative.md` | `interview_private` | Interview script; useful, but current facts live in README/demo/Q&A. |
+| `docs/interview_narrative.html` | `interview_private` | HTML reading view of interview script. |
+| `docs/hardwise_evolution_narrative.md` | `interview_private` | Personal evolution narrative for interviews and posts; verify numbers before reuse. |
+| `docs/hardwise_social_drafts.md` | `interview_private` | Social/posting drafts; not a source of product truth. |
 | `docs/midpoint_review.md` | `historical_record` | Midpoint memo; not current final narrative. |
 | `docs/midpoint_review.html` | `historical_record` | HTML reading view of midpoint memo. |
 | `docs/hardware-demo-review-queue.html` | `historical_record` | vNext/product exploration; do not promote over `hardware-demo.html`. |
