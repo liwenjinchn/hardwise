@@ -33,6 +33,7 @@ from sqlalchemy.orm import Session
 
 from hardwise.adapters.base import BoardRegistry
 from hardwise.agent.document_tools import DOCUMENT_TOOL_DEFINITIONS
+from hardwise.agent.evidence_locator import EVIDENCE_LOCATOR_TOOL_DEFINITIONS
 from hardwise.agent.topology_tools import TOPOLOGY_TOOL_DEFINITIONS
 from hardwise.store.relational import query_components, query_nc_pins
 from hardwise.store.vector import query_chunks
@@ -412,4 +413,4 @@ TOOL_DEFINITIONS: list[dict] = [
         ),
         "input_schema": RunComponentValidationInput.model_json_schema(),
     },
-] + TOPOLOGY_TOOL_DEFINITIONS + DOCUMENT_TOOL_DEFINITIONS
+] + TOPOLOGY_TOOL_DEFINITIONS + DOCUMENT_TOOL_DEFINITIONS + EVIDENCE_LOCATOR_TOOL_DEFINITIONS

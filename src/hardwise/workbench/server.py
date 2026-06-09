@@ -13,6 +13,10 @@ from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from hardwise.agent.evidence_locator import (
+    LocateComponentEvidenceInput,
+    locate_component_evidence,
+)
 from hardwise.report.copilot_panel import render_copilot_panel
 from hardwise.report.validator_project_ui import render_project_workbench
 from hardwise.workbench.chat import ChatRequest, ChatResponse, WorkbenchChatService, default_refdes
@@ -33,6 +37,11 @@ from hardwise.workbench.view_model import (
 from hardwise.workbench.prep_packet import (
     build_project_review_prep_packet,
     render_project_review_prep_packet_markdown,
+)
+from hardwise.workbench.profile_promotion import (
+    ProfilePromotionMiss,
+    build_profile_promotion_packet,
+    render_profile_promotion_packet_markdown,
 )
 
 STATIC_DIR = Path(__file__).with_name("static")
@@ -137,6 +146,30 @@ def create_workbench_app(
             },
         )
 
+    @app.get("/api/workbench/components/{refdes}/evidence")
+    def component_evidence(
+        refdes: str,
+        topic: str = Query("all"),
+        pin_number: str | None = Query(None),
+        limit: int = Query(12, ge=1, le=50),
+    ) -> Response:
+        context = current_context["value"]
+        result = locate_component_evidence(
+            context.design,
+            context.validation_targets,
+            context.index,
+            context.document_report,
+            LocateComponentEvidenceInput(
+                refdes=refdes,
+                topic=topic,
+                pin_number=pin_number,
+                limit=limit,
+            ),
+        )
+        if result.status == "not_found":
+            return JSONResponse(status_code=404, content=result.model_dump(mode="json"))
+        return JSONResponse(content=result.model_dump(mode="json"))
+
     @app.get("/api/workbench/prep-packet")
     def project_prep_packet(
         format: Literal["json", "markdown"] = Query("json"),
@@ -148,8 +181,30 @@ def create_workbench_app(
                 content=render_project_review_prep_packet_markdown(packet),
                 media_type="text/markdown; charset=utf-8",
                 headers={
+                    "Content-Disposition": ('attachment; filename="hardwise-project-prep.md"')
+                },
+            )
+        return JSONResponse(
+            content=packet.model_dump(mode="json"),
+            headers={"Content-Disposition": ('attachment; filename="hardwise-project-prep.json"')},
+        )
+
+    @app.get("/api/workbench/profile-gaps/{group_id}/promotion-packet")
+    def profile_promotion_packet(
+        group_id: str,
+        format: Literal["json", "markdown"] = Query("json"),
+    ) -> Response:
+        context = current_context["value"]
+        packet = build_profile_promotion_packet(context, group_id)
+        if isinstance(packet, ProfilePromotionMiss):
+            return JSONResponse(status_code=404, content=packet.model_dump(mode="json"))
+        if format == "markdown":
+            return Response(
+                content=render_profile_promotion_packet_markdown(packet),
+                media_type="text/markdown; charset=utf-8",
+                headers={
                     "Content-Disposition": (
-                        'attachment; filename="hardwise-project-prep.md"'
+                        f'attachment; filename="hardwise-profile-promotion-{group_id}.md"'
                     )
                 },
             )
@@ -157,7 +212,7 @@ def create_workbench_app(
             content=packet.model_dump(mode="json"),
             headers={
                 "Content-Disposition": (
-                    'attachment; filename="hardwise-project-prep.json"'
+                    f'attachment; filename="hardwise-profile-promotion-{group_id}.json"'
                 )
             },
         )
@@ -171,7 +226,9 @@ def create_workbench_app(
         import_dir = Path(tempfile.mkdtemp(prefix="hardwise-workbench-import-"))
         try:
             netlist_path = _save_upload(netlist, import_dir, fallback_name="uploaded.net")
-            bom_path = _save_upload(bom, import_dir, fallback_name="uploaded_bom.csv") if bom else None
+            bom_path = (
+                _save_upload(bom, import_dir, fallback_name="uploaded_bom.csv") if bom else None
+            )
             hints_path = (
                 _save_upload(risk_hints_json, import_dir, fallback_name="risk_hints.json")
                 if risk_hints_json

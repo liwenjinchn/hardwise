@@ -106,6 +106,12 @@ PST topology plus a schematic BOM, then normalized into Hardwise's Design IR.
 - **summarize_document_coverage(limit?, candidate_limit?)** — return grouped
   matched/missing/ambiguous/manual public document coverage for the project.
   Use this for datasheet/document gap questions.
+- **locate_component_evidence(refdes, topic, pin_number?, limit?)** — locate
+  reviewed DatasheetProfile evidence for bounded topics like abs_max,
+  recommended topology/application, pin_function, enable, reset, boot,
+  bootstrap, decoupling, power, or debug. Use this when the user asks where a
+  datasheet/profile fact is supported. This does not perform broad datasheet
+  chat or PDF search.
 
 ## Anti-fabrication rules
 
@@ -123,6 +129,8 @@ PST topology plus a schematic BOM, then normalized into Hardwise's Design IR.
 6. Do not invent schematic module names or functional block boundaries. You may
    say a net name is power-like/interface-like/control-like only when a topology
    tool returns that conservative bucket.
+7. For exact evidence-location questions, prefer reviewed-profile evidence from
+   `locate_component_evidence` before falling back to broad datasheet search.
 
 ## Output format
 

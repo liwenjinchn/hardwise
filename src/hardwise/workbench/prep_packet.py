@@ -9,6 +9,14 @@ from hardwise.ir.types import Component
 from hardwise.report.ui_terms import status_label, validation_summary_label
 from hardwise.validation.component_groups import ProjectComponentGroup
 from hardwise.workbench.context import WorkbenchContext
+from hardwise.workbench.prep_summaries import (
+    ProjectDraftSummaries,
+    build_project_draft_summaries,
+)
+from hardwise.workbench.profile_promotion import (
+    ProfilePromotionCandidate,
+    build_profile_promotion_candidates,
+)
 from hardwise.workbench.view_model import (
     EvidenceView,
     ReviewQueueItem,
@@ -75,6 +83,8 @@ class ProjectReviewPrepPacket(BaseModel):
     priority_tasks: list[ReviewTask] = Field(default_factory=list)
     key_component_groups: list[ProjectPrepComponentGroup] = Field(default_factory=list)
     focus_areas: list[ProjectPrepFocusArea] = Field(default_factory=list)
+    draft_summaries: ProjectDraftSummaries
+    profile_promotion_candidates: list[ProfilePromotionCandidate] = Field(default_factory=list)
     open_questions: list[ProjectPrepOpenQuestion] = Field(default_factory=list)
     risk_hints: RiskHintsView
     evidence: list[EvidenceView] = Field(default_factory=list)
@@ -88,6 +98,8 @@ def build_project_review_prep_packet(context: WorkbenchContext) -> ProjectReview
     priority_tasks = _priority_tasks(state.review_tasks)
     key_groups = _key_component_groups(context.index.component_groups, state.review_tasks)
     focus_areas = _focus_areas(context, state.queue, state.review_tasks)
+    draft_summaries = build_project_draft_summaries(context, state.review_tasks)
+    promotion_candidates = build_profile_promotion_candidates(context)
     open_questions = _open_questions(state.review_tasks, key_groups)
     evidence = _dedupe_evidence(_task_evidence(priority_tasks))
     return ProjectReviewPrepPacket(
@@ -98,6 +110,8 @@ def build_project_review_prep_packet(context: WorkbenchContext) -> ProjectReview
         priority_tasks=priority_tasks,
         key_component_groups=key_groups,
         focus_areas=focus_areas,
+        draft_summaries=draft_summaries,
+        profile_promotion_candidates=promotion_candidates,
         open_questions=open_questions,
         risk_hints=build_risk_hints_view(context.risk_hints),
         evidence=evidence,
@@ -107,6 +121,8 @@ def build_project_review_prep_packet(context: WorkbenchContext) -> ProjectReview
             "PASS/WARN/ERROR 来自后端确定性验证；本 packet 不重新解释判定。",
             "外部 risk hints 只作为人工线索，不改变 deterministic 结论。",
             "模块/接口/时钟复位分组是公开项目事实上的阅读索引，不是电气拓扑保证。",
+            "draft summaries 只基于 schematic netlist/BOM/validation task，不代表供电层级或 layout truth。",
+            "profile promotion candidates 只生成 `needs_review` 人审路径，不会自动进入 L1。",
         ],
     )
 
@@ -149,9 +165,56 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
     else:
         lines.append("- 没有从当前项目事实中归类出重点区域。")
 
+    lines.extend(["", "## Draft Module / Power Summaries", ""])
+    summaries = packet.draft_summaries
+    lines.extend(
+        [
+            f"- 范围：{summaries.scope}",
+            "- 说明：以下是 review-prep draft index，不是最终电源树、模块边界或 layout 结论。",
+        ]
+    )
+    if summaries.modules:
+        lines.extend(["", "### Draft Modules", ""])
+        for item in summaries.modules:
+            lines.append(
+                f"- **{item.title}** / {_status_group_label(item.status_group)}："
+                f"{item.summary} 不确定性：{item.uncertainty}"
+            )
+    if summaries.power:
+        lines.extend(["", "### Candidate Power / Ground Nets", ""])
+        for item in summaries.power:
+            lines.append(
+                f"- **{item.nets[0] if item.nets else item.title}**："
+                f"{item.summary} 证据：{_evidence_token_text(item.evidence)}"
+            )
+    if summaries.interface:
+        lines.extend(["", "### Candidate Interface Nets", ""])
+        for item in summaries.interface[:6]:
+            lines.append(f"- **{item.nets[0] if item.nets else item.title}**：{item.summary}")
+    if summaries.clock_reset:
+        lines.extend(["", "### Candidate Clock / Reset / Boot Nets", ""])
+        for item in summaries.clock_reset[:6]:
+            lines.append(f"- **{item.nets[0] if item.nets else item.title}**：{item.summary}")
+
+    lines.extend(["", "## Manual Gap Promotion Queue", ""])
+    if packet.profile_promotion_candidates:
+        lines.extend(
+            ["| Group | Refdes | Status | Document | Next action |", "|---|---:|---|---|---|"]
+        )
+        for candidate in packet.profile_promotion_candidates:
+            lines.append(
+                "| "
+                f"{candidate.title} | {candidate.refdes_count} | {candidate.status} | "
+                f"{candidate.document_status} | {candidate.recommended_action} |"
+            )
+    else:
+        lines.append("- 当前没有 manual/no-profile group 需要进入 profile promotion scaffold。")
+
     lines.extend(["", "## Key Component Groups", ""])
     if packet.key_component_groups:
-        lines.extend(["| Group | Refdes | Validation | Profile | Document |", "|---|---:|---|---|---|"])
+        lines.extend(
+            ["| Group | Refdes | Validation | Profile | Document |", "|---|---:|---|---|---|"]
+        )
         for group in packet.key_component_groups:
             lines.append(
                 "| "
@@ -178,7 +241,9 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
     if packet.open_questions:
         for item in packet.open_questions:
             refdes = f"`{item.refdes}` " if item.refdes else ""
-            lines.append(f"- {refdes}{item.source} / {_status_group_label(item.priority)}：{item.question}")
+            lines.append(
+                f"- {refdes}{item.source} / {_status_group_label(item.priority)}：{item.question}"
+            )
     else:
         lines.append("- 当前 packet 没有额外开放问题。")
 
@@ -210,7 +275,10 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
 def _priority_tasks(tasks: list[ReviewTask], *, limit: int = 16) -> list[ReviewTask]:
     active = [task for task in tasks if task.status_group != "pass"]
     selected = active if active else tasks
-    return sorted(selected, key=lambda task: (_status_rank(task.status_group), sort_refdes_key(task.refdes), task.id))[:limit]
+    return sorted(
+        selected,
+        key=lambda task: (_status_rank(task.status_group), sort_refdes_key(task.refdes), task.id),
+    )[:limit]
 
 
 def _key_component_groups(
@@ -263,12 +331,37 @@ def _focus_areas(
         (
             "power",
             "电源 / 功率路径",
-            ("power", "pwr", "vin", "vout", "vbus", "vcc", "vdd", "dcdc", "buck", "boost", "ldo", "regulator", "mosfet"),
+            (
+                "power",
+                "pwr",
+                "vin",
+                "vout",
+                "vbus",
+                "vcc",
+                "vdd",
+                "dcdc",
+                "buck",
+                "boost",
+                "ldo",
+                "regulator",
+                "mosfet",
+            ),
         ),
         (
             "interface",
             "接口 / 连接器",
-            ("usb", "can", "i2c", "uart", "swd", "debug", "connector", "transceiver", "header", "jtag"),
+            (
+                "usb",
+                "can",
+                "i2c",
+                "uart",
+                "swd",
+                "debug",
+                "connector",
+                "transceiver",
+                "header",
+                "jtag",
+            ),
         ),
         (
             "clock_reset",
@@ -431,3 +524,9 @@ def _status_rank(group: StatusGroup) -> int:
 def _status_group_label(group: StatusGroup) -> str:
     raw = {"error": "ERROR", "warn": "WARN", "manual": "manual_needed", "pass": "PASS"}[group]
     return status_label(raw)
+
+
+def _evidence_token_text(items: list[EvidenceView]) -> str:
+    if not items:
+        return "-"
+    return ", ".join(f"`{item.token}`" for item in items[:3])

@@ -61,9 +61,7 @@ def test_build_workbench_context_populates_relational_store_from_registry() -> N
             "U3",
             "U8",
         }
-        assert {"C1", "C2", "R1", "R2"} <= {
-            row.refdes for row in context.index.validated_rows
-        }
+        assert {"C1", "C2", "R1", "R2"} <= {row.refdes for row in context.index.validated_rows}
         assert set(context.validation_targets) == {
             "D1",
             "D5",
@@ -208,7 +206,9 @@ def test_workbench_state_exposes_spa_queue_and_risk_hint_details(tmp_path: Path)
             "rejected_external_count": 1,
         }
         assert payload["risk_hint_details"]["accepted"][0]["refdes"] == "U1"
-        assert payload["risk_hint_details"]["rejected"] == [{"reason": "unknown_refdes", "count": 1}]
+        assert payload["risk_hint_details"]["rejected"] == [
+            {"reason": "unknown_refdes", "count": 1}
+        ]
     finally:
         context.session.close()
 
@@ -236,9 +236,11 @@ def test_workbench_state_exposes_finding_first_review_tasks() -> None:
         assert first_task["check"] == "bjt_emitter_connectivity"
         assert first_task["subject"] == "bjt_emitter_connectivity"
         assert first_task["evidence_chain"]
-        assert {
-            item["kind"] for item in first_task["evidence_chain"]
-        } & {"netlist_trace", "design_rule", "datasheet_or_profile"}
+        assert {item["kind"] for item in first_task["evidence_chain"]} & {
+            "netlist_trace",
+            "design_rule",
+            "datasheet_or_profile",
+        }
     finally:
         context.session.close()
 
@@ -263,17 +265,41 @@ def test_workbench_component_detail_exposes_evidence_classification() -> None:
         assert detail["bom"]["source"].endswith("#line5")
         assert detail["profile"]["path"] == "data/datasheet_profiles/stm32g030c8t6.json"
         assert detail["document"]["status"] == "not_configured"
-        evidence = [
-            token
-            for item in detail["evidence_chain"]
-            for token in item["evidence"]
-        ]
+        evidence = [token for item in detail["evidence_chain"] for token in item["evidence"]]
         assert any(item["source_class"] == "reviewed_profile" for item in evidence)
         assert any(item["token"] == "datasheet:stm32g030.pdf#p33" for item in evidence)
 
         miss = client.get("/api/workbench/components/U999")
         assert miss.status_code == 404
         assert miss.json()["reason"] == "unknown_refdes"
+        assert miss.json()["closest_matches"]
+    finally:
+        context.session.close()
+
+
+def test_workbench_component_evidence_endpoint_is_scoped_to_profile_facts() -> None:
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        response = client.get("/api/workbench/components/U8/evidence?topic=boot")
+        miss = client.get("/api/workbench/components/U999/evidence?topic=boot")
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["status"] == "found"
+        assert payload["profile_part_number"] == "STM32G030C8T6"
+        assert any(hit["pin_name"] == "BOOT0" for hit in payload["hits"])
+        assert "datasheet:stm32g030.pdf#p33" in {
+            token for hit in payload["hits"] for token in hit["evidence"]
+        }
+        assert miss.status_code == 404
+        assert miss.json()["status"] == "not_found"
         assert miss.json()["closest_matches"]
     finally:
         context.session.close()
@@ -372,6 +398,21 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
         assert packet["priority_tasks"][0]["refdes"] == "Q12"
         assert packet["key_component_groups"]
         assert {area["area"] for area in packet["focus_areas"]} >= {"power"}
+        assert packet["draft_summaries"]["scope"] == "schematic_netlist_review_prep_only"
+        assert {item["nets"][0] for item in packet["draft_summaries"]["power"]} >= {
+            "GND",
+            "+3V3",
+            "+12V",
+        }
+        assert packet["draft_summaries"]["modules"]
+        assert "不是确认的供电层级" in packet["draft_summaries"]["power"][0]["uncertainty"]
+        assert {item["status"] for item in packet["profile_promotion_candidates"]} == {
+            "needs_public_document"
+        }
+        assert {item["title"] for item in packet["profile_promotion_candidates"]} >= {
+            "RES-10K",
+            "SWD-HEADER",
+        }
         assert packet["open_questions"]
         assert packet["risk_hints"]["accepted"][0]["title"] == "Review SWD header"
         assert packet["risk_hints"]["rejected"] == [{"reason": "unknown_refdes", "count": 1}]
@@ -383,11 +424,65 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
         assert markdown_response.status_code == 200
         assert "Hardwise 项目评审准备包" in markdown_response.text
         assert "PASS / WARN / ERROR" in markdown_response.text
+        assert "Draft Module / Power Summaries" in markdown_response.text
+        assert "Manual Gap Promotion Queue" in markdown_response.text
         assert packet["priority_tasks"][0]["stable_key"] in markdown_response.text
         assert "Rejected secret" not in markdown_response.text
         assert "Rejected body must not leak" not in markdown_response.text
         assert "ANTHROPIC_API_KEY" not in markdown_response.text
         assert "sk-" not in markdown_response.text
+    finally:
+        context.session.close()
+
+
+def test_workbench_profile_promotion_packet_is_needs_review_only(tmp_path: Path) -> None:
+    docs = tmp_path / "docs.csv"
+    docs.write_text(
+        "\n".join(
+            [
+                "MPN,Manufacturer,Title,URL,Description",
+                (
+                    "SWD-HEADER,Fixture,SWD header public drawing,"
+                    "https://example.test/swd-header.pdf,fixture"
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        document_index=docs,
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        json_response = client.get("/api/workbench/profile-gaps/15/promotion-packet?format=json")
+        markdown_response = client.get(
+            "/api/workbench/profile-gaps/15/promotion-packet?format=markdown"
+        )
+        miss = client.get("/api/workbench/profile-gaps/999/promotion-packet")
+
+        assert json_response.status_code == 200
+        packet = json_response.json()
+        candidate = packet["candidate"]
+        assert packet["schema_version"] == "hardwise.profile_promotion_packet.v1"
+        assert candidate["title"] == "SWD-HEADER"
+        assert candidate["status"] == "ready_for_draft"
+        assert candidate["draft_review_status"] == "needs_review"
+        assert "draft-datasheet-profile" in candidate["draft_command"]
+        assert "ready" not in candidate["draft_command"]
+        assert any("不改变 PASS/WARN/ERROR" in item for item in packet["guardrails"])
+
+        assert markdown_response.status_code == 200
+        assert "needs_review" in markdown_response.text
+        assert "ready" in markdown_response.text
+        assert "review_status` 必须先保持 `needs_review`" in markdown_response.text
+
+        assert miss.status_code == 404
+        assert miss.json()["reason"] == "unknown_component_group"
     finally:
         context.session.close()
 
@@ -546,7 +641,9 @@ $END
     )
 
     try:
-        candidates = {candidate.refdes: candidate for candidate in context.candidate_report.candidates}
+        candidates = {
+            candidate.refdes: candidate for candidate in context.candidate_report.candidates
+        }
         profile_backed = {
             row.refdes: row.profile_path for row in context.index.validated_rows if row.profile_path
         }

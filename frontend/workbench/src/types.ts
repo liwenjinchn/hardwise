@@ -270,6 +270,63 @@ export interface ProjectPrepOpenQuestion {
   question: string;
 }
 
+export type DraftSummaryConfidence = "high" | "medium" | "low";
+
+export interface DraftSummaryItem {
+  kind: string;
+  title: string;
+  summary: string;
+  refdes: string[];
+  nets: string[];
+  task_ids: string[];
+  evidence: EvidenceView[];
+  confidence: DraftSummaryConfidence;
+  uncertainty: string;
+  basis: string[];
+  status_group: StatusGroup;
+}
+
+export interface ProjectDraftSummaries {
+  schema_version: string;
+  scope: string;
+  modules: DraftSummaryItem[];
+  key_groups: DraftSummaryItem[];
+  power: DraftSummaryItem[];
+  interface: DraftSummaryItem[];
+  clock_reset: DraftSummaryItem[];
+  open_questions: DraftSummaryItem[];
+}
+
+export type PromotionStatus =
+  | "ready_for_draft"
+  | "needs_public_document"
+  | "needs_document_selection"
+  | "already_l1"
+  | "covered_by_generic_passive";
+
+export interface ProfilePromotionCandidate {
+  group_id: string;
+  title: string;
+  identity: string;
+  identity_kind: string;
+  suggested_family: string;
+  refdes: string[];
+  refdes_count: number;
+  refdes_sample: string[];
+  profile_status: string;
+  validation_status: string;
+  document_status: string;
+  document_title?: string | null;
+  document_url?: string | null;
+  document_source?: string | null;
+  status: PromotionStatus;
+  draft_review_status: "needs_review";
+  recommended_action: string;
+  draft_command: string;
+  required_checks: string[];
+  guardrails: string[];
+}
+
 export interface ProjectReviewPrepPacket {
   schema_version: string;
   project: WorkbenchProject;
@@ -280,6 +337,8 @@ export interface ProjectReviewPrepPacket {
   priority_tasks: ReviewTask[];
   key_component_groups: ProjectPrepComponentGroup[];
   focus_areas: ProjectPrepFocusArea[];
+  draft_summaries: ProjectDraftSummaries;
+  profile_promotion_candidates: ProfilePromotionCandidate[];
   open_questions: ProjectPrepOpenQuestion[];
   risk_hints: RiskHintsView;
   evidence: EvidenceView[];

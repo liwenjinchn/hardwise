@@ -102,6 +102,27 @@ def test_fake_chat_reports_datasheet_search_unavailable_and_uses_validation() ->
         context.session.close()
 
 
+def test_fake_chat_uses_evidence_locator_for_exact_profile_evidence() -> None:
+    context = _context()
+    try:
+        service = WorkbenchChatService(context, mode="fake")
+
+        response = service.ask(
+            ChatRequest(question="U8 的 BOOT0 数据手册证据在哪?", selected_refdes="U8")
+        )
+
+        assert "已审结构化 profile" in response.answer
+        assert "datasheet:stm32g030.pdf#p33" in response.answer
+        assert [trace.tool for trace in response.trace] == ["locate_component_evidence"]
+        assert response.trace[0].summary.startswith("status=found")
+        assert response.trace[0].trust_tier == "l1"
+        assert {item.source_class for item in response.trace[0].evidence_classification} == {
+            "reviewed_profile"
+        }
+    finally:
+        context.session.close()
+
+
 def test_fake_chat_drives_component_topology_tool() -> None:
     context = _context()
     try:

@@ -170,9 +170,9 @@ Recommended priority:
 |---|---|---|---|
 | P0 | Visual/information-architecture alignment | Do next | The product already has enough function to demo, but the screen does not yet look as convincing as the reference. |
 | Done | Project-level Review Prep Packet | Implemented | Complements the shipped component-level prep packet with board overview, key groups, review focus areas, open questions, risk hints, and evidence tokens. Keep it working during visual alignment. |
-| P1 | Datasheet evidence locator | Next non-visual feature | Build as "find the exact page/table/section" for EN pins, abs max, recommended application, decoupling, reset, boot, and pin function. Do not turn it into broad datasheet chat. |
-| P2 | Manual Gap -> L1 promotion | Valuable, later | Lets humans approve profiles/evidence before deterministic validation. Important for trust, but less demo-visible than the visual pass and project packet. |
-| P3 | Module/power-tree summaries | Useful with guardrails | Present as draft review-prep context with evidence and uncertainty, not as final electrical truth. |
+| Done | Datasheet evidence locator | Implemented | `locate_component_evidence` finds bounded reviewed-profile evidence for EN pins, abs max, recommended application, decoupling, reset, boot, debug, bootstrap, power, and pin function. It is not broad datasheet chat or PDF search. |
+| Done | Manual Gap -> L1 promotion scaffold | Implemented | Project packet now includes `profile_promotion_candidates`, and `/api/workbench/profile-gaps/{group_id}/promotion-packet` emits a human checklist plus `needs_review` draft command. It never writes `ready` or changes deterministic verdicts. |
+| Done | Module/power-tree summaries | Implemented | Project packet now includes `draft_summaries` for modules, key groups, candidate power/interface/clock-reset nets, and open questions, with uncertainty text that keeps them as review-prep draft context, not final electrical truth. |
 | Defer | PLM, supplier, lifecycle, pricing, PCB/layout review, auto score, bug attribution | Do not add now | These widen the product beyond the schematic-review-prep node and weaken the trust story. |
 
 ## Implementation Boundaries

@@ -242,6 +242,8 @@ ComponentNotFound(
 
 **v5.46 (Trust & Coverage dashboard)**: 新增 `trust-dashboard`，把已有 machine-readable artifacts 汇总成静态 analytics 面：`eval-summary.json` 是必需输入，`design-validator-ui --index-json`、`eval-comparison.json`、`trace.jsonl` / workbench `ChatResponse` JSON 是可选输入。它只读这些 JSON/JSONL，不解析 HTML、不自动跑 eval、不启动 agent，也不改变任何 validator truth。页面显示 eval health、guardrail health、validation coverage、profile gaps、document coverage 和 L1/L2/L3 trace counts；缺少 validation index 或 trace 时降级展示 unavailable。讲法要准：这是 regression / coverage / evidence discipline dashboard，不是专家准确率 benchmark，也不是新的硬件判定器。
 
+**v5.47 (Workbench prep intelligence, not new verdicts)**: 非视觉 workbench P1-P3 收口成三件只读能力。`locate_component_evidence(refdes, topic)` 只定位已审 `DatasheetProfile` 里的 evidence token，回答 EN/BOOT0/NRST/SWD/abs max/recommended topology 等“证据在哪”，不做 broad datasheet chat。Project Prep Packet 新增 `draft_summaries`，把 module/key-group/power/interface/clock-reset/open-question 做成 schematic-netlist-only review-prep index，明确不是最终电源树或 layout truth。Manual gap 侧新增 `profile_promotion_candidates` 和 `/api/workbench/profile-gaps/{group_id}/promotion-packet`，只给人审 checklist 和 `needs_review` 草稿命令；不会写 profile、不会自动改 `ready`、不会改变 PASS/WARN/ERROR。面试讲法：Hardwise 把“下一步 reviewer 该看什么证据”产品化了，但仍把硬件 verdict 锁在 reviewed profile + deterministic validator。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？

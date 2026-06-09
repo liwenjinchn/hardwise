@@ -40,6 +40,11 @@ from hardwise.agent.document_tools import (
     get_component_documents,
     summarize_document_coverage,
 )
+from hardwise.agent.evidence_locator import (
+    LocateComponentEvidenceInput,
+    evidence_locator_tokens,
+    locate_component_evidence,
+)
 from hardwise.agent.grounding import (
     evidence_tokens_from_datasheet_hits,
     trust_tier_for_datasheet_search,
@@ -161,7 +166,9 @@ class Runner:
         result = RunResult(text="")
         messages: list[dict] = [{"role": "user", "content": user_message}]
         model = self.router.select(self.tier)
-        system_blocks = build_system_blocks(self.system_prompt) if self.system_prompt else build_system_blocks()
+        system_blocks = (
+            build_system_blocks(self.system_prompt) if self.system_prompt else build_system_blocks()
+        )
 
         for iteration in range(1, self.max_iterations + 1):
             response = self.client.messages.create(
@@ -322,6 +329,22 @@ class Runner:
                 )
                 evidence = document_evidence_tokens(out)
                 trust_tier = "l3" if out.status == "not_configured" else "l1"
+                payload = out.model_dump_json()
+            elif name == "locate_component_evidence":
+                out = locate_component_evidence(
+                    self.design,
+                    self.validation_targets,
+                    self.project_index,
+                    self.document_report,
+                    LocateComponentEvidenceInput(**args),
+                )
+                summary = f"status={out.status}, hits={len(out.hits)}"
+                evidence = evidence_locator_tokens(out)
+                trust_tier = (
+                    "l1"
+                    if out.found and any(hit.source_kind != "document_coverage" for hit in out.hits)
+                    else "l3"
+                )
                 payload = out.model_dump_json()
             else:
                 summary = f"unknown tool: {name}"

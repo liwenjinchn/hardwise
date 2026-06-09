@@ -137,6 +137,20 @@ class _FakeWorkbenchMessages:
                     )
                 ]
             )
+        if _needs_evidence_locator(self._last_question):
+            return _FakeResponse(
+                [
+                    _FakeToolUseBlock(
+                        id=f"hw_fake_{self._turn}_evidence_locator",
+                        name="locate_component_evidence",
+                        input={
+                            "refdes": refdes,
+                            "topic": _locator_topic(self._last_question),
+                            "limit": 8,
+                        },
+                    )
+                ]
+            )
         if _needs_datasheet_search(self._last_question):
             tool_uses: list[Any] = [
                 _FakeToolUseBlock(
@@ -175,9 +189,12 @@ class _FakeWorkbenchMessages:
         topology_payload = _topology_payload(payloads)
         search_payload = _search_payload(payloads)
         document_payload = _document_payload(payloads)
+        evidence_locator_payload = _evidence_locator_payload(payloads)
         validation_payload = _validation_payload(payloads)
         if topology_payload is not None:
             return self._answer_from_topology_result(topology_payload)
+        if evidence_locator_payload is not None:
+            return self._answer_from_evidence_locator_result(evidence_locator_payload)
         if search_payload is not None:
             return self._answer_from_datasheet_result(search_payload, validation_payload)
         if document_payload is not None:
@@ -204,8 +221,7 @@ class _FakeWorkbenchMessages:
                 )
             else:
                 prefix = (
-                    "这次原理图检验工具没有配置向量数据手册搜索。"
-                    "先回退到结构化器件档案/验证证据："
+                    "这次原理图检验工具没有配置向量数据手册搜索。先回退到结构化器件档案/验证证据："
                 )
             if validation_payload is not None:
                 return prefix + self._answer_from_validation_result(validation_payload)
@@ -290,7 +306,9 @@ class _FakeWorkbenchMessages:
             return f"{refdes} 在板上，但还没有分配结构化器件档案。"
 
         if _wants_english(self._last_question):
-            return "The tool returned a result, but this fake workbench mode cannot summarize it yet."
+            return (
+                "The tool returned a result, but this fake workbench mode cannot summarize it yet."
+            )
         return "工具已经返回结果，但演示模式暂时不能总结这个结果。"
 
     def _answer_from_topology_result(self, payload: dict[str, Any]) -> str:
@@ -325,7 +343,11 @@ class _FakeWorkbenchMessages:
             )
 
         if status == "configured":
-            counts = payload.get("counts_by_status") if isinstance(payload.get("counts_by_status"), dict) else {}
+            counts = (
+                payload.get("counts_by_status")
+                if isinstance(payload.get("counts_by_status"), dict)
+                else {}
+            )
             groups = payload.get("groups") if isinstance(payload.get("groups"), list) else []
             missing = [
                 group
@@ -333,7 +355,11 @@ class _FakeWorkbenchMessages:
                 if isinstance(group, dict)
                 and group.get("document_status") in {"no_result", "ambiguous", "manual_needed"}
             ]
-            first = missing[0] if missing else (groups[0] if groups and isinstance(groups[0], dict) else {})
+            first = (
+                missing[0]
+                if missing
+                else (groups[0] if groups and isinstance(groups[0], dict) else {})
+            )
             identity = str(first.get("identity") or "-")
             doc_status = str(first.get("document_status") or "-")
             if _wants_english(self._last_question):
@@ -353,7 +379,9 @@ class _FakeWorkbenchMessages:
         refdes = str(payload.get("refdes") or self._last_selected or "")
         identity = str(payload.get("identity") or "-")
         selected = payload.get("selected") if isinstance(payload.get("selected"), dict) else None
-        candidates = payload.get("candidates") if isinstance(payload.get("candidates"), list) else []
+        candidates = (
+            payload.get("candidates") if isinstance(payload.get("candidates"), list) else []
+        )
         if status == "matched" and selected:
             title = str(selected.get("title") or "document")
             source = str(selected.get("source") or "")
@@ -390,6 +418,54 @@ class _FakeWorkbenchMessages:
             "资料工具已经返回结果，但演示模式暂时不能总结这个结果。",
         )
 
+    def _answer_from_evidence_locator_result(self, payload: dict[str, Any]) -> str:
+        status = str(payload.get("status") or "")
+        refdes = str(payload.get("refdes") or self._last_selected or "")
+        topic = str(payload.get("normalized_topic") or payload.get("topic") or "evidence")
+        hits = payload.get("hits") if isinstance(payload.get("hits"), list) else []
+        if status == "found" and hits:
+            rendered = []
+            evidence: list[str] = []
+            for hit in hits[:3]:
+                if not isinstance(hit, dict):
+                    continue
+                title = str(hit.get("title") or hit.get("fact_key") or "fact")
+                tokens = hit.get("evidence") if isinstance(hit.get("evidence"), list) else []
+                token_text = ", ".join(str(token) for token in tokens[:3]) or "no direct token"
+                rendered.append(f"{title}: {token_text}")
+                for token in tokens:
+                    token = str(token)
+                    if token and token not in evidence:
+                        evidence.append(token)
+            if _wants_english(self._last_question):
+                return (
+                    f"{refdes} {topic} evidence is from reviewed profile facts, not broad "
+                    f"datasheet chat: {'; '.join(rendered)}."
+                )
+            return (
+                f"{refdes} 的 {topic} 证据来自已审结构化 profile，不是自由 datasheet 问答："
+                f"{'；'.join(rendered)}。"
+            )
+        if status == "no_profile":
+            if _wants_english(self._last_question):
+                return (
+                    f"{refdes} exists, but no reviewed DatasheetProfile is assigned. "
+                    "Document coverage, if present, is not electrical proof."
+                )
+            return (
+                f"{refdes} 在板上，但没有已审结构化 DatasheetProfile。"
+                "即使有资料覆盖，也不能当作电气规格证据。"
+            )
+        if status == "not_found":
+            matches = payload.get("closest_matches")
+            suggestions = ", ".join(matches[:3]) if isinstance(matches, list) else ""
+            if _wants_english(self._last_question):
+                return f"I could not find {refdes}. Closest matches: {suggestions}."
+            return f"我没有在当前设计里找到 {refdes}。最接近的是: {suggestions}。"
+        if _wants_english(self._last_question):
+            return f"No reviewed profile evidence matched {refdes} topic {topic}."
+        return f"没有找到 {refdes} 关于 {topic} 的已审 profile evidence。"
+
 
 class FakeWorkbenchAnthropic:
     """Tiny Anthropic-compatible fake client for tests and demo smoke."""
@@ -408,12 +484,7 @@ class _AuditedL78SnapshotCollection:
         del query_texts, n_results
         return {
             "documents": [
-                [
-                    (
-                        "Absolute maximum ratings table: input voltage VI is 35 V "
-                        "for VO = 5 to 18 V."
-                    )
-                ]
+                [("Absolute maximum ratings table: input voltage VI is 35 V for VO = 5 to 18 V.")]
             ],
             "metadatas": [
                 [
@@ -477,10 +548,7 @@ class WorkbenchChatService:
 
     def fallback_response(self, question: str, selected_refdes: str | None = None) -> ChatResponse:
         selected = self._selected_refdes(selected_refdes)
-        answer = (
-            "这个离线演示只包含已审计的验证快照。"
-            "请选择建议问题，或在本地服务模式下连接模型。"
-        )
+        answer = "这个离线演示只包含已审计的验证快照。请选择建议问题，或在本地服务模式下连接模型。"
         clean_answer, wrapped = sanitize_text(answer, self.context.registry)
         return ChatResponse(
             answer=clean_answer,
@@ -682,6 +750,13 @@ def _document_payload(payloads: list[dict[str, Any]]) -> dict[str, Any] | None:
     return None
 
 
+def _evidence_locator_payload(payloads: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for payload in payloads:
+        if "normalized_topic" in payload and "hits" in payload and "profile_part_number" in payload:
+            return payload
+    return None
+
+
 def _topology_payload(payloads: list[dict[str, Any]]) -> dict[str, Any] | None:
     topology_statuses = {"found", "not_found", "not_configured", "summarized"}
     for payload in payloads:
@@ -771,12 +846,40 @@ def _needs_net_topology_search(question: str) -> bool:
     if re.search(r"\b[A-Z]{1,3}\d{1,4}\b", question.upper()):
         return False
     topology_words = ("net", "network", "网络", "相关", "有哪些", "搜索", "查找")
-    net_tokens = ("reset", "nrst", "rst", "boot", "vin", "3v3", "sda", "scl", "swd", "swclk", "swdio", "pwm")
-    return any(word in text for word in topology_words) and any(token in text for token in net_tokens)
+    net_tokens = (
+        "reset",
+        "nrst",
+        "rst",
+        "boot",
+        "vin",
+        "3v3",
+        "sda",
+        "scl",
+        "swd",
+        "swclk",
+        "swdio",
+        "pwm",
+    )
+    return any(word in text for word in topology_words) and any(
+        token in text for token in net_tokens
+    )
 
 
 def _net_search_query(question: str) -> str:
-    known = ("RESET", "NRST", "RST", "BOOT", "VIN", "3V3", "SDA", "SCL", "SWD", "SWCLK", "SWDIO", "PWM")
+    known = (
+        "RESET",
+        "NRST",
+        "RST",
+        "BOOT",
+        "VIN",
+        "3V3",
+        "SDA",
+        "SCL",
+        "SWD",
+        "SWCLK",
+        "SWDIO",
+        "PWM",
+    )
     upper = question.upper()
     found = [token for token in known if token in upper]
     return " ".join(found) if found else question
@@ -848,7 +951,9 @@ def _summarize_net_search_payload(question: str, payload: dict[str, Any]) -> str
     for hit in hits[:5]:
         if not isinstance(hit, dict):
             continue
-        sample = _format_members(hit.get("sample_members") if isinstance(hit.get("sample_members"), list) else [])
+        sample = _format_members(
+            hit.get("sample_members") if isinstance(hit.get("sample_members"), list) else []
+        )
         rendered.append(f"{hit.get('net_name')}({hit.get('member_count')}): {sample}")
     joined = "; ".join(rendered)
     return _localized(
@@ -859,15 +964,29 @@ def _summarize_net_search_payload(question: str, payload: dict[str, Any]) -> str
 
 
 def _summarize_topology_payload(question: str, payload: dict[str, Any]) -> str:
-    totals = payload.get("validation_totals") if isinstance(payload.get("validation_totals"), dict) else {}
-    power = _format_net_hits(payload.get("power_like_nets") if isinstance(payload.get("power_like_nets"), list) else [])
+    totals = (
+        payload.get("validation_totals")
+        if isinstance(payload.get("validation_totals"), dict)
+        else {}
+    )
+    power = _format_net_hits(
+        payload.get("power_like_nets") if isinstance(payload.get("power_like_nets"), list) else []
+    )
     interface = _format_net_hits(
-        payload.get("interface_like_nets") if isinstance(payload.get("interface_like_nets"), list) else []
+        payload.get("interface_like_nets")
+        if isinstance(payload.get("interface_like_nets"), list)
+        else []
     )
     control = _format_net_hits(
-        payload.get("control_like_nets") if isinstance(payload.get("control_like_nets"), list) else []
+        payload.get("control_like_nets")
+        if isinstance(payload.get("control_like_nets"), list)
+        else []
     )
-    gaps = payload.get("profile_gap_groups") if isinstance(payload.get("profile_gap_groups"), list) else []
+    gaps = (
+        payload.get("profile_gap_groups")
+        if isinstance(payload.get("profile_gap_groups"), list)
+        else []
+    )
     first_gap = gaps[0] if gaps and isinstance(gaps[0], dict) else {}
     if _wants_english(question):
         return (
@@ -892,7 +1011,9 @@ def _format_pin_nets(pins: list[Any], *, english: bool) -> str:
     rendered = []
     for pin in pins:
         if isinstance(pin, dict):
-            rendered.append(f"{pin.get('pin_number')}/{pin.get('pin_name') or '-'}->{pin.get('net') or '-'}")
+            rendered.append(
+                f"{pin.get('pin_number')}/{pin.get('pin_name') or '-'}->{pin.get('net') or '-'}"
+            )
     if not rendered:
         return "none" if english else "无"
     return ", ".join(rendered)
@@ -928,7 +1049,10 @@ def _format_net_hits(hits: list[Any]) -> str:
 
 def _needs_document_coverage(question: str) -> bool:
     text = question.lower()
-    if any(term in text for term in ("absolute maximum", "abs max", "rating", "rated", "绝对最大", "额定")):
+    if any(
+        term in text
+        for term in ("absolute maximum", "abs max", "rating", "rated", "绝对最大", "额定")
+    ):
         return False
     needles = (
         "public document",
@@ -955,6 +1079,75 @@ def _needs_document_coverage(question: str) -> bool:
 def _needs_document_summary(question: str) -> bool:
     text = question.lower()
     return any(term in text for term in ("gap", "coverage", "缺口", "哪些", "summary", "summarize"))
+
+
+def _needs_evidence_locator(question: str) -> bool:
+    if _is_evidence_chain_smoke(question):
+        return False
+    text = question.lower()
+    exact_evidence_words = (
+        "evidence",
+        "locator",
+        "where",
+        "which page",
+        "section",
+        "table",
+        "证据",
+        "第几页",
+        "哪一页",
+        "出处",
+        "定位",
+    )
+    exact_topics = (
+        "absolute maximum",
+        "abs max",
+        "绝对最大",
+        "耐压",
+        "enable",
+        "on/off",
+        "boot0",
+        "boot",
+        "nrst",
+        "reset",
+        "swdio",
+        "swclk",
+        "swd",
+        "pin function",
+        "pinout",
+        "引脚功能",
+        "自举",
+        "bootstrap",
+        "decoupling",
+        "去耦",
+    )
+    return any(word in text for word in exact_evidence_words) and any(
+        topic in text for topic in exact_topics
+    )
+
+
+def _locator_topic(question: str) -> str:
+    text = question.lower()
+    if any(term in text for term in ("absolute maximum", "abs max", "绝对最大", "耐压", "额定")):
+        return "abs_max"
+    if any(term in text for term in ("enable", "on/off", "使能")):
+        return "enable"
+    if any(term in text for term in ("boot0", "boot", "启动")):
+        return "boot"
+    if any(term in text for term in ("nrst", "reset", "rst", "复位")):
+        return "reset"
+    if any(term in text for term in ("swdio", "swclk", "swd", "debug", "调试")):
+        return "debug"
+    if any(term in text for term in ("bootstrap", "自举")):
+        return "bootstrap"
+    if any(term in text for term in ("decoupling", "bypass", "去耦", "旁路")):
+        return "decoupling"
+    if any(term in text for term in ("pin function", "pinout", "引脚功能", "管脚功能")):
+        return "pin_function"
+    if any(
+        term in text for term in ("recommended", "application", "topology", "推荐", "应用", "拓扑")
+    ):
+        return "recommended"
+    return "all"
 
 
 def _needs_datasheet_search(question: str) -> bool:

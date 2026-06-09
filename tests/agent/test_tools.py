@@ -318,6 +318,7 @@ def test_tool_definitions_match_anthropic_format() -> None:
         "summarize_project_topology",
         "get_component_documents",
         "summarize_document_coverage",
+        "locate_component_evidence",
     }
     actual_names = {entry["name"] for entry in TOOL_DEFINITIONS}
     assert actual_names == expected_names

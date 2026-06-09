@@ -3906,3 +3906,34 @@ Keep the real L78 evidence token assertions, but add an explicit
 Evidence-audit tests should choose tokens that force the audited state under
 test. Do not infer missing-source behavior from whether a real datasheet fixture
 happens to be absent today.
+
+## 2026-06-09 — Non-visual workbench P1-P3 must stay prep-only
+
+**Symptom**
+
+The workbench backlog had three useful non-visual asks: exact datasheet evidence
+location, manual-gap promotion to L1, and module/power-tree summaries. Each one
+could accidentally become a new hardware verdict path if implemented as broad
+PDF chat, automatic profile promotion, or inferred electrical topology.
+
+**Root cause**
+
+These features sound like product intelligence, but the safe source of truth is
+already narrower: reviewed `DatasheetProfile` facts, deterministic validation
+rows, public document-index coverage, and parsed schematic netlist membership.
+Anything beyond that needs a human reviewer or a future validator rule.
+
+**Fix**
+
+Added `locate_component_evidence` as a scoped reviewed-profile locator, not a
+PDF search. Added read-only profile-promotion packets that produce `needs_review`
+checklists/commands without writing `ready` profiles. Added project
+`draft_summaries` for module/key-group/power/interface/clock-reset/open-question
+prep context with explicit uncertainty. FastAPI exports are GET-only and tests
+lock that PASS/WARN/ERROR counts and legacy L2 datasheet smoke stay unchanged.
+
+**Takeaway**
+
+Workbench intelligence should organize evidence and reviewer work, not invent
+new electrical truth. When a feature could sound authoritative, encode its
+trust tier, source boundary, and non-goal directly in the DTO and markdown.
