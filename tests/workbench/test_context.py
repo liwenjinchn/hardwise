@@ -331,6 +331,67 @@ def test_workbench_component_prep_packet_json_and_markdown_are_safe(tmp_path: Pa
         context.session.close()
 
 
+def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path) -> None:
+    risk_hints = tmp_path / "risk-hints.json"
+    risk_hints.write_text(
+        """
+        [
+          {"refdes": "U8", "title": "Review SWD header", "body": "Check debug wiring."},
+          {"refdes": "U999", "title": "Rejected secret", "body": "Rejected body must not leak."}
+        ]
+        """,
+        encoding="utf-8",
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        risk_hints_json=risk_hints,
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        json_response = client.get("/api/workbench/prep-packet?format=json")
+        markdown_response = client.get("/api/workbench/prep-packet?format=markdown")
+
+        assert json_response.status_code == 200
+        packet = json_response.json()
+        assert packet["schema_version"] == "hardwise.project_prep_packet.v1"
+        assert packet["summary"] == {
+            "components": 25,
+            "bom_matched": 25,
+            "validated": 22,
+            "manual": 3,
+            "pass_count": 5,
+            "warn_count": 13,
+            "error_count": 4,
+        }
+        assert packet["queue"][0]["refdes"] == "Q12"
+        assert packet["priority_tasks"][0]["id"] == "F-001"
+        assert packet["priority_tasks"][0]["refdes"] == "Q12"
+        assert packet["key_component_groups"]
+        assert {area["area"] for area in packet["focus_areas"]} >= {"power"}
+        assert packet["open_questions"]
+        assert packet["risk_hints"]["accepted"][0]["title"] == "Review SWD header"
+        assert packet["risk_hints"]["rejected"] == [{"reason": "unknown_refdes", "count": 1}]
+        assert "Rejected secret" not in json_response.text
+        assert "Rejected body must not leak" not in json_response.text
+        assert "ANTHROPIC_API_KEY" not in json_response.text
+        assert "sk-" not in json_response.text
+
+        assert markdown_response.status_code == 200
+        assert "Hardwise 项目评审准备包" in markdown_response.text
+        assert "PASS / WARN / ERROR" in markdown_response.text
+        assert packet["priority_tasks"][0]["stable_key"] in markdown_response.text
+        assert "Rejected secret" not in markdown_response.text
+        assert "Rejected body must not leak" not in markdown_response.text
+        assert "ANTHROPIC_API_KEY" not in markdown_response.text
+        assert "sk-" not in markdown_response.text
+    finally:
+        context.session.close()
+
+
 def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
     context = build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/l78_regulator.net"),

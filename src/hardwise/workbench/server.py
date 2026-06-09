@@ -30,6 +30,10 @@ from hardwise.workbench.view_model import (
     build_workbench_state,
     render_review_prep_packet_markdown,
 )
+from hardwise.workbench.prep_packet import (
+    build_project_review_prep_packet,
+    render_project_review_prep_packet_markdown,
+)
 
 STATIC_DIR = Path(__file__).with_name("static")
 
@@ -129,6 +133,31 @@ def create_workbench_app(
             headers={
                 "Content-Disposition": (
                     f'attachment; filename="hardwise-prep-{filename_refdes}.json"'
+                )
+            },
+        )
+
+    @app.get("/api/workbench/prep-packet")
+    def project_prep_packet(
+        format: Literal["json", "markdown"] = Query("json"),
+    ) -> Response:
+        context = current_context["value"]
+        packet = build_project_review_prep_packet(context)
+        if format == "markdown":
+            return Response(
+                content=render_project_review_prep_packet_markdown(packet),
+                media_type="text/markdown; charset=utf-8",
+                headers={
+                    "Content-Disposition": (
+                        'attachment; filename="hardwise-project-prep.md"'
+                    )
+                },
+            )
+        return JSONResponse(
+            content=packet.model_dump(mode="json"),
+            headers={
+                "Content-Disposition": (
+                    'attachment; filename="hardwise-project-prep.json"'
                 )
             },
         )
