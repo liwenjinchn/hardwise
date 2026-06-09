@@ -45,6 +45,9 @@ Current shipped behavior:
   as `⟨?U999⟩`.
 - Per-component prep packets exist at
   `/api/workbench/components/{refdes}/prep-packet?format=json|markdown`.
+- Project-level prep packets exist at
+  `/api/workbench/prep-packet?format=json|markdown`; the SPA Export page can
+  preview and download the markdown package.
 
 ## Visual Reference
 
@@ -166,8 +169,8 @@ Recommended priority:
 | Priority | Feature | Decision | Reason |
 |---|---|---|---|
 | P0 | Visual/information-architecture alignment | Do next | The product already has enough function to demo, but the screen does not yet look as convincing as the reference. |
-| P1 | Project-level Review Prep Packet | Valuable after visual pass | Complements the shipped component-level prep packet with board overview, modules, key parts, power/interface/clock/reset summaries, and open questions. |
-| P1 | Datasheet evidence locator | Valuable, scoped | Build as "find the exact page/table/section" for EN pins, abs max, recommended application, decoupling, reset, boot, and pin function. Do not turn it into broad datasheet chat. |
+| Done | Project-level Review Prep Packet | Implemented | Complements the shipped component-level prep packet with board overview, key groups, review focus areas, open questions, risk hints, and evidence tokens. Keep it working during visual alignment. |
+| P1 | Datasheet evidence locator | Next non-visual feature | Build as "find the exact page/table/section" for EN pins, abs max, recommended application, decoupling, reset, boot, and pin function. Do not turn it into broad datasheet chat. |
 | P2 | Manual Gap -> L1 promotion | Valuable, later | Lets humans approve profiles/evidence before deterministic validation. Important for trust, but less demo-visible than the visual pass and project packet. |
 | P3 | Module/power-tree summaries | Useful with guardrails | Present as draft review-prep context with evidence and uncertainty, not as final electrical truth. |
 | Defer | PLM, supplier, lifecycle, pricing, PCB/layout review, auto score, bug attribution | Do not add now | These widen the product beyond the schematic-review-prep node and weaken the trust story. |
