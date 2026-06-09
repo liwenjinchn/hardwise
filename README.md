@@ -120,9 +120,9 @@ public datasheet profiles by BOM identity, and writes a single static HTML
 workbench with a top summary, grouped component list, validation section,
 report detail, and baked Copilot panel. What the workbench proves is the
 deterministic trust path, not a coverage trophy: U1/L7805 repeats the L78
-evidence path in the workbench, while U12/XL1509, U3/EG2132, and
-U8/STM32G030 show deterministic topology/debug-interface errors. The mixed
-controller fixture reports 25 components, 22 validated rows, BOM matched=25,
+evidence path in the workbench, while U12/XL1509, U3/EG2132, U8/STM32G030, and
+Q12/SS8050 show deterministic topology, debug-interface, or profile-pin errors.
+The mixed controller fixture reports 25 components, 22 validated rows, BOM matched=25,
 PASS/WARN/ERROR = 5/13/4, and 3 manual/no-local-profile rows. The 22 L1 rows
 are 9 profile-backed targets (U1/U12/U3/U8, D1/D5, and Q1/Q2/Q12) plus 13
 generic passive checks; the passive checks are light deterministic coverage
@@ -177,7 +177,7 @@ The L78 path also has a live retrieval smoke: `l78.pdf` is ingested into Chroma,
 tokens are reviewed public profile evidence unless their PDFs have also been
 staged and queried.
 
-Real-board imports are pressure tests and coverage-planning evidence, not the primary public demo. The closeout rerun reports Switch board 4010 components / 3794 validated / 216 manual / PASS/WARN/ERROR = 3663/125/6, and mainboard 8180 components / 7248 BOM matched / 6847 validated / 1333 manual / PASS/WARN/ERROR = 3921/2926/0. See [`docs/closeout_pressure_summary.md`](docs/closeout_pressure_summary.md); the movement came from conservative generic inductor/ferrite coverage plus the reviewed PE537BA P-MOS profile, not from a full-board automatic correctness claim.
+Public/synthetic pressure-fixture imports are coverage-planning evidence, not the primary public demo. The closeout rerun reports Switch fixture 4010 components / 3794 validated / 216 manual / PASS/WARN/ERROR = 3663/125/6, and mainboard fixture 8180 components / 7248 BOM matched / 6847 validated / 1333 manual / PASS/WARN/ERROR = 3921/2926/0. See [`docs/closeout_pressure_summary.md`](docs/closeout_pressure_summary.md); the movement came from conservative generic inductor/ferrite coverage plus the reviewed PE537BA P-MOS profile, not from a full-board automatic correctness claim.
 
 For repeated component families, Hardwise can draft `needs_review` profile
 skeletons from reusable archetypes such as `74x165_piso_16pin`. See
@@ -327,7 +327,7 @@ The relational store uses SQLAlchemy 2.0. Default is SQLite (`reports/<project>.
 
 ```bash
 uv sync --extra postgres
-export HARDWISE_DB_URL="postgresql+psycopg2://$USER@localhost:5432/hardwise"
+export HARDWISE_DB_URL="postgresql+psycopg2://<user>@<db-host>:5432/hardwise"
 uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
 ```
 

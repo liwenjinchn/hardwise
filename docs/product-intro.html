@@ -300,17 +300,17 @@
               </div>
               <div class="mock-review">
                 <h3>评审队列</h3>
-                <div class="finding-row"><b>Must Review</b><em>3 error</em></div>
-                <div class="finding-row"><b>Manual Gap</b><em>8 rows</em></div>
+                <div class="finding-row"><b>Must Review</b><em>4 error</em></div>
+                <div class="finding-row"><b>Manual Gap</b><em>3 rows</em></div>
                 <div class="finding-row"><b>Evidence</b><em>tokens</em></div>
               </div>
             </div>
           </div>
           <div class="metrics" aria-label="样例工程结果">
             <div class="metric"><strong>25</strong><span>components indexed</span></div>
-            <div class="metric"><strong>8</strong><span>manual gaps visible</span></div>
-            <div class="metric"><strong>29</strong><span>KiCad findings</span></div>
-            <div class="metric"><strong>17</strong><span>L1 rows</span></div>
+            <div class="metric"><strong>3</strong><span>manual gaps visible</span></div>
+            <div class="metric"><strong>25</strong><span>BOM matched</span></div>
+            <div class="metric"><strong>22</strong><span>L1 rows</span></div>
           </div>
         </div>
       </div>
@@ -345,7 +345,7 @@
       <div class="panel chat">
         <div class="bubble"><b>Reviewer</b>U12 为什么排在 Must Review？</div>
         <div class="bubble answer"><b>Hardwise</b>确定性 validator 看到 XL1509 的 OUTPUT 路径接到 D5 和 L1：D5=1N4007W 不是 Schottky-style，L1=6.8uH 低于 profile 范围。结论是 L1 deterministic。</div>
-        <div class="bubble"><b>Reviewer</b>剩下 8 个 manual row 是失败吗？</div>
+        <div class="bubble"><b>Reviewer</b>剩下 3 个 manual row 是失败吗？</div>
         <div class="bubble answer"><b>Hardwise</b>不是。它们是 no-local-profile/manual gap：当前没有足够证据给 PASS/WARN/ERROR，所以留在人工确认区，而不是让模型猜。</div>
       </div>
     </section>

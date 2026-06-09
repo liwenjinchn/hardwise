@@ -22,12 +22,12 @@
       <a href="./mvp_definition.html"><b>4. MVP definition</b><span class="muted">边界和验收</span></a>
       <a href="./demo.html"><b>5. Technical demo</b><span class="muted">workbench 主线 + KiCad 附录</span></a>
       <a href="./evidence_chain_audit.html"><b>6. Evidence audit</b><span class="muted">L78 retrieval 边界</span></a>
-      <a href="./closeout_pressure_summary.html"><b>7. Pressure summary</b><span class="muted">真实板 coverage 证据</span></a>
+      <a href="./closeout_pressure_summary.html"><b>7. Pressure summary</b><span class="muted">fixture aggregate evidence</span></a>
       <a href="./index.html"><b>8. Reading index</b><span class="muted">全部 HTML 入口</span></a>
     </div>
 
     <h2>Canonical Current Facts</h2>
-    <p class="muted">Keep public-facing docs aligned with <code>README.md</code> and <code>docs/demo.md</code>. Older closeout and interview numbers are historical unless this map says otherwise.</p>
+    <p class="muted">Keep public-facing docs aligned with <code>README.md</code> and <code>docs/demo.md</code>. Older closeout and interview numbers are historical unless this map says otherwise. The pressure summary is fixture/aggregate evidence, not the primary demo path.</p>
     <table>
       <tr><th>Fact</th><th>Current value</th></tr>
       <tr><td>Components</td><td>25</td></tr>
@@ -68,7 +68,7 @@
       <tr><td><a href="./mvp_definition.html">docs/mvp_definition.html</a></td><td class="tag">public_entry</td><td>HTML view of the MVP boundary.</td></tr>
       <tr><td><a href="./demo.html">docs/demo.html</a></td><td class="tag">public_entry</td><td>Workbench-first technical narrative plus KiCad evidence-chain appendix.</td></tr>
       <tr><td><a href="./evidence_chain_audit.html">docs/evidence_chain_audit.html</a></td><td class="tag">current_reference</td><td>Evidence boundary summary.</td></tr>
-      <tr><td><a href="./closeout_pressure_summary.html">docs/closeout_pressure_summary.html</a></td><td class="tag">current_reference</td><td>Switch/mainboard pressure-test summary.</td></tr>
+      <tr><td><a href="./closeout_pressure_summary.html">docs/closeout_pressure_summary.html</a></td><td class="tag">current_reference</td><td>Public/synthetic fixture pressure-test aggregate summary.</td></tr>
       <tr><td><a href="./demo_recording_script.html">docs/demo_recording_script.html</a></td><td class="tag">public_entry</td><td>Canonical 90-second script: project summary -> Must Review -> U12 -> Copilot trace -> U999 -> L78.</td></tr>
       <tr><td><a href="./docs_inventory.html">docs/docs_inventory.html</a></td><td class="tag">public_entry</td><td>This public reading map.</td></tr>
     </table>
@@ -88,6 +88,16 @@
       <tr><td><code>docs/hardwise_social_drafts.md</code></td><td class="tag">interview_private</td><td>Social/posting drafts; not a source of product truth.</td></tr>
       <tr><td><code>docs/jd_alignment.md</code></td><td class="tag">interview_private</td><td>Role-alignment support material.</td></tr>
       <tr><td><code>docs/interview_narrative.md</code></td><td class="tag">interview_private</td><td>Interview script; secondary to README/demo facts.</td></tr>
+    </table>
+
+    <h2>Historical And Staged Records</h2>
+    <table>
+      <tr><th>File</th><th>Status</th><th>Use</th></tr>
+      <tr><td><code>docs/PLAN.md</code></td><td class="tag">historical_record</td><td>Long-term roadmap and decision records; not the current sprint plan or public fact source.</td></tr>
+      <tr><td><code>docs/PLAN.html</code></td><td class="tag">historical_record</td><td>Reading view of <code>docs/PLAN.md</code>.</td></tr>
+      <tr><td><code>docs/learning_log.md</code></td><td class="tag">historical_record</td><td>Debugging journal and task-specific lessons; not a current product claim.</td></tr>
+      <tr><td><code>docs/rolling_log.md</code></td><td class="tag">staged_plan</td><td>Staged future improvements and deferred work; candidate ideas are not active scope.</td></tr>
+      <tr><td><code>docs/weekend_closeout_plan.md</code></td><td class="tag">historical_record</td><td>Completed closeout checklist; keep for traceability, not current instructions.</td></tr>
     </table>
 
     <p class="muted">Markdown files remain the source records in the repository. Public Pages entry links point to HTML so reviewers do not land on raw Markdown text.</p>

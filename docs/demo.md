@@ -45,7 +45,7 @@ validation-index-json: /tmp/hardwise-workbench-index.json (25 rows)
 | `U999` wrapped | 点“板上有没有 U999?”。 | 未知位号返回 structured miss，并显示成 `⟨?U999⟩`。 |
 | L78 evidence token | 点 L78 evidence 问题或 U1/L7805 trace。 | `datasheet:l78.pdf#p4` 是可见、可核对的 L2 evidence token。 |
 
-四个 profile-backed targets 是主讲对象；13 个 generic passive rows 只表示轻量确定性覆盖，不包装成深度 datasheet review：
+9 个 profile-backed targets 加 13 个 generic passive checks 构成 22 个 L1/validated rows；录屏主讲可聚焦 U1/U12/U3/U8/Q12，generic passive 只表示轻量确定性覆盖，不包装成深度 datasheet review：
 
 | Refdes | Profile | Status | What it shows |
 |---|---|---|---|
@@ -53,6 +53,7 @@ validation-index-json: /tmp/hardwise-workbench-index.json (25 rows)
 | U12 | XL1509-12E1 | ERROR | Buck topology flags `D5=1N4007W` and `L1=6.8uH`. |
 | U3 | EG2132 | ERROR | Gate-driver bootstrap diode rating issue. |
 | U8 | STM32G030C8T6 | ERROR | SWDIO/SWCLK swap. |
+| Q12 | SS8050 | ERROR | Profile pin/connectivity mismatch keeps the BJT emitter issue visible. |
 
 `--ai-snapshot` 会把已审计的 Copilot 快照烤进单文件 HTML，不需要 server 或 API key。live path 用 `serve-workbench --fake-ai` 跑本地 FastAPI server；fake client 只发 tool_use/text，仍然经过真实 Runner、五个工具和 Refdes Guard。
 

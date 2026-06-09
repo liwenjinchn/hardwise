@@ -17,6 +17,9 @@ Use this order for the current public narrative:
 7. `docs/evidence_chain_audit.html`
 8. `docs/closeout_pressure_summary.html`
 
+The pressure summary is fixture/aggregate evidence for stress testing the
+intake and validator layers. It is not the primary demo path.
+
 `docs/index.html` is the GitHub Pages reading index for these files.
 
 ## Canonical Current Facts
@@ -72,17 +75,17 @@ entry pages.
 | `docs/docs_inventory.md` | `public_entry` | This map of current, reference, historical, and staged docs. |
 | `docs/evidence_chain_audit.html` | `current_reference` | Rendered GitHub Pages view of the evidence boundary. |
 | `docs/evidence_chain_audit.md` | `current_reference` | Boundary between L78 live retrieval and reviewed profile tokens. |
-| `docs/closeout_pressure_summary.html` | `current_reference` | Rendered GitHub Pages view of the pressure-test summary. |
-| `docs/closeout_pressure_summary.md` | `current_reference` | Small committed summary for Switch/mainboard pressure tests. |
+| `docs/closeout_pressure_summary.html` | `current_reference` | Rendered GitHub Pages view of the public/synthetic fixture pressure-test summary. |
+| `docs/closeout_pressure_summary.md` | `current_reference` | Small committed aggregate summary for Switch/mainboard fixture pressure tests. |
 | `docs/architecture.md` | `current_reference` | Module-level architecture and trust-mechanism design. |
 | `docs/review_node.md` | `current_reference` | Pre-Layout schematic-review node profile and MVP anchor. |
 | `docs/profile_archetypes.md` | `current_reference` | Reusable `needs_review` profile draft workflow. |
 | `docs/windows.md` | `current_reference` | Windows/PowerShell setup notes and CI boundary. |
-| `docs/PLAN.md` | `current_reference` | Long-term roadmap and decision records; not the current sprint plan. |
-| `docs/PLAN.html` | `current_reference` | Reading view of `docs/PLAN.md`; source of truth remains Markdown. |
+| `docs/PLAN.md` | `historical_record` | Long-term roadmap and decision records; not the current sprint plan or public fact source. |
+| `docs/PLAN.html` | `historical_record` | Reading view of `docs/PLAN.md`; source of truth remains Markdown. |
 | `docs/interview_qa.md` | `interview_private` | Long-form evidence bank for interviews; check current facts before quoting. |
-| `docs/learning_log.md` | `current_reference` | Debugging journal and task-specific lessons. |
-| `docs/rolling_log.md` | `current_reference` | Staged future improvements and deferred work; candidate ideas are not active scope. |
+| `docs/learning_log.md` | `historical_record` | Debugging journal and task-specific lessons; not a current product claim. |
+| `docs/rolling_log.md` | `staged_plan` | Staged future improvements and deferred work; candidate ideas are not active scope. |
 | `docs/workbench_spa_handoff.md` | `handoff` | Continuation guide for the React/Vite workbench visual alignment and feature triage. |
 | `docs/documentation_cleanup_handoff.md` | `handoff` | Continuation guide for AI-first documentation cleanup and context routing. |
 | `docs/weekend_closeout_plan.md` | `historical_record` | Completed closeout checklist; keep for traceability, not current instructions. |

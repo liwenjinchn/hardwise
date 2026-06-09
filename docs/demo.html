@@ -143,7 +143,7 @@
       <div class="summary" aria-label="workbench metrics">
         <div class="metric"><span>主舞台</span><strong>90s</strong><code>design-validator-ui --ai-snapshot</code></div>
         <div class="metric"><span>评审动作</span><strong>3</strong><code>Must Review / Manual Gap / Passed</code></div>
-        <div class="metric"><span>工作台</span><strong>17</strong><code>L1 rows / 25 components</code></div>
+        <div class="metric"><span>工作台</span><strong>22</strong><code>L1 rows / 25 components</code></div>
         <div class="metric"><span>证据附录</span><strong>L78</strong><code>datasheet:l78.pdf#p4</code></div>
       </div>
     </header>
@@ -209,7 +209,7 @@ PASS/WARN/ERROR=5/13/4, manual=3</code></pre>
       <article class="track">
         <div class="tagrow"><span class="tag">主舞台</span><span class="tag">exported netlist/PST+BOM</span><span class="tag">离线 Copilot</span></div>
         <h3>mixed_controller_power_stage：评审工作台</h3>
-        <p>同一套 deterministic validation truth 渲染成 HTML：U1 PASS，U12/U3/U8 ERROR，generic passive rows 是 light deterministic coverage，其余器件透明显示 no-local-profile/manual。</p>
+        <p>同一套 deterministic validation truth 渲染成 HTML：U1 PASS，U12/U3/U8/Q12 ERROR，9 个 profile-backed targets + 13 个 generic passive checks 构成 22 个 L1 rows，其余 3 个器件透明显示 no-local-profile/manual。</p>
         <div class="table-wrap">
           <table>
             <tbody>
@@ -217,6 +217,7 @@ PASS/WARN/ERROR=5/13/4, manual=3</code></pre>
               <tr><td>U12 / XL1509</td><td class="status-error">ERROR</td><td>D5 不是 Schottky-style；L1 低于 profile 范围。</td></tr>
               <tr><td>U3 / EG2132</td><td class="status-error">ERROR</td><td>bootstrap diode rating issue。</td></tr>
               <tr><td>U8 / STM32G030</td><td class="status-error">ERROR</td><td>SWDIO/SWCLK swap。</td></tr>
+              <tr><td>Q12 / SS8050</td><td class="status-error">ERROR</td><td>profile pin/connectivity mismatch keeps the BJT emitter issue visible。</td></tr>
             </tbody>
           </table>
         </div>
