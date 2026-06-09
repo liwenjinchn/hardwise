@@ -244,6 +244,8 @@ ComponentNotFound(
 
 **v5.47 (Workbench prep intelligence, not new verdicts)**: 非视觉 workbench P1-P3 收口成三件只读能力。`locate_component_evidence(refdes, topic)` 只定位已审 `DatasheetProfile` 里的 evidence token，回答 EN/BOOT0/NRST/SWD/abs max/recommended topology 等“证据在哪”，不做 broad datasheet chat。Project Prep Packet 新增 `draft_summaries`，把 module/key-group/power/interface/clock-reset/open-question 做成 schematic-netlist-only review-prep index，明确不是最终电源树或 layout truth。Manual gap 侧新增 `profile_promotion_candidates` 和 `/api/workbench/profile-gaps/{group_id}/promotion-packet`，只给人审 checklist 和 `needs_review` 草稿命令；不会写 profile、不会自动改 `ready`、不会改变 PASS/WARN/ERROR。面试讲法：Hardwise 把“下一步 reviewer 该看什么证据”产品化了，但仍把硬件 verdict 锁在 reviewed profile + deterministic validator。
 
+**v5.48 (Datasheets.com candidate search wired into Workbench)**: 这一步把之前已经存在的 Datasheets.com adapter 接到 manual-gap workbench，但只接到 candidate 层：`/api/workbench/profile-gaps/{group_id}/datasheet-candidates` 按 BOM group 的公开 identity 搜 Datasheets.com，返回 JSON/Markdown/CSV，CSV 仍是 `ReviewStatus=candidate`。没有 API key 时返回 `not_configured`，provider 限流/Cloudflare/错误也结构化返回；不会下载 PDF、不会写 profile、不会把草稿改成 `ready`、不会影响 PASS/WARN/ERROR。讲法要准：Hardwise 现在能把“找规格书候选”放进 reviewer queue；公司版 PLM/AML 才是 approved source，public repo 不接内部资料。
+
 ---
 
 ## Q5. 怎么防止编造元件编号和 datasheet 参数？

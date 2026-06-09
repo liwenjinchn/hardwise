@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from hardwise.documents.datasheets_com import DatasheetsComLookupReport, DatasheetsComPart
 from hardwise.store.relational import query_components
 from hardwise.workbench.server import create_workbench_app
 from hardwise.workbench.context import (
@@ -480,6 +481,133 @@ def test_workbench_profile_promotion_packet_is_needs_review_only(tmp_path: Path)
         assert "needs_review" in markdown_response.text
         assert "ready" in markdown_response.text
         assert "review_status` 必须先保持 `needs_review`" in markdown_response.text
+
+        assert miss.status_code == 404
+        assert miss.json()["reason"] == "unknown_component_group"
+    finally:
+        context.session.close()
+
+
+def test_workbench_datasheet_candidate_search_returns_reviewable_candidates(
+    monkeypatch,
+) -> None:
+    seen: list[dict[str, object]] = []
+
+    def fake_lookup(query: str, **kwargs: object) -> DatasheetsComLookupReport:
+        seen.append(
+            {
+                "query": query,
+                "api_key": kwargs["api_key"],
+                "limit": kwargs["limit"],
+                "timeout_seconds": kwargs["timeout_seconds"],
+            }
+        )
+        return DatasheetsComLookupReport(
+            status="found",
+            query=query,
+            page=1,
+            limit=3,
+            count=1,
+            results=[
+                DatasheetsComPart(
+                    mpn=query,
+                    manufacturer="Fixture",
+                    title=f"{query} public datasheet",
+                    datasheetUrl=f"https://static.example.test/{query.lower()}.pdf",
+                )
+            ],
+        )
+
+    monkeypatch.setenv("DATASHEETS_API_KEY", "test-key")
+    monkeypatch.setattr(
+        "hardwise.workbench.datasheet_candidates.lookup_datasheets_com", fake_lookup
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        json_response = client.get(
+            "/api/workbench/profile-gaps/15/datasheet-candidates?format=json&limit=3&timeout=4"
+        )
+        csv_response = client.get(
+            "/api/workbench/profile-gaps/15/datasheet-candidates?format=csv&limit=3"
+        )
+        markdown_response = client.get(
+            "/api/workbench/profile-gaps/15/datasheet-candidates?format=markdown&limit=3"
+        )
+
+        assert json_response.status_code == 200
+        payload = json_response.json()
+        assert payload["schema_version"] == "hardwise.datasheet_candidate_search.v1"
+        assert payload["scope"] == "manual_gap_public_datasheet_candidate_search"
+        assert payload["status"] == "found"
+        assert payload["query"] == "SWD-HEADER"
+        assert payload["candidates"][0]["review_status"] == "candidate"
+        assert payload["candidates"][0]["source"] == "datasheets.com_api"
+        assert "ReviewStatus" in payload["document_index_csv"]
+        assert "candidate" in payload["document_index_csv"]
+        assert any("不会改变 PASS/WARN/ERROR" in item for item in payload["guardrails"])
+        assert seen[0] == {
+            "query": "SWD-HEADER",
+            "api_key": "test-key",
+            "limit": 3,
+            "timeout_seconds": 4,
+        }
+        assert len(seen) == 3
+
+        assert csv_response.status_code == 200
+        assert "text/csv" in csv_response.headers["content-type"]
+        assert "ReviewStatus" in csv_response.text
+        assert "candidate" in csv_response.text
+
+        assert markdown_response.status_code == 200
+        assert "ReviewStatus=candidate" in markdown_response.text
+    finally:
+        context.session.close()
+
+
+def test_workbench_datasheet_candidate_search_fails_closed_without_api_key(
+    monkeypatch,
+) -> None:
+    seen: dict[str, object] = {}
+
+    def fake_lookup(query: str, **kwargs: object) -> DatasheetsComLookupReport:
+        seen["query"] = query
+        seen["api_key"] = kwargs["api_key"]
+        return DatasheetsComLookupReport(
+            status="not_configured",
+            query=query,
+            reason="DATASHEETS_API_KEY is not set",
+        )
+
+    monkeypatch.delenv("DATASHEETS_API_KEY", raising=False)
+    monkeypatch.delenv("DATASHEETS_COM_API_KEY", raising=False)
+    monkeypatch.setattr(
+        "hardwise.workbench.datasheet_candidates.lookup_datasheets_com", fake_lookup
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        response = client.get("/api/workbench/profile-gaps/15/datasheet-candidates")
+        miss = client.get("/api/workbench/profile-gaps/999/datasheet-candidates")
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["status"] == "not_configured"
+        assert payload["candidates"] == []
+        assert payload["reason"] == "DATASHEETS_API_KEY is not set"
+        assert seen == {"query": "SWD-HEADER", "api_key": None}
 
         assert miss.status_code == 404
         assert miss.json()["reason"] == "unknown_component_group"

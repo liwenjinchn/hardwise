@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -24,6 +25,11 @@ from hardwise.workbench.context import (
     WorkbenchContext,
     build_workbench_context,
     close_workbench_context,
+)
+from hardwise.workbench.datasheet_candidates import (
+    DatasheetCandidateSearchMiss,
+    build_datasheet_candidate_search_packet,
+    render_datasheet_candidate_search_markdown,
 )
 from hardwise.workbench.view_model import (
     ComponentMiss,
@@ -217,6 +223,54 @@ def create_workbench_app(
             },
         )
 
+    @app.get("/api/workbench/profile-gaps/{group_id}/datasheet-candidates")
+    def datasheet_candidate_search(
+        group_id: str,
+        format: Literal["json", "markdown", "csv"] = Query("json"),
+        limit: int = Query(5, ge=1, le=10),
+        page: int = Query(1, ge=1),
+        timeout_seconds: int = Query(20, ge=1, le=60, alias="timeout"),
+    ) -> Response:
+        context = current_context["value"]
+        packet = build_datasheet_candidate_search_packet(
+            context,
+            group_id,
+            api_key=_datasheets_api_key(),
+            limit=limit,
+            page=page,
+            timeout_seconds=timeout_seconds,
+        )
+        if isinstance(packet, DatasheetCandidateSearchMiss):
+            return JSONResponse(status_code=404, content=packet.model_dump(mode="json"))
+        if format == "markdown":
+            return Response(
+                content=render_datasheet_candidate_search_markdown(packet),
+                media_type="text/markdown; charset=utf-8",
+                headers={
+                    "Content-Disposition": (
+                        f'attachment; filename="hardwise-datasheet-candidates-{group_id}.md"'
+                    )
+                },
+            )
+        if format == "csv":
+            return Response(
+                content=packet.document_index_csv,
+                media_type="text/csv; charset=utf-8",
+                headers={
+                    "Content-Disposition": (
+                        f'attachment; filename="hardwise-datasheet-candidates-{group_id}.csv"'
+                    )
+                },
+            )
+        return JSONResponse(
+            content=packet.model_dump(mode="json"),
+            headers={
+                "Content-Disposition": (
+                    f'attachment; filename="hardwise-datasheet-candidates-{group_id}.json"'
+                )
+            },
+        )
+
     @app.post("/api/workbench/import")
     def import_workbench(
         netlist: UploadFile = File(...),
@@ -286,6 +340,13 @@ def create_workbench_app(
         return chat_service.ask(request)
 
     return app
+
+
+def _datasheets_api_key() -> str | None:
+    key = os.environ.get("DATASHEETS_API_KEY") or os.environ.get("DATASHEETS_COM_API_KEY")
+    if key is None or key.strip() == "" or key.strip() == "replace_me":
+        return None
+    return key
 
 
 def _save_upload(upload: UploadFile, directory: Path, *, fallback_name: str) -> Path:

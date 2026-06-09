@@ -3937,3 +3937,37 @@ lock that PASS/WARN/ERROR counts and legacy L2 datasheet smoke stay unchanged.
 Workbench intelligence should organize evidence and reviewer work, not invent
 new electrical truth. When a feature could sound authoritative, encode its
 trust tier, source boundary, and non-goal directly in the DTO and markdown.
+
+## 2026-06-09 — Datasheet web search can feed candidates, not approval
+
+**Symptom**
+
+The manual-gap promotion scaffold still felt disconnected from the existing
+Datasheets.com adapter, even though the repo already had public candidate
+search, document-index rendering, approved-PDF cache, and `needs_review`
+profile-draft commands.
+
+**Root cause**
+
+The missing connection was product glue, not datasheet infrastructure. External
+datasheet search results are candidates; PLM/AML-style approval and Hardwise
+`ready` profiles are separate trust boundaries. If the workbench turned a
+provider hit directly into `ready` evidence, it would weaken the core
+PASS/WARN/ERROR contract.
+
+**Fix**
+
+Added a workbench Datasheets.com candidate-search packet and API endpoint:
+`/api/workbench/profile-gaps/{group_id}/datasheet-candidates`. It searches by
+the grouped public identity, returns JSON/Markdown/CSV candidate rows with
+`ReviewStatus=candidate`, and fails closed as `not_configured`,
+`rate_limited`, `cloudflare_challenge`, or `provider_error`. It does not write
+profiles, approve PDFs, download cache entries, or change deterministic
+verdicts.
+
+**Takeaway**
+
+Workbench may safely prefill the reviewer queue from public web search. Approval
+remains explicit: reviewer confirms the public document row, then
+`fetch-approved-documents`, then `draft-datasheet-profile`, then human-reviewed
+`ready` only when facts have page-level evidence.
