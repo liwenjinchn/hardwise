@@ -25,6 +25,7 @@ Use this order for the current public narrative:
 |---|---|
 | `public_entry` | Safe to put in front of a reviewer as the current demo/story. |
 | `current_reference` | Accurate supporting design, boundary, or evidence reference. |
+| `handoff` | Active continuation notes for the next local session or another machine. |
 | `historical_record` | Useful history, but not the current entry path or current numbers. |
 | `staged_plan` | Planning/spec material kept for traceability, not a public claim. |
 | `asset` | Static media used by current pages. |
@@ -57,6 +58,8 @@ Use this order for the current public narrative:
 | `docs/interview_qa.md` | `current_reference` | Long-form evidence bank for interviews; not the first public page. |
 | `docs/learning_log.md` | `current_reference` | Debugging journal and task-specific lessons. |
 | `docs/rolling_log.md` | `current_reference` | Staged future improvements and deferred work. |
+| `docs/workbench_spa_handoff.md` | `handoff` | Continuation guide for the React/Vite workbench visual alignment and feature triage. |
+| `docs/documentation_cleanup_handoff.md` | `handoff` | Continuation guide for AI-first documentation cleanup and context routing. |
 | `docs/weekend_closeout_plan.md` | `current_reference` | Active branch closeout checklist; becomes historical after handoff. |
 | `docs/jd_alignment.md` | `historical_record` | Role-alignment support material; keep secondary to public demo docs. |
 | `docs/jd_alignment.html` | `historical_record` | HTML reading view of JD alignment. |
