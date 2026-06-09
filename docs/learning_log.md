@@ -3878,3 +3878,31 @@ the Vite workspace dependencies are installed.
 Review navigation should be component-first; finding-first data belongs in the
 register and evidence rail. Put that contract in the backend DTO so the UI does
 not reverse-engineer hardware semantics from display copy.
+
+## 2026-06-09 — Evidence audit tests must control local-source presence
+
+**Symptom**
+
+Full pytest failed in the component markdown and validator UI evidence-chip
+tests after `data/datasheets/l78.pdf` existed in the repo. The tests expected
+`datasheet:l78.pdf#p4` to render `missing_local_source`, but the audit correctly
+classified it as `ok` because the local PDF was present.
+
+**Root cause**
+
+The missing-source assertion depended on ambient repository files instead of a
+test-controlled missing token. Once the public L78 PDF became a real fixture,
+the test no longer represented the condition it claimed to verify.
+
+**Fix**
+
+Keep the real L78 evidence token assertions, but add an explicit
+`pdf:missing.pdf#p7` token to the markdown and UI fixtures for the
+`missing_local_source` branch. Document-index tokens still assert
+`document_index` separately.
+
+**Takeaway**
+
+Evidence-audit tests should choose tokens that force the audited state under
+test. Do not infer missing-source behavior from whether a real datasheet fixture
+happens to be absent today.

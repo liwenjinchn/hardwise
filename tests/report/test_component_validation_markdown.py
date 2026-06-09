@@ -34,6 +34,7 @@ def test_render_component_validation_markdown() -> None:
     )
     report = validate_component_against_profile(component, profile, design)
     report.pin_results[0].evidence.append("doc:docs.csv#line2")
+    report.pin_results[0].evidence.append("pdf:missing.pdf#p7")
 
     md = render(
         report,

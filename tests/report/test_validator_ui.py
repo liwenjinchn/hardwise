@@ -38,6 +38,7 @@ def test_render_validator_ui_includes_index_detail_and_scope() -> None:
     profile = DatasheetProfile.load(Path("data/datasheet_profiles/l78.json"))
     validation = validate_component_against_profile(design.components["U1"], profile, design)
     validation.pin_results[0].evidence.append("doc:docs.csv#line2")
+    validation.pin_results[0].evidence.append("pdf:missing.pdf#p7")
 
     html = render(
         design,
