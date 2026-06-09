@@ -1,8 +1,8 @@
 # Hardwise Workbench SPA Handoff
 
 This handoff is for continuing the real React/Vite workbench from another
-machine. It records the current product state, the visual target, the next
-implementation sequence, and which feature ideas should or should not be added.
+machine. It records the current product state, completed visual/offline work,
+and which future feature ideas should or should not be added.
 
 For the separate documentation consolidation pass, read
 `docs/documentation_cleanup_handoff.md` before asking an agent to load broad
@@ -22,6 +22,20 @@ uv run hardwise serve-workbench \
 ```
 
 Open `http://localhost:4314/`.
+
+The public/offline backup uses the same SPA shell with baked snapshot data:
+
+```bash
+uv run hardwise design-validator-ui \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --ai-snapshot \
+  --output /tmp/hardwise-copilot-workbench.html
+```
+
+Open the generated HTML directly. The file embeds workbench state, component
+details, prep/export data, and audited Copilot responses; it does not require a
+server or API key.
 
 Expected fixture numbers:
 
@@ -48,6 +62,8 @@ Current shipped behavior:
 - Project-level prep packets exist at
   `/api/workbench/prep-packet?format=json|markdown`; the SPA Export page can
   preview and download the markdown package.
+- `design-validator-ui --ai-snapshot` renders an offline single-file SPA
+  snapshot instead of the older Python static workbench shell.
 
 ## Visual Reference
 
@@ -83,80 +99,28 @@ If the reference folder is unavailable, do not continue visual alignment from
 memory. First recreate a reference screenshot and a current screenshot, then
 compare them side by side.
 
-## Visual Gap Audit
+## Completed Visual / Offline Work
 
-The current SPA is structurally correct but not visually finished. Treat it as a
-functional alignment pass, not a final design pass.
+The focused visual pass is complete enough for the current demo. Review now
+uses the engineering-sheet visual language from the reference: compact
+component-first queue rows, status stamps, trust badges, detail sheet hierarchy,
+and a chain-of-custody evidence rail. The queue overflow issue found during
+browser review is fixed.
 
-Main gaps to close:
+Acceptance evidence from the shipped pass:
 
-1. The screen still feels like a styled admin dashboard. The reference feels
-   like a precise engineering review sheet.
-2. Real backend data is shown too literally. The UI needs stronger summary,
-   truncation, and hierarchy before showing raw evidence text.
-3. The left queue is component-first, but rows are still too text-heavy. It
-   should read as refdes, one main conclusion, status stamp, trust badge, and
-   issue count.
-4. The detail panel has the right content, but the component sheet needs tighter
-   baseline alignment, smaller internal headings, and better separation between
-   identity, verdict, pins, checks, and prep packet.
-5. The evidence rail works functionally, but it does not yet feel like the
-   reference chain-of-custody. Strengthen the vertical rail, node rhythm, guard
-   note, and recommended action sequence.
-6. Badges and buttons are too generic. Status badges should feel like small
-   engineering stamps; icon buttons should be quieter and more square.
-7. Typography needs another pass for Chinese/English/mono rhythm. Keep Chinese
-   first, but make `F-001`, `L1`, evidence tokens, and refdes visually crisp.
+- `npm --prefix frontend/workbench run build` passed.
+- `uv run pytest -q` passed with 598 tests, 7 deselected, 1 warning.
+- `uv run ruff check .` passed.
+- Browser smoke covered 1440x900 and 760x900 without horizontal overflow.
+- Clicking `Q12`, `U8`, and `U12` updated detail and evidence.
+- Copilot still wrapped `U999` as `⟨?U999⟩`.
+- Prep Packet preview opened for `Q12`.
+- Offline `docs/hardware-demo.html` now contains `__HARDWISE_OFFLINE_SNAPSHOT__`
+  and no `./assets` dependency.
 
-## Visual Alignment Plan
-
-Do this as a single focused visual pass before adding more product features.
-
-1. Capture comparison evidence.
-   - Reference Review, 1440x900.
-   - Current SPA Review, 1440x900.
-   - Current SPA Review, 760x900.
-   - Optional: reference Import/Copilot/Findings if those pages will be touched.
-
-2. Build a small token map before editing:
-
-   | Reference concept | SPA target |
-   |---|---|
-   | Paper canvas / drafting grid | `frontend/workbench/src/styles.css :root` and `body::before` |
-   | Status stamp | `.status-badge` plus queue/detail/evidence variants |
-   | Trust badge | `.trust-badge` |
-   | Queue row | `.queue-row`, `.queue-copy`, `.queue-side` |
-   | Detail sheet | `.detail-panel`, `.detail-head`, `.identity-grid`, `.pin-table` |
-   | Evidence rail | `.finding-chain`, `.evidence-list`, `.evi-node`, `.task-brief` |
-   | Topbar/nav | `.topbar`, `.flow-nav`, `.project-pill`, `.mini-stats` |
-
-3. Tighten the Review first.
-   - Do not redesign every page at once.
-   - Make the first screen look finished at 1440x900.
-   - Keep the three-column ratio near `340px / 1fr / 360px`.
-   - Preserve component-first behavior and component/detail/evidence sync.
-
-4. Then carry the same primitives to Import, Parse, Copilot, Findings, and
-   Export.
-   - Reuse the stamp, chip, table, rail, and icon-button language.
-   - Keep those pages simpler than Review; Review is the hero screen.
-
-5. Verify with both visual and functional gates.
-   - `npm --prefix frontend/workbench run build`
-   - `uv run pytest tests/workbench/test_context.py -q`
-   - `uv run pytest -q`
-   - `uv run ruff check .`
-   - Browser smoke at 1440x900 and 760x900.
-
-Acceptance for the next visual pass:
-
-- Review reads as an engineering review workspace, not a generic dashboard.
-- Left queue shows one compact component row per refdes; Q12 appears once.
-- Three columns are complete and non-overlapping at 1440x900.
-- Narrow width has no horizontal overflow and evidence tokens remain readable.
-- Clicking `Q12`, `U8`, and `U12` updates detail and evidence.
-- Copilot still wraps `U999` as `⟨?U999⟩`.
-- Prep packet buttons still work.
+Future visual work should be polish only: do not add another broad redesign
+unless the demo target or product scope changes.
 
 ## Feature Backlog Review
 
@@ -168,7 +132,7 @@ Recommended priority:
 
 | Priority | Feature | Decision | Reason |
 |---|---|---|---|
-| P0 | Visual/information-architecture alignment | Do next | The product already has enough function to demo, but the screen does not yet look as convincing as the reference. |
+| Done | Visual/information-architecture alignment | Implemented | Review now uses the reference engineering-sheet language and the offline snapshot reuses the SPA shell. |
 | Done | Project-level Review Prep Packet | Implemented | Complements the shipped component-level prep packet with board overview, key groups, review focus areas, open questions, risk hints, and evidence tokens. Keep it working during visual alignment. |
 | Done | Datasheet evidence locator | Implemented | `locate_component_evidence` finds bounded reviewed-profile evidence for EN pins, abs max, recommended application, decoupling, reset, boot, debug, bootstrap, power, and pin function. It is not broad datasheet chat or PDF search. |
 | Done | Manual Gap -> L1 promotion scaffold | Implemented | Project packet now includes `profile_promotion_candidates`, and `/api/workbench/profile-gaps/{group_id}/promotion-packet` emits a human checklist plus `needs_review` draft command. `/api/workbench/profile-gaps/{group_id}/datasheet-candidates` can call the existing Datasheets.com adapter to prefill reviewable `ReviewStatus=candidate` document-index rows. It never writes `ready`, downloads approved PDFs, or changes deterministic verdicts. |
@@ -183,7 +147,8 @@ Keep these invariants while continuing:
 - Do not mix external risk hints into deterministic verdicts.
 - Do not expose API keys or model credentials to the browser.
 - Keep Refdes Guard visible and tested.
-- Keep old static `design-validator-ui` and risk-hints paths working.
+- Keep plain `design-validator-ui` and risk-hints paths working.
+- Keep `design-validator-ui --ai-snapshot` on the SPA offline snapshot path.
 - Do not commit local screenshots unless they are intentionally added as docs
   assets.
 

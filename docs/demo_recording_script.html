@@ -12,22 +12,31 @@
   <main class="shell">
     <p class="kicker">90 second demo script</p>
     <h1>Hardwise Demo 录屏脚本</h1>
-    <p class="lead">主线只讲 <code>design-validator-ui --ai-snapshot</code> 离线 workbench：模型不能自由评审硬件，必须被 EDA registry、evidence token、deterministic validator 和 Refdes Guard 约束住。KiCad review/ask 只作为证据链复现附录。</p>
+    <p class="lead">主线录 <code>serve-workbench --fake-ai</code> 启动的本地 workbench：模型不能自由评审硬件，必须被 EDA registry、evidence token、deterministic validator 和 Refdes Guard 约束住。<code>design-validator-ui --ai-snapshot</code> 生成的单文件 SPA 快照作为无需起服务的离线备份；KiCad review/ask 只作为证据链复现附录。</p>
 
     <h2>录屏前准备</h2>
+    <pre><code>uv sync
+uv run hardwise serve-workbench \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --fake-ai</code></pre>
+    <p>命令会打印 <code>serve-workbench: http://127.0.0.1:8765 (...)</code>，开录前在浏览器打开这个 URL（默认端口 8765，可用 <code>--port</code> 改）。浏览器里只保留 README 和 workbench 两个页面，避免录屏时切到无关 tab。</p>
+
+    <h2>离线备份</h2>
     <pre><code>uv sync
 uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
   --ai-snapshot \
   --output /tmp/hardwise-copilot-workbench.html</code></pre>
+    <p>直接用 <code>file://</code> 打开生成的 HTML，无需起服务、无需 API key（同一份校验真值与 Refdes Guard，复用 SPA 外观和离线快照数据）。</p>
 
     <h2>分镜</h2>
     <div class="step"><div class="num">01</div><div><b>项目摘要，10 秒</b><p>指顶部指标：25 components、22 L1 rows、PASS-WARN-ERROR=5/13/4、3 manual/no-local-profile。Hardwise 消费导出的 netlist/PST+BOM，生成 pre-Layout review workbench；这不是实时 EDA 插件。</p></div></div>
     <div class="step"><div class="num">02</div><div><b>Must Review，10 秒</b><p>指 Must Review 队列。工作台先回答评审会最关心的问题：哪些条目必须在 Layout handoff 前看，哪些只是 manual gap，哪些已经 deterministic pass。</p></div></div>
     <div class="step"><div class="num">03</div><div><b>U12 deterministic ERROR，18 秒</b><p>点 U12，展示 XL1509 buck 错误。这个 ERROR 不是模型意见，而是 deterministic validator 从网表和 profile 得到的结论：<code>L1=6.8uH</code> 低于最小值，<code>D5=1N4007W</code> 不是 Schottky-style freewheel diode。</p></div></div>
-    <div class="step"><div class="num">04</div><div><b>Copilot trace，18 秒</b><p>打开右下角 Hardwise 助手，点已烘焙问题并展开 Evidence / Tool trace。<code>run_component_validation</code> 是 L1 deterministic，证据 token 必须可见、可复制。</p></div></div>
-    <div class="step"><div class="num">05</div><div><b>U999 wrapped，12 秒</b><p>点“板上有没有 U999?”。不存在的位号不会被模型编造成器件，工具返回 <code>found=false</code>，最终显示会把它包成 <code>⟨?U999⟩</code>。</p></div></div>
+    <div class="step"><div class="num">04</div><div><b>Copilot trace，18 秒</b><p>打开右下角 Hardwise 助手，点 suggested 问题（或直接提问），展开 Evidence / Tool trace。<code>--fake-ai</code> 只产出确定性 <code>tool_use</code>/text，回答仍来自真实 Runner 的 structured tools；<code>run_component_validation</code> 是 L1 deterministic，证据 token 必须可见、可复制。</p></div></div>
+    <div class="step"><div class="num">05</div><div><b>U999 wrapped，12 秒</b><p>在 Copilot 输入“板上有没有 U999?”。不存在的位号不会被模型编造成器件，工具返回 <code>found=false</code>，最终显示会把它包成 <code>⟨?U999⟩</code>。</p></div></div>
     <div class="step"><div class="num">06</div><div><b>L78 evidence token，12 秒</b><p>点 L78 evidence 问题或 U1/L7805 trace，停在 <code>datasheet:l78.pdf#p4</code>。L78 是 L2 grounded evidence：有页码级 token 供 reviewer 核对，但不会自动升级成模型自由判断。</p></div></div>
     <div class="step"><div class="num">07</div><div><b>收束，10 秒</b><p>只做 schematic-side review，只用公开输入，不做 PCB layout、boardview、PLM、供应商、价格库存，也不碰公司内部硬件数据。</p></div></div>
 

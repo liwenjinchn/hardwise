@@ -138,10 +138,10 @@
       <div class="hero-copy">
         <p class="eyebrow">Hardwise / 90 秒 workbench runbook</p>
         <h1>进 Layout 前，先把风险排成队</h1>
-        <p class="lead">Hardwise 把公开原理图或导出的 schematic netlist/PST+BOM 变成评审者能直接使用的队列：Must Review、Manual Gap、Passed、Evidence。90 秒主舞台是 <code>design-validator-ui --ai-snapshot</code> 生成的离线 Copilot workbench；KiCad review/ask 是证据链附录。</p>
+        <p class="lead">Hardwise 把公开原理图或导出的 schematic netlist/PST+BOM 变成评审者能直接使用的队列：Must Review、Manual Gap、Passed、Evidence。90 秒主舞台是 <code>serve-workbench --fake-ai</code> 启动的本地 React workbench；<code>design-validator-ui --ai-snapshot</code> 是同款 SPA 外观的离线备份。KiCad review/ask 是证据链附录。</p>
       </div>
       <div class="summary" aria-label="workbench metrics">
-        <div class="metric"><span>主舞台</span><strong>90s</strong><code>design-validator-ui --ai-snapshot</code></div>
+        <div class="metric"><span>主舞台</span><strong>90s</strong><code>serve-workbench --fake-ai</code></div>
         <div class="metric"><span>评审动作</span><strong>3</strong><code>Must Review / Manual Gap / Passed</code></div>
         <div class="metric"><span>工作台</span><strong>22</strong><code>L1 rows / 25 components</code></div>
         <div class="metric"><span>证据附录</span><strong>L78</strong><code>datasheet:l78.pdf#p4</code></div>
@@ -150,7 +150,14 @@
 
     <section class="section">
       <h2>90 秒主舞台</h2>
-      <pre><code>uv run hardwise design-validator-ui \
+      <pre><code>uv run hardwise serve-workbench \
+  tests/fixtures/allegro/mixed_controller_power_stage.net \
+  tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --fake-ai \
+  --port 8765
+
+# offline backup / GitHub Pages artifact
+uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
   --ai-snapshot \
@@ -172,8 +179,8 @@ PASS/WARN/ERROR=5/13/4, manual=3</code></pre>
             <tr><td>项目摘要</td><td>顶部 metrics 和 grouped review queue。</td><td>输入已经变成 review workbench，不是聊天记录。</td></tr>
             <tr><td>Must Review</td><td>切到 Must Review 区域。</td><td>ERROR/WARN 在 Layout handoff 前保持显眼。</td></tr>
             <tr><td><code>U12</code> deterministic ERROR</td><td>打开 XL1509 detail。</td><td>ERROR 来自 netlist + reviewed profile 的 Python validator。</td></tr>
-            <tr><td>Copilot trace</td><td>展开 baked Copilot 的 Evidence / Tool trace。</td><td>Copilot 解释 structured tool result，不决定 PASS/WARN/ERROR。</td></tr>
-            <tr><td><code>U999</code> wrapped</td><td>点“板上有没有 U999?”。</td><td>未知位号返回 structured miss，并显示成 <code>⟨?U999⟩</code>。</td></tr>
+            <tr><td>Copilot trace</td><td>展开 Copilot 的 Evidence / Tool trace。</td><td>Copilot 解释 structured tool result，不决定 PASS/WARN/ERROR。</td></tr>
+            <tr><td><code>U999</code> wrapped</td><td>输入“板上有没有 U999?”。</td><td>未知位号返回 structured miss，并显示成 <code>⟨?U999⟩</code>。</td></tr>
             <tr><td>L78 evidence token</td><td>点 L78 evidence 问题或 U1/L7805 trace。</td><td><code>datasheet:l78.pdf#p4</code> 是可见、可核对的 L2 evidence token。</td></tr>
           </tbody>
         </table>
@@ -207,7 +214,7 @@ PASS/WARN/ERROR=5/13/4, manual=3</code></pre>
 
     <section class="section band" aria-label="main stage and appendix">
       <article class="track">
-        <div class="tagrow"><span class="tag">主舞台</span><span class="tag">exported netlist/PST+BOM</span><span class="tag">离线 Copilot</span></div>
+        <div class="tagrow"><span class="tag">主舞台</span><span class="tag">exported netlist/PST+BOM</span><span class="tag">live + offline SPA</span></div>
         <h3>mixed_controller_power_stage：评审工作台</h3>
         <p>同一套 deterministic validation truth 渲染成 HTML：U1 PASS，U12/U3/U8/Q12 ERROR，9 个 profile-backed targets + 13 个 generic passive checks 构成 22 个 L1 rows，其余 3 个器件透明显示 no-local-profile/manual。</p>
         <div class="table-wrap">
@@ -221,7 +228,7 @@ PASS/WARN/ERROR=5/13/4, manual=3</code></pre>
             </tbody>
           </table>
         </div>
-        <p style="margin-top:14px">这个路径不是实时 Cadence/Allegro 插件；它消费导出的 netlist/PST+BOM artifact，离线或通过本地 server 生成 reviewer workbench。</p>
+        <p style="margin-top:14px">这个路径不是实时 Cadence/Allegro 插件；它消费导出的 netlist/PST+BOM artifact，通过本地 server 生成 reviewer workbench，或生成同款单文件 SPA 离线快照。</p>
       </article>
 
       <article class="track">
@@ -249,7 +256,7 @@ uv run hardwise query-datasheet \
     </section>
 
     <section class="section note">
-      <p><b>文档入口：</b>如果你不确定该读哪份文档，先看 <code>docs/docs_inventory.html</code>。公开路径是 README → 离线工作台 → 录屏脚本 → 产品介绍页 → MVP 定义 → 本技术 Demo → Evidence Chain Audit。</p>
+      <p><b>文档入口：</b>如果你不确定该读哪份文档，先看 <code>docs/docs_inventory.html</code>。公开路径是 README → 离线 SPA 快照 → 录屏脚本 → 产品介绍页 → MVP 定义 → 本技术 Demo → Evidence Chain Audit。</p>
     </section>
   </main>
 </body>
