@@ -51,6 +51,18 @@
   ≤300 行,验收标准2即自检达成;之后做期中盘点(各文件行数+四条验收
   逐条核)再决定是否进目标3 polish
 
+- 2026-06-11 15:02 | 目标2最后一刀:Review 三栏迁出 src/views/review/
+  (TaskQueueColumn+FILTERS / DetailColumn 含 prep packet 接线 /
+  EvidenceColumn+私有 RiskHintsPanel);App.tsx 619→218 行,三刀合计
+  1356→218 | commit dee10db(typecheck+unit 21+E2E 5+pytest 598+ruff
+  全绿;static 恢复 HEAD) | 行数全景:循环触及的所有文件 ≤218 行;
+  预存 types.ts 398 行——非 App.tsx 非新文件,判定在验收2范围外,留给
+  人工决定。下一步:补验收2的"拆出组件有 vitest 覆盖"缺口——用
+  react-dom/server renderToStaticMarkup 在 node 环境测 components/ui 与
+  关键 views(零新依赖,绕开 jsdom 白名单问题),然后做期中盘点逐条核
+  验收 1-4
+
+
 
 
 
