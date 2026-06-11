@@ -62,6 +62,45 @@
   关键 views(零新依赖,绕开 jsdom 白名单问题),然后做期中盘点逐条核
   验收 1-4
 
+- 2026-06-11 15:18 | 验收2收口:renderToStaticMarkup(node 环境零新依赖,
+  绕开 jsdom 白名单)给全部拆出组件补 vitest——testing/fixtures.ts 共享
+  构造器、ui.test.tsx 9 个原语、views.test.tsx 9 个视图初始渲染,
+  format.test.ts 去重;单测 21→50 | commit 73e0906(unit 50+E2E 5+
+  pytest 598+ruff 全绿) | 盘点后触发停止条件,见下方期末自检
+
+## 期末自检(2026-06-11 15:20,迭代 6 后触发停止条件)
+
+**结论:验收标准 1-4 全部通过;按停止条件第 1 条停止迭代,等待人工验收。**
+
+1. **E2E 覆盖手工冒烟清单 ✅** — `npm --prefix frontend/workbench run
+   test:e2e` 一条命令:build → Playwright webServer 拉起
+   `serve-workbench --fake-ai` → 5 条断言对应 handoff 清单全部条目
+   (Q12/U8/U12 队列联动详情+证据列、U999→⟨?U999⟩、Q12 Prep Packet
+   预览、1440x900 与 760x900 无横向溢出)。最近一跑 5/5(10.5s)。
+2. **拆出组件 vitest 覆盖 + 行数守卫 ✅** — 50 条单测覆盖
+   lib/format(21)、components/ui 全部 9 原语(13)、全部 9 个拆出
+   视图(16);App.tsx 1356→218 行,循环触及文件最大 218 行,全部
+   ≤300。注:预存 types.ts 398 行,非 App.tsx 非新文件,判定在范围外,
+   留人工裁决。
+3. **每个落盘 commit 全链绿 ✅** — 6 次迭代 6 个实质 commit
+   (2e8e86c→3cbd624→8bf41c6→8a3c2bb→dee10db→73e0906),每个都在
+   build(含 typecheck)+ 新增测试 + pytest 598 + ruff 干净下落盘;
+   零丢弃、零 STUCK/RED/ASK。离线 --ai-snapshot 路径由既有 pytest
+   守住,无回归。
+4. **diff 范围 ✅** — `git diff main...HEAD --name-only`(26 个文件)
+   仅触及 frontend/workbench/**、docs/loop/**、docs/learning_log.md;
+   src/hardwise/ 零改动(E2E 复用既有 serve-workbench,未需测试胶水)。
+
+**留给人工验收的事项**:
+- 已提交的 SPA 构建产物(src/hardwise/workbench/static/)按产物策略
+  未刷新(详见 learning_log 2026-06-11 条目);合并时建议补一个独立
+  build commit 刷新产物。
+- types.ts(398 行,预存)是否拆分,人工决定。
+- 依赖新增仅 @playwright/test 与 vitest(白名单内,devDependencies);
+  Playwright chromium 二进制属契约允许的首次下载。
+- 目标 3(polish)未启动:停止条件先于其触发,且无明确 polish 诉求。
+
+
 
 
 
