@@ -15,3 +15,19 @@
 - 2026-06-11 | B | B 轨第一刀:器件族分类扩容。基线实测:12 个真实形态(Y 晶振/F 保险丝/SW 开关/K 继电器/T 变压器/BT 电池/RP 排阻/VT/VD/IC 位号)11/12 落 unknown。新增 crystal/fuse/switch/relay/transformer/battery 六族(标准位号前缀 + 保守文本 token),既有族补 RP/RA/VT/VD/IC 前缀与 CHOKE/SCHOTTKY/RECTIFIER token;FAMILY_LABELS 补中文标签;黄金测试集 26 例锁定(unknown 12→0,既有分类回归锁死,子串陷阱防护:button cell→battery、gold contact→connector)。motor_sensor_controller fixture 两颗晶振 MPN 从 unknown 组迁入 crystal 组(verdict 无变化,纯分类分组迁移,CLI 测试断言同步) | 绿 3ee6411(638 passed,ruff 干净);commit 显式列路径绕开 ASK #1 外来文件 | 下一步:B 轨第二刀——unknown 计数下降的 index 级断言(合成 netlist+BOM fixture 走 build_project_validation_index,锁 gap group unknown 计数),或 pstchip JEDEC_TYPE 属性信号接入分类(勘察 allegro_pst properties 流到 BomItem/identity 的通路是否存在)
 - 2026-06-11 | B | B 轨第二刀:index 级 unknown 下降断言落地——合成板(crystal/fuse/switch/ic/cap + 真不可识别 module)走完整 build_project_validation_index 通路,断言 unknown 组恰 1 个(改造前应为 4 个);**验收 #3 两个子项(黄金测试集 + 合成 fixture unknown 计数可复现断言)全部闭合**。顺带观察到既有怪癖:passive-value 正则宽松到把 "25MHz Crystal" 认成 passive_value identity(组身份取 value 而非 MPN,family 判定不受影响)——列为后续候选,不在本迭代修 | 绿 0dc7163(639 passed,ruff 干净);一次断言返工(identity 键假设 MPN,实测为 value,已注释说明) | 下一步:pstchip JEDEC_TYPE/properties 信号接入分类通路勘察;或回 A 轨把 net 检查族做到第 3 个(如电源轨名但零电压可解析的命名审查);ASK #1 仍未决
 
+## 期末自检(2026-06-11,迭代 7 — 停止条件触发:验收标准 1–4 全部自检通过)
+
+| 验收项 | 验证命令/方式 | 结果 |
+|---|---|---|
+| #1 独立 rule ID + source token | `nets.py` 含 `net_single_endpoint` / `design_missing_ground_net`;token 形态 `netlist:<file>#net=<NAME>` / `#nets=<count>`,经 evidence 分类器归 design_source | ✓ |
+| #2 公开 fixture 可断言结果 | mixed_controller_power_stage(2 单端点)、pst(0)、2n3904_bjt_emitter_reference(缺地+3)真值写死;`pytest -k fixture` 3 passed | ✓ |
+| #3 黄金测试集 + unknown 下降断言 | test_component_identity.py 27 passed:12 真实形态 unknown 11/12→0;index 级合成板 unknown 组 4→1 | ✓ |
+| #4 每 commit 全绿 | journal 逐迭代自证;终态 `uv run pytest -q` **639 passed**(基线 598,+41),`ruff check` 干净 | ✓ |
+| #5 公开叙事 diff 为空 | `git diff main...HEAD -- README.md ... docs/ :(exclude)docs/loop/*` → 空;"ready" 写入 grep 仅命中契约规则自身文本 | ✓ |
+
+**交付摘要**:A 轨——网络级检查族从 0 到 2(`net_single_endpoint` / `design_missing_ground_net`),贯通 markdown 报告 + workbench API + 离线 snapshot,evidence 分类器学会 `netlist:` scheme;B 轨——器件族分类 +6 族(crystal/fuse/switch/relay/transformer/battery)+5 前缀映射,黄金测试集 26 例 + index 级断言。功能提交 5 个,全部绿;ASK 1 个未决(外来叙事编辑,等人工);RED 0;STUCK 0。
+
+**未尽事项(下期候选)**:pstchip 属性信号接入分类;net 检查族第 3 个;passive-value 正则宽松怪癖;SPA 渲染 net_checks(归前端轨);ASK #1 处置。
+
+**循环停止**。等待人工验收(验收方式见契约末节)。
+
