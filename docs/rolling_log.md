@@ -339,89 +339,25 @@ Each anti-rule must reference a real moment when reality tried to violate it. An
 
 ---
 
-## Capture pin-table export — staged behind a home OrCAD rig
+## Pin-table workbench intake — staged behind the workbench-hardening loop
 
-**Trigger**: A reproducible OrCAD Capture setup (Lite/trial) outside company
-equipment, plus a synthetic multi-page demo design committed as a public
-fixture. Hard precondition per AGENTS.md rule 1: no company scripts, files, or
-designs — the export script must be a from-scratch rewrite against
-public/synthetic inputs only.
+**Trigger**: the workbench-hardening loop's SPA/frontend changes settle (no
+concurrent edits to `serve-workbench` / `design-validator-ui` paths), and the
+shipped `report-pin-table` CLI loop has been exercised on at least one real
+export.
 
-**Where it lands**: new adapter `adapters/capture_pin_table.py` + checks under
-`checklist/checks/`; `docs/architecture.md` data-flow section when it ships.
+**Where it lands**: `workbench/context.py` (third optional input), workbench
+check rows, `docs/architecture.md` data-flow section.
 
-**What to add**: a read-only Capture Tcl (DBO API) script that walks pages →
-instances → pins and exports one pin-table CSV per design, plus Hardwise
-ingestion and 1-2 deterministic checks. Motivation: the netlist/PST/BOM path
-carries no pin types, no page/grid locations, no NC markers, and no off-page
-connector names (`pstchip.dat` fixtures confirm pins carry `PIN_NUMBER` only)
-— this export is the only public-input way to obtain them.
-
-CSV schema (one row per pin instance):
-
-| column | example | source |
-|---|---|---|
-| refdes | U12 | instance |
-| value | XL1509-12E1 | instance part value |
-| footprint | SOP8 | instance PCB footprint property (feeds R001) |
-| pin_number | 2 | pin |
-| pin_name | SW | pin |
-| pin_type | IN / OUT / BI / PWR / GND / PASSIVE / NC | DBO pin type |
-| net | SW | connectivity |
-| page | 3 | page object |
-| grid_ref | B4 | pin location → border grid |
-| nc_marker | true / false | no-connect flag |
-| off_page | +24V_EN | attached off-page connector name, else empty |
-
-Checks unlocked (all L1 deterministic):
-
-- floating-input: IN-type pin with no net and no `nc_marker` → ERROR
-- power-pin-unconnected: PWR/GND pin with no net → ERROR
-- nc-conflict: `nc_marker` pin that is wired anyway → WARN (strengthens R003)
-- off-page-orphan: off-page name appearing on exactly one page → WARN
-
-Evidence: findings gain `sch:<page>@<grid_ref>` source tokens, extending the
-evidence-token scheme from datasheet pages to schematic locations.
-
-Scope bound: one script + one CSV + at most two checks. Read-only export; no
-write-back, no swap/edit operations, no second project.
-
-**Status (2026-06-11)**: clean-room export script landed at
-`scripts/capture_pin_table_export.tcl` (read-only, catch-guarded, version
-differences marked ADJUST; emits raw inst x/y — grid zone derives Python-side).
-Validated on a real 81-page Capture 16.6 design (3874 instances / 15879 pins):
-refdes/value/pin_number/pin_name/page full, net 15233 filled (646 no-net pins =
-floating-check input), off_page 2947. Three accessors returned empty and need
-release-specific names (discover via `info commands DboPin_*` in the Capture
-shell): pin_type, inst x/y location, nc_marker. The validation CSV is
-company-design data — used for validation only, never committed; the public
-synthetic fixture is still required before ingestion + checks ship. Windows Tcl
-writes CRLF — ingestion must strip `\r`. v2 (same day): direct
-`GetReferenceDesignator` / `GetPartValue` / new `footprint` column via
-`GetPCBFootprint` (all confirmed present by 16.6 introspection); pin class is
-NOT `DboPin` (`info commands DboPin_*` empty — likely `DboPinInst`); pin_type
-tries `GetPinType` first; location tries three signatures; `hardwise_introspect`
-proc added for one-paste accessor discovery if columns stay empty. v2 run on
-the same real design: footprint + inst_x/inst_y now full — 10/12 columns
-working. v3 (same day): introspection proved iterated pins are `DboPortInst`
-(GetPinNumber exists only there); member `GetPinType` returns a wrapped enum
-the Tcl layer can't convert, so v3 switches pin_type / nc_marker to the
-Tcl-native static helpers `DboPortInst_sGetPinType` /
-`DboPortInst_sGetIsNoConnect`. Awaiting one more Windows run; after pin_type
-fills, sanity-check enum order by joining POWER-typed pins against GND/VCC
-nets before trusting the mapping. v4/v5 (same day): v3 still empty → v4
-printed raw catch errors for the first 3 pins → SWIG error text named the
-class (`DboPortInst`) and the missing argument (16.6 DBO getters take a
-`DboState`). v5 passes `$lStatus` to `GetPinType` / `GetIsNoConnect`; full
-debugging story in `docs/learning_log.md` (2026-06-11 entry). **v5 confirmed
-complete (2026-06-11)**: 12/12 columns full on the real 81-page design;
-enum-order verified — POWER(7) pins land on power-pattern nets at 99.9%
-(2672/2676, 0 unconnected). Check-yield preview on that board: 48
-floating-input candidates (INPUT, no net, no NC), 30 NC-conflict candidates
-(NC-marked but wired), 0 unconnected power pins — the first two are invisible
-to the netlist path, which carries no pin types or NC markers. The script is
-final; remaining work is the public synthetic fixture, then ingestion + the
-two L1 checks + `sch:<page>@<grid>` evidence tokens.
+**What to add**: accept an optional pin-table CSV alongside netlist+BOM, run
+R008/R009 during workbench build, and surface their Findings in the Must
+Review queue with the existing trust labels (both are L1 deterministic).
+Candidate follow-on checks from the same data, in value order: nc-conflict
+(NC-marked but wired — strengthens R003; 30 candidates on the validated real
+board), off-page-orphan (off-page name on exactly one page), and net-naming
+checks (the R006/R007 family can run on the pin-table `net` column without
+waiting for the KiCad schematic net parser). Hard bounds: same `Finding`
+shape, no new validation truth, no PCB/PLM scope.
 
 ---
 
@@ -573,6 +509,7 @@ tracing (第 5/14 条 full form), no deliverable-pack product build. 第 3/19/20
   - Follow-up: add a synthetic `.kicad_pcb` unit test that explicitly lights both net syntaxes handled by `_pad_net_name()`; `pic_programmer` only gives implicit coverage for whichever KiCad version generated the fixture.
   - R005/R006/R007 remain queued above because they need a real schematic net parser: wire + local/global label + power symbol + hierarchical label + symbol pin endpoint resolution from `.kicad_sch`.
 - 2026-05-26 — V2.9 stage details landed in code/docs: local document-index parsing + BOM item document matching + report sections + synthetic fixture smoke. The roadmap keeps V3.0+ queued for pin profiles and component validation, but V2.9 is no longer just a planned item.
+- 2026-06-11 — Capture pin-table export discharged: `scripts/capture_pin_table_export.tcl` (v5; 12/12 columns validated on a real 81-page / 15879-pin design, pin-type enum cross-checked at 99.9%), adapter `adapters/capture_pin_table.py` + synthetic fixture, checks R008 (floating input) / R009 (unconnected power pin), and the `report-pin-table` CLI all shipped on `feat/capture-pin-table`. Final schema lives in the adapter docstring; bring-up story in `docs/learning_log.md` (2026-06-11). Remainder staged above as "Pin-table workbench intake".
 - 2026-05-27 — V3.0 stage details landed in code/docs: schema-v2 `DatasheetProfile.pins`, L78 public pin-profile fixture, `report-pin-profile`, renderer and focused tests.
 - 2026-05-27 — V3.1 stage details landed in code/docs: deterministic `validation/component.py`, `report-component-validation`, L78 regulator netlist+BOM fixtures, renderer and focused tests. Next component-family templates remain queued behind explicit public profiles and fixtures.
 - 2026-05-27 — V3.2 stage details landed in code/docs: `report-validator-ui` creates a single-file local HTML UI with component index, selected validation detail, schematic-net pane, scope pane, and report download. V3.3 is queued for the next component-family template rather than more UI surface.
