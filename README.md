@@ -30,14 +30,12 @@ Built with AI assistance. All design decisions and final code are reviewed and o
 
 ---
 
-## 90-second demo
+## Demo
 
-If you only have 90 seconds, start with the Workbench demo. The local recording
-path is `serve-workbench --fake-ai`; the public GitHub Pages entry is the same
-SPA shell baked into an offline `design-validator-ui --ai-snapshot` file:
+Two ways in, no setup for either:
 
-- **1-minute demo video:** [hardwise-demo.mp4](https://github.com/liwenjinchn/hardwise/releases/download/demo-video/hardwise-demo.mp4)
-- **90-second main stage:** project summary -> Must Review -> `U12` deterministic ERROR -> Copilot trace -> `U999` wrapped as `⟨?U999⟩` -> L78 evidence token `datasheet:l78.pdf#p4`
+- **Demo video (~90 s):** [hardwise-demo.mp4](https://github.com/liwenjinchn/hardwise/releases/download/demo-video/hardwise-demo.mp4)
+- **Live workbench:** [hardware-demo.html](https://liwenjinchn.github.io/hardwise/hardware-demo.html) — the offline SPA snapshot, click around straight in the browser
 
 GitHub shows HTML files as source. Open the rendered GitHub Pages demos for the intended reading view:
 
@@ -58,7 +56,7 @@ uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_powe
 ```
 
 KiCad `review` / `ask` commands are kept below as evidence-chain appendix and
-reproduction commands, not the primary 90-second stage.
+reproduction commands.
 
 ## MVP product loop
 
@@ -116,7 +114,7 @@ Action labels in the product map to the trust tiers:
 
 The coverage loop is supporting evidence: Hardwise ranks profile gaps, then moves selected public-evidence groups from L3/manual rows into L1 deterministic rows one family at a time. That proves the loop is repeatable, but the headline remains trust: the model is bounded by registry objects, evidence tokens, deterministic validators, and structured tool returns.
 
-The 90-second main stage is the exported-netlist workbench. For live local
+The demo main stage is the exported-netlist workbench. For live local
 recording, run the deterministic fake-agent server:
 
 ```bash
