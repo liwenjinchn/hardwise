@@ -45,7 +45,7 @@ New implementation shipped in this pass:
 
 Core checks:
 
-- `uv run pytest -q` → 666 passed, 7 deselected, 1 warning
+- `uv run pytest -q` → 669 passed, 7 deselected, 1 warning
 - `uv run ruff check .` → all checks passed
 - `npm run test:unit` → 51 passed
 - `npm run build` → production workbench bundle built
@@ -81,7 +81,8 @@ Representative CLI smoke checks:
 - Pin-table workbench intake:
   `serve-workbench ... --fake-ai --dry-run --pin-table <csv>` reports loaded
   findings and rejected unknown refdes; `design-validator-ui ... --pin-table`
-  writes a static artifact with the same context path
+  writes a static artifact with the same context path; `report-pin-table` on the
+  R010 smoke CSV reports R008=2, R009=1, R010=1
 
 ## Deviations From Plan
 
