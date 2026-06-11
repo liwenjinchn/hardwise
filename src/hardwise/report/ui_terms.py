@@ -35,6 +35,12 @@ FAMILY_LABELS = {
     "resistor": "电阻",
     "test_point": "测试点",
     "transistor": "晶体管",
+    "crystal": "晶振",
+    "fuse": "保险丝",
+    "switch": "开关",
+    "relay": "继电器",
+    "transformer": "变压器",
+    "battery": "电池",
     "unknown": "未知",
 }
 

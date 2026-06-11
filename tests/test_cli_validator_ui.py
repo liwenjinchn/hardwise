@@ -992,7 +992,9 @@ def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
     assert "triage_new=1" in result.output
     text = output.read_text(encoding="utf-8")
     assert "| diode | 1 | 1 | 0.8 | diode | BAV99" in text
-    assert "| unknown | 2 | 2 | 0.6 | - | ABM8-8.000MHZ, ECS-2520MV" in text
+    # Crystals classified as `unknown` before the 2026-06 family expansion;
+    # the two oscillator MPNs now group under `crystal`.
+    assert "| crystal | 2 | 2 | 0.6 | - | ABM8-8.000MHZ, ECS-2520MV" in text
     assert "| inductor |" not in text
     assert "| ferrite |" not in text
     assert "LTST-C190KGKT" not in text
