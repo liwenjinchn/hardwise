@@ -2,6 +2,12 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
+**[▶ 打开在线工作台 demo](https://liwenjinchn.github.io/hardwise/hardware-demo.html)** ——
+评审工作台的离线快照，浏览器直接打开：评审队列、带证据 token 的确定性
+finding、可审计的 Copilot 问答轨迹。
+
+[![Hardwise 评审工作台——器件队列、验证明细与 Copilot 面板](docs/assets/hardwise-workbench-snapshot.png)](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
+
 > 面向公开硬件项目的 pre-Layout 原理图评审工作台：review queue、证据化
 > finding、registry-verified 位号和确定性验证。
 

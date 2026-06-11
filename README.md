@@ -2,6 +2,13 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
+**[▶ Open the live workbench demo](https://liwenjinchn.github.io/hardwise/hardware-demo.html)** — an
+offline snapshot of the review workbench, straight in the browser: review
+queues, deterministic findings with evidence tokens, and an audited Copilot
+transcript.
+
+[![Hardwise review workbench — component queue, validation detail, and Copilot panel](docs/assets/hardwise-workbench-snapshot.png)](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
+
 > A trusted pre-layout schematic-review workbench for public hardware projects:
 > review queues, evidence-backed findings, registry-verified refdes, and
 > deterministic validation.
