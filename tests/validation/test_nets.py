@@ -9,6 +9,7 @@ from hardwise.ir.build import build_design_from_netlist, build_design_from_pst
 from hardwise.ir.types import Design, Net
 from hardwise.report.project_validation_markdown import render
 from hardwise.validation.nets import (
+    CHECK_MISSING_GROUND,
     CHECK_SINGLE_ENDPOINT,
     validate_design_nets,
 )
@@ -33,6 +34,7 @@ def test_single_endpoint_net_warns_with_evidence_token():
     design = _design_with_nets(
         {
             "VCC_3V3": [("U1", "1"), ("C1", "1")],
+            "GND": [("U1", "2"), ("C1", "2")],
             "DANGLE": [("U1", "7")],
         }
     )
@@ -64,7 +66,12 @@ def test_multi_endpoint_nets_produce_no_results():
 def test_source_label_overrides_project_path_in_evidence():
     """Callers that know the netlist file name control the token label."""
 
-    design = _design_with_nets({"DANGLE": [("U1", "7")]})
+    design = _design_with_nets(
+        {
+            "GND": [("U1", "2"), ("C1", "2")],
+            "DANGLE": [("U1", "7")],
+        }
+    )
     results = validate_design_nets(design, source_label="board.net")
 
     assert results[0].evidence == ["netlist:board.net#net=DANGLE"]
@@ -77,11 +84,64 @@ def test_results_are_sorted_by_net_name():
         {
             "Z_LATE": [("U1", "9")],
             "A_EARLY": [("U1", "8")],
+            "GND": [("U1", "2"), ("C1", "2")],
         }
     )
     results = validate_design_nets(design)
 
     assert [r.net_name for r in results] == ["A_EARLY", "Z_LATE"]
+
+
+def test_design_without_ground_net_warns_once():
+    """A grounded-net-free design yields one design-level WARN, first."""
+
+    design = _design_with_nets(
+        {
+            "VCC": [("U1", "1"), ("C1", "1")],
+            "DANGLE": [("U1", "7")],
+        }
+    )
+    results = validate_design_nets(design, source_label="board.net")
+
+    assert [r.check for r in results] == [
+        CHECK_MISSING_GROUND,
+        CHECK_SINGLE_ENDPOINT,
+    ]
+    missing = results[0]
+    assert missing.net_name == "-"
+    assert missing.status == "WARN"
+    assert missing.nodes == []
+    assert missing.evidence == ["netlist:board.net#nets=2"]
+    assert "checked 2 nets" in missing.summary
+    assert "Reviewer to confirm" in missing.summary
+
+
+def test_empty_net_facts_do_not_claim_missing_ground():
+    """No connectivity facts at all means nothing to judge — no findings."""
+
+    design = _design_with_nets({})
+
+    assert validate_design_nets(design) == []
+
+
+def test_emitter_reference_fixture_ground_truth():
+    """Public BJT fixture: no ground net plus three single-endpoint nets."""
+
+    registry = parse_allegro_netlist(
+        Path("tests/fixtures/allegro/2n3904_bjt_emitter_reference.net")
+    )
+    design = build_design_from_netlist(registry)
+    results = validate_design_nets(
+        design, source_label="2n3904_bjt_emitter_reference.net"
+    )
+
+    assert [(r.check, r.net_name) for r in results] == [
+        (CHECK_MISSING_GROUND, "-"),
+        (CHECK_SINGLE_ENDPOINT, "+15V"),
+        (CHECK_SINGLE_ENDPOINT, "+24V"),
+        (CHECK_SINGLE_ENDPOINT, "EMITTER_NODE"),
+    ]
+    assert all(r.status == "WARN" for r in results)
 
 
 def test_mixed_controller_power_stage_fixture_ground_truth():
