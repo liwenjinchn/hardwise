@@ -4027,3 +4027,37 @@ legacy static renderer for compatibility.
 When the product UI moves to SPA, public offline demos should reuse the same
 shell and data contract. Otherwise the demo artifact becomes a stale second UI
 that drifts from the real workbench.
+
+## 2026-06-11 — Committed Vite build artifacts fight with diff-scope acceptance
+
+**Symptom**
+
+During the autonomous frontend-hardening loop, the first real refactor of
+`App.tsx` made `npm run build` emit a new hashed bundle
+(`index-BA39aatN.js` → `index-_F95Jcy9.js`) into
+`src/hardwise/workbench/static/`, dirtying a path the loop contract's diff
+audit (acceptance #4) does not allow the loop to touch.
+
+**Root cause**
+
+The Vite build output is committed into `src/hardwise/workbench/static/` so
+`serve-workbench` works from a fresh clone without a Node toolchain. Any
+source-level frontend change therefore wants to rewrite committed backend-tree
+artifacts — two repo conventions (vendored build output vs. scoped loop diffs)
+colliding. Iterations 1–2 hid the issue because export-only changes were
+tree-shaken into byte-identical bundles.
+
+**Fix**
+
+The loop's E2E flow builds first and tests the fresh bundle, then restores
+`src/hardwise/workbench/static/` to HEAD before committing
+(`git checkout -- … && git clean -fd …`). Behavior parity is safe because loop
+refactors are structural by contract. The end-of-term human acceptance should
+refresh the committed artifacts in one deliberate build commit after merging.
+
+**Takeaway**
+
+When build artifacts are vendored into the tree, every automated workflow that
+edits sources needs an explicit artifact policy (rebuild-and-commit vs.
+restore-and-defer). Decide it in the contract up front; don't let the first
+hash change decide for you.
