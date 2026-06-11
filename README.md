@@ -381,7 +381,7 @@ Current MVP status:
 | 2 — R002 + Consolidator | Done | Capacitor-voltage-field check, candidate-rule memory |
 | 3 — R003 + Dual Store + Router | Done | NC-pin parser, SQLite/Chroma, datasheet ingest, tiered routing |
 | 4 — Agent Loop + Prompt Caching | Done | `hardwise ask`, structured tools, live prompt-cache read hit |
-| 5 — Submission Closeout | Done | Canonical workbench demo narrative, README/demo/JD/interview closeout, final artifacts |
+| 5 — Submission Closeout | Done | Canonical workbench demo narrative, README/demo/docs closeout, final artifacts |
 | Workbench — Allegro Copilot | Done | `serve-workbench` live agent loop + `design-validator-ui --ai-snapshot` offline; reuses the five-tool Runner + Refdes Guard |
 
 The MVP intentionally stops here. R004/R005-style net-aware checks, a
@@ -391,9 +391,9 @@ The current submission story is not "more rules"; it is a constrained
 design-validation workbench with registry-verified objects and evidence-gated
 findings.
 
-## Interview Q&A
+## FAQ
 
-See [`docs/interview_qa.md`](docs/interview_qa.md) for concise answers to the six questions this project is meant to withstand in interview.
+See [`docs/faq.md`](docs/faq.md) for concise answers to the six recurring technical questions about this project's design choices.
 
 ## License
 

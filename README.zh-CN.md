@@ -321,14 +321,14 @@ uv run hardwise review data/projects/pic_programmer --rules R001,R002,R003
 | 2 — R002 + Consolidator | 已完成 | 电容耐压字段检查、候选规则记忆 |
 | 3 — R003 + Dual Store + Router | 已完成 | NC pin parser、SQLite/Chroma、datasheet ingest、tiered routing |
 | 4 — Agent Loop + Prompt Caching | 已完成 | `hardwise ask`、5 个工具、实测 prompt-cache read hit |
-| 5 — Submission Closeout | 已完成 | Phase 4 两轨 demo narrative、README/demo/JD/interview closeout、最终 artifacts |
+| 5 — Submission Closeout | 已完成 | Phase 4 两轨 demo narrative、README/demo/docs 收口、最终 artifacts |
 | Workbench — Allegro Copilot | 已完成 | `serve-workbench` 实时 agent loop + `design-validator-ui --ai-snapshot` 离线；复用五工具 Runner + Refdes Guard |
 
 MVP 到这里停止。R004/R005 式 net-aware checks、schematic-side net parser、人工标注 calibration set、Windows CI 结果回填、Cadence/Allegro 运行时集成都明确属于 post-MVP。
 
-## 面试问答
+## 常见技术问题
 
-[`docs/interview_qa.md`](docs/interview_qa.md) 里维护了这个项目需要能回答的 6 个高频问题。
+[`docs/faq.md`](docs/faq.md) 回答了关于这个项目设计取舍的 6 个高频技术问题。
 
 ## License
 

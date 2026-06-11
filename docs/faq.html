@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hardwise 常见技术问题</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #23231f; --muted: #666154; --line: rgba(72, 60, 40, .2);
+      --paper: #fbf4e4; --desk: #d4c7b2;
+      --green: #183f35; --red: #a23f33; --blue: #294b64;
+      --serif: "Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif;
+      --sans: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --mono: "SFMono-Regular", "Cascadia Code", Menlo, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink); font-family: var(--sans); line-height: 1.75;
+      background:
+        radial-gradient(circle at 18% 10%, rgba(162,63,51,.11), transparent 22rem),
+        linear-gradient(135deg, #e8dfcf 0%, var(--desk) 55%, #c5b79f 100%);
+    }
+    a { color: var(--blue); }
+    code {
+      padding: .08rem .32rem; border: 1px solid rgba(41,75,100,.16);
+      background: rgba(41,75,100,.08); color: #253d55; font-family: var(--mono); font-size: .92em;
+    }
+    .shell { width: min(880px, calc(100% - 32px)); margin: 0 auto; padding: 30px 0 60px; }
+    .paper {
+      padding: 40px clamp(24px, 5vw, 56px) 48px;
+      background: var(--paper); border: 1px solid #eadab9;
+      box-shadow: 0 32px 72px rgba(45,37,24,.22);
+    }
+    .kicker { margin: 0 0 10px; color: var(--red); font: 900 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0 0 10px; font: clamp(34px, 5.5vw, 54px)/1.08 var(--serif); }
+    .lead { margin: 0 0 8px; color: #38362f; font: clamp(16px, 2vw, 19px)/1.7 var(--serif); }
+    .crumb { margin: 0 0 28px; font-size: 13px; color: var(--muted); }
+    h2 {
+      margin: 34px 0 12px; padding-top: 22px; border-top: 1px solid var(--line);
+      color: var(--green); font: 900 24px/1.3 var(--serif);
+    }
+    p, li { color: #3a382f; font-size: 15.5px; }
+    ul { padding-left: 22px; }
+    li { margin-bottom: 6px; }
+    b { color: var(--green); }
+    .callout {
+      margin: 14px 0; padding: 12px 16px; background: rgba(41,75,100,.06);
+      border-left: 4px solid var(--blue); font-size: 14.5px; color: #37404b;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <article class="paper">
+      <p class="kicker">Hardwise FAQ</p>
+      <h1>常见技术问题</h1>
+      <p class="lead">关于 Hardwise 设计取舍的六个高频问题。所有数字都可以用 README 里的命令在公开数据上复现。</p>
+      <p class="crumb"><a href="index.html">← 返回阅读索引</a> · 文字版：<a href="https://github.com/liwenjinchn/hardwise/blob/main/docs/faq.md">docs/faq.md</a></p>
+
+      <h2>Q1. 这个工具帮硬件工程师省了哪一步？</h2>
+      <p>省的是评审前后的"搬运链"：在原理图、BOM、规格书、引脚定义和检查清单之间反复查证、对位号、整理证据、写结论。</p>
+      <p>Hardwise 把这条链整理成评审工作台：导入网表 + BOM 后自动建立器件台账，跑确定性检查，把结果分成"必须修 / 人工确认 / 检查已满足"三类队列，每条结论带证据出处。工程师省掉的是查位号、对引脚、整理证据、排除模型胡编对象的时间；<b>最终是否接受每条意见，仍由人来判断</b>。</p>
+      <p>它不替代硬件工程师下判断，也不宣称大模型可以独立评审完整硬件设计。</p>
+
+      <h2>Q2. 输入是什么，输出是什么？</h2>
+      <p><b>输入（全部公开数据）：</b></p>
+      <ul>
+        <li>Cadence/Allegro 导出的原理图网表（Telesis 单文件或 PST 三件套）+ 导出 BOM（CSV/TSV/Cadence <code>.BOM</code>/窄列 <code>.xlsx</code>）——工作台主路径</li>
+        <li>KiCad 工程目录（<code>.kicad_sch</code> + <code>.kicad_pcb</code>）——规则评审与回归基线路径</li>
+        <li>公开规格书 PDF/HTML + 人工审核过的结构化器件档案（<code>DatasheetProfile</code>）</li>
+        <li>检查清单规则（<code>data/checklists/sch_review.yaml</code>）</li>
+      </ul>
+      <p><b>输出：</b></p>
+      <ul>
+        <li>三栏评审工作台（本地服务或离线单文件 HTML），含器件队列、验证明细、证据出处和 AI 助手问答轨迹</li>
+        <li>Markdown/HTML 评审报告与可导出的评审反馈清单</li>
+        <li>SQLite/PostgreSQL 结构化存储与运行轨迹台账</li>
+      </ul>
+      <p class="callout">公开演示数字：mixed controller 样例 25 个器件 / BOM 全配 / 22 行确定性验证 / 通过-警告-错误 = 5-13-4 / 3 行人工缺口；KiCad <code>pic_programmer</code> 121 个器件 / 77 个 NC 引脚 / 29 条带证据评审发现。</p>
+
+      <h2>Q3. 哪些数据进向量库，哪些进关系库？为什么这样分？</h2>
+      <ul>
+        <li><b>关系库</b>（SQLAlchemy，SQLite 与 PostgreSQL 同套表结构）：位号、引脚、网络、BOM 身份、审核过的器件档案——强 schema、要做 join 和位号校验的数据。</li>
+        <li><b>向量库</b>（Chroma 本地持久化）：规格书长文本切块——无固定 schema、需要语义检索的数据。每个切块带 {来源 PDF, 页码, 器件} 出处元数据。</li>
+      </ul>
+      <p><b>位号 + 型号是两库之间的关联键。</b>混存会让位号查询和参数引用都失去可信度：规格书文本进关系库没法做语义检索，位号进向量库会失去精确校验。</p>
+      <p>实测链路：<code>l78.pdf</code> 切成 157 块入 Chroma，检索 "absolute maximum input voltage" top-1 命中第 4 页；评审规则引用的是人工审核过的档案事实 <code>datasheet:l78.pdf#p4</code>，向量检索是对同一页的独立佐证。</p>
+
+      <h2>Q4. AI 助手有哪些工具？为什么不让模型自由回答？</h2>
+      <p>五个工具，输入输出全部经 Pydantic schema 校验：<code>list_components</code>、<code>get_component</code>、<code>get_nc_pins</code>、<code>search_datasheet</code>、<code>run_component_validation</code>。</p>
+      <p>模型自由回答会编造位号、网络名和参数。强制走工具意味着每条回答都有查询和返回值，可审计、可复现。关键设计在"未命中"分支：问一个不存在的 <code>U999</code>，工具不会编一个，而是返回 <code>found=false</code> 加上最接近的真实位号候选；没有加载设计或没有器件档案时，验证工具返回"未配置 / 无档案"，而不是编一个结论。</p>
+      <p>回答按三档可信度标注：</p>
+      <ul>
+        <li><b>L1 确定性</b>——通过/警告/错误结论只能来自 Python 规则和验证器，模型可以解释它，不能推翻它。</li>
+        <li><b>L2 有出处</b>——规格书问答只有携带页码级检索证据（如 <code>datasheet:l78.pdf#p4</code>）才标这一档。</li>
+        <li><b>L3 人工确认</b>——没有档案、没有检索证据，就留在人工确认区。</li>
+      </ul>
+
+      <h2>Q5. 怎么防止编造位号和规格书参数？</h2>
+      <p>三层合同，不是一句提示词：</p>
+      <ul>
+        <li><b>工具层</b>——未知位号返回结构化未命中 + 候选项，工具从不编造。</li>
+        <li><b>输出层（位号防护）</b>——每条对外文本都用正则扫描位号形状的词（<code>U1</code>/<code>R10</code>/<code>J5</code>），对照解析出的器件台账校验，未注册的包裹成 <code>⟨?U999⟩</code> 再显示。</li>
+        <li><b>报告层（证据台账）</b>——没有 <code>sch:</code> / <code>datasheet:</code> / <code>rule:</code> 出处标记的评审发现，写报告前直接丢弃，报告头公示丢弃计数。</li>
+      </ul>
+      <p>回归基线持续盯防：5 个公开仓库 / 6 个 KiCad 工程 / 1707 个器件 / 437 条评审发现的公开评测包里，"未验证位号包裹数"和"因缺证据被丢弃的发现数"两个硬指标都锁定为 0 才算通过。</p>
+
+      <h2>Q6. 它明确不做什么？</h2>
+      <ul>
+        <li>不做 PCB layout、SI/PI、EMC、热、仿真和时序收敛</li>
+        <li>不解析 <code>.brd</code>、boardview、布局布线和 PCB 几何</li>
+        <li>不做 PLM、生命周期、价格、库存和供应商风险</li>
+        <li>不做实时 Cadence/Allegro 插件——消费的是导出文件</li>
+        <li>不用任何公司内部硬件数据，即使脱敏</li>
+        <li>评测包是回归冒烟，不包装成专家准确率基准</li>
+      </ul>
+      <p>已知限制与后续方向：人工标注的判定准确率校准集、原理图侧网络解析器（之后才做网络命名类规则）、企业 EDA 环境适配。原则是先窄而真，不为覆盖率把弱证据包装成硬结论。</p>
+    </article>
+  </main>
+</body>
+</html>

@@ -104,7 +104,7 @@ Tests do not require `ANTHROPIC_API_KEY`; only runtime code paths raise if it's 
 - **File size guard.** If a file creeps past ~300 lines, ask whether it should split. One responsibility per module, no god classes.
 - **Verify before declaring done.** Run `uv run pytest -q` and `uv run ruff check .` before saying a change is complete. For CLI changes, run the command at least once.
 - **Learning log discipline.** Every bug, framework quirk, or surprise gets a `docs/learning_log.md` entry: Symptom / Root cause / Fix / Takeaway. Debugging is learning.
-- **Iterate the interview answers.** When a module ships, update `docs/interview_qa.md` from `v0.x` toward `v1.0` with the new measured fact.
+- **Iterate the FAQ.** When a module ships, update `docs/faq.md` with the new measured fact; keep it public-facing and free of interview framing.
 - **Two stores, one join key.** Datasheet text → vector store; refdes / nets / BOM / DRC → relational. Never mix shapes between stores; refdes is the join key when crossing.
 
 ## Commit hygiene
@@ -120,7 +120,7 @@ Tests do not require `ANTHROPIC_API_KEY`; only runtime code paths raise if it's 
 - `README.md` — public-facing project overview
 - `docs/PLAN.md` — sprint plan + architectural decision records (DR-NNN)
 - `docs/architecture.md` — module-level design and data flow
-- `docs/interview_qa.md` — six interview questions, iterating per ship
+- `docs/faq.md` — six recurring technical questions, iterated per ship
 - `docs/learning_log.md` — debugging journal (symptom / cause / fix / takeaway)
 - `docs/rolling_log.md` — staged improvements waiting for specific milestones
 - `.env.example` — required environment variables
