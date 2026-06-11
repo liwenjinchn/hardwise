@@ -1,50 +1,45 @@
-# Hardwise Closeout Pressure-Test Summary
+# Hardwise 压力测试摘要
 
-This is the small committed summary for the closeout pressure-test rerun. The
-large generated HTML/JSON artifacts stayed under `/tmp` and are not part of the
-repo.
+这是收尾压力测试复跑的小型入库摘要。生成的大体积 HTML/JSON 产物留在
+`/tmp`，不进入仓库。
 
-## Scope
+## 范围
 
-- Switch and mainboard fixture exports are pressure tests, not the primary public
-  demo.
-- Inputs are public/synthetic Allegro/PST + BOM fixture exports already used by
-  the closeout branch.
-- This committed page keeps only aggregate counts, not raw board artifacts.
-- No company-internal hardware data is used or recorded here.
-- No local absolute input paths are recorded here.
-- The measured changes come from Workstream A generic inductor/ferrite coverage
-  and Workstream B PE537BA MOSFET profile coverage.
+- 交换机与主板样例板的导出是压力测试，不是主公开演示。
+- 输入是收尾分支已经在用的公开/合成 Allegro/PST + BOM 样例导出。
+- 这个入库页面只保留聚合计数，不保留原始单板产物。
+- 不使用、不记录任何公司内部硬件数据。
+- 不记录本机绝对输入路径。
+- 测得的变化来自工作流 A 的通用电感/磁珠覆盖和工作流 B 的 PE537BA
+  MOSFET 档案覆盖。
 
-## Results
+## 结果
 
-| Board | Components | BOM matched | Validated before | Validated after | Manual before | Manual after | PASS after | WARN after | ERROR after |
+| 单板 | 器件数 | BOM 配对 | 复跑前已验证 | 复跑后已验证 | 复跑前人工 | 复跑后人工 | 复跑后 PASS | 复跑后 WARN | 复跑后 ERROR |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Switch fixture | 4010 | 4010 | 3738 | 3794 | 272 | 216 | 3663 | 125 | 6 |
-| Mainboard fixture | 8180 | 7248 | 6752 | 6847 | 1428 | 1333 | 3921 | 2926 | 0 |
+| 交换机样例板 | 4010 | 4010 | 3738 | 3794 | 272 | 216 | 3663 | 125 | 6 |
+| 主板样例板 | 8180 | 7248 | 6752 | 6847 | 1428 | 1333 | 3921 | 2926 | 0 |
 
-## Coverage Movement
+## 覆盖变化
 
-| Board | Slice | Rows moved out of manual | Resulting profile/status |
+| 单板 | 切片 | 移出人工的行数 | 对应档案/状态 |
 |---|---|---:|---|
-| Switch fixture | Generic inductor | 18 | `GENERIC_INDUCTOR`, light deterministic coverage |
-| Switch fixture | Generic ferrite | 38 | `GENERIC_FERRITE`, light deterministic coverage |
-| Mainboard fixture | Generic inductor | 41 | `GENERIC_INDUCTOR`, light deterministic coverage |
-| Mainboard fixture | Generic ferrite | 43 | `GENERIC_FERRITE`, light deterministic coverage |
-| Mainboard fixture | PE537BA P-MOS | 11 | `PE537BA`, MOSFET validator, WARN because static drain/load voltage is not inferred |
+| 交换机样例板 | 通用电感 | 18 | `GENERIC_INDUCTOR`，轻量确定性覆盖 |
+| 交换机样例板 | 通用磁珠 | 38 | `GENERIC_FERRITE`，轻量确定性覆盖 |
+| 主板样例板 | 通用电感 | 41 | `GENERIC_INDUCTOR`，轻量确定性覆盖 |
+| 主板样例板 | 通用磁珠 | 43 | `GENERIC_FERRITE`，轻量确定性覆盖 |
+| 主板样例板 | PE537BA P-MOS | 11 | `PE537BA`，MOSFET 验证器；静态漏极/负载电压不做推断，保持 WARN |
 
-## Remaining Gaps
+## 剩余缺口
 
-| Board | Top remaining family gaps | Why deferred |
+| 单板 | 剩余主要器件族缺口 | 暂缓原因 |
 |---|---|---|
-| Switch fixture | `ic` 35 refdes / 14 groups; `unknown` 41 / 6; `diode` 8 / 2 | IC/diode rows need reviewed public profiles or family-specific rules; unknown rows need identity cleanup before validator work. |
-| Mainboard fixture | `unknown` 1118 refdes / 957 groups; `ic` 121 / 28; `diode` 54 / 8 | Unknown is mostly intake/classification work; IC/diode groups are candidates for future public-document review and scoped family validators. |
+| 交换机样例板 | `ic` 35 位号 / 14 组；`unknown` 41 / 6；`diode` 8 / 2 | IC/二极管行需要人工审核过的公开档案或器件族专用规则；unknown 行需要先做身份清理再做验证器。 |
+| 主板样例板 | `unknown` 1118 位号 / 957 组；`ic` 121 / 28；`diode` 54 / 8 | unknown 主要是导入/分类工作；IC/二极管组是未来公开文档审核和限定范围器件族验证器的候选。 |
 
-## Interpretation
+## 解读
 
-The closeout branch improved coverage without changing the product claim:
-Hardwise remains a trusted pre-Layout schematic-review workbench. Generic
-inductor/ferrite rows are conservative L1 facts from BOM/package/connectivity,
-not topology or EMI sufficiency checks. PE537BA proves the existing MOSFET
-validator can handle a P-channel profile while preserving the source-referenced
-Vgs rule and leaving unknown drain/load voltage as WARN.
+收尾分支提升了覆盖，但没有改变产品主张：Hardwise 仍是可信的 Layout 前
+原理图评审工作台。通用电感/磁珠行是来自 BOM/封装/连接关系的保守 L1 事实，
+不是拓扑或 EMI 充分性检查。PE537BA 证明既有 MOSFET 验证器能处理 P 沟道
+档案，同时保留带出处的 Vgs 规则，并把未知的漏极/负载电压留为 WARN。

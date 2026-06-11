@@ -3,53 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Hardwise Evidence Chain Audit</title>
+  <title>Hardwise 证据链边界说明</title>
   <style>
     :root{--bg:#0f1418;--panel:#171d23;--ink:#eef4f6;--muted:#9daab0;--line:#2a333b;--rail:#00b8d4;--ok:#4ade80;--warn:#facc15}*{box-sizing:border-box}body{margin:0;background:#0f1418;color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,"PingFang SC",sans-serif}.shell{max-width:1040px;margin:0 auto;padding:44px 22px 70px}.kicker{color:var(--rail);font-size:12px;text-transform:uppercase;letter-spacing:.14em}h1{margin:10px 0 14px;font-size:34px}h2{margin:30px 0 10px}.lead{font-size:18px;color:#cbd6db}.flow{background:#0a0f12;border:1px solid var(--line);border-radius:8px;padding:16px;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}.card b{display:block;font-size:19px}.card span{color:var(--muted)}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border-bottom:1px solid var(--line);padding:9px 6px;text-align:left;vertical-align:top}th{color:var(--muted)}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.nav{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.nav a{color:#001013;background:var(--rail);padding:8px 11px;border-radius:6px;text-decoration:none;font-weight:800}.nav a.secondary{color:var(--rail);background:transparent;border:1px solid var(--rail)}@media(max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:28px}}
   </style>
 </head>
 <body>
   <main class="shell">
-    <p class="kicker">Evidence boundary</p>
-    <h1>Evidence Chain Audit</h1>
-    <p class="lead">这页把“真实 ingest/retrieve/agent citation”与“reviewed structured profile token”分开，避免把所有 datasheet token 都说成 live retrieval。</p>
+    <p class="kicker">证据边界</p>
+    <h1>证据链边界说明</h1>
+    <p class="lead">这页把"真实入库 / 检索 / AI 引用"与"人工审核过的器件档案出处"分开，避免把所有规格书出处都说成实时检索。</p>
 
-    <h2>Fully Smoked Retrieval Chain</h2>
+    <h2>完整冒烟过的检索链</h2>
     <div class="flow">data/datasheets/l78.pdf
-  -> ingest/pdf.py
-  -> store/vector.py (Chroma, 157 chunks)
-  -> query-datasheet / search_datasheet
-  -> agent answer citing l78.pdf p4</div>
+  -> ingest/pdf.py（切页分块）
+  -> store/vector.py（Chroma，157 块）
+  -> query-datasheet / search_datasheet（语义检索）
+  -> AI 回答引用 l78.pdf 第 4 页</div>
 
-    <section class="grid" aria-label="evidence classes">
-      <div class="card"><b>Live retrieved evidence</b><span>L78 已经跑过 ingest -> retrieve -> ask smoke，可以说是 live retrieval。</span></div>
-      <div class="card"><b>Reviewed profile token</b><span>其它 profile 的 <code>datasheet:&lt;part&gt;.pdf#pN</code> 是 reviewer 整理的公开 profile evidence，不自动等于 Chroma 检索。</span></div>
+    <section class="grid" aria-label="证据分类">
+      <div class="card"><b>实时检索证据</b><span>L78 已经跑过 入库 -> 检索 -> 问答 冒烟，可以说是实时检索。</span></div>
+      <div class="card"><b>审核档案出处</b><span>其它器件档案的 <code>datasheet:&lt;part&gt;.pdf#pN</code> 是评审人整理的公开档案证据，不自动等于向量检索。</span></div>
     </section>
 
-    <h2>Observed Output</h2>
-    <p><code>query-datasheet "absolute maximum input voltage"</code> top hit 返回 <code>[l78.pdf p4 part=L7805]</code>。随后 <code>hardwise ask --vector</code> 调用了 <code>search_datasheet</code> 和 <code>get_component</code>，最终引用第 4 页和 35 V absolute-maximum input-voltage fact。</p>
+    <h2>实测输出</h2>
+    <p><code>query-datasheet "absolute maximum input voltage"</code> 第一名返回 <code>[l78.pdf p4 part=L7805]</code>。随后 <code>hardwise ask --vector</code> 调用了 <code>search_datasheet</code> 和 <code>get_component</code>，最终引用第 4 页和 35 V 绝对最大输入电压这条事实。</p>
 
-    <h2>Evidence Classes</h2>
+    <h2>证据分类</h2>
     <table>
-      <thead><tr><th>Class</th><th>Example</th><th>Narrative Rule</th></tr></thead>
+      <thead><tr><th>类别</th><th>例子</th><th>表述规则</th></tr></thead>
       <tbody>
-        <tr><td>Live retrieved</td><td><code>[l78.pdf p4 part=L7805]</code></td><td>可以说 ingest -> retrieve -> agent citation。</td></tr>
-        <tr><td>Reviewed profile token</td><td><code>datasheet:l78.pdf#p4</code></td><td>可以说 L1 profile evidence；只有单独 smoke 后才说 Chroma retrieval。</td></tr>
-        <tr><td>Reviewed token, no local PDF</td><td><code>datasheet:stm32g030.pdf#p33</code></td><td>说 reviewed public profile evidence，不说 live retrieval。</td></tr>
-        <tr><td>Coverage/ranking artifact</td><td><code>recommend-next-family</code> rows</td><td>只作为 planning support，不作为 headline AI claim。</td></tr>
+        <tr><td>实时检索</td><td><code>[l78.pdf p4 part=L7805]</code></td><td>可以说 入库 -> 检索 -> AI 引用。</td></tr>
+        <tr><td>审核档案出处</td><td><code>datasheet:l78.pdf#p4</code></td><td>可以说 L1 档案证据；只有单独冒烟后才说向量检索。</td></tr>
+        <tr><td>审核出处、PDF 未本地入库</td><td><code>datasheet:stm32g030.pdf#p33</code></td><td>说人工审核过的公开档案证据，不说实时检索。</td></tr>
+        <tr><td>覆盖/排序产物</td><td><code>recommend-next-family</code> 输出行</td><td>只作为规划辅助，不作为 AI 能力的主张。</td></tr>
       </tbody>
     </table>
 
-    <h2>Current Local PDF Inventory</h2>
-    <p>只有 <code>data/datasheets/l78.pdf</code> 本地 staged 且跑过 smoke。其它 24 个 ready profiles 是 reviewed public profile evidence。</p>
+    <h2>当前本地 PDF 清单</h2>
+    <p>只有 <code>data/datasheets/l78.pdf</code> 本地入库且跑过冒烟。其它 24 个就绪器件档案是人工审核过的公开档案证据。</p>
 
-    <h2>Interview Rule</h2>
-    <p>最强且诚实的说法：L78 有完整 ingest/retrieve/agent-citation smoke；其它 profiles 是 reviewed public profile evidence，进入 deterministic validators。</p>
+    <h2>表述规则</h2>
+    <p>最强且诚实的说法：L78 有完整的 入库/检索/AI 引用 冒烟；其它器件档案是人工审核过的公开档案证据，进入确定性验证器。</p>
 
     <div class="nav">
       <a href="./hardware-demo.html">打开 AI 工作台</a>
       <a href="./index.html" class="secondary">回到阅读索引</a>
-      <a href="./evidence_chain_audit.md" class="secondary">Markdown source</a>
+      <a href="./evidence_chain_audit.md" class="secondary">Markdown 原文</a>
     </div>
   </main>
 </body>

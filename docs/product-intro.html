@@ -267,9 +267,9 @@
 
       <div class="hero-inner">
         <div class="copy">
-          <span class="eyebrow">pre-Layout schematic review workbench</span>
+          <span class="eyebrow">Layout 前原理图评审工作台</span>
           <h1>进 Layout 前，把评审风险排成队。</h1>
-          <p class="lead">Hardwise 导入公开原理图或 netlist+BOM，生成 review queue：哪些必须看、哪些缺证据、哪些已通过。Agent 只解释工具查到的证据，不自由编位号、pin 或 datasheet 结论。</p>
+          <p class="lead">Hardwise 导入 Cadence/Allegro 导出的网表 + BOM（或公开原理图工程），生成评审队列：哪些必须修、哪些要人工确认、哪些检查已满足。AI 助手只解释工具查到的证据，不自由编位号、引脚或规格书结论。</p>
           <div class="actions">
             <a class="button primary" href="./hardware-demo.html">打开 AI 工作台</a>
             <a class="button" href="./demo.html">看技术证据</a>
@@ -280,14 +280,14 @@
           <div class="mock-card" aria-label="Hardwise 设计验证器产品介绍卡片">
             <div class="mock-top">
               <div class="mock-brand"><span class="mark">⌁</span><span>Hardwise</span></div>
-              <span class="mock-pill">review queue</span>
+              <span class="mock-pill">评审队列</span>
             </div>
             <div class="mock-body">
               <div class="mock-rail">
-                <span>Must Review</span>
-                <span>Manual Gap</span>
-                <span>Passed</span>
-                <span>Feedback List</span>
+                <span>必须修</span>
+                <span>人工确认</span>
+                <span>检查已满足</span>
+                <span>反馈清单</span>
               </div>
               <div class="mock-schematic" aria-hidden="true">
                 <span class="wire w1"></span>
@@ -300,17 +300,17 @@
               </div>
               <div class="mock-review">
                 <h3>评审队列</h3>
-                <div class="finding-row"><b>Must Review</b><em>4 error</em></div>
-                <div class="finding-row"><b>Manual Gap</b><em>3 rows</em></div>
-                <div class="finding-row"><b>Evidence</b><em>tokens</em></div>
+                <div class="finding-row"><b>必须修</b><em>4 项错误</em></div>
+                <div class="finding-row"><b>人工确认</b><em>3 行缺口</em></div>
+                <div class="finding-row"><b>证据出处</b><em>可追溯</em></div>
               </div>
             </div>
           </div>
           <div class="metrics" aria-label="样例工程结果">
-            <div class="metric"><strong>25</strong><span>components indexed</span></div>
-            <div class="metric"><strong>3</strong><span>manual gaps visible</span></div>
-            <div class="metric"><strong>25</strong><span>BOM matched</span></div>
-            <div class="metric"><strong>22</strong><span>L1 rows</span></div>
+            <div class="metric"><strong>25</strong><span>个器件入台账</span></div>
+            <div class="metric"><strong>3</strong><span>行人工缺口可见</span></div>
+            <div class="metric"><strong>25</strong><span>BOM 全部配对</span></div>
+            <div class="metric"><strong>22</strong><span>行确定性验证</span></div>
           </div>
         </div>
       </div>
@@ -322,17 +322,17 @@
         <article class="card">
           <div class="icon">01</div>
           <h2>先建可信台账</h2>
-          <p>从公开 EDA 工程或 schematic netlist+BOM 建立 refdes、pin、net 和 BOM identity。用户看见的位号必须来自 parsed registry。</p>
+          <p>从导出网表 + BOM 或公开 EDA 工程建立位号、引脚、网络和 BOM 身份台账。用户看见的位号必须来自解析出的台账。</p>
         </article>
         <article class="card">
           <div class="icon">02</div>
-          <h2>再排 review queue</h2>
-          <p>确定性规则和 validator 产出 Must Review / Passed；缺 profile 或证据不足的对象进入 Manual Gap，不被伪装成硬结论。</p>
+          <h2>再排评审队列</h2>
+          <p>确定性规则和验证器产出"必须修 / 检查已满足"；缺器件档案或证据不足的对象进入人工确认区，不被伪装成硬结论。</p>
         </article>
         <article class="card">
           <div class="icon">03</div>
           <h2>最后带证据讨论</h2>
-          <p>每条 finding 带 source token；Copilot 展示工具 trace 和 trust tier，只解释已有证据，不替代 reviewer 的接受/拒绝判断。</p>
+          <p>每条评审发现带证据出处；AI 助手展示工具调用轨迹和可信度档位，只解释已有证据，不替代评审人的接受/拒绝判断。</p>
         </article>
       </div>
     </section>
@@ -340,19 +340,19 @@
     <section id="demo" class="section demo" aria-label="评审会示例">
       <aside class="panel">
         <h2>评审会上怎么用</h2>
-        <p>先看 Must Review，再看 Manual Gap，最后用证据 token 和 Copilot trace 解释每个条目为什么存在、是否应该接受。</p>
+        <p>先看"必须修"，再看"人工确认"，最后用证据出处和 AI 问答轨迹解释每个条目为什么存在、是否应该接受。</p>
       </aside>
       <div class="panel chat">
-        <div class="bubble"><b>Reviewer</b>U12 为什么排在 Must Review？</div>
-        <div class="bubble answer"><b>Hardwise</b>确定性 validator 看到 XL1509 的 OUTPUT 路径接到 D5 和 L1：D5=1N4007W 不是 Schottky-style，L1=6.8uH 低于 profile 范围。结论是 L1 deterministic。</div>
-        <div class="bubble"><b>Reviewer</b>剩下 3 个 manual row 是失败吗？</div>
-        <div class="bubble answer"><b>Hardwise</b>不是。它们是 no-local-profile/manual gap：当前没有足够证据给 PASS/WARN/ERROR，所以留在人工确认区，而不是让模型猜。</div>
+        <div class="bubble"><b>评审人</b>U12 为什么排在"必须修"？</div>
+        <div class="bubble answer"><b>Hardwise</b>确定性验证器看到 XL1509 的输出路径接到 D5 和 L1：D5=1N4007W 不是肖特基类续流二极管，L1=6.8uH 低于档案下限。这是 L1 确定性结论。</div>
+        <div class="bubble"><b>评审人</b>剩下 3 个人工确认行是失败吗？</div>
+        <div class="bubble answer"><b>Hardwise</b>不是。它们是缺本地器件档案的人工缺口：当前没有足够证据给出通过/警告/错误，所以留在人工确认区，而不是让模型猜。</div>
       </div>
     </section>
 
     <div class="footer-note">
-      <strong>从 review queue 到可 close 的反馈表</strong>
-      <span>工作台面向评审动作；技术 demo 解释背后的五大机制和 L1/L2/L3 证据边界。</span>
+      <strong>从评审队列到可关闭的反馈清单</strong>
+      <span>工作台面向评审动作；技术 Demo 解释背后的五个防编造机制和 L1/L2/L3 证据分层。</span>
     </div>
   </main>
 </body>

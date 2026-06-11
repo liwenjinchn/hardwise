@@ -1,102 +1,93 @@
-# Hardwise MVP Definition
+# Hardwise MVP 定义
 
-Hardwise MVP is a trusted pre-layout schematic review workbench.
+Hardwise 的 MVP 是一个可信的 Layout 前原理图评审工作台。
 
-It does not try to prove that an LLM can independently judge a complete
-hardware design. It proves a narrower workflow: turn public EDA files,
-schematic BOM identity, and public datasheet/profile evidence into a review
-artifact where every surfaced object is registry-verified, every actionable
-finding carries evidence, and every uncertain area stays in the reviewer's
-hands.
+它不试图证明大模型能独立判断完整硬件设计。它证明一个更窄的工作流：把公开
+EDA 文件、原理图 BOM 身份和公开规格书/器件档案证据变成一份评审产物——每个
+展示出来的对象都经过台账校验，每条可执行的评审发现都带证据，每个不确定的
+区域都留在评审人手里。
 
-## User Problem
+## 用户问题
 
-Target user: hardware engineers preparing a schematic for Layout handoff.
+目标用户：准备把原理图交给 Layout 的硬件工程师。
 
-Before Layout, reviewers need to quickly answer:
+进 Layout 前，评审人需要快速回答：
 
-- Which components require attention before the review meeting?
-- Which findings are deterministic issues, and which are only manual checks?
-- Which datasheet page, netlist fact, rule, or BOM row supports each claim?
-- Did the AI mention a real board object, or did it invent a refdes-shaped token?
-- What feedback list can the team discuss and close item by item?
+- 评审会前哪些器件必须先看？
+- 哪些发现是确定性问题，哪些只是人工检查项？
+- 每条结论由哪一页规格书、哪条网表事实、哪条规则或哪行 BOM 支撑？
+- AI 提到的是真实板上对象，还是编了一个长得像位号的词？
+- 团队可以逐项讨论、逐项关闭的反馈清单在哪里？
 
-The costly work is not only electrical reasoning. It is the repeated switching
-between schematic, BOM/netlist, datasheet, checklist, evidence notes, and review
-feedback rows.
+最费时间的不只是电气推理，而是在原理图、BOM/网表、规格书、检查清单、证据
+笔记和评审反馈行之间反复切换。
 
-## Core Flow
+## 核心流程
 
-1. Import a public schematic project or schematic netlist plus schematic BOM.
-2. Build a trusted EDA registry for refdes, pins, nets, and BOM identity.
-3. Match local public datasheet documents and reviewed structured profiles.
-4. Run deterministic checklist rules and component-family validators.
-5. Classify output into review actions:
-   - `Must review`: deterministic ERROR/WARN or high-value checklist finding.
-   - `Manual gap`: no ready profile, no retrieval evidence, or not enough context.
-   - `Passed`: deterministic check completed without an issue.
-6. Let Copilot explain only tool-backed facts: component context, validation
-   result, topology, datasheet evidence, and unknown-refdes misses.
-7. Export a workbench and feedback list that the engineer can use in the
-   schematic review meeting.
+1. 导入公开原理图工程，或导出的原理图网表 + 原理图 BOM。
+2. 建立位号、引脚、网络、BOM 身份的可信器件台账。
+3. 匹配本地公开规格书文档和人工审核过的结构化器件档案。
+4. 运行确定性检查清单规则和器件族验证器。
+5. 把输出分成评审动作：
+   - `必须修`：确定性 ERROR/WARN 或高价值检查清单发现。
+   - `人工确认`：没有就绪器件档案、没有检索证据，或上下文不足。
+   - `检查已满足`：确定性检查完成且没有发现问题。
+6. AI 助手只解释有工具支撑的事实：器件上下文、验证结果、连接拓扑、规格书
+   证据、未知位号未命中。
+7. 导出评审工作台和反馈清单，供工程师在原理图评审会上逐项使用。
 
-## Page Structure
+## 页面结构
 
-The MVP UI should open on the review workflow, not the internal architecture.
+MVP 的界面应该从评审工作流打开，而不是从内部架构打开。
 
-- Project summary: input files, component count, BOM match count, validated count,
-  PASS/WARN/ERROR/manual counts.
-- Review queue: issue-first list of `Must review`, `Manual gap`, and `Passed`
-  rows, filterable by refdes/status/trust tier.
-- Component detail: selected component identity, pins, nets, validation result,
-  profile/document state, evidence tokens, and suggested review action.
-- Copilot/evidence panel: answers questions by showing tool trace and trust tier;
-  it explains deterministic results but does not replace them.
-- Feedback list export: issue location/refdes, description, evidence, accept or
-  reject field, reviewer feedback, and close status.
+- 项目摘要：输入文件、器件数、BOM 配对数、已验证数、通过/警告/错误/人工
+  计数。
+- 评审队列：问题优先的"必须修 / 人工确认 / 检查已满足"行，可按位号/状态/
+  可信度档位过滤。
+- 器件详情：选中器件的身份、引脚、网络、验证结果、档案/文档状态、证据出处
+  和建议评审动作。
+- AI 助手/证据面板：回答问题时展示工具调用轨迹和可信度档位；解释确定性
+  结果但不替代它们。
+- 反馈清单导出：问题位置/位号、描述、证据、接受或拒绝字段、评审人反馈、
+  关闭状态。
 
-## MVP Scope
+## MVP 范围
 
-In scope:
+范围内：
 
-- Public KiCad projects and public Allegro schematic netlist/PST plus schematic
-  BOM fixtures.
-- Registry-verified component, pin, net, and BOM identity.
-- Local document index and public datasheet/profile evidence.
-- Deterministic checklist rules for new-component candidates, capacitor voltage
-  annotation, NC-pin handling, and reviewed datasheet facts.
-- Deterministic component-family validation where a reviewed profile exists.
-- L1/L2/L3 trust tiers:
-  - L1 deterministic: Python rule or validator owns PASS/WARN/ERROR.
-  - L2 grounded: this turn has page-level datasheet retrieval evidence.
-  - L3 manual: no ready profile, no retrieval evidence, or insufficient context.
-- Static HTML workbench, markdown/HTML report, and optional local Copilot panel.
+- 公开 KiCad 工程，以及公开 Allegro 原理图网表/PST + 原理图 BOM 样例。
+- 台账校验过的器件、引脚、网络和 BOM 身份。
+- 本地文档索引和公开规格书/器件档案证据。
+- 确定性检查清单规则：新器件候选、电容耐压标注、NC 引脚处理、人工审核过的
+  规格书事实。
+- 有审核档案的器件族做确定性验证。
+- L1/L2/L3 可信度分层：
+  - L1 确定性：由 Python 规则或验证器给出 PASS/WARN/ERROR。
+  - L2 有出处：本轮有页级规格书检索证据。
+  - L3 人工确认：没有就绪档案、没有检索证据，或上下文不足。
+- 静态 HTML 工作台、markdown/HTML 报告，以及可选的本地 AI 助手面板。
 
-## Non-Goals
+## 非目标
 
-- PCB layout review, `.brd`, boardview, placement, routing, or PCB geometry.
-- SI/PI, EMC, thermal, SPICE, timing, or simulation closure.
-- PLM, lifecycle, supplier risk, price, inventory, or production BOM governance.
-- Company-internal hardware data, even sanitized.
-- Full-board automatic correctness judgement.
-- Automatic promotion of profile drafts into ready validators.
-- Multi-agent decomposition, hosted account system, WebSocket streaming, or team
-  collaboration features.
+- PCB layout 评审、`.brd`、boardview、布局、布线或 PCB 几何。
+- SI/PI、EMC、热、SPICE、时序或仿真收敛。
+- PLM、生命周期、供应商风险、价格、库存或生产 BOM 治理。
+- 公司内部硬件数据，即使已脱敏。
+- 整板自动正确性判断。
+- 器件档案草稿自动转为就绪验证器。
+- 多智能体分解、托管账号系统、WebSocket 流式或团队协作功能。
 
-## Acceptance Criteria
+## 验收标准
 
-The MVP is credible when:
+满足以下条件，MVP 才算可信：
 
-- A public demo input opens a workbench with project summary, review queue,
-  component detail, evidence, and manual-gap rows.
-- Unknown refdes such as `U999` cannot be presented as a valid board object.
-- Every report finding has a source token, or it is downgraded out of hard
-  findings.
-- At least one L1 deterministic issue is traceable from component to net/profile
-  evidence.
-- At least one L2 datasheet answer shows a `datasheet:<file>#p<N>` token.
-- Manual/profile gaps are visible as reviewer work, not hidden as failures.
-- Copilot answers expose tool trace and cannot overwrite L1 validator results.
-- The exported report can be discussed item by item in a pre-Layout schematic
-  review.
-- `uv run pytest -q` and `uv run ruff check .` pass before claiming done.
+- 公开演示输入能打开含项目摘要、评审队列、器件详情、证据和人工缺口行的
+  工作台。
+- 未知位号如 `U999` 不能被展示成有效板上对象。
+- 每条报告发现都有证据出处，否则降级出硬结论。
+- 至少一个 L1 确定性问题能从器件追到网络/档案证据。
+- 至少一个 L2 规格书回答展示 `datasheet:<file>#p<N>` 证据出处。
+- 人工/档案缺口作为评审人工作可见，而不是被藏成失败。
+- AI 助手回答暴露工具调用轨迹，且不能覆盖 L1 验证器结果。
+- 导出的报告能在 Layout 前的原理图评审会上逐项讨论。
+- 声称完成前 `uv run pytest -q` 和 `uv run ruff check .` 通过。
