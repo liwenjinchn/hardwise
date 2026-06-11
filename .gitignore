@@ -66,3 +66,6 @@ eval/baselines/*.json
 # of candidates into the repo.
 memory/*.md
 !memory/.gitkeep
+
+# Private reference material (company-derived; AGENTS.md hard rule 1)
+refs/
