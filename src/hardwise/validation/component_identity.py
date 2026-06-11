@@ -28,6 +28,12 @@ SuggestedFamily = Literal[
     "connector",
     "test_point",
     "mechanical",
+    "crystal",
+    "fuse",
+    "switch",
+    "relay",
+    "transformer",
+    "battery",
     "unknown",
 ]
 
@@ -91,17 +97,31 @@ def _suggest_family(item: BomItem, identity: str) -> SuggestedFamily:
         return "connector"
     if prefix in {"C", "CE", "PC"}:
         return "capacitor"
-    if prefix in {"R", "PR", "RN", "RT"}:
+    if prefix in {"R", "PR", "RN", "RT", "RP", "RA"}:
         return "resistor"
-    if prefix in {"L", "PL"}:
+    if prefix in {"L", "PL"} or _has_any(text, ("CHOKE",)):
         return "inductor"
     if prefix == "FB" or "BEAD" in text or "FERRITE" in text:
         return "ferrite"
-    if prefix in {"D", "LED"} or _has_any(text, ("DIODE", "ZENER", "TVS", "LED")):
+    if prefix in {"D", "LED", "VD"} or _has_any(
+        text, ("DIODE", "ZENER", "TVS", "LED", "SCHOTTKY", "RECTIFIER")
+    ):
         return "diode"
-    if prefix in {"Q", "PQ"} or _has_any(text, ("MOSFET", "BJT", "TRANSISTOR")):
+    if prefix in {"Q", "PQ", "VT"} or _has_any(text, ("MOSFET", "BJT", "TRANSISTOR")):
         return "transistor"
-    if prefix in {"U", "PU"}:
+    if prefix == "Y" or _has_any(text, ("CRYSTAL", "XTAL", "OSCILLATOR", "RESONATOR")):
+        return "crystal"
+    if prefix in {"F", "FU"} or _has_any(text, ("FUSE", "POLYFUSE", "PTC RESETTABLE")):
+        return "fuse"
+    if prefix == "SW" or _has_any(text, ("SWITCH", "PUSHBUTTON")):
+        return "switch"
+    if prefix in {"K", "RY"} or "RELAY" in text:
+        return "relay"
+    if prefix == "T" or _has_any(text, ("TRANSFORMER", "XFMR")):
+        return "transformer"
+    if prefix == "BT" or _has_any(text, ("BATTERY", "COIN CELL", "BUTTON CELL")):
+        return "battery"
+    if prefix in {"U", "PU", "IC"}:
         return "ic"
     return "unknown"
 

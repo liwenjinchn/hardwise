@@ -19,6 +19,7 @@ from hardwise.validation.generic_passive import (
     PassiveFamily,
     validate_generic_passive,
 )
+from hardwise.validation.nets import NetValidation, validate_design_nets
 from hardwise.validation.profile_candidates import ProfileCandidateReport
 from hardwise.validation.types import ValidationReport
 
@@ -72,6 +73,7 @@ class ProjectValidationIndex(BaseModel):
     bom_matched: int
     rows: list[ProjectValidationRow] = Field(default_factory=list)
     component_groups: list[ProjectComponentGroup] = Field(default_factory=list)
+    net_checks: list[NetValidation] = Field(default_factory=list)
 
     @property
     def validated_rows(self) -> list[ProjectValidationRow]:
@@ -181,6 +183,7 @@ def build_project_validation_index(
         bom_matched=len(bom_report.matched_refdes),
         rows=rows,
         component_groups=component_groups,
+        net_checks=validate_design_nets(design, source_label=Path(netlist_source).name),
     )
 
 

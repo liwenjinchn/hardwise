@@ -65,3 +65,10 @@ def test_classifies_token_sequence_with_shared_live_context(tmp_path: Path) -> N
     )
 
     assert [item.source_class for item in classified] == ["live_retrieved", "document_index"]
+
+
+def test_classifies_netlist_token_as_design_source() -> None:
+    classified = classify_evidence_token("netlist:board.net#net=DANGLE")
+
+    assert classified.source_class == "design_source"
+    assert classified.audit_status == "ok"

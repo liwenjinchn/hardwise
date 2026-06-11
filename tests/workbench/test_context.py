@@ -789,3 +789,33 @@ $END
         assert rows["U13"].validation.status == "PASS"
     finally:
         context.session.close()
+
+
+def test_workbench_state_exposes_net_checks() -> None:
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-06-11T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        response = client.get("/api/workbench/state")
+
+        assert response.status_code == 200
+        net_checks = response.json()["net_checks"]
+        assert [(c["net_name"], c["status"], c["nodes"]) for c in net_checks] == [
+            ("ADC_POT", "WARN", ["U8.11"]),
+            ("PWM1L", "WARN", ["U3.3"]),
+        ]
+        first = net_checks[0]
+        assert first["check"] == "net_single_endpoint"
+        assert first["status_group"] == "warn"
+        assert first["evidence"][0]["token"] == (
+            "netlist:mixed_controller_power_stage.net#net=ADC_POT"
+        )
+        assert first["evidence"][0]["source_class"] == "design_source"
+        assert first["evidence"][0]["trust_tier"] == "l1"
+    finally:
+        context.session.close()

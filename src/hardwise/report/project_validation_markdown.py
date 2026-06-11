@@ -37,6 +37,22 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
     lines.append(f"| Generated at | {index.generated_at} |")
     lines.append("")
 
+    lines.append("## Net Checks")
+    lines.append("")
+    if index.net_checks:
+        lines.append("| Net | Check | Status | Endpoints | Summary | Evidence |")
+        lines.append("|---|---|---|---|---|---|")
+        for net_check in index.net_checks:
+            lines.append(
+                f"| {_escape_pipe(net_check.net_name)} | {net_check.check} | "
+                f"{net_check.status} | {_escape_pipe(', '.join(net_check.nodes))} | "
+                f"{_escape_pipe(net_check.summary)} | "
+                f"`{'`, `'.join(net_check.evidence)}` |"
+            )
+    else:
+        lines.append("No net-level findings.")
+    lines.append("")
+
     lines.append("## Validated Components")
     lines.append("")
     lines.append("| Refdes | BOM value | MPN | Profile | Status | Pin PASS/WARN/ERROR |")

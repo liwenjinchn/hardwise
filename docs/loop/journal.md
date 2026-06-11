@@ -1,0 +1,33 @@
+# 自主循环 Journal — loop/backend-allegro
+
+> 每次迭代追加一条,格式:
+> `日期时间 | 轨道(A/B) | 选了什么 | 结果(commit hash 或丢弃/STUCK/RED/ASK 原因) | 下一步意图`
+>
+> 本文件 + git log 是期末人工验收的主要材料。不删改旧条目。
+
+## 迭代记录
+
+- 2026-06-11 | A | 首个网络级检查 `net_single_endpoint`(`validation/nets.py` + 6 测试):勘察确认 Design.nets 已有 (refdes,pin) 端点但零消费方;单端点网络报保守 WARN + `netlist:<file>#net=<NAME>` 证据 token;公开 fixture 真值锁定(mixed_controller_power_stage.net → ADC_POT/PWM1L 恰 2 条,pst → 0 条) | 绿 44eed81(604 passed,ruff 干净) | 下一步:CLI/report 接入 net 检查结果(让 finding 进现有报告通路),之后考虑电源轨识别(Net.is_power_rail 预留字段)
+- 2026-06-11 | A | net 检查接入报告通路:ProjectValidationIndex 加 net_checks 字段(builder 用网表 basename 做 token 标签,绝对路径不进 token),markdown 报告加 Net Checks 节(有发现出表格/无发现出明示行),组件级 totals 不动 | 绿 8fc1a5f(607 passed,ruff 干净);一次测试断言过宽返工(发现既有行为:report 头部对仓库外路径显示绝对路径,系 display_path 既有语义,非本迭代引入,已收窄断言并注释) | 下一步:workbench 状态/UI 暴露 net_checks(view_model/server,涉及前端展示的部分留给前端轨),或先做电源轨识别充实检查族
+- 2026-06-11 | A | workbench 状态层暴露 net_checks:WorkbenchState 加 net_checks(NetCheckView 镜像 CheckView 风格,l1 证据视图);evidence 分类器新认 `netlist:` scheme → design_source(与 sch/bom/drc/rule 同族);/api/workbench/state 与离线 snapshot 自动携带;SPA 渲染明确留给前端轨(API 契约先行,前端循环可消费 `state.net_checks`) | 绿 51b854d(609 passed,ruff 干净) | 下一步:电源轨识别(消费 Net.is_power_rail/voltage_hint 预留字段,复用 pins.is_ground_net/_voltage_from_net_name),让 net 检查族从 1 个长到 2-3 个;A 轨连续 3 迭代绿,暂不切 B
+- 2026-06-11 | A | 检查族第 2 个:`design_missing_ground_net`(设计级缺地检查,WARN,token `netlist:<file>#nets=<count>`,空网表不判)。**计划修正**:勘察发现电源轨识别已被既有设施覆盖大半——POWER_NET_PATTERN(topology_tools)+ _voltage_from_net_name(pins)+ prep_summaries 候选电源网络草稿已存在,且 voltage_for_net 动态回退使 is_power_rail tagging 功能惰性,做了就是重复造;改做缺地检查(导出完整性真实信号,零重复)。公开 fixture 真值:2n3904_bjt_emitter_reference.net → 缺地 + 3 单端点;既有合成测试补 GND 网保持单一断言意图 | 绿 c2d38c0(612 passed,ruff 干净) | 下一步:切 B 轨开工(A 轨 4 连绿,检查族已 2 个 + 双通路接入,边际杠杆下降;B 轨黄金测试集是验收 #3 唯一缺口)——先勘察 component_identity.py/component_groups.py 既有分类逻辑,确定 unknown 分类的工作面和度量基线
+- 2026-06-11 | - | **ASK #1**:迭代 4 提交后发现工作树出现非循环产生的改动——README.md / README.zh-CN.md / docs/demo_recording_script.md / docs/rolling_log.md(README 开头叙事段重写 + rolling_log +47 行),全部属于红线 #3 公开叙事文档,且出现在 loop/backend-allegro 检出上(语义上属于 main)。循环不提交、不丢弃这些文件,等人工处置。**安全调整**:此后所有"不绿则丢弃"一律限定到本迭代明确触碰的路径(git checkout -- <具体文件>),永不全局丢弃,避免误毁外部编辑 | 未决 | 人工处置前 B 轨开工照常,但 commit 一律显式列路径
+- 2026-06-11 | B | B 轨第一刀:器件族分类扩容。基线实测:12 个真实形态(Y 晶振/F 保险丝/SW 开关/K 继电器/T 变压器/BT 电池/RP 排阻/VT/VD/IC 位号)11/12 落 unknown。新增 crystal/fuse/switch/relay/transformer/battery 六族(标准位号前缀 + 保守文本 token),既有族补 RP/RA/VT/VD/IC 前缀与 CHOKE/SCHOTTKY/RECTIFIER token;FAMILY_LABELS 补中文标签;黄金测试集 26 例锁定(unknown 12→0,既有分类回归锁死,子串陷阱防护:button cell→battery、gold contact→connector)。motor_sensor_controller fixture 两颗晶振 MPN 从 unknown 组迁入 crystal 组(verdict 无变化,纯分类分组迁移,CLI 测试断言同步) | 绿 3ee6411(638 passed,ruff 干净);commit 显式列路径绕开 ASK #1 外来文件 | 下一步:B 轨第二刀——unknown 计数下降的 index 级断言(合成 netlist+BOM fixture 走 build_project_validation_index,锁 gap group unknown 计数),或 pstchip JEDEC_TYPE 属性信号接入分类(勘察 allegro_pst properties 流到 BomItem/identity 的通路是否存在)
+- 2026-06-11 | B | B 轨第二刀:index 级 unknown 下降断言落地——合成板(crystal/fuse/switch/ic/cap + 真不可识别 module)走完整 build_project_validation_index 通路,断言 unknown 组恰 1 个(改造前应为 4 个);**验收 #3 两个子项(黄金测试集 + 合成 fixture unknown 计数可复现断言)全部闭合**。顺带观察到既有怪癖:passive-value 正则宽松到把 "25MHz Crystal" 认成 passive_value identity(组身份取 value 而非 MPN,family 判定不受影响)——列为后续候选,不在本迭代修 | 绿 0dc7163(639 passed,ruff 干净);一次断言返工(identity 键假设 MPN,实测为 value,已注释说明) | 下一步:pstchip JEDEC_TYPE/properties 信号接入分类通路勘察;或回 A 轨把 net 检查族做到第 3 个(如电源轨名但零电压可解析的命名审查);ASK #1 仍未决
+
+## 期末自检(2026-06-11,迭代 7 — 停止条件触发:验收标准 1–4 全部自检通过)
+
+| 验收项 | 验证命令/方式 | 结果 |
+|---|---|---|
+| #1 独立 rule ID + source token | `nets.py` 含 `net_single_endpoint` / `design_missing_ground_net`;token 形态 `netlist:<file>#net=<NAME>` / `#nets=<count>`,经 evidence 分类器归 design_source | ✓ |
+| #2 公开 fixture 可断言结果 | mixed_controller_power_stage(2 单端点)、pst(0)、2n3904_bjt_emitter_reference(缺地+3)真值写死;`pytest -k fixture` 3 passed | ✓ |
+| #3 黄金测试集 + unknown 下降断言 | test_component_identity.py 27 passed:12 真实形态 unknown 11/12→0;index 级合成板 unknown 组 4→1 | ✓ |
+| #4 每 commit 全绿 | journal 逐迭代自证;终态 `uv run pytest -q` **639 passed**(基线 598,+41),`ruff check` 干净 | ✓ |
+| #5 公开叙事 diff 为空 | `git diff main...HEAD -- README.md ... docs/ :(exclude)docs/loop/*` → 空;"ready" 写入 grep 仅命中契约规则自身文本 | ✓ |
+
+**交付摘要**:A 轨——网络级检查族从 0 到 2(`net_single_endpoint` / `design_missing_ground_net`),贯通 markdown 报告 + workbench API + 离线 snapshot,evidence 分类器学会 `netlist:` scheme;B 轨——器件族分类 +6 族(crystal/fuse/switch/relay/transformer/battery)+5 前缀映射,黄金测试集 26 例 + index 级断言。功能提交 5 个,全部绿;ASK 1 个未决(外来叙事编辑,等人工);RED 0;STUCK 0。
+
+**未尽事项(下期候选)**:pstchip 属性信号接入分类;net 检查族第 3 个;passive-value 正则宽松怪癖;SPA 渲染 net_checks(归前端轨);ASK #1 处置。
+
+**循环停止**。等待人工验收(验收方式见契约末节)。
+
