@@ -28,4 +28,18 @@
   E2E+unit 守行为。注意:拆出组件的 vitest 需要 DOM 环境,jsdom 不在依赖
   白名单——届时优先用已测纯函数+E2E 覆盖,或标 ASK 问 jsdom
 
+- 2026-06-11 14:26 | 目标2第一刀:纯函数→src/lib/format.ts(单测随迁为
+  format.test.ts),9 个叶子组件(Metric/StatusBadge/TrustBadge/StatusIcon/
+  VerdictBanner/InfoCell/EvidenceToken/EvidenceCard/CheckCard)→
+  src/components/ui.tsx(命名对齐参考原型 ui.jsx);App.tsx 1356→1121 行,
+  顺手删 countTaskEvidence 死代码 | commit 8bf41c6(typecheck+unit 21+
+  E2E 5+pytest 598+ruff 全绿) | 关键决策:bundle 哈希首次变化,按验收4
+  的 diff 范围,E2E 在新构建上验证后恢复 static 产物到 HEAD 再 commit;
+  张力已记 learning_log(66a7af0),期末人工验收时统一刷新产物。
+  下一步:继续拆 App.tsx——视图层切片,候选:Header+ImportView+ParseView
+  →一个文件或各自文件,CopilotPanel、FindingsView+ExportView、
+  TaskQueueColumn/DetailColumn/EvidenceColumn(Review 三栏)分批;每刀
+  保持 ≤300 行/文件、全链绿
+
+
 
