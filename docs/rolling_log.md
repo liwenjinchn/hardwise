@@ -8,21 +8,6 @@
 
 ---
 
-## Active weekend closeout handoff
-
-**Trigger**: The current `codex/mvp-review-workbench-scope` branch needs to be
-continued from another computer and closed into a resume/demo-ready state.
-
-**Where it lands**: [`docs/weekend_closeout_plan.md`](weekend_closeout_plan.md)
-tracks the short execution plan. Measured facts should move into README/demo
-docs only after the implementation and pressure-test reruns are complete.
-
-**What to build**: Generic inductor/ferrite validation, optional PE537BA MOSFET
-profile completion, real-board summary artifacts, documentation/demo refresh,
-verification, and branch push.
-
----
-
 ## Constrained LLM validator roadmap — staged after Copilot workbench
 
 **Trigger**: The Allegro Copilot workbench (`serve-workbench` plus
@@ -31,7 +16,7 @@ questions, evidence traces, and the unknown-refdes path.
 
 **Where it lands**: `docs/PLAN.md` DR-013 records the architectural decision.
 Implementation should be split into future Trellis tasks, with `docs/architecture.md`
-and `docs/interview_qa.md` updated only when a stage ships.
+and `docs/faq.md` updated only when a stage ships.
 
 **What to build**: Move Hardwise from a deterministic-only validator toward a
 constrained LLM validator. Deterministic validators remain the highest-confidence
@@ -293,7 +278,7 @@ src/hardwise/
   guards/            Two-layer anti-hallucination: refdes guard + evidence ledger.
   memory/            Sleep Consolidator + candidate-rule pool (rules.md).
 data/                Local input — KiCad projects + datasheet PDFs (gitignored except .gitkeep).
-docs/                architecture.md / interview_qa.md / learning_log.md / rolling_log.md.
+docs/                architecture.md / faq.md / learning_log.md / rolling_log.md.
 reports/             Generated review reports (markdown, gitignored).
 ```
 
@@ -370,3 +355,4 @@ Each anti-rule must reference a real moment when reality tried to violate it. An
 - 2026-05-27 — V3.0 stage details landed in code/docs: schema-v2 `DatasheetProfile.pins`, L78 public pin-profile fixture, `report-pin-profile`, renderer and focused tests.
 - 2026-05-27 — V3.1 stage details landed in code/docs: deterministic `validation/component.py`, `report-component-validation`, L78 regulator netlist+BOM fixtures, renderer and focused tests. Next component-family templates remain queued behind explicit public profiles and fixtures.
 - 2026-05-27 — V3.2 stage details landed in code/docs: `report-validator-ui` creates a single-file local HTML UI with component index, selected validation detail, schematic-net pane, scope pane, and report download. V3.3 is queued for the next component-family template rather than more UI surface.
+- 2026-06-11 — Weekend closeout handoff discharged: the closeout (generic inductor/ferrite validation, PE537BA profile, pressure reruns, docs refresh) shipped and its measured facts live in `docs/closeout_pressure_summary.md` and README. The standalone `weekend_closeout_plan.md` checklist was removed in the docs cleanup; history stays in git.

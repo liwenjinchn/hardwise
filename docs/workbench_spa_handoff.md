@@ -4,9 +4,7 @@ This handoff is for continuing the real React/Vite workbench from another
 machine. It records the current product state, completed visual/offline work,
 and which future feature ideas should or should not be added.
 
-For the separate documentation consolidation pass, read
-`docs/documentation_cleanup_handoff.md` before asking an agent to load broad
-project context.
+For the current documentation reading map, see `docs/docs_inventory.md`.
 
 ## Current State
 

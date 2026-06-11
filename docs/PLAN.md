@@ -9,7 +9,6 @@
 > - `CLAUDE.md` — project rules (timeless)
 > - `docs/architecture.md` — module-level design
 > - `docs/review_node.md` — schematic-review-node profile + field-survey template (the demo anchor)
-> - `docs/jd_alignment.md` — DJI JD ↔ Hardwise commitment table
 > - `docs/rolling_log.md` — staged improvements waiting for milestones
 > - `docs/learning_log.md` — debugging journal
 
