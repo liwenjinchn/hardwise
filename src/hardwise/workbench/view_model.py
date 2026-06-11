@@ -13,6 +13,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from hardwise.bom.types import sort_refdes_key
+from hardwise.checklist.finding import Finding
 from hardwise.guards.evidence_class import EvidenceClassification, classify_evidence_tokens
 from hardwise.ir.types import Component
 from hardwise.report.ui_terms import reason_label, status_label, validation_summary_label
@@ -56,6 +57,7 @@ class WorkbenchCapabilities(BaseModel):
     datasheet_search_enabled: bool
     document_index_enabled: bool
     risk_hints_enabled: bool
+    pin_table_enabled: bool = False
 
 
 class EvidenceView(BaseModel):
@@ -451,6 +453,7 @@ def build_workbench_state(
             datasheet_search_enabled=datasheet_search_enabled,
             document_index_enabled=context.document_report is not None,
             risk_hints_enabled=context.risk_hints.source_path is not None,
+            pin_table_enabled=context.pin_table_path is not None,
         ),
         selected_refdes=_default_refdes(queue) or _default_task_refdes(review_tasks),
         queue=queue,
@@ -535,6 +538,8 @@ def build_review_tasks(context: WorkbenchContext) -> list[ReviewTask]:
 
     for hint in context.risk_hints.accepted:
         tasks.append(_risk_hint_task(hint))
+    for finding in context.pin_table_findings:
+        tasks.append(_pin_table_task(finding))
 
     tasks.sort(key=lambda item: (_status_rank(item.status_group), sort_refdes_key(item.refdes), item.title))
     return [
@@ -873,6 +878,54 @@ def _risk_hint_task(hint: RiskHint) -> ReviewTask:
     )
 
 
+def _pin_table_task(finding: Finding) -> ReviewTask:
+    status = _status_for_finding(finding)
+    evidence = _evidence_views(
+        [
+            *finding.evidence_tokens,
+            *[step.token for step in finding.evidence_chain],
+        ],
+        "l1",
+    )
+    pin = f".{finding.pin_number}" if finding.pin_number else ""
+    return _task(
+        refdes=finding.refdes or "",
+        kind="pin_table_check",
+        check=finding.rule_id,
+        pin_number=finding.pin_number,
+        subject=f"{finding.refdes}{pin}",
+        status=status,
+        trust_tier="l1",
+        title=f"{finding.rule_id} · {finding.message}",
+        body=finding.message,
+        recommended_action=finding.suggested_action,
+        chain=[
+            EvidenceChainItem(
+                kind="pin_table_row",
+                title=f"Capture pin-table · {finding.refdes}{pin}",
+                body=(
+                    finding.evidence_chain[0].claim
+                    if finding.evidence_chain
+                    else "Capture pin-table row triggered this deterministic check."
+                ),
+                status=status,
+                status_group=_status_group(status),
+                trust_tier="l1",
+                evidence=[item for item in evidence if item.token.startswith("pintable:")],
+            ),
+            EvidenceChainItem(
+                kind="design_rule",
+                title=finding.rule_id,
+                body=finding.message,
+                status=status,
+                status_group=_status_group(status),
+                trust_tier="l1",
+                evidence=[item for item in evidence if not item.token.startswith("pintable:")],
+            ),
+        ],
+    )
+
+
 def _cleared_task(row: ProjectValidationRow, validation: ValidationReport) -> ReviewTask:
     evidence = _evidence_views(_validation_evidence(validation), "l1")
     return _task(
@@ -957,6 +1010,14 @@ def _recommended_action(status: str, summary: str) -> str:
     if status == "WARN":
         return f"复核使用条件或补充证据：{clean}"
     return "保持当前连接和器件档案；若设计输入变化则重新验证。"
+
+
+def _status_for_finding(finding: Finding) -> str:
+    if finding.decision == "likely_issue" and finding.severity in {"critical", "high"}:
+        return "ERROR"
+    if finding.decision == "likely_ok":
+        return "PASS"
+    return "WARN"
 
 
 def _check_chain_item(check: ComponentValidation) -> EvidenceChainItem:

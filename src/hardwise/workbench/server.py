@@ -65,6 +65,7 @@ def create_workbench_app(
     *,
     profiles: Path = Path("data/datasheet_profiles"),
     document_index: Path | None = None,
+    pin_table: Path | None = None,
 ) -> FastAPI:
     """Create the local live workbench app."""
 
@@ -275,6 +276,7 @@ def create_workbench_app(
     def import_workbench(
         netlist: UploadFile = File(...),
         bom: UploadFile | None = File(None),
+        pin_table_csv: UploadFile | None = File(None),
         risk_hints_json: UploadFile | None = File(None),
     ) -> dict[str, object]:
         import_dir = Path(tempfile.mkdtemp(prefix="hardwise-workbench-import-"))
@@ -288,12 +290,18 @@ def create_workbench_app(
                 if risk_hints_json
                 else None
             )
+            pin_table_path = (
+                _save_upload(pin_table_csv, import_dir, fallback_name="pin_table.csv")
+                if pin_table_csv
+                else pin_table
+            )
             next_context = build_workbench_context(
                 netlist_path=netlist_path,
                 bom_path=bom_path,
                 profiles=profiles,
                 document_index=document_index,
                 risk_hints_json=hints_path,
+                pin_table=pin_table_path,
             )
         except Exception as exc:
             shutil.rmtree(import_dir, ignore_errors=True)

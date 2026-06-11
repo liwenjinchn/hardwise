@@ -10,6 +10,7 @@ from hardwise.adapters.base import (
     NcPinRecord,
     NetMemberRecord,
     PcbNetRecord,
+    SchematicNetRecord,
 )
 
 Sexp = str | list["Sexp"]
@@ -43,6 +44,12 @@ def parse_project(project_dir: Path) -> BoardRegistry:
     for schematic_path in schematic_paths:
         nc_pins.extend(parse_nc_pins(schematic_path))
 
+    from hardwise.adapters.kicad_schematic_nets import parse_schematic_nets
+
+    schematic_nets: list[SchematicNetRecord] = []
+    for schematic_path in schematic_paths:
+        schematic_nets.extend(parse_schematic_nets(schematic_path))
+
     nets: list[PcbNetRecord] = []
     for pcb_path in sorted(project_dir.glob("*.kicad_pcb")):
         nets.extend(parse_pcb_nets(pcb_path))
@@ -53,6 +60,7 @@ def parse_project(project_dir: Path) -> BoardRegistry:
         schematic_records=list(schematic_components.values()),
         pcb_records=list(pcb_components.values()),
         nc_pins=nc_pins,
+        schematic_nets=schematic_nets,
         pcb_nets=nets,
     )
 

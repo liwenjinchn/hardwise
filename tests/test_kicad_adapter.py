@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from hardwise.adapters.kicad import is_unconnected_pcb_net, parse_project, pcb_signal_nets
+from hardwise.adapters.kicad_schematic_nets import parse_schematic_nets
 
 
 def test_parse_pic_programmer_registry() -> None:
@@ -50,6 +51,42 @@ def test_registry_stores_full_pcb_net_set() -> None:
     gnd = next(n for n in registry.pcb_nets if n.name == "GND")
     assert len(gnd.members) == 40
     assert all(m.refdes and m.pad for m in gnd.members)
+
+
+def test_parse_schematic_nets_uses_pre_layout_labels_and_power_symbols(tmp_path: Path) -> None:
+    schematic = tmp_path / "fixture.kicad_sch"
+    schematic.write_text(
+        """
+        (kicad_sch
+          (label "clk_33m_ich" (at 1 1 0))
+          (global_label "PCIE_TX_DP0" (shape input) (at 2 2 0))
+          (hierarchical_label "VPP{slash}MCLR" (shape input) (at 3 3 0))
+          (symbol
+            (property "Reference" "#PWR01")
+            (property "Value" "GND"))
+        )
+        """,
+        encoding="utf-8",
+    )
+
+    records = parse_schematic_nets(schematic)
+
+    assert [(record.name, record.source_kind) for record in records] == [
+        ("clk_33m_ich", "label"),
+        ("PCIE_TX_DP0", "global_label"),
+        ("VPP/MCLR", "hierarchical_label"),
+        ("GND", "power_symbol"),
+    ]
+
+
+def test_parse_project_exposes_schematic_net_names() -> None:
+    registry = parse_project(Path("data/projects/pic_programmer"))
+    names = {record.name for record in registry.schematic_nets}
+
+    assert "GND" in names
+    assert "VCC" in names
+    assert "VPP/MCLR" in names
+    assert registry.schematic_nets[0].source_file.suffix == ".kicad_sch"
 
 
 def test_pcb_signal_nets_filters_unconnected_only() -> None:

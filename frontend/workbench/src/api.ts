@@ -126,6 +126,7 @@ export function askCopilot(
 export function importWorkbench(files: {
   netlist: File;
   bom?: File | null;
+  pinTable?: File | null;
   riskHints?: File | null;
 }): Promise<ImportResponse> {
   if (offlineSnapshot()) {
@@ -134,6 +135,7 @@ export function importWorkbench(files: {
   const body = new FormData();
   body.append("netlist", files.netlist);
   if (files.bom) body.append("bom", files.bom);
+  if (files.pinTable) body.append("pin_table_csv", files.pinTable);
   if (files.riskHints) body.append("risk_hints_json", files.riskHints);
   return requestJson<ImportResponse>("/api/workbench/import", {
     method: "POST",

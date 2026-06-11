@@ -26,6 +26,7 @@ export interface WorkbenchCapabilities {
   datasheet_search_enabled: boolean;
   document_index_enabled: boolean;
   risk_hints_enabled: boolean;
+  pin_table_enabled: boolean;
 }
 
 export interface EvidenceView {

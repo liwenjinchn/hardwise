@@ -54,6 +54,19 @@ class PcbNetRecord(BaseModel):
     source_file: Path
 
 
+class SchematicNetRecord(BaseModel):
+    """One explicitly named schematic-side net token.
+
+    This is a pre-Layout fact extracted from ``.kicad_sch`` labels and
+    power-symbol values. It intentionally records names only; full
+    wire-to-symbol connectivity remains a separate schematic parser.
+    """
+
+    name: str
+    source_file: Path
+    source_kind: str
+
+
 class BoardRegistry(BaseModel):
     """Refdes registry used by tools and guardrails."""
 
@@ -62,6 +75,7 @@ class BoardRegistry(BaseModel):
     schematic_records: list[ComponentRecord] = Field(default_factory=list)
     pcb_records: list[ComponentRecord] = Field(default_factory=list)
     nc_pins: list[NcPinRecord] = Field(default_factory=list)
+    schematic_nets: list[SchematicNetRecord] = Field(default_factory=list)
     pcb_nets: list[PcbNetRecord] = Field(default_factory=list)
 
     @property

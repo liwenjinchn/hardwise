@@ -96,18 +96,90 @@ def inspect_kicad(
             "KiCad's PCB Net Inspector. No effect without --net."
         ),
     ),
+    schematic_net: bool = typer.Option(
+        False,
+        "--schematic-net",
+        help=(
+            "Print explicit .kicad_sch net names from labels and power symbols. "
+            "This is pre-Layout naming evidence only; it does not infer wire fanout."
+        ),
+    ),
+    check_net_names: bool = typer.Option(
+        False,
+        "--check-net-names",
+        help=(
+            "With --schematic-net, run the shared NamingPolicy over schematic-side "
+            "net names and print WARN findings."
+        ),
+    ),
+    naming_policy: Path | None = typer.Option(
+        None,
+        "--naming-policy",
+        help=(
+            "Optional YAML NamingPolicy for --schematic-net --check-net-names. "
+            "Defaults to the public permissive policy."
+        ),
+    ),
 ) -> None:
     """Parse a KiCad project and print the initial refdes registry."""
     from hardwise.adapters.kicad import parse_project, pcb_signal_nets
+    from hardwise.ir.types import Design, Net
+    from hardwise.validation.net_naming import load_naming_policy, validate_net_naming
 
     try:
         registry = parse_project(project_dir)
     except Exception as e:
         typer.echo(f"error: {type(e).__name__}: {e}", err=True)
         raise typer.Exit(1) from e
+    if show_nets and schematic_net:
+        typer.echo("error: --net and --schematic-net are mutually exclusive", err=True)
+        raise typer.Exit(1)
+    if check_net_names and not schematic_net:
+        typer.echo("error: --check-net-names requires --schematic-net", err=True)
+        raise typer.Exit(1)
+    if naming_policy is not None and not check_net_names:
+        typer.echo("error: --naming-policy requires --schematic-net --check-net-names", err=True)
+        raise typer.Exit(1)
 
     typer.echo(f"project: {registry.project_dir}")
     typer.echo(f"components: {len(registry.components)}")
+    if schematic_net:
+        typer.echo(f"schematic named nets: {len(registry.schematic_nets)}")
+        typer.echo("source: .kicad_sch labels/power symbols (pre-Layout naming evidence)")
+        typer.echo("scope: net names only; no wire fanout, pin endpoints, .kicad_pcb, or PCB geometry")
+        if check_net_names:
+            try:
+                policy = load_naming_policy(naming_policy) if naming_policy is not None else None
+            except Exception as e:
+                typer.echo(f"error: {type(e).__name__}: {e}", err=True)
+                raise typer.Exit(1) from e
+            names_by_file: dict[Path, set[str]] = {}
+            for record in registry.schematic_nets:
+                names_by_file.setdefault(record.source_file, set()).add(record.name)
+            checks = []
+            for source_file, names in sorted(names_by_file.items(), key=lambda item: item[0].name):
+                design = Design(
+                    components={},
+                    nets={name: Net(name=name) for name in names},
+                    project_path=registry.project_dir,
+                    source_eda="kicad",
+                )
+                checks.extend(
+                    validate_net_naming(
+                        design,
+                        policy=policy,
+                        source_label=source_file.name,
+                    )
+                )
+            typer.echo(f"naming checks: {len(checks)} warning(s)")
+            for check in checks[:limit]:
+                evidence = ", ".join(check.evidence) if check.evidence else "-"
+                typer.echo(f"{check.net_name:32} {check.check:28} {check.status:5} {evidence}")
+            return
+        typer.echo("")
+        for record in registry.schematic_nets[:limit]:
+            typer.echo(f"{record.name:32} {record.source_kind:18} {record.source_file.name}")
+        return
     if show_nets:
         all_count = len(registry.pcb_nets)
         signal = pcb_signal_nets(registry.pcb_nets)
@@ -1288,6 +1360,14 @@ def design_validator_ui(
         "--risk-hints-json",
         help="Optional external risk-hints JSON anchored to registry-verified refdes.",
     ),
+    pin_table: Path | None = typer.Option(
+        None,
+        "--pin-table",
+        help=(
+            "Optional Capture pin-table CSV. Runs R008/R009 into workbench review tasks; "
+            "does not change ValidationReport PASS/WARN/ERROR totals."
+        ),
+    ),
     manual_limit: int = typer.Option(
         50,
         "--manual-limit",
@@ -1320,6 +1400,7 @@ def design_validator_ui(
             profiles=profiles,
             document_index=document_index,
             risk_hints_json=risk_hints_json,
+            pin_table=pin_table,
         )
     except ProfileCandidateError as e:
         typer.echo(f"error: profile candidate generation failed: {e}", err=True)
@@ -1373,6 +1454,12 @@ def design_validator_ui(
             "risk-hints: loaded "
             f"(accepted={context.risk_hints.accepted_count}, "
             f"rejected={context.risk_hints.rejected_count})"
+        )
+    if context.pin_table_path is not None:
+        typer.echo(
+            f"pin-table: {display_path(context.pin_table_path)} "
+            f"(findings={len(context.pin_table_findings)}, "
+            f"rejected_unknown_refdes={context.rejected_pin_table_findings})"
         )
     if context.resolved_bom.auto_selected:
         parseable_count = sum(
@@ -1447,6 +1534,14 @@ def serve_workbench(
         "--risk-hints-json",
         help="Optional external risk-hints JSON anchored to registry-verified refdes.",
     ),
+    pin_table: Path | None = typer.Option(
+        None,
+        "--pin-table",
+        help=(
+            "Optional Capture pin-table CSV. Runs R008/R009 into workbench review tasks; "
+            "does not change ValidationReport PASS/WARN/ERROR totals."
+        ),
+    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
@@ -1473,6 +1568,7 @@ def serve_workbench(
             profiles=profiles,
             document_index=document_index,
             risk_hints_json=risk_hints_json,
+            pin_table=pin_table,
         )
         collection = None
         if use_vector:
@@ -1507,12 +1603,19 @@ def serve_workbench(
             f"accepted={context.risk_hints.accepted_count}, "
             f"rejected={context.risk_hints.rejected_count}"
         )
+    pin_table_state = "not_configured"
+    if context.pin_table_path is not None:
+        pin_table_state = (
+            f"loaded findings={len(context.pin_table_findings)}, "
+            f"rejected_unknown_refdes={context.rejected_pin_table_findings}"
+        )
     typer.echo(
         f"serve-workbench: {url} "
         f"({context.index.components_in_design} components, "
         f"validated={len(context.index.validated_rows)}, "
         f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'}, "
-        f"document-index={document_state}, risk-hints={risk_hints_state})"
+        f"document-index={document_state}, risk-hints={risk_hints_state}, "
+        f"pin-table={pin_table_state})"
     )
     if dry_run:
         return
@@ -1524,6 +1627,7 @@ def serve_workbench(
         chat_service,
         profiles=profiles,
         document_index=document_index,
+        pin_table=pin_table,
     )
     uvicorn.run(app_obj, host=host, port=port)
 

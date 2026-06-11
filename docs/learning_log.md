@@ -8,6 +8,40 @@
 
 ---
 
+## 2026-06-12 — KiCad named-net checks should not pretend to know fanout
+
+**Symptom**
+
+The rolling log had a real leftover: R006/R007 net-name checks were waiting for
+"the KiCad schematic net parser," but the existing KiCad net code only read
+`.kicad_pcb`. That was correctly labeled post-Layout, so it could not be used as
+pre-Layout schematic-review evidence.
+
+**Root cause**
+
+There are two different facts hiding under "net parser." A naming check only
+needs explicit names from labels and power symbols. A dangling-net/fanout check
+needs full wire connectivity plus symbol pin endpoints. Treating those as one
+milestone either blocks useful naming checks too long or tempts the code to
+reuse PCB data outside the review node.
+
+**Fix**
+
+Added `adapters/kicad_schematic_nets.py` to extract explicit `.kicad_sch` local,
+global, hierarchical, and power-symbol net names into `SchematicNetRecord`.
+`inspect-kicad --schematic-net --check-net-names` now reuses the existing
+`validation/net_naming.py` `NamingPolicy`, with optional YAML policy override.
+The CLI labels the source as `.kicad_sch` naming evidence and states that it
+does not infer wire fanout, pin endpoints, `.kicad_pcb`, or PCB geometry.
+
+**Takeaway**
+
+Split parsers by the evidence they can honestly provide. A narrow named-net
+parser is enough for R006-style policy checks, but R005 dangling nets still need
+a real schematic topology parser before they can become L1 findings.
+
+---
+
 ## 2026-06-11 — Real Copilot smoke must start with verify-api
 
 **Symptom**
@@ -4168,3 +4202,36 @@ When build artifacts are vendored into the tree, every automated workflow that
 edits sources needs an explicit artifact policy (rebuild-and-commit vs.
 restore-and-defer). Decide it in the contract up front; don't let the first
 hash change decide for you.
+
+## 2026-06-12 — Pin-table findings are workbench tasks, not validation totals
+
+**Symptom**
+
+The Capture pin-table path exposes facts that the netlist/BOM/profile validator
+cannot see: pin electrical type, explicit NC marker, and schematic page
+location. Feeding R008/R009 into the workbench looked tempting as "more
+validation", but adding those findings to `ValidationReport` would silently
+change the meaning of the PASS/WARN/ERROR summary.
+
+**Root cause**
+
+`ValidationReport` is component/profile validation truth: one design component
+plus one reviewed public profile. Pin-table checks are deterministic and L1,
+but they are sourced from an optional auxiliary CSV and already use the generic
+`Finding` contract. Mixing the two would make a missing optional file change
+the validation denominator and make historical workbench counts hard to compare.
+
+**Fix**
+
+`build_workbench_context(pin_table=...)` now parses the CSV, runs R008/R009,
+filters findings through `design.refdes_set`, and stores accepted/rejected
+counts on `WorkbenchContext`. `view_model.py` maps accepted rows to
+`pin_table_check` review tasks with `pintable:` evidence and L1 trust. The
+project summary still reports the original validation totals, while the queue
+gets extra actionable tasks.
+
+**Takeaway**
+
+When a new evidence source has a different contract, surface it at the review
+task layer first. Keep the existing scorecard stable until the denominator and
+truth model are explicitly redesigned.

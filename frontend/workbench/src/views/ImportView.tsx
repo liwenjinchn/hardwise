@@ -12,6 +12,7 @@ export function ImportView({
 }) {
   const [netlist, setNetlist] = useState<File | null>(null);
   const [bom, setBom] = useState<File | null>(null);
+  const [pinTable, setPinTable] = useState<File | null>(null);
   const [riskHints, setRiskHints] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -25,7 +26,7 @@ export function ImportView({
     setBusy(true);
     setError("");
     try {
-      const result = await importWorkbench({ netlist, bom, riskHints });
+      const result = await importWorkbench({ netlist, bom, pinTable, riskHints });
       onImported(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "导入失败");
@@ -59,6 +60,13 @@ export function ImportView({
           file={bom}
           accept=".csv,.tsv,.txt"
           onPick={setBom}
+        />
+        <UploadSlot
+          icon={<FileUp size={20} />}
+          label="pin table CSV"
+          file={pinTable}
+          accept=".csv,.txt"
+          onPick={setPinTable}
         />
         <UploadSlot
           icon={<FileUp size={20} />}

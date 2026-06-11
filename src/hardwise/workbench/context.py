@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from hardwise.adapters.base import BoardRegistry, ComponentRecord, NcPinRecord
 from hardwise.bom import apply_bom_to_design
 from hardwise.bom.types import Bom, BomMatchReport
+from hardwise.checklist.finding import Finding
 from hardwise.documents import match_documents_to_bom, parse_document_index
 from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile
@@ -42,6 +43,9 @@ class WorkbenchContext:
     candidate_report: ProfileCandidateReport
     document_report: DocumentMatchReport | None
     risk_hints: RiskHintReport
+    pin_table_path: Path | None
+    pin_table_findings: list[Finding]
+    rejected_pin_table_findings: int
     validation_targets: dict[str, DatasheetProfile]
     project_name: str
     netlist_source: Path
@@ -115,6 +119,7 @@ def build_workbench_context(
     profiles: Path,
     document_index: Path | None = None,
     risk_hints_json: Path | None = None,
+    pin_table: Path | None = None,
     generated_at: str | None = None,
 ) -> WorkbenchContext:
     """Build shared deterministic workbench state from Allegro/PST inputs."""
@@ -148,6 +153,10 @@ def build_workbench_context(
         document_report=document_report,
         design=design,
     )
+    pin_table_findings, rejected_pin_table_findings = _pin_table_findings(
+        pin_table,
+        design_refdes=design.refdes_set,
+    )
     timestamp = generated_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
     project_name = project_name_for_inputs(source, bom)
     index = build_project_validation_index(
@@ -176,6 +185,9 @@ def build_workbench_context(
         candidate_report=candidate_report,
         document_report=document_report,
         risk_hints=risk_hints,
+        pin_table_path=pin_table,
+        pin_table_findings=pin_table_findings,
+        rejected_pin_table_findings=rejected_pin_table_findings,
         validation_targets=validation_targets,
         project_name=project_name,
         netlist_source=source,
@@ -189,6 +201,25 @@ def close_workbench_context(context: WorkbenchContext) -> None:
     """Close context-owned resources."""
 
     context.session.close()
+
+
+def _pin_table_findings(
+    pin_table: Path | None,
+    *,
+    design_refdes: set[str],
+) -> tuple[list[Finding], int]:
+    """Run Capture pin-table checks and keep only registry-backed findings."""
+
+    if pin_table is None:
+        return [], 0
+    from hardwise.adapters.capture_pin_table import parse_pin_table
+    from hardwise.checklist.checks.r008_floating_input import check as r008_check
+    from hardwise.checklist.checks.r009_power_pin_unconnected import check as r009_check
+
+    records = parse_pin_table(pin_table)
+    findings = r008_check(records) + r009_check(records)
+    accepted = [item for item in findings if item.refdes in design_refdes]
+    return accepted, len(findings) - len(accepted)
 
 
 def validation_row_by_refdes(context: WorkbenchContext) -> dict[str, Any]:

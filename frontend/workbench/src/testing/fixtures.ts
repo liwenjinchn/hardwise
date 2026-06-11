@@ -159,6 +159,7 @@ export function makeCapabilities(
     datasheet_search_enabled: false,
     document_index_enabled: false,
     risk_hints_enabled: false,
+    pin_table_enabled: false,
     ...overrides
   };
 }

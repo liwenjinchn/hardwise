@@ -219,20 +219,25 @@ at the sentence layer. Pursue only behind a new DR if an interview/demo needs it
 
 ---
 
-## Triggered by Slice 5 — KiCad schematic net parser shipping (R005 dangling-nets)
+## KiCad schematic topology parser — remaining after named-net bridge
 
-**Where it lands**: `data/checklists/sch_review.yaml` → R005 (dangling / unexpected unconnected schematic nets), R006 (通用 net 命名规则), and R007 (分类 net 命名规则).
+**Where it lands**: `data/checklists/sch_review.yaml` → R005 (dangling /
+unexpected unconnected schematic nets) and any future topology-aware R007 slice.
 
-**What to add**: 只从公开、通用的 schematic net naming conventions 提炼候选规则，作为 candidate rules 待 **schematic-side** net parser 上线后才可执行。不要从公司内部或脱敏规范文件转写规则；PCB-side `pcb_nets` 不能作为 pre-Layout schematic-review evidence，因为评审节点还没有 `.kicad_pcb`。
+**Shipped bridge (2026-06-12)**: R006-style net-name checks no longer wait on
+full KiCad topology. `adapters/kicad_schematic_nets.py` extracts explicit
+`.kicad_sch` local/global/hierarchical labels and power-symbol values into
+`SchematicNetRecord`; `inspect-kicad --schematic-net --check-net-names` reuses
+`validation/net_naming.py` `NamingPolicy`, with optional `--naming-policy`
+YAML. This is naming evidence only: no wire fanout, pin endpoints, `.kicad_pcb`,
+or PCB geometry.
 
-**Overlap note (2026-06-11)**: R006 的实质（charset / 双下划线 / 长度 / 差分配对）
-已在 Allegro 网表路径以 `validation/net_naming.py` 落地（policy-as-data，默认
-policy 即公开通用约定）。本节剩余的 KiCad 侧工作是：net parser 上线后把
-`NamingPolicy` 复用到 `.kicad_sch` 网名上，而不是重写一套规则；R006/R007 若
-登记进 yaml，应引用 net_naming 的实现而非新建 check。地网识别已在
-`pins.is_ground_net`。**不要重复实现。**
+**Still staged**: R005 dangling-net/fanout checks need a real schematic topology
+parser: wire connectivity, local/global label merge, power-symbol merge,
+hierarchical sheet propagation, and symbol pin endpoint mapping to `refdes/pin`.
+PCB-side `pcb_nets` remains invalid as pre-Layout schematic-review evidence.
 
-**R006 — 通用 net 命名规则**（公开通用命名习惯候选）
+**Strict R006 policy shape, when a site YAML opts in**:
 
 | 子项 | 规则 |
 |---|---|
@@ -243,7 +248,7 @@ policy 即公开通用约定）。本节剩余的 KiCad 侧工作是：net parse
 
 Check 逻辑（伪代码）：`re.fullmatch(r"[A-Z0-9_]+(?<!_)(?<!__)", net_name)` 且 `len(net_name) <= 32`；不符 → `severity=medium, action=按命名规范重命名`。
 
-**R007 — 分类 net 命名规则**（公开通用命名习惯候选）
+**R007 — 分类 net 命名规则**（仍为公开通用命名习惯候选）
 
 | 类别 | 模式 | 例 |
 |---|---|---|
@@ -258,37 +263,31 @@ Check 逻辑（伪代码）：`re.fullmatch(r"[A-Z0-9_]+(?<!_)(?<!__)", net_name
 
 Check 逻辑：按 prefix 路由到不同 regex；任何"看起来像但不符合"（如 `clk_33m_ich`、`CLK33M`、`POWER_5V`）→ `severity=medium, action=按分类命名规范重命名`。
 
-**为什么不在 Slice 3 实现**：
-
-1. 需要 KiCad schematic net parser：wire 连通、local/global label 合并、power symbol 合并、hierarchical label 跨页传播、symbol pin endpoint 映射到 `refdes/pin`；Slice 3 只做到 pin parser，Slice 5 task 3 目前只完成了 **PCB-side diagnostic parser**（读 `.kicad_pcb`），不能作为 pre-Layout 证据；
-2. 公开 demo 项目 `pic_programmer` 用的是 KiCad 默认 net 命名（如 `Net-(D1-Pad1)`），不遵守 enterprise-style net naming，强行套用会输出大量 false positive；
-3. 这两条规则的真实价值在企业级项目，pic_programmer 等公开 demo 跑不出有意义的结果，但代码逻辑可单测覆盖。
-
-**先决条件 (planned)**：KiCad **schematic** net 解析能产出 `list[SchematicNetRecord(name, refdes_pin_list, source_labels, source_wires)]`。最小可行版本先支持同一 sheet 内 wire 连通、local/global label 合并、power symbol 合并、symbol pin endpoint 映射；hierarchical sheet 可第二步补。R005/R006/R007 只能吃这份 schematic-side 输入。
+**先决条件 (planned)**：KiCad **schematic topology** 解析能产出 net names plus
+`refdes/pin` endpoint membership. 最小可行版本先支持同一 sheet 内 wire 连通、
+local/global label 合并、power symbol 合并、symbol pin endpoint 映射；
+hierarchical sheet 可第二步补。R005 和任何 topology-aware R007 只能吃这份
+schematic-side 输入。
 
 **安全边界**：R006/R007 只能来自公开通用命名习惯和本仓库公开 fixture 反馈；不要使用公司内部硬件团队规范，即使材料已经脱敏。示例模式（PXX 表电源、CLK_ 表时钟、差分 P/N 后缀）只能作为公开候选，必须先用公开项目或合成 fixture 单测验证，再进入规则库。
 
 ---
 
-## Pin-table workbench intake — staged behind the workbench-hardening loop
+## Pin-table follow-ons — staged after workbench intake
 
-**Trigger**: the workbench-hardening loop's SPA/frontend changes settle (no
-concurrent edits to `serve-workbench` / `design-validator-ui` paths), and the
-shipped `report-pin-table` CLI loop has been exercised on at least one real
-export.
+The core workbench intake is shipped: `design-validator-ui --pin-table`,
+`serve-workbench --pin-table`, and `POST /api/workbench/import` accept an
+optional Capture pin-table CSV; `workbench/context.py` runs R008/R009, rejects
+unknown-refdes findings, and `workbench/view_model.py` surfaces accepted rows
+as L1 `pin_table_check` review tasks. These tasks do not change
+`ValidationReport` PASS/WARN/ERROR totals.
 
-**Where it lands**: `workbench/context.py` (third optional input), workbench
-check rows, `docs/architecture.md` data-flow section.
-
-**What to add**: accept an optional pin-table CSV alongside netlist+BOM, run
-R008/R009 during workbench build, and surface their Findings in the Must
-Review queue with the existing trust labels (both are L1 deterministic).
-Candidate follow-on checks from the same data, in value order: nc-conflict
-(NC-marked but wired — strengthens R003; 30 candidates on the validated real
-board), off-page-orphan (off-page name on exactly one page), and net-naming
-checks (the R006/R007 family can run on the pin-table `net` column without
-waiting for the KiCad schematic net parser). Hard bounds: same `Finding`
-shape, no new validation truth, no PCB/PLM scope.
+Remaining candidate follow-on checks from the same data, in value order:
+nc-conflict (NC-marked but wired — strengthens R003; 30 candidates on the
+validated real board), off-page-orphan (off-page name on exactly one page), and
+net-naming checks (the R006/R007 family can run on the pin-table `net` column).
+Hard bounds: same `Finding` shape, no new validation truth without a documented
+denominator change, no PCB/PLM scope.
 
 ---
 

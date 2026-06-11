@@ -26,6 +26,24 @@ class DummyChatService:
         raise AssertionError("state/detail endpoints should not call chat")
 
 
+def _write_pin_table(path: Path) -> None:
+    path.write_text(
+        "\n".join(
+            [
+                (
+                    "refdes,value,footprint,pin_number,pin_name,pin_type,net,page,"
+                    "inst_x,inst_y,nc_marker,off_page"
+                ),
+                "U8,STM32G030C8T6,LQFP48,11,BOOT0,INPUT(3),,PAGE2,100,200,0,",
+                "U3,EG2132,SOP8,6,VCC,POWER(7),,PAGE3,300,400,0,",
+                "U999,UNKNOWN,SOP8,1,IN,INPUT(3),,PAGE9,900,900,0,",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
 def test_board_registry_from_design_projects_components_into_runner_registry() -> None:
     design, _source, _input_type, _property_count = load_allegro_design(
         Path("tests/fixtures/allegro/l78_regulator.net")
@@ -242,6 +260,52 @@ def test_workbench_state_exposes_finding_first_review_tasks() -> None:
             "design_rule",
             "datasheet_or_profile",
         }
+    finally:
+        context.session.close()
+
+
+def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path) -> None:
+    pin_table = tmp_path / "pin_table.csv"
+    _write_pin_table(pin_table)
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        pin_table=pin_table,
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        assert len(context.pin_table_findings) == 2
+        assert context.rejected_pin_table_findings == 1
+
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        payload = client.get("/api/workbench/state").json()
+
+        assert payload["summary"] == {
+            "components": 25,
+            "bom_matched": 25,
+            "validated": 22,
+            "manual": 3,
+            "pass_count": 5,
+            "warn_count": 13,
+            "error_count": 4,
+        }
+        assert payload["capabilities"]["pin_table_enabled"] is True
+        pin_tasks = [
+            task for task in payload["review_tasks"] if task["kind"] == "pin_table_check"
+        ]
+        assert {(task["refdes"], task["check"]) for task in pin_tasks} == {
+            ("U8", "R008"),
+            ("U3", "R009"),
+        }
+        assert {task["trust_tier"] for task in pin_tasks} == {"l1"}
+        assert all(task["status"] == "ERROR" for task in pin_tasks)
+        assert all(
+            any(item["kind"] == "pin_table_row" for item in task["evidence_chain"])
+            for task in pin_tasks
+        )
+        assert all("U999" not in task["stable_key"] for task in payload["review_tasks"])
     finally:
         context.session.close()
 
@@ -649,6 +713,45 @@ def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
             "error_count": 4,
         }
         assert client.get("/api/workbench/state").json()["summary"]["components"] == 25
+    finally:
+        app.state.workbench_context["value"].session.close()
+
+
+def test_workbench_import_accepts_uploaded_pin_table(tmp_path: Path) -> None:
+    pin_table_path = tmp_path / "pin_table.csv"
+    _write_pin_table(pin_table_path)
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/l78_regulator.net"),
+        bom_path=Path("tests/fixtures/allegro/l78_regulator_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+    app = create_workbench_app(context, DummyChatService())  # type: ignore[arg-type]
+    client = TestClient(app)
+
+    try:
+        with (
+            Path("tests/fixtures/allegro/mixed_controller_power_stage.net").open("rb") as netlist,
+            Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv").open("rb") as bom,
+            pin_table_path.open("rb") as pin_table,
+        ):
+            response = client.post(
+                "/api/workbench/import",
+                files={
+                    "netlist": ("mixed_controller_power_stage.net", netlist, "text/plain"),
+                    "bom": ("mixed_controller_power_stage_bom.csv", bom, "text/csv"),
+                    "pin_table_csv": ("pin_table.csv", pin_table, "text/csv"),
+                },
+            )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["task_counts"]["error"] >= 5
+        state = client.get("/api/workbench/state").json()
+        assert state["capabilities"]["pin_table_enabled"] is True
+        assert {(task["refdes"], task["check"]) for task in state["review_tasks"]} >= {
+            ("U8", "R008"),
+            ("U3", "R009"),
+        }
     finally:
         app.state.workbench_context["value"].session.close()
 
