@@ -413,8 +413,15 @@ nets before trusting the mapping. v4/v5 (same day): v3 still empty → v4
 printed raw catch errors for the first 3 pins → SWIG error text named the
 class (`DboPortInst`) and the missing argument (16.6 DBO getters take a
 `DboState`). v5 passes `$lStatus` to `GetPinType` / `GetIsNoConnect`; full
-debugging story in `docs/learning_log.md` (2026-06-11 entry). Awaiting one
-more Windows run to confirm 12/12 columns, then the enum-order sanity check.
+debugging story in `docs/learning_log.md` (2026-06-11 entry). **v5 confirmed
+complete (2026-06-11)**: 12/12 columns full on the real 81-page design;
+enum-order verified — POWER(7) pins land on power-pattern nets at 99.9%
+(2672/2676, 0 unconnected). Check-yield preview on that board: 48
+floating-input candidates (INPUT, no net, no NC), 30 NC-conflict candidates
+(NC-marked but wired), 0 unconnected power pins — the first two are invisible
+to the netlist path, which carries no pin types or NC markers. The script is
+final; remaining work is the public synthetic fixture, then ingestion + the
+two L1 checks + `sch:<page>@<grid>` evidence tokens.
 
 ---
 
