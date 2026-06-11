@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { CopilotPanel } from "./CopilotPanel";
+import { CopilotPanel, RichMessageText } from "./CopilotPanel";
 import { ExportView } from "./ExportView";
 import { FindingsView } from "./FindingsView";
 import { Header } from "./Header";
@@ -60,6 +60,7 @@ describe("ImportView", () => {
     expect(html).toContain("risk hints JSON");
     expect(html).toContain("25 components");
     expect(html).toContain("导入并解析");
+    expect(html).toContain("拖入文件或点击选择");
   });
 });
 
@@ -83,6 +84,33 @@ describe("CopilotPanel", () => {
     expect(html).toContain("板上有没有 U999?");
     expect(html).toContain("Trust tiers");
     expect(html).toContain("回答必须被 netlist、规则或引用来源锚定");
+  });
+
+  it("renders structured assistant text with lists and evidence tokens", () => {
+    const html = renderToStaticMarkup(
+      <RichMessageText
+        text={[
+          "结论",
+          "",
+          "- 检查 `BOOT0`。",
+          "- 证据 datasheet:stm32g030.pdf#p33 和 EV-BOOT。",
+          "",
+          "| 项目 | 数值 |",
+          "|---|---|",
+          "| **ERROR** | 4 |",
+          "",
+          "1. 先看规则结果",
+          "2. 再看 trace"
+        ].join("\n")}
+      />
+    );
+    expect(html).toContain("<ul");
+    expect(html).toContain("<ol");
+    expect(html).toContain("message-table");
+    expect(html).toContain("<strong>ERROR</strong>");
+    expect(html).toContain("<code>BOOT0</code>");
+    expect(html).toContain("evidence-inline");
+    expect(html).toContain("datasheet:stm32g030.pdf#p33");
   });
 });
 

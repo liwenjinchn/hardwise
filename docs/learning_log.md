@@ -8,6 +8,69 @@
 
 ---
 
+## 2026-06-11 — Real Copilot smoke must start with verify-api
+
+**Symptom**
+
+The local workbench context builds in real mode, but the planned real-AI
+closed-loop smoke could not start because `uv run hardwise verify-api` returned
+`PermissionDeniedError: Your request was blocked.` from the configured upstream.
+
+**Root cause**
+
+The failure is outside the workbench runtime path: the configured
+Anthropic-format endpoint rejected the one-shot connectivity check before any
+project context, tools, or browser flow were involved.
+
+**Fix**
+
+Keep `verify-api` as the first gate for any real Copilot smoke. If it fails,
+record the upstream/API issue and fall back to deterministic fake-agent and
+tool/guard tests instead of treating UI or Runner code as suspect. After moving
+local `.env` to a reachable Anthropic-format endpoint, `verify-api` returned
+`hardwise api ok` and the live workbench answered the five planned smoke
+questions.
+
+**Takeaway**
+
+Separate "model endpoint reachable" from "workbench loop works." A blocked API
+key or gateway can make the AI look broken even when import, validation, tool
+dispatch, and Refdes Guard are healthy.
+
+---
+
+## 2026-06-11 — Real model smoke surfaced substitute-part drift
+
+**Symptom**
+
+The real Copilot smoke passed unknown-refdes, component-risk, key-net,
+profile-evidence, project-overview, import, and export paths. In the U12 risk
+answer, however, the model gave example substitute diode names that were not in
+the parsed registry; Refdes Guard wrapped one refdes-shaped example as
+`⟨?SS14⟩`.
+
+**Root cause**
+
+The guard worked: the model-facing answer could still mention a plausible
+electronics part example, but the user-visible copy could not present it as a
+verified board object. The remaining product issue is prompt discipline: a
+review workbench should prefer "use a suitable Schottky diode per the
+datasheet" over naming unregistered alternates unless a tool supplied them.
+
+**Fix**
+
+Treat this as a Copilot-quality prompt follow-up, not a guard bug. The current
+implementation keeps the answer safe; a future prompt pass should explicitly
+discourage unsourced replacement part examples in workbench answers.
+
+**Takeaway**
+
+Real model smoke is necessary even after deterministic fake-agent tests pass:
+fake mode proves tool wiring, but only live mode reveals style and judgment
+drift in free-form engineering prose.
+
+---
+
 ## 2026-06-05 · Evidence-gap marker over-flagged facts backed by grouped tokens
 
 **Symptom**

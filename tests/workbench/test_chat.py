@@ -6,6 +6,7 @@ from pathlib import Path
 
 from hardwise.workbench.chat import (
     C5_L2_SNAPSHOT_QUESTION,
+    ChatMessage,
     ChatRequest,
     WorkbenchChatService,
     build_snapshot_responses,
@@ -66,6 +67,32 @@ def test_fake_chat_wraps_unknown_refdes_through_runner_guard() -> None:
         assert "⟨?U999⟩" in response.answer
         assert response.wrapped_count >= 1
         assert response.trace[0].input["refdes"] == "⟨?U999⟩"
+    finally:
+        context.session.close()
+
+
+def test_chat_request_history_is_included_in_runner_prompt() -> None:
+    context = _context()
+    try:
+        service = WorkbenchChatService(context, mode="fake")
+
+        service.ask(
+            ChatRequest(
+                question="它为什么是 WARN?",
+                selected_refdes="U8",
+                history=[
+                    ChatMessage(role="user", content="先看 U8。"),
+                    ChatMessage(role="assistant", content="U8 是 MCU，BOOT0 需要确认。"),
+                ],
+            )
+        )
+
+        first_call = service.client.messages.calls[0]
+        prompt = first_call["messages"][0]["content"]
+        assert "Recent conversation:" in prompt
+        assert "- user: 先看 U8。" in prompt
+        assert "- assistant: U8 是 MCU，BOOT0 需要确认。" in prompt
+        assert "Question: 它为什么是 WARN?" in prompt
     finally:
         context.session.close()
 

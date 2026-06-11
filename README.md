@@ -51,9 +51,13 @@ Local quickstart:
 
 ```bash
 uv sync
-uv run hardwise serve-workbench tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --fake-ai --port 8765
+./scripts/start_hardwise_workbench.command
 uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --ai-snapshot --output /tmp/hardwise-copilot-workbench.html
 ```
+
+On Windows, double-click `scripts/start_hardwise_workbench.cmd`. Both launchers
+load the built-in demo project, open `http://127.0.0.1:8765/`, and keep the
+Import tab available for replacing the netlist/PST and BOM.
 
 KiCad `review` / `ask` commands are kept below as evidence-chain appendix and
 reproduction commands.
@@ -114,8 +118,14 @@ Action labels in the product map to the trust tiers:
 
 The coverage loop is supporting evidence: Hardwise ranks profile gaps, then moves selected public-evidence groups from L3/manual rows into L1 deterministic rows one family at a time. That proves the loop is repeatable, but the headline remains trust: the model is bounded by registry objects, evidence tokens, deterministic validators, and structured tool returns.
 
-The demo main stage is the exported-netlist workbench. For live local
-recording, run the deterministic fake-agent server:
+The demo main stage is the exported-netlist workbench. For a live local run
+with the real Copilot path, use the launcher:
+
+```bash
+./scripts/start_hardwise_workbench.command
+```
+
+For deterministic recording without an API key, run the fake-agent server:
 
 ```bash
 uv run hardwise serve-workbench \

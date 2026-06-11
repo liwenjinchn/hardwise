@@ -543,7 +543,7 @@ class WorkbenchChatService:
             project_index=self.context.index,
             document_report=self.context.document_report,
         )
-        result = runner.run(_runner_prompt(request.question, selected))
+        result = runner.run(_runner_prompt(request.question, selected, request.history))
         return self._response_from_result(result, selected)
 
     def fallback_response(self, question: str, selected_refdes: str | None = None) -> ChatResponse:
@@ -673,9 +673,36 @@ def build_snapshot_responses(context: WorkbenchContext) -> dict[str, ChatRespons
     return responses
 
 
-def _runner_prompt(question: str, selected_refdes: str | None) -> str:
+def _runner_prompt(
+    question: str,
+    selected_refdes: str | None,
+    history: list[ChatMessage] | None = None,
+) -> str:
     selected = selected_refdes or "(none)"
+    history_block = _history_prompt_block(history or [])
+    if history_block:
+        return (
+            f"Selected refdes: {selected}\n"
+            f"Recent conversation:\n{history_block}\n"
+            f"Question: {question.strip()}"
+        )
     return f"Selected refdes: {selected}\nQuestion: {question.strip()}"
+
+
+def _history_prompt_block(history: list[ChatMessage]) -> str:
+    recent = [
+        item
+        for item in history[-6:]
+        if item.content.strip()
+        and item.content.strip() != "(stopped: iteration cap reached)"
+    ]
+    lines: list[str] = []
+    for item in recent:
+        content = re.sub(r"\s+", " ", item.content.strip())
+        if len(content) > 500:
+            content = content[:497].rstrip() + "..."
+        lines.append(f"- {item.role}: {content}")
+    return "\n".join(lines)
 
 
 def _parse_runner_prompt(content: str) -> tuple[str, str]:

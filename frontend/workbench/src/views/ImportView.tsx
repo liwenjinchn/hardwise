@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
 import { FileArchive, FileUp, Loader2, Play, UploadCloud } from "lucide-react";
 import { importWorkbench } from "../api";
 import type { ImportResponse, WorkbenchState } from "../types";
@@ -94,11 +94,31 @@ function UploadSlot(props: {
   accept: string;
   onPick: (file: File | null) => void;
 }) {
+  const [dragging, setDragging] = useState(false);
+
+  const handleDragOver = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    setDragging(true);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setDragging(false);
+    props.onPick(event.dataTransfer.files?.[0] ?? null);
+  };
+
   return (
-    <label className="upload-slot">
+    <label
+      className={`upload-slot${dragging ? " dragging" : ""}`}
+      onDragEnter={() => setDragging(true)}
+      onDragLeave={() => setDragging(false)}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <span>{props.icon}</span>
       <strong>{props.label}{props.required ? " *" : ""}</strong>
-      <small>{props.file?.name ?? "选择文件"}</small>
+      <small>{props.file?.name ?? "拖入文件或点击选择"}</small>
       <input
         type="file"
         accept={props.accept}

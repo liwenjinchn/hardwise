@@ -47,6 +47,16 @@ HARDWISE_MODEL_DEEP=mimo-v2.5
 
 ## Local Commands
 
+Double-click launcher for the built-in demo workbench:
+
+```powershell
+.\scripts\start_hardwise_workbench.cmd
+```
+
+The launcher runs `uv sync`, starts the local workbench on
+`http://127.0.0.1:8765/`, and opens the browser. The Import tab can replace the
+demo netlist/PST and BOM after startup.
+
 Fast deterministic checks:
 
 ```powershell

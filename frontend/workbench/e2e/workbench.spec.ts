@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import path from "node:path";
 
 // Automated replacement for the manual browser smoke checklist in
 // docs/workbench_spa_handoff.md ("Completed Visual / Offline Work").
@@ -49,6 +50,23 @@ test("prep packet preview opens for Q12", async ({ page }) => {
   const preview = page.locator(".prep-preview");
   await expect(preview).toBeVisible();
   await expect(preview).toContainText("Q12");
+});
+
+test("import page can reload the built-in demo files", async ({ page }) => {
+  await openReview(page);
+  await page.getByRole("button", { name: "导入" }).click();
+  await expect(page.locator(".upload-slot").first()).toContainText("拖入文件或点击选择");
+  await page
+    .locator('input[accept=".net,.dat,.txt,.pst"]')
+    .setInputFiles(path.resolve("../../tests/fixtures/allegro/mixed_controller_power_stage.net"));
+  await page
+    .locator('input[accept=".csv,.tsv,.txt"]')
+    .setInputFiles(
+      path.resolve("../../tests/fixtures/allegro/mixed_controller_power_stage_bom.csv")
+    );
+  await page.getByRole("button", { name: "导入并解析" }).click();
+  await expect(page.locator(".parse-step").first()).toBeVisible();
+  await expect(page.locator(".queue-list .queue-row").first()).toBeVisible({ timeout: 30_000 });
 });
 
 for (const viewport of [
