@@ -4,12 +4,16 @@ from pathlib import Path
 
 from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.adapters.allegro_pst import parse_allegro_pst
+from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist, build_design_from_pst
 from hardwise.ir.types import Design, Net
+from hardwise.report.project_validation_markdown import render
 from hardwise.validation.nets import (
     CHECK_SINGLE_ENDPOINT,
     validate_design_nets,
 )
+from hardwise.validation.profile_candidates import suggest_profile_candidates
+from hardwise.validation.project_index import build_project_validation_index
 
 
 def _design_with_nets(nets: dict[str, list[tuple[str, str]]]) -> Design:
@@ -108,3 +112,88 @@ def test_pst_fixture_has_no_single_endpoint_nets():
     design = build_design_from_pst(registry)
 
     assert validate_design_nets(design) == []
+
+
+def _index_from_text(tmp_path: Path, netlist: str, bom_text: str):
+    """Build a project validation index from synthetic netlist/BOM text."""
+
+    netlist_path = tmp_path / "fixture.net"
+    bom_path = tmp_path / "fixture_bom.csv"
+    netlist_path.write_text(netlist, encoding="utf-8")
+    bom_path.write_text(bom_text, encoding="utf-8")
+    registry = parse_allegro_netlist(netlist_path)
+    bom = parse_bom(bom_path)
+    design = build_design_from_netlist(registry)
+    report = match_bom_to_design(bom, design)
+    design = apply_bom_to_design(design, report)
+    candidates = suggest_profile_candidates(bom, Path("data/datasheet_profiles"))
+    return build_project_validation_index(
+        design=design,
+        bom=bom,
+        bom_report=report,
+        candidate_report=candidates,
+        project_name="net-checks",
+        generated_at="2026-06-11T00:00:00+00:00",
+        netlist_source=str(netlist_path),
+        netlist_type="fixture",
+    )
+
+
+_DANGLING_NETLIST = """$PACKAGES
+  ! 'SOP8' ! FIXTURE_IC ; U1
+  ! 'C0805' ! 100nF ; C1
+$NETS
+  'VCC' ; U1.1, C1.1
+  'GND' ; U1.2, C1.2
+  'DANGLE' ; U1.7
+$END
+"""
+
+_DANGLING_BOM = """Reference,Quantity,Value,Manufacturer,MPN
+U1,1,FIXTURE_IC,Fixture,FIXTURE_IC
+C1,1,100nF,Fixture,GRM21BR71E104KA01
+"""
+
+
+def test_project_index_populates_net_checks(tmp_path):
+    """build_project_validation_index runs net checks with a basename token."""
+
+    index = _index_from_text(tmp_path, _DANGLING_NETLIST, _DANGLING_BOM)
+
+    assert [(c.net_name, c.status) for c in index.net_checks] == [("DANGLE", "WARN")]
+    assert index.net_checks[0].check == CHECK_SINGLE_ENDPOINT
+    # Token uses the netlist basename, never the absolute local path.
+    assert index.net_checks[0].evidence == ["netlist:fixture.net#net=DANGLE"]
+
+
+def test_markdown_report_renders_net_checks_section(tmp_path):
+    """The project markdown report carries a Net Checks section."""
+
+    index = _index_from_text(tmp_path, _DANGLING_NETLIST, _DANGLING_BOM)
+    report = render(index)
+
+    assert "## Net Checks" in report
+    assert "| DANGLE | net_single_endpoint | WARN | U1.7 |" in report
+    assert "`netlist:fixture.net#net=DANGLE`" in report
+    # The net-check evidence token never carries the absolute local path.
+    # (The header Netlist/BOM source fields show what display_path returns
+    # for out-of-repo inputs — pre-existing behavior outside this check.)
+    assert f"netlist:{tmp_path}" not in report
+
+
+def test_markdown_report_states_no_net_findings(tmp_path):
+    """With no single-endpoint nets the section says so explicitly."""
+
+    clean_netlist = """$PACKAGES
+  ! 'SOP8' ! FIXTURE_IC ; U1
+  ! 'C0805' ! 100nF ; C1
+$NETS
+  'VCC' ; U1.1, C1.1
+  'GND' ; U1.2, C1.2
+$END
+"""
+    index = _index_from_text(tmp_path, clean_netlist, _DANGLING_BOM)
+    report = render(index)
+
+    assert "## Net Checks" in report
+    assert "No net-level findings." in report
