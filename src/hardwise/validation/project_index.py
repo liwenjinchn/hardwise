@@ -19,6 +19,7 @@ from hardwise.validation.generic_passive import (
     PassiveFamily,
     validate_generic_passive,
 )
+from hardwise.validation.net_naming import NamingPolicy, validate_net_naming
 from hardwise.validation.nets import NetValidation, validate_design_nets
 from hardwise.validation.profile_candidates import ProfileCandidateReport
 from hardwise.validation.types import ValidationReport
@@ -108,6 +109,7 @@ def build_project_validation_index(
     generated_at: str,
     netlist_source: str,
     netlist_type: str,
+    naming_policy: NamingPolicy | None = None,
 ) -> ProjectValidationIndex:
     """Build a project validation index from BOM/profile candidates."""
 
@@ -183,7 +185,10 @@ def build_project_validation_index(
         bom_matched=len(bom_report.matched_refdes),
         rows=rows,
         component_groups=component_groups,
-        net_checks=validate_design_nets(design, source_label=Path(netlist_source).name),
+        net_checks=validate_design_nets(design, source_label=Path(netlist_source).name)
+        + validate_net_naming(
+            design, policy=naming_policy, source_label=Path(netlist_source).name
+        ),
     )
 
 
