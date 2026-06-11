@@ -339,6 +339,215 @@ Each anti-rule must reference a real moment when reality tried to violate it. An
 
 ---
 
+## Capture pin-table export — staged behind a home OrCAD rig
+
+**Trigger**: A reproducible OrCAD Capture setup (Lite/trial) outside company
+equipment, plus a synthetic multi-page demo design committed as a public
+fixture. Hard precondition per AGENTS.md rule 1: no company scripts, files, or
+designs — the export script must be a from-scratch rewrite against
+public/synthetic inputs only.
+
+**Where it lands**: new adapter `adapters/capture_pin_table.py` + checks under
+`checklist/checks/`; `docs/architecture.md` data-flow section when it ships.
+
+**What to add**: a read-only Capture Tcl (DBO API) script that walks pages →
+instances → pins and exports one pin-table CSV per design, plus Hardwise
+ingestion and 1-2 deterministic checks. Motivation: the netlist/PST/BOM path
+carries no pin types, no page/grid locations, no NC markers, and no off-page
+connector names (`pstchip.dat` fixtures confirm pins carry `PIN_NUMBER` only)
+— this export is the only public-input way to obtain them.
+
+CSV schema (one row per pin instance):
+
+| column | example | source |
+|---|---|---|
+| refdes | U12 | instance |
+| value | XL1509-12E1 | instance part value |
+| footprint | SOP8 | instance PCB footprint property (feeds R001) |
+| pin_number | 2 | pin |
+| pin_name | SW | pin |
+| pin_type | IN / OUT / BI / PWR / GND / PASSIVE / NC | DBO pin type |
+| net | SW | connectivity |
+| page | 3 | page object |
+| grid_ref | B4 | pin location → border grid |
+| nc_marker | true / false | no-connect flag |
+| off_page | +24V_EN | attached off-page connector name, else empty |
+
+Checks unlocked (all L1 deterministic):
+
+- floating-input: IN-type pin with no net and no `nc_marker` → ERROR
+- power-pin-unconnected: PWR/GND pin with no net → ERROR
+- nc-conflict: `nc_marker` pin that is wired anyway → WARN (strengthens R003)
+- off-page-orphan: off-page name appearing on exactly one page → WARN
+
+Evidence: findings gain `sch:<page>@<grid_ref>` source tokens, extending the
+evidence-token scheme from datasheet pages to schematic locations.
+
+Scope bound: one script + one CSV + at most two checks. Read-only export; no
+write-back, no swap/edit operations, no second project.
+
+**Status (2026-06-11)**: clean-room export script landed at
+`scripts/capture_pin_table_export.tcl` (read-only, catch-guarded, version
+differences marked ADJUST; emits raw inst x/y — grid zone derives Python-side).
+Validated on a real 81-page Capture 16.6 design (3874 instances / 15879 pins):
+refdes/value/pin_number/pin_name/page full, net 15233 filled (646 no-net pins =
+floating-check input), off_page 2947. Three accessors returned empty and need
+release-specific names (discover via `info commands DboPin_*` in the Capture
+shell): pin_type, inst x/y location, nc_marker. The validation CSV is
+company-design data — used for validation only, never committed; the public
+synthetic fixture is still required before ingestion + checks ship. Windows Tcl
+writes CRLF — ingestion must strip `\r`. v2 (same day): direct
+`GetReferenceDesignator` / `GetPartValue` / new `footprint` column via
+`GetPCBFootprint` (all confirmed present by 16.6 introspection); pin class is
+NOT `DboPin` (`info commands DboPin_*` empty — likely `DboPinInst`); pin_type
+tries `GetPinType` first; location tries three signatures; `hardwise_introspect`
+proc added for one-paste accessor discovery if columns stay empty. v2 run on
+the same real design: footprint + inst_x/inst_y now full — 10/12 columns
+working. v3 (same day): introspection proved iterated pins are `DboPortInst`
+(GetPinNumber exists only there); member `GetPinType` returns a wrapped enum
+the Tcl layer can't convert, so v3 switches pin_type / nc_marker to the
+Tcl-native static helpers `DboPortInst_sGetPinType` /
+`DboPortInst_sGetIsNoConnect`. Awaiting one more Windows run; after pin_type
+fills, sanity-check enum order by joining POWER-typed pins against GND/VCC
+nets before trusting the mapping.
+
+---
+
+## Eval dual-track: seeded-defect benchmark + defects4KiCad mining — staged for interview prep
+
+**Trigger**: interview scheduled (not a submission blocker). Motivation: the
+current eval pack reports counts (437 findings, 0 failures), not rates — there
+is no recall/precision number to answer "how accurate is it", and the eval
+corpus is KiCad while the demo mainline is Allegro netlist/PST+BOM.
+
+**Search conclusion (2026-06-11, grok multi-query, cross-verified)**: no public
+"schematic + human-labeled defects" dataset exists — commercial AI schematic
+review tools (galvano.ai, Netlist.io, ThomsonLint, AllSpice) publicly state
+they rely on private design data. The gap is industry-wide, which makes the
+harness design itself the story.
+
+**Architecture — two tracks, one number**:
+
+```
+optimization signal (infinite, free)      holdout (small, real)
+Track A: seeded-defect mutation set   →   Track B: defects4KiCad pilot
+agent scores → tune rules → re-run        verify-only, never tuned against
+```
+
+Track A answers "what's the rate"; Track B answers "but did you just overfit
+your own mutations" — the classic critique of mutation oracles. Neither track
+alone survives that question.
+
+**Track A — seeded-defect benchmark (Allegro-native, ~3-5h)**: programmatically
+inject known defects into clean fixtures (`tests/fixtures/allegro/pst/`):
+drop footprint fields, strip cap rated-voltage suffixes, alter NC pin wiring,
+break BOM line matches — 3-5 cases per shipped rule. Ground truth by
+construction; zero labeling. Output one headline number:
+"N seeded defects, recall X/N, Y new false positives". Mutation-testing
+analogy is the interview term. Each future check (e.g., Capture pin-table
+checks above) ships with its own seeded cases.
+
+**Track B — defects4KiCad mining pilot (~3-4h timebox)**: mine git history of
+the 5 repos already in `eval/manifest.yaml` for commits touching `.kicad_sch`
+with fix-like messages — the commit message is a human-written defect
+description, the pre-fix tree is a defective schematic, free real gold. Search
+confirmed no prior art (no defects4j-style schematic mining exists publicly).
+Verify 10-20 cases by hand (minutes each — verification, not labeling). Scope
+caveat: filter for defect classes current rules cover (component/field-level:
+footprint, value, NC); net-topology defects (missing pull-up) need the queued
+schematic net parser (R005+) and become its motivation, not this pilot's scope.
+
+**Why KiCad is the only minable source (and why that's fine)**: code LLMs work
+because source is text with public git history; in EDA only KiCad satisfies
+both (.kicad_sch is S-expression text, large public repo base). Cadence
+formats are binary/proprietary with no public fix history — mining there is a
+dead end, full stop. But defect patterns are EDA-agnostic; carriers are
+EDA-specific. Mined KiCad defects replay through the kicad adapter into the IR
+and validate the shared rules layer — the same layer the Allegro path uses.
+Track A runs Allegro-native, so the mainline is covered where it matters.
+
+**Supplementary sources (optional, "one more month" answers)**:
+
+- KiCad source tree `qa/tests/eeschema/erc/` — ERC regression fixtures with
+  expected violations; narrow, engine-edge-case flavored; ~1h to harvest for
+  ERC-overlap rules.
+- PCB-Bench (ICLR 2026, verified live: github.com/digailab/PCB-Bench) —
+  ~3,700 expert QA on placement/routing/design rules + 174 complete OSHWHub
+  projects (mostly LCEDA format). QA-style, not defect labels: use the 174
+  projects as corpus expansion and the QA set as a knowledge-layer sanity
+  check, not as gold.
+- TI/ADI reference designs (OrCAD/Allegro files, presumed-correct) — negative
+  control corpus for false-positive measurement on the Cadence side; no fix
+  history, so no defect gold.
+- Community review threads (r/PrintedCircuitBoard, EEVblog) — confirmed never
+  scraped into a dataset; image-heavy. Use for rule discovery (recurring
+  human-flagged issues → checklist candidates → Sleep Consolidator), never as
+  eval instances.
+
+**Scope bound**: Track A = one injection script + one scoring report; Track B
+= 10-20 verified cases, manifest repos only, no new repos. No human gold-label
+set, no monitoring dashboard, no community scraping — those are "one more
+month" interview answers, not work items.
+
+---
+
+## Rules-layer re-audit conclusions — staged for interview prep
+
+**Trigger**: interview scheduled. Source: a 2026-06-11 re-audit of the rules
+layer against the original checklist source material and the schematic design
+spec it lives under (full audit is a private reference doc; only sanitized
+conclusions land here, abstract "checklist 第 N 条" references per the
+`sch_review.yaml` convention).
+
+**Conclusion 1 — narrative corrections (no code)**: R003 (NC pin, checklist
+第 9 条) was a manual check the source process *dropped for labor cost*, not
+for low value — "the checks humans gave up on are where automation pays most"
+is the corrected pitch. R001 (第 4 条) does not replace downstream part-管理
+gating; its value is the *timing* — an attention list at review time, before
+the downstream system runs. Both corrections go to `docs/faq.md` when touched.
+
+**Conclusion 2 — review work-product is evidence tables, not verdicts**: the
+source review method asks for output tables (GPIO/net list, link list, I2C
+mapping table, polarized-component list, cap voltage min/max table) far more
+often than pass/fail. Target product shape: the report should be able to emit
+a review-deliverable pack (checklist back-fill table + per-item evidence
+tables + feedback-list draft). Long-term shape, not a near-term slice; record
+in `docs/PLAN.md` as a DR when pursued.
+
+**Conclusion 3 — naming-policy check family (highest-leverage new code,
+~4-6h)**: net naming conventions are a human-maintained machine-readable
+layer — schematic conventions encode topology semantics (series elements,
+diff pairs, power rails, active-low) into net names. All checkable by regex
+on the Allegro netlist mainline with zero datasheet dependency:
+
+- charset/length policy (uppercase, no double underscore, max length)
+- diff-pair suffix pairing (`_DP`/`_DN` set difference → unlocks 第 14 条)
+- series-termination suffix (`_R`/`_C` after series R/C → 第 2 条 detectable
+  from net names alone)
+- power-rail pattern (`PXX...`) → power-domain recognition that feeds R002
+  stage 2 working_voltage *without* waiting for deeper net semantics
+- ground family recognition (GND/AGND/EGND) → strengthens `nets.py`
+
+Implementation: policy-as-data (YAML), repo default policy uses public
+industry conventions only; any site-specific policy is user-supplied config,
+never committed. Ships with its own seeded cases per the eval dual-track
+entry above (naming violations are the cheapest mutations to construct).
+
+**Conclusion 4 — asset-file drift (fix with conclusion 3, ~1h)**:
+`data/checklists/sch_review.yaml` still marks R005 planned/KiCad/slice 5, but
+`validation/nets.py` already ships the same semantics on the Allegro path.
+The yaml is the "rules are data" storefront — sync it (implementation mapping
+per rule) or it contradicts the code in front of an interviewer. Add the
+polarized-component inventory table (第 18 条, refdes-prefix + BOM class, pure
+table output, ~1h) as the cheapest proof of conclusion 2's table-first shape.
+
+**Scope bound**: no current-annotation semantics (第 12/21 条), no
+back-feed/anti-backflow topology patterns (第 13 条), no cross-connector link
+tracing (第 5/14 条 full form), no deliverable-pack product build. 第 3/19/20
+条 stay blocked behind the Capture pin-table export entry above.
+
+---
+
 ## Discharged improvements (keep for audit)
 
 > When an item moves out of this file, leave a one-line entry below noting where it landed.
