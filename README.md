@@ -6,13 +6,16 @@
 > review queues, evidence-backed findings, registry-verified refdes, and
 > deterministic validation.
 
-Hardwise is a two-week portfolio MVP for the **pre-layout schematic-review**
-node in hardware R&D. It does not claim that an LLM can independently judge a
-complete hardware design. It proves a narrower and more useful engineering loop:
+Pre-layout schematic review still runs on manual labor: cross-checking
+reference designators, digging through datasheets, and assembling evidence for
+every finding before a board goes to Layout. Hardwise targets that single
+node. It does not claim that an LLM can independently judge a complete
+hardware design. It proves a narrower and more useful engineering loop:
 import a public schematic project or schematic netlist+BOM, build a trusted
 component registry, run deterministic review checks, separate hard findings from
 manual/profile gaps, attach evidence tokens, and let the agent explain only
-tool-backed facts.
+tool-backed facts. Scope is bounded on purpose: a two-week MVP covering the
+pre-layout schematic-review node only.
 
 Architecture is inspired by [Wrench Board](https://github.com/Junkz3/wrench-board) (Anthropic *Build with Opus 4.7* hackathon, 2nd place, April 2026). Design ideas only, no code copied.
 
@@ -20,7 +23,7 @@ Built with AI assistance. All design decisions and final code are reviewed and o
 
 ---
 
-## Resume demo
+## 90-second demo
 
 If you only have 90 seconds, start with the Workbench demo. The local recording
 path is `serve-workbench --fake-ai`; the public GitHub Pages entry is the same

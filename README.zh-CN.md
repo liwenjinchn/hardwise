@@ -5,12 +5,13 @@
 > 面向公开硬件项目的 pre-Layout 原理图评审工作台：review queue、证据化
 > finding、registry-verified 位号和确定性验证。
 
-Hardwise 是一个两周完成的作品集 MVP，锚定硬件研发里的
-**pre-layout 原理图评审** 节点。它不声称大模型已经能独立判断完整硬件
-设计，而是证明一个更窄、更有用的工程闭环：导入公开原理图工程或
-schematic netlist+BOM，建立可信 component registry，运行确定性 review
-检查，把硬 finding 和 manual/profile gap 分开，给每条结论挂 evidence
-token，再让 Agent 只解释工具查到的事实。
+Layout 前的原理图评审至今仍靠人肉：对位号、翻规格书、给每条结论找证据。
+Hardwise 只锚定 **pre-layout 原理图评审** 这一个节点。它不声称大模型已经
+能独立判断完整硬件设计，而是证明一个更窄、更有用的工程闭环：导入公开
+原理图工程或 schematic netlist+BOM，建立可信 component registry，运行
+确定性 review 检查，把硬 finding 和 manual/profile gap 分开，给每条结论挂
+evidence token，再让 Agent 只解释工具查到的事实。范围刻意收窄：两周完成
+的 MVP，只覆盖 pre-layout 原理图评审节点。
 
 架构灵感来自 [Wrench Board](https://github.com/Junkz3/wrench-board)（Anthropic *Build with Opus 4.7* hackathon，2026 年 4 月第二名）。只借鉴设计思路，不复制代码。
 
@@ -18,7 +19,7 @@ token，再让 Agent 只解释工具查到的事实。
 
 ---
 
-## 简历快速入口
+## 90 秒 demo
 
 如果只有 90 秒，先看 Workbench demo。本地录屏主线是
 `serve-workbench --fake-ai`；公开 GitHub Pages 入口是同一套 SPA 外观烘焙成
