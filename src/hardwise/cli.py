@@ -903,6 +903,49 @@ def report_pin_profile(
     typer.echo(f"pin-profile: {output} ({len(profile.pins)} pins, part={profile.part_number})")
 
 
+@app.command(name="report-pin-table")
+def report_pin_table(
+    pin_table_path: Path = typer.Argument(
+        ...,
+        help="Capture pin-table CSV from scripts/capture_pin_table_export.tcl.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output markdown path (default: reports/<csv>-pin-table.md).",
+    ),
+) -> None:
+    """Run deterministic pin-table checks (R008 floating input, R009 unconnected power pin)."""
+    from hardwise.adapters.capture_pin_table import parse_pin_table
+    from hardwise.checklist.checks.r008_floating_input import check as r008_check
+    from hardwise.checklist.checks.r009_power_pin_unconnected import check as r009_check
+    from hardwise.report.pin_table_markdown import render as render_pin_table
+
+    try:
+        records = parse_pin_table(pin_table_path)
+    except Exception as e:
+        typer.echo(f"error: pin-table parse failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    findings = r008_check(records) + r009_check(records)
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{pin_table_path.stem}-pin-table.md"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    output.write_text(
+        render_pin_table(records, findings, source_path=pin_table_path),
+        encoding="utf-8",
+    )
+    r008_n = sum(1 for f in findings if f.rule_id == "R008")
+    r009_n = sum(1 for f in findings if f.rule_id == "R009")
+    typer.echo(f"pin-table: {output} ({len(records)} pins, R008={r008_n}, R009={r009_n})")
+
+
 @app.command(name="store-datasheet-profile")
 def store_datasheet_profile(
     profile_path: Path = typer.Argument(..., help="Path to a DatasheetProfile JSON file."),
