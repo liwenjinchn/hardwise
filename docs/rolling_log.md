@@ -225,6 +225,13 @@ at the sentence layer. Pursue only behind a new DR if an interview/demo needs it
 
 **What to add**: 只从公开、通用的 schematic net naming conventions 提炼候选规则，作为 candidate rules 待 **schematic-side** net parser 上线后才可执行。不要从公司内部或脱敏规范文件转写规则；PCB-side `pcb_nets` 不能作为 pre-Layout schematic-review evidence，因为评审节点还没有 `.kicad_pcb`。
 
+**Overlap note (2026-06-11)**: R006 的实质（charset / 双下划线 / 长度 / 差分配对）
+已在 Allegro 网表路径以 `validation/net_naming.py` 落地（policy-as-data，默认
+policy 即公开通用约定）。本节剩余的 KiCad 侧工作是：net parser 上线后把
+`NamingPolicy` 复用到 `.kicad_sch` 网名上，而不是重写一套规则；R006/R007 若
+登记进 yaml，应引用 net_naming 的实现而非新建 check。地网识别已在
+`pins.is_ground_net`。**不要重复实现。**
+
 **R006 — 通用 net 命名规则**（公开通用命名习惯候选）
 
 | 子项 | 规则 |
