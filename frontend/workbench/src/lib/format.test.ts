@@ -13,63 +13,7 @@ import {
   statusLabelFromRaw,
   taskKindLabel
 } from "./format";
-import type { EvidenceChainItem, EvidenceView, ReviewQueueItem } from "../types";
-
-function makeQueueItem(overrides: Partial<ReviewQueueItem> = {}): ReviewQueueItem {
-  return {
-    refdes: "U8",
-    value: "STM32F103",
-    part_number: "STM32F103C8T6",
-    manufacturer: "ST",
-    package: "LQFP48",
-    title: "MCU power pins",
-    subtitle: "subtitle",
-    status: "WARN",
-    status_label: "看证据",
-    status_group: "warn",
-    deterministic_status: "WARN",
-    deterministic_status_label: "看证据",
-    deterministic_status_group: "warn",
-    trust_tier: "l1",
-    issue_count: 1,
-    evidence_count: 2,
-    risk_hint_count: 1,
-    task_count: 1,
-    task_counts: { total: 1, error: 0, warn: 1, manual: 0, pass_count: 0 },
-    task_ids: ["T1"],
-    top_task_id: "T1",
-    profile_status: "ok",
-    profile_path: null,
-    document_status: "matched",
-    ...overrides
-  };
-}
-
-function makeEvidence(overrides: Partial<EvidenceView> = {}): EvidenceView {
-  return {
-    token: "EV-1",
-    source_class: "design_source",
-    audit_status: "ok",
-    local_source: null,
-    reason: "",
-    trust_tier: "l1",
-    label: "netlist",
-    ...overrides
-  };
-}
-
-function makeChainItem(overrides: Partial<EvidenceChainItem> = {}): EvidenceChainItem {
-  return {
-    kind: "component_check",
-    title: "title",
-    body: "body",
-    status: "WARN",
-    status_group: "warn",
-    trust_tier: "l1",
-    evidence: [],
-    ...overrides
-  };
-}
+import { makeChainItem, makeEvidence, makeQueueItem } from "../testing/fixtures";
 
 describe("statusGroup", () => {
   it("maps backend status strings onto the four UI groups", () => {
