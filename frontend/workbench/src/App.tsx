@@ -1208,7 +1208,7 @@ function StatusIcon({ group }: { group: StatusGroup }) {
   return <AlertTriangle size={15} />;
 }
 
-function attentionLabel(group: StatusGroup): string {
+export function attentionLabel(group: StatusGroup): string {
   const labels: Record<StatusGroup, string> = {
     error: "必须修",
     warn: "看证据",
@@ -1218,14 +1218,14 @@ function attentionLabel(group: StatusGroup): string {
   return labels[group];
 }
 
-function statusGroup(status: string): StatusGroup {
+export function statusGroup(status: string): StatusGroup {
   if (status === "ERROR") return "error";
   if (status === "WARN") return "warn";
   if (status === "PASS") return "pass";
   return "manual";
 }
 
-function pinStatusLabel(status: string): string {
+export function pinStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     ERROR: "必须修",
     WARN: "看证据",
@@ -1237,13 +1237,13 @@ function pinStatusLabel(status: string): string {
   return labels[status] ?? statusLabelFromRaw(status);
 }
 
-function statusLabelFromRaw(status: string): string {
+export function statusLabelFromRaw(status: string): string {
   return status
     .replaceAll("_", " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function profileStatusLabel(status: string): string {
+export function profileStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     ok: "已匹配",
     exact: "已匹配",
@@ -1255,7 +1255,7 @@ function profileStatusLabel(status: string): string {
   return labels[status] ?? statusLabelFromRaw(status || "unknown");
 }
 
-function documentStatusLabel(status: string): string {
+export function documentStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     matched: "已索引",
     loaded: "已索引",
@@ -1266,7 +1266,7 @@ function documentStatusLabel(status: string): string {
   return labels[status] ?? statusLabelFromRaw(status || "unknown");
 }
 
-function queueSubtitle(item: ReviewQueueItem): string {
+export function queueSubtitle(item: ReviewQueueItem): string {
   const identity = [
     item.part_number || item.value || "无 MPN",
     item.package
@@ -1282,7 +1282,7 @@ function countTaskEvidence(task: ReviewTask): number {
   return task.evidence_chain.reduce((count, item) => count + item.evidence.length, 0);
 }
 
-function sourceLabel(sourceClass: string): string {
+export function sourceLabel(sourceClass: string): string {
   const labels: Record<string, string> = {
     live_retrieved: "本轮检索",
     reviewed_profile: "已审档案",
@@ -1293,7 +1293,7 @@ function sourceLabel(sourceClass: string): string {
   return labels[sourceClass] ?? sourceClass;
 }
 
-function evidenceNodeKind(item: EvidenceChainItem): string {
+export function evidenceNodeKind(item: EvidenceChainItem): string {
   if (item.trust_tier === "l3" || item.kind.includes("external") || item.kind.includes("manual")) {
     return "manual";
   }
@@ -1322,13 +1322,13 @@ const SUMMARY_REPLACEMENTS: Array<[RegExp, string]> = [
   [/status=ok/g, "状态：通过"]
 ];
 
-function formatSummary(text: string): string {
+export function formatSummary(text: string): string {
   return SUMMARY_REPLACEMENTS.reduce((current, [pattern, replacement]) => {
     return current.replace(pattern, replacement);
   }, text);
 }
 
-function chainKindLabel(kind: string): string {
+export function chainKindLabel(kind: string): string {
   const labels: Record<string, string> = {
     component_check: "组件规则",
     pin_check: "引脚规则",
@@ -1342,7 +1342,7 @@ function chainKindLabel(kind: string): string {
   return labels[kind] ?? kind;
 }
 
-function taskKindLabel(kind: string): string {
+export function taskKindLabel(kind: string): string {
   const labels: Record<string, string> = {
     component_check: "组件检查",
     pin_check: "引脚检查",
