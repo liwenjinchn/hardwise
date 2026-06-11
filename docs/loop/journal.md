@@ -41,5 +41,16 @@
   TaskQueueColumn/DetailColumn/EvidenceColumn(Review 三栏)分批;每刀
   保持 ≤300 行/文件、全链绿
 
+- 2026-06-11 14:45 | 目标2第二刀:非 Review 视图整体迁出 src/views/
+  (nav.ts 承载 ViewId+NAV_ITEMS 防循环依赖;Header/ImportView+UploadSlot/
+  ParseView/CopilotPanel/FindingsView/ExportView 原样搬移);App.tsx
+  1121→619 行,清理无用 icon/api/type imports | commit 8a3c2bb(typecheck+
+  unit 21+E2E 5+pytest 598+ruff 全绿;static 按产物策略恢复 HEAD) |
+  下一步:最后一刀拆 Review 三栏——TaskQueueColumn+FILTERS、DetailColumn、
+  EvidenceColumn+RiskHintsPanel → src/views/review/,App.tsx 应落到
+  ≤300 行,验收标准2即自检达成;之后做期中盘点(各文件行数+四条验收
+  逐条核)再决定是否进目标3 polish
+
+
 
 
