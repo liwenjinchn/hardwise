@@ -409,7 +409,12 @@ the Tcl layer can't convert, so v3 switches pin_type / nc_marker to the
 Tcl-native static helpers `DboPortInst_sGetPinType` /
 `DboPortInst_sGetIsNoConnect`. Awaiting one more Windows run; after pin_type
 fills, sanity-check enum order by joining POWER-typed pins against GND/VCC
-nets before trusting the mapping.
+nets before trusting the mapping. v4/v5 (same day): v3 still empty → v4
+printed raw catch errors for the first 3 pins → SWIG error text named the
+class (`DboPortInst`) and the missing argument (16.6 DBO getters take a
+`DboState`). v5 passes `$lStatus` to `GetPinType` / `GetIsNoConnect`; full
+debugging story in `docs/learning_log.md` (2026-06-11 entry). Awaiting one
+more Windows run to confirm 12/12 columns, then the enum-order sanity check.
 
 ---
 
