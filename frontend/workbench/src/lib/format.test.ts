@@ -12,8 +12,8 @@ import {
   statusGroup,
   statusLabelFromRaw,
   taskKindLabel
-} from "./App";
-import type { EvidenceChainItem, EvidenceView, ReviewQueueItem } from "./types";
+} from "./format";
+import type { EvidenceChainItem, EvidenceView, ReviewQueueItem } from "../types";
 
 function makeQueueItem(overrides: Partial<ReviewQueueItem> = {}): ReviewQueueItem {
   return {
