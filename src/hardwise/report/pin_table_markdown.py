@@ -52,7 +52,8 @@ def render(
             "## Scope",
             "",
             "Deterministic pin-table checks only (R008 floating input, R009 "
-            "unconnected power pin). Input is the read-only Capture export from "
+            "unconnected power pin, R010 NC marker on a connected pin). Input "
+            "is the read-only Capture export from "
             "`scripts/capture_pin_table_export.tcl`; public/synthetic designs "
             "only. No netlist cross-check, no PCB geometry, no supplier/PLM "
             "scope.",

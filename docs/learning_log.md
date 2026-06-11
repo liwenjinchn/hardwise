@@ -4209,7 +4209,7 @@ hash change decide for you.
 
 The Capture pin-table path exposes facts that the netlist/BOM/profile validator
 cannot see: pin electrical type, explicit NC marker, and schematic page
-location. Feeding R008/R009 into the workbench looked tempting as "more
+location. Feeding pin-table checks into the workbench looked tempting as "more
 validation", but adding those findings to `ValidationReport` would silently
 change the meaning of the PASS/WARN/ERROR summary.
 
@@ -4223,7 +4223,7 @@ the validation denominator and make historical workbench counts hard to compare.
 
 **Fix**
 
-`build_workbench_context(pin_table=...)` now parses the CSV, runs R008/R009,
+`build_workbench_context(pin_table=...)` now parses the CSV, runs R008/R009/R010,
 filters findings through `design.refdes_set`, and stores accepted/rejected
 counts on `WorkbenchContext`. `view_model.py` maps accepted rows to
 `pin_table_check` review tasks with `pintable:` evidence and L1 trust. The
@@ -4235,3 +4235,32 @@ gets extra actionable tasks.
 When a new evidence source has a different contract, surface it at the review
 task layer first. Keep the existing scorecard stable until the denominator and
 truth model are explicitly redesigned.
+
+## 2026-06-12 — NC-marker conflicts prove contradiction, not direction
+
+**Symptom**
+
+After R008/R009 landed in the workbench, the next pin-table follow-on was
+obvious: a pin can be both connected to a net and marked NC in the Capture
+export. Treating that as a hard ERROR would overstate what the CSV proves,
+because either the marker may be stale or the wire may be wrong.
+
+**Root cause**
+
+Pin-table rows give strong local evidence for the contradiction (`net != ""`
+and `nc_marker == 1`), but no datasheet/profile or design-intent evidence that
+chooses the correct repair. This differs from R008/R009 unmarked floating input
+or unconnected power, where the row itself is enough for a likely issue.
+
+**Fix**
+
+R010 emits a standard `Finding` with `severity=medium` and
+`decision=reviewer_to_confirm`. `report-pin-table` includes it in the rule
+summary, and workbench maps it to an L1 WARN task using the existing
+pin-table evidence chain.
+
+**Takeaway**
+
+For deterministic checks, separate "the source facts are contradictory" from
+"the board is electrically wrong". The former can be L1 evidence while the
+recommended fix still belongs to the reviewer.

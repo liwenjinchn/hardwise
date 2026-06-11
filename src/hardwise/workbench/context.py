@@ -215,9 +215,10 @@ def _pin_table_findings(
     from hardwise.adapters.capture_pin_table import parse_pin_table
     from hardwise.checklist.checks.r008_floating_input import check as r008_check
     from hardwise.checklist.checks.r009_power_pin_unconnected import check as r009_check
+    from hardwise.checklist.checks.r010_nc_marker_conflict import check as r010_check
 
     records = parse_pin_table(pin_table)
-    findings = r008_check(records) + r009_check(records)
+    findings = r008_check(records) + r009_check(records) + r010_check(records)
     accepted = [item for item in findings if item.refdes in design_refdes]
     return accepted, len(findings) - len(accepted)
 

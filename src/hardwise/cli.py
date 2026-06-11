@@ -988,10 +988,11 @@ def report_pin_table(
         help="Output markdown path (default: reports/<csv>-pin-table.md).",
     ),
 ) -> None:
-    """Run deterministic pin-table checks (R008 floating input, R009 unconnected power pin)."""
+    """Run deterministic pin-table checks (R008/R009/R010)."""
     from hardwise.adapters.capture_pin_table import parse_pin_table
     from hardwise.checklist.checks.r008_floating_input import check as r008_check
     from hardwise.checklist.checks.r009_power_pin_unconnected import check as r009_check
+    from hardwise.checklist.checks.r010_nc_marker_conflict import check as r010_check
     from hardwise.report.pin_table_markdown import render as render_pin_table
 
     try:
@@ -1000,7 +1001,7 @@ def report_pin_table(
         typer.echo(f"error: pin-table parse failed: {type(e).__name__}: {e}", err=True)
         raise typer.Exit(1) from e
 
-    findings = r008_check(records) + r009_check(records)
+    findings = r008_check(records) + r009_check(records) + r010_check(records)
 
     if output is None:
         reports_dir = Path("reports")
@@ -1015,7 +1016,11 @@ def report_pin_table(
     )
     r008_n = sum(1 for f in findings if f.rule_id == "R008")
     r009_n = sum(1 for f in findings if f.rule_id == "R009")
-    typer.echo(f"pin-table: {output} ({len(records)} pins, R008={r008_n}, R009={r009_n})")
+    r010_n = sum(1 for f in findings if f.rule_id == "R010")
+    typer.echo(
+        f"pin-table: {output} ({len(records)} pins, "
+        f"R008={r008_n}, R009={r009_n}, R010={r010_n})"
+    )
 
 
 @app.command(name="store-datasheet-profile")

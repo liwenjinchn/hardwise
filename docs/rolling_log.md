@@ -277,17 +277,20 @@ schematic-side 输入。
 
 The core workbench intake is shipped: `design-validator-ui --pin-table`,
 `serve-workbench --pin-table`, and `POST /api/workbench/import` accept an
-optional Capture pin-table CSV; `workbench/context.py` runs R008/R009, rejects
+optional Capture pin-table CSV; `workbench/context.py` runs R008/R009/R010, rejects
 unknown-refdes findings, and `workbench/view_model.py` surfaces accepted rows
 as L1 `pin_table_check` review tasks. These tasks do not change
 `ValidationReport` PASS/WARN/ERROR totals.
 
+R010 nc-conflict is now shipped: an NC-marked but wired pin becomes a
+medium-severity, reviewer-to-confirm L1 task, because the pin-table row proves
+contradiction but not whether the NC marker or the wire is wrong.
+
 Remaining candidate follow-on checks from the same data, in value order:
-nc-conflict (NC-marked but wired — strengthens R003; 30 candidates on the
-validated real board), off-page-orphan (off-page name on exactly one page), and
-net-naming checks (the R006/R007 family can run on the pin-table `net` column).
-Hard bounds: same `Finding` shape, no new validation truth without a documented
-denominator change, no PCB/PLM scope.
+off-page-orphan (off-page name on exactly one page), then net-naming checks
+(the R006/R007 family can run on the pin-table `net` column). Hard bounds:
+same `Finding` shape, no new validation truth without a documented denominator
+change, no PCB/PLM scope.
 
 ---
 

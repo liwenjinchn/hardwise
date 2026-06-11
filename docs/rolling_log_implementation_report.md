@@ -19,8 +19,8 @@ New implementation shipped in this pass:
 - Tests for schematic named-net parsing and CLI naming-policy warnings
 - Optional Capture pin-table workbench intake via `--pin-table` and
   `pin_table_csv` upload
-- R008/R009 pin-table findings mapped to registry-backed L1 review tasks without
-  changing component validation PASS/WARN/ERROR totals
+- R008/R009/R010 pin-table findings mapped to registry-backed L1 review tasks
+  without changing component validation PASS/WARN/ERROR totals
 - Documentation updates in `docs/architecture.md`, `docs/faq.md`,
   `docs/learning_log.md`, and `docs/rolling_log.md`
 
@@ -38,7 +38,8 @@ New implementation shipped in this pass:
 | V2.8-V3.8 final validator roadmap | Implemented | CLI smoke covered report modes, document match, pin profiles, validation reports, single/batch UI, manifest targets, candidates, XL1509, EG2132 |
 | KiCad R006 named-net bridge | Implemented in this pass | `inspect-kicad --schematic-net --check-net-names` on `.kicad_sch` names |
 | KiCad R005 dangling/fanout topology | Not implemented | Still requires full schematic wire + endpoint topology parser; rolling log now keeps only this remaining staged work |
-| Pin-table workbench intake | Implemented in this pass | Optional CLI/server/import pin-table path, R008/R009 L1 review tasks, unknown-refdes rejection tests |
+| Pin-table workbench intake | Implemented in this pass | Optional CLI/server/import pin-table path, R008/R009/R010 L1 review tasks, unknown-refdes rejection tests |
+| Pin-table nc-conflict follow-on | Implemented in this pass | R010 standalone check, `report-pin-table` summary, workbench WARN task coverage |
 
 ## Verification Workflow
 
@@ -110,5 +111,5 @@ Representative CLI smoke checks:
   the existing DR-014 note. Current enforcement is trace-level plus Refdes Guard.
 - Hosted shell behavior has no implementation or verification in this local-only
   workflow.
-- Pin-table intake currently covers only R008/R009. NC-conflict, off-page-orphan,
-  and pin-table-sourced net-naming checks remain staged follow-ons.
+- Pin-table intake currently covers R008/R009/R010. Off-page-orphan and
+  pin-table-sourced net-naming checks remain staged follow-ons.

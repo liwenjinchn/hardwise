@@ -35,6 +35,7 @@ def _write_pin_table(path: Path) -> None:
                     "inst_x,inst_y,nc_marker,off_page"
                 ),
                 "U8,STM32G030C8T6,LQFP48,11,BOOT0,INPUT(3),,PAGE2,100,200,0,",
+                "U8,STM32G030C8T6,LQFP48,12,PA0,INPUT(3),GPIO_BOOT,PAGE2,120,220,1,",
                 "U3,EG2132,SOP8,6,VCC,POWER(7),,PAGE3,300,400,0,",
                 "U999,UNKNOWN,SOP8,1,IN,INPUT(3),,PAGE9,900,900,0,",
             ]
@@ -276,7 +277,7 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
     )
 
     try:
-        assert len(context.pin_table_findings) == 2
+        assert len(context.pin_table_findings) == 3
         assert context.rejected_pin_table_findings == 1
 
         client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
@@ -297,10 +298,15 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
         ]
         assert {(task["refdes"], task["check"]) for task in pin_tasks} == {
             ("U8", "R008"),
+            ("U8", "R010"),
             ("U3", "R009"),
         }
         assert {task["trust_tier"] for task in pin_tasks} == {"l1"}
-        assert all(task["status"] == "ERROR" for task in pin_tasks)
+        assert {task["check"]: task["status"] for task in pin_tasks} == {
+            "R008": "ERROR",
+            "R009": "ERROR",
+            "R010": "WARN",
+        }
         assert all(
             any(item["kind"] == "pin_table_row" for item in task["evidence_chain"])
             for task in pin_tasks
@@ -750,6 +756,7 @@ def test_workbench_import_accepts_uploaded_pin_table(tmp_path: Path) -> None:
         assert state["capabilities"]["pin_table_enabled"] is True
         assert {(task["refdes"], task["check"]) for task in state["review_tasks"]} >= {
             ("U8", "R008"),
+            ("U8", "R010"),
             ("U3", "R009"),
         }
     finally:
