@@ -28,10 +28,19 @@
 #   R003: EDA pin × datasheet 语义查询（跨库语义证据）
 #   R004: nets × datasheet 跨设备语义聚合（多设备对比）
 #   R005: nets × DRC 拓扑查询（图结构分析）
+#
+# 边界备忘（防止本文件与代码漂移）：本文件只登记 KiCad 检查清单路径的规则。
+# Allegro 工作台路径的 net 级检查族（validation/nets.py 单端/无地、
+# validation/net_naming.py 命名策略）不在本文件登记 —— 它们走
+# project_index 的 net_checks 管线，不走 checklist runner。两条路径
+# 语义相同的规则（如 R005 与 net_single_endpoint）在各自条目里互相引用。
 
 - id: R001
   title: 新建器件候选识别（footprint 字段缺失）
   source: 原理图 checklist 第 4 条（新物料 symbol/封装检查）— 利用 footprint 字段缺失作为新建器件的弱信号
+  # 定位说明：下游物料管理流程的新物料检测发生在评审之后；本规则的价值是
+  # 评审时刻的时序差 —— 评审现场需要的是"当下重点关注哪些器件"的清单，
+  # 不是替代评审后的物料 gating。
   status: active
   severity: info
   required_evidence:
@@ -79,6 +88,9 @@
 - id: R003
   title: NC pin 处理是否符合 datasheet 规格
   source: 原理图 checklist 第 9 条
+  # 定位说明：逐 pin 对照规格书核对 NC 处理是人工评审里最贵的体力活之一，
+  # 实践中常被整体放弃。人工因成本放弃的检查，恰是自动化价值最高的 ——
+  # 这是本规则入选 5 条精选的核心理由。
   status: active            # Slice 3 翻活；当前实现仅做 EDA-only NC pin 列出
   severity: high
   required_evidence:
@@ -132,6 +144,11 @@
 - id: R005
   title: 单端 / 空网络
   source: 原理图 checklist 第 10 条
+  # 实现状态（2026-06-11 重审同步）：同语义已在 Allegro 工作台路径落地 ——
+  # validation/nets.py 的 net_single_endpoint / design_missing_ground_net
+  # （WARN 级，netlist 证据 token，tests/validation/test_nets.py 锁行为）。
+  # 本条目维持 planned 仅指 KiCad 检查清单路径：它依赖的原理图侧 net parser
+  # （wire + label + power symbol 端点解析）尚未实现，DRC.warnings 取证同理。
   status: planned
   severity: medium
   required_evidence:
@@ -140,5 +157,8 @@
   check_function: hardwise.checklist.checks.r005_dangling_nets.check
   rule: |
     对每条 net：fanout == 0 → finding(空网络，severity=medium)；
-    fanout == 1 → finding(单端网络，severity=low，需评审者确认是否 intentional)
+    fanout == 1 → finding(单端网络，severity=low，需评审者确认是否 intentional)。
+    Allegro 路径的已落地版本见 validation/nets.py（fanout==1 报 WARN；
+    fanout==0 在网表中不会出现 —— 没有端点的网不进 netlist，故该分支
+    只在 KiCad 原理图侧有意义）。
   slice: 5

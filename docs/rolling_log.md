@@ -509,49 +509,25 @@ month" interview answers, not work items.
 layer against the original checklist source material and the schematic design
 spec it lives under (full audit is a private reference doc; only sanitized
 conclusions land here, abstract "checklist 第 N 条" references per the
-`sch_review.yaml` convention).
+`sch_review.yaml` convention). The narrative, naming-family, and asset-sync
+conclusions shipped 2026-06-11 — see the discharged list. What remains staged:
 
-**Conclusion 1 — narrative corrections (no code)**: R003 (NC pin, checklist
-第 9 条) was a manual check the source process *dropped for labor cost*, not
-for low value — "the checks humans gave up on are where automation pays most"
-is the corrected pitch. R001 (第 4 条) does not replace downstream part-管理
-gating; its value is the *timing* — an attention list at review time, before
-the downstream system runs. Both corrections go to `docs/faq.md` when touched.
+**Review work-product is evidence tables, not verdicts**: the source review
+method asks for output tables (GPIO/net list, link list, I2C mapping table,
+polarized-component list, cap voltage min/max table) far more often than
+pass/fail. Target product shape: the report should be able to emit a
+review-deliverable pack (checklist back-fill table + per-item evidence tables
++ feedback-list draft). Long-term shape, not a near-term slice; record in
+`docs/PLAN.md` as a DR when pursued.
 
-**Conclusion 2 — review work-product is evidence tables, not verdicts**: the
-source review method asks for output tables (GPIO/net list, link list, I2C
-mapping table, polarized-component list, cap voltage min/max table) far more
-often than pass/fail. Target product shape: the report should be able to emit
-a review-deliverable pack (checklist back-fill table + per-item evidence
-tables + feedback-list draft). Long-term shape, not a near-term slice; record
-in `docs/PLAN.md` as a DR when pursued.
+**Polarized-component inventory table (第 18 条, ~1h)**: refdes-prefix + BOM
+class, pure table output — the cheapest proof of the table-first shape above.
 
-**Conclusion 3 — naming-policy check family (highest-leverage new code,
-~4-6h)**: net naming conventions are a human-maintained machine-readable
-layer — schematic conventions encode topology semantics (series elements,
-diff pairs, power rails, active-low) into net names. All checkable by regex
-on the Allegro netlist mainline with zero datasheet dependency:
-
-- charset/length policy (uppercase, no double underscore, max length)
-- diff-pair suffix pairing (`_DP`/`_DN` set difference → unlocks 第 14 条)
-- series-termination suffix (`_R`/`_C` after series R/C → 第 2 条 detectable
-  from net names alone)
-- power-rail pattern (`PXX...`) → power-domain recognition that feeds R002
-  stage 2 working_voltage *without* waiting for deeper net semantics
-- ground family recognition (GND/AGND/EGND) → strengthens `nets.py`
-
-Implementation: policy-as-data (YAML), repo default policy uses public
-industry conventions only; any site-specific policy is user-supplied config,
-never committed. Ships with its own seeded cases per the eval dual-track
-entry above (naming violations are the cheapest mutations to construct).
-
-**Conclusion 4 — asset-file drift (fix with conclusion 3, ~1h)**:
-`data/checklists/sch_review.yaml` still marks R005 planned/KiCad/slice 5, but
-`validation/nets.py` already ships the same semantics on the Allegro path.
-The yaml is the "rules are data" storefront — sync it (implementation mapping
-per rule) or it contradicts the code in front of an interviewer. Add the
-polarized-component inventory table (第 18 条, refdes-prefix + BOM class, pure
-table output, ~1h) as the cheapest proof of conclusion 2's table-first shape.
+**Series-termination naming check (deferred remainder of the naming family)**:
+the `_R`/`_C` suffix convention makes series elements *recognizable* from net
+names, but checking 第 2 条 ("series resistor reserved on low-speed buses")
+honestly requires correlating the name with actual series topology — a
+name-only version would guess. Stays behind net-topology correlation work.
 
 **Scope bound**: no current-annotation semantics (第 12/21 条), no
 back-feed/anti-backflow topology patterns (第 13 条), no cross-connector link
@@ -563,6 +539,12 @@ tracing (第 5/14 条 full form), no deliverable-pack product build. 第 3/19/20
 ## Discharged improvements (keep for audit)
 
 > When an item moves out of this file, leave a one-line entry below noting where it landed.
+
+- 2026-06-11 — Rules-layer re-audit conclusions 1/3/4 shipped on `reaudit/rules-layer`:
+  - **Narrative corrections** landed in `docs/faq.md` (Q1 check-selection principle, Q6 naming-rules dependency fix) and as rationale comments on R001/R003 in `data/checklists/sch_review.yaml`.
+  - **Naming-policy check family** landed as `validation/net_naming.py` (charset/double-underscore/uppercase-opt-in, max-length, `_DP`/`_DN` pair check incl. trailing index; policy-as-data via `NamingPolicy` + `load_naming_policy`, site YAML never committed; `_P`/`_N` pairing deliberately off-default — collides with active-low). Wired into `project_index.net_checks`; 10 seeded tests in `tests/validation/test_net_naming.py`; public fixtures naming-clean → zero new findings, noise gate held.
+  - **Honest corrections found while implementing**: power-rail and ground recognition already shipped in `pins.voltage_for_net` / `pins.is_ground_net` (not rebuilt); the series-termination `_R`/`_C` check was *not* shipped — name-only would guess, it stays staged above behind topology correlation.
+  - **Asset sync** landed in `sch_review.yaml`: R005 entry now records the shipped Allegro implementation (`validation/nets.py`) and scopes `planned` to the KiCad checklist path; new boundary memo documents that Allegro net-level families are registered in code, not in this yaml.
 
 - 2026-05-13 — "first tool registered in `agent/tools.py`" trigger landed → `CLAUDE.md` gained a "Tool manifest" section (between Models and Run/test/lint); 4 tools shipped (`list_components` / `get_component` / `get_nc_pins` / `search_datasheet`) with the `closest_matches` discriminated-union pattern replacing the original `get_net / check_bom / lookup_drc` placeholder shape. Names drifted as predicted; manifest reflects the actual Slice 3 store surface.
 - 2026-05-14 — Slice 5 task 3 landed as a **scope correction**: the implemented net reader is PCB-side diagnostic infrastructure, not the schematic net parser required for pre-Layout review.
