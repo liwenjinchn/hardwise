@@ -196,6 +196,19 @@ class CheckView(BaseModel):
     evidence: list[EvidenceView] = Field(default_factory=list)
 
 
+class NetCheckView(BaseModel):
+    """Design-level net check shown in the project summary area."""
+
+    net_name: str
+    check: str
+    status: str
+    status_label: str
+    status_group: StatusGroup
+    summary: str
+    nodes: list[str] = Field(default_factory=list)
+    evidence: list[EvidenceView] = Field(default_factory=list)
+
+
 class EvidenceChainItem(BaseModel):
     """A reader-facing chain-of-custody card."""
 
@@ -298,6 +311,7 @@ class WorkbenchState(BaseModel):
     queue: list[ReviewQueueItem]
     review_tasks: list[ReviewTask]
     task_counts: ReviewTaskCounts
+    net_checks: list[NetCheckView]
     risk_hints: RiskHintsSummary
     risk_hint_details: RiskHintsView
 
@@ -442,6 +456,7 @@ def build_workbench_state(
         queue=queue,
         review_tasks=review_tasks,
         task_counts=_review_task_counts(review_tasks),
+        net_checks=_net_check_views(context),
         risk_hints=build_risk_hints_summary(context.risk_hints),
         risk_hint_details=build_risk_hints_view(context.risk_hints),
     )
@@ -966,6 +981,24 @@ def _pin_chain_item(pin: PinValidation) -> EvidenceChainItem:
         trust_tier="l1",
         evidence=_evidence_views(pin.evidence, "l1"),
     )
+
+
+def _net_check_views(context: WorkbenchContext) -> list[NetCheckView]:
+    """Project net-level deterministic checks into SPA view models."""
+
+    return [
+        NetCheckView(
+            net_name=net_check.net_name,
+            check=net_check.check,
+            status=net_check.status,
+            status_label=status_label(net_check.status),
+            status_group=_status_group(net_check.status),
+            summary=validation_summary_label(net_check.summary),
+            nodes=list(net_check.nodes),
+            evidence=_evidence_views(net_check.evidence, "l1"),
+        )
+        for net_check in context.index.net_checks
+    ]
 
 
 def _risk_hint_view(hint: RiskHint) -> RiskHintView:
