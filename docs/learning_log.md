@@ -4027,3 +4027,48 @@ legacy static renderer for compatibility.
 When the product UI moves to SPA, public offline demos should reuse the same
 shell and data contract. Otherwise the demo artifact becomes a stale second UI
 that drifts from the real workbench.
+
+---
+
+## 2026-06-11 · Capture DBO getters take a DboState argument — one error message beats four rounds of guessing
+
+**Symptom**
+
+`scripts/capture_pin_table_export.tcl` v1-v4 exported 10/12 columns from a real
+81-page / 15879-pin Capture 16.6 design, but `pin_type` and `nc_marker` came
+back empty in every run, while `GetPinNumber` / `GetPinName` / `GetNet` on the
+same pin objects worked fine. Three rounds of accessor-name guessing
+(`GetElectricalType` → `GetPinType` → `DboPortInst_sGetPinType`) all failed,
+including names confirmed to exist by `info commands` introspection.
+
+**Root cause**
+
+Every catch-guarded call swallowed the real error. When v4 finally printed the
+raw catch text, the answer was in one line:
+
+```
+Wrong number of arguments :DboPortInst_GetPinType self status  argument 2
+```
+
+16.6 DBO getters take a `DboState` argument: `$lPin GetPinType $lStatus`. The
+pin objects were `DboPortInst` all along (the error text names the dispatched
+class). `GetPinNumber` "worked" in v1 only by coincidence — the CString output
+container happened to fill the required argument slot.
+
+HW analogy: like probing a rail with the scope ground clip off — every reading
+is garbage, but consistently garbage, so the readings themselves never tell you
+the probe is the problem until you check the setup instead of the signal.
+
+**Fix**
+
+v5 passes `$lStatus` to `GetPinType` / `GetIsNoConnect` (fallback: defining
+symbol pin via `GetDefiningPin $lStatus` → `DboSymbolPin_sGetPinType`). The v4
+diagnostic pattern is kept as a 3-pin one-line sanity print.
+
+**Takeaway**
+
+`catch {...}` without capturing the message converts diagnosable errors into
+silent empty columns. When an exotic API rejects calls, stop iterating guesses
+and print the raw error once — SWIG error texts name the real class and the
+expected signature. Enumerate (`info commands`), then interrogate (print the
+error), then fix; guessing is the most expensive of the three.
