@@ -7,7 +7,9 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "build": "tsc --noEmit && vite build"
+    "build": "tsc --noEmit && vite build",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:only": "playwright test"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.0",
@@ -17,6 +19,7 @@
     "vite": "^7.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.0"
