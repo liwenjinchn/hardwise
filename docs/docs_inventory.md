@@ -16,6 +16,7 @@ Use this order for the current public narrative:
 6. `docs/demo.md` or `docs/demo.html`
 7. `docs/evidence_chain_audit.html`
 8. `docs/closeout_pressure_summary.html`
+9. `docs/faq.md` or `docs/faq.html`
 
 The pressure summary is fixture/aggregate evidence for stress testing the
 intake and validator layers. It is not the primary demo path.
@@ -46,7 +47,6 @@ entry pages.
 | `historical_record` | Useful history, but not the current entry path or current numbers. |
 | `staged_plan` | Planning/spec material kept for traceability, not a public claim. |
 | `ai_rules` | Agent operating contract or overlay; not public product narrative. |
-| `interview_private` | Recruiting, interview, or social draft material; verify facts against the canonical block before quoting. |
 | `asset` | Static media used by current pages. |
 
 ## Root Documents
@@ -73,6 +73,8 @@ entry pages.
 | `docs/demo_recording_script.md` | `public_entry` | Canonical 90-second script: project summary -> Must Review -> U12 -> Copilot trace -> U999 -> L78. |
 | `docs/docs_inventory.html` | `public_entry` | Rendered GitHub Pages reading map. |
 | `docs/docs_inventory.md` | `public_entry` | This map of current, reference, historical, and staged docs. |
+| `docs/faq.md` | `public_entry` | Chinese public technical FAQ: six recurring design-choice questions with reproducible numbers. |
+| `docs/faq.html` | `public_entry` | Rendered GitHub Pages view of the technical FAQ. |
 | `docs/evidence_chain_audit.html` | `current_reference` | Rendered GitHub Pages view of the evidence boundary. |
 | `docs/evidence_chain_audit.md` | `current_reference` | Boundary between L78 live retrieval and reviewed profile tokens. |
 | `docs/closeout_pressure_summary.html` | `current_reference` | Rendered GitHub Pages view of the public/synthetic fixture pressure-test summary. |
@@ -83,30 +85,24 @@ entry pages.
 | `docs/windows.md` | `current_reference` | Windows/PowerShell setup notes and CI boundary. |
 | `docs/PLAN.md` | `historical_record` | Long-term roadmap and decision records; not the current sprint plan or public fact source. |
 | `docs/PLAN.html` | `historical_record` | Reading view of `docs/PLAN.md`; source of truth remains Markdown. |
-| `docs/interview_qa.md` | `interview_private` | Long-form evidence bank for interviews; check current facts before quoting. |
 | `docs/learning_log.md` | `historical_record` | Debugging journal and task-specific lessons; not a current product claim. |
 | `docs/rolling_log.md` | `staged_plan` | Staged future improvements and deferred work; candidate ideas are not active scope. |
 | `docs/workbench_spa_handoff.md` | `handoff` | Continuation guide for the React/Vite workbench visual alignment and feature triage. |
-| `docs/documentation_cleanup_handoff.md` | `handoff` | Continuation guide for AI-first documentation cleanup and context routing. |
-| `docs/weekend_closeout_plan.md` | `historical_record` | Completed closeout checklist; keep for traceability, not current instructions. |
-| `docs/jd_alignment.md` | `interview_private` | Role-alignment support material; keep secondary to public demo docs. |
-| `docs/jd_alignment.html` | `interview_private` | HTML reading view of JD alignment. |
-| `docs/interview_narrative.md` | `interview_private` | Interview script; useful, but current facts live in README/demo/Q&A. |
-| `docs/interview_narrative.html` | `interview_private` | HTML reading view of interview script. |
-| `docs/hardwise_evolution_narrative.md` | `interview_private` | Personal evolution narrative for interviews and posts; verify numbers before reuse. |
-| `docs/hardwise_social_drafts.md` | `interview_private` | Social/posting drafts; not a source of product truth. |
-| `docs/midpoint_review.md` | `historical_record` | Midpoint memo; not current final narrative. |
-| `docs/midpoint_review.html` | `historical_record` | HTML reading view of midpoint memo. |
-| `docs/hardware-demo-review-queue.html` | `historical_record` | vNext/product exploration; do not promote over `hardware-demo.html`. |
-| `docs/validator_coverage_plan.md` | `historical_record` | Earlier coverage plan; use `closeout_pressure_summary.md` for current numbers. |
-| `docs/superpowers/plans/2026-05-25-hardwise-v2-1-ir-foundation.md` | `staged_plan` | Historical Superpowers plan. |
-| `docs/superpowers/plans/2026-05-26-hardwise-v2-5-allegro-netlist-adapter.md` | `staged_plan` | Historical Superpowers plan. |
-| `docs/superpowers/specs/2026-05-24-hardwise-v2-design.md` | `staged_plan` | Historical Superpowers spec. |
 | `docs/assets/hardwise-product-card.png` | `asset` | Product/demo image asset. |
 | `docs/assets/hardwise-product-intro-screenshot.png` | `asset` | Product intro screenshot asset. |
 
 ## Cleanup Decision
 
-No docs are deleted in this closeout slice. The safer handoff is to make the
-current entry path explicit, keep historical files labeled, and avoid rewriting
-older artifacts that still explain how the project got here.
+The 2026-06 docs cleanup removed non-public material from the repository
+instead of labeling it:
+
+- Interview, recruiting, and social-draft documents moved to the local
+  `docs/submission/` directory, which is gitignored and never published.
+- Internal working documents (completed checklists, superseded plans, and
+  handoffs whose work shipped) were deleted; their history stays in git.
+- The former interview Q&A was rewritten as the public technical FAQ at
+  `docs/faq.md`.
+
+Anything still listed above is either part of the public entry path, an
+accurate supporting reference, or labeled history that explains how the
+project got here.

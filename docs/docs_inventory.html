@@ -23,7 +23,8 @@
       <a href="./demo.html"><b>5. Technical demo</b><span class="muted">workbench 主线 + KiCad 附录</span></a>
       <a href="./evidence_chain_audit.html"><b>6. Evidence audit</b><span class="muted">L78 retrieval 边界</span></a>
       <a href="./closeout_pressure_summary.html"><b>7. Pressure summary</b><span class="muted">fixture aggregate evidence</span></a>
-      <a href="./index.html"><b>8. Reading index</b><span class="muted">全部 HTML 入口</span></a>
+      <a href="./faq.html"><b>8. Technical FAQ</b><span class="muted">6 个设计取舍问题</span></a>
+      <a href="./index.html"><b>9. Reading index</b><span class="muted">全部 HTML 入口</span></a>
     </div>
 
     <h2>Canonical Current Facts</h2>
@@ -46,7 +47,6 @@
       <tr><td class="tag">historical_record</td><td>Useful history, but not the current entry path or current numbers.</td></tr>
       <tr><td class="tag">staged_plan</td><td>Planning/spec material kept for traceability, not a public claim.</td></tr>
       <tr><td class="tag">ai_rules</td><td>Agent operating contract or overlay; not public product narrative.</td></tr>
-      <tr><td class="tag">interview_private</td><td>Recruiting, interview, or social draft material; verify facts against the canonical block before quoting.</td></tr>
       <tr><td class="tag">asset</td><td>Static media used by current pages.</td></tr>
     </table>
 
@@ -70,6 +70,7 @@
       <tr><td><a href="./evidence_chain_audit.html">docs/evidence_chain_audit.html</a></td><td class="tag">current_reference</td><td>Evidence boundary summary.</td></tr>
       <tr><td><a href="./closeout_pressure_summary.html">docs/closeout_pressure_summary.html</a></td><td class="tag">current_reference</td><td>Public/synthetic fixture pressure-test aggregate summary.</td></tr>
       <tr><td><a href="./demo_recording_script.html">docs/demo_recording_script.html</a></td><td class="tag">public_entry</td><td>Canonical 90-second script: project summary -> Must Review -> U12 -> Copilot trace -> U999 -> L78.</td></tr>
+      <tr><td><a href="./faq.html">docs/faq.html</a></td><td class="tag">public_entry</td><td>Chinese public technical FAQ: six recurring design-choice questions with reproducible numbers.</td></tr>
       <tr><td><a href="./docs_inventory.html">docs/docs_inventory.html</a></td><td class="tag">public_entry</td><td>This public reading map.</td></tr>
     </table>
 
@@ -77,17 +78,6 @@
     <table>
       <tr><th>File</th><th>Status</th><th>Use</th></tr>
       <tr><td><a href="./workbench_spa_handoff.md">docs/workbench_spa_handoff.md</a></td><td class="tag">handoff</td><td>Continuation guide for the React/Vite workbench visual alignment and feature triage.</td></tr>
-      <tr><td><a href="./documentation_cleanup_handoff.md">docs/documentation_cleanup_handoff.md</a></td><td class="tag">handoff</td><td>Continuation guide for AI-first documentation cleanup and context routing.</td></tr>
-    </table>
-
-    <h2>Interview And Draft Material</h2>
-    <table>
-      <tr><th>File</th><th>Status</th><th>Use</th></tr>
-      <tr><td><code>docs/interview_qa.md</code></td><td class="tag">interview_private</td><td>Long-form interview evidence bank; check current facts before quoting.</td></tr>
-      <tr><td><code>docs/hardwise_evolution_narrative.md</code></td><td class="tag">interview_private</td><td>Personal evolution narrative for interviews and posts.</td></tr>
-      <tr><td><code>docs/hardwise_social_drafts.md</code></td><td class="tag">interview_private</td><td>Social/posting drafts; not a source of product truth.</td></tr>
-      <tr><td><code>docs/jd_alignment.md</code></td><td class="tag">interview_private</td><td>Role-alignment support material.</td></tr>
-      <tr><td><code>docs/interview_narrative.md</code></td><td class="tag">interview_private</td><td>Interview script; secondary to README/demo facts.</td></tr>
     </table>
 
     <h2>Historical And Staged Records</h2>
@@ -97,8 +87,9 @@
       <tr><td><code>docs/PLAN.html</code></td><td class="tag">historical_record</td><td>Reading view of <code>docs/PLAN.md</code>.</td></tr>
       <tr><td><code>docs/learning_log.md</code></td><td class="tag">historical_record</td><td>Debugging journal and task-specific lessons; not a current product claim.</td></tr>
       <tr><td><code>docs/rolling_log.md</code></td><td class="tag">staged_plan</td><td>Staged future improvements and deferred work; candidate ideas are not active scope.</td></tr>
-      <tr><td><code>docs/weekend_closeout_plan.md</code></td><td class="tag">historical_record</td><td>Completed closeout checklist; keep for traceability, not current instructions.</td></tr>
     </table>
+
+    <p class="muted">The 2026-06 docs cleanup moved interview/recruiting material to the gitignored local <code>docs/submission/</code> directory and deleted internal working documents whose work shipped; their history stays in git. The former interview Q&amp;A was rewritten as the public technical FAQ at <code>docs/faq.md</code>.</p>
 
     <p class="muted">Markdown files remain the source records in the repository. Public Pages entry links point to HTML so reviewers do not land on raw Markdown text.</p>
 

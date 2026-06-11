@@ -75,25 +75,18 @@
     .path { display: inline-block; color: var(--blue); font: 12px var(--mono); word-break: break-all; }
     .tagrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
     .tag { padding: 3px 7px; color: var(--red); border: 1px solid rgba(162,63,51,.25); background: rgba(162,63,51,.06); font: 800 11px var(--mono); }
-    details {
-      margin-top: 14px; padding: 14px 18px; background: rgba(255,255,255,.36);
-      border: 1px dashed rgba(72,60,40,.3);
-    }
-    summary { cursor: pointer; color: var(--green); font-weight: 900; }
-    .history { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin-top: 12px; }
-    .history a { padding: 9px 10px; background: rgba(255,255,255,.4); border: 1px solid var(--line); color: var(--blue); font: 12px var(--mono); }
     .note { margin-top: 24px; padding: 18px 20px; color: #4a352d; background: rgba(162,63,51,.08); border-left: 5px solid var(--red); }
     @media (max-width: 920px) {
       .shell { width: min(100% - 20px, 900px); padding-top: 12px; }
       .hero::before { position: static; display: inline-block; margin-bottom: 16px; }
-      .quick, .grid, .history { grid-template-columns: 1fr; }
+      .quick, .grid { grid-template-columns: 1fr; }
       .section-head { display: block; }
       .section-head p { margin-top: 4px; }
     }
     @media print {
       body { background: #fff; }
       .shell { width: 100%; padding: 0; }
-      .hero, .card, details { box-shadow: none; break-inside: avoid; }
+      .hero, .card { box-shadow: none; break-inside: avoid; }
     }
   </style>
 </head>
@@ -102,64 +95,47 @@
     <header class="hero">
       <p class="kicker">Hardwise archive</p>
       <h1>HTML 阅读索引</h1>
-      <p class="lead">所有“给人看”的 Hardwise HTML 入口集中在这里。当前主线是 pre-Layout 原理图评审工作台：review queue、manual gap、证据 token 和 guarded Copilot。</p>
+      <p class="lead">所有"给人看"的 Hardwise 页面集中在这里。Hardwise 是面向 Layout 前原理图评审的 AI 评审工作台：导入 Cadence/Allegro 导出的网表 + BOM，自动分出"必须修 / 人工确认 / 检查已满足"评审队列，每条结论带证据出处，AI 助手只解释工具查到的事实。</p>
       <div class="quick">
-        <a href="hardware-demo.html"><b>离线 SPA 快照</b><span>同款 workbench 外观：mixed_controller_power_stage + audited Copilot snapshot。</span></a>
-        <a href="demo_recording_script.html"><b>录屏脚本</b><span>项目摘要 → Must Review → U12 → Copilot trace → U999 → L78。</span></a>
-        <a href="product-intro.html"><b>产品介绍</b><span>把项目理解成进 Layout 前的 review workbench。</span></a>
-        <a href="mvp_definition.html"><b>MVP 定义</b><span>用户问题、核心流程、页面结构、范围、非目标和验收标准。</span></a>
-        <a href="demo.html"><b>技术 Demo</b><span>workbench 主线、五大机制、三层 trust、KiCad 证据链附录。</span></a>
-        <a href="docs_inventory.html"><b>文档清单</b><span>区分当前入口、参考资料、历史材料和阶段计划。</span></a>
+        <a href="hardware-demo.html"><b>离线工作台 Demo</b><span>真实产品同款界面：评审队列、验证明细、证据出处和 AI 助手问答。</span></a>
+        <a href="product-intro.html"><b>产品介绍</b><span>三分钟理解 Hardwise：评审会上怎么用、解决什么问题。</span></a>
+        <a href="https://github.com/liwenjinchn/hardwise/releases/download/demo-video/hardwise-demo.mp4"><b>1 分钟演示视频</b><span>完整走一遍：项目摘要 → 必须修 → 错误详情 → AI 问答 → 证据页码。</span></a>
+        <a href="faq.html"><b>常见技术问题</b><span>六个高频问题：省了哪一步、怎么分库、怎么防编造、边界在哪。</span></a>
       </div>
     </header>
 
     <section class="section">
-      <div class="section-head"><h2>投递前优先看</h2><p>面试准备和项目叙事主线</p></div>
+      <div class="section-head"><h2>了解产品</h2><p>从产品定位到技术边界的主线阅读</p></div>
       <div class="grid">
-        <a class="card" data-type="HTML" href="product-intro.html"><h3>产品介绍页</h3><p>Hardwise 的当前入口页：定位为 pre-Layout review workbench，而不是泛化 AI 检查器。</p><span class="path">docs/product-intro.html</span><div class="tagrow"><span class="tag">当前</span><span class="tag">产品</span></div></a>
-        <a class="card" data-type="HTML" href="mvp_definition.html"><h3>MVP 定义</h3><p>固定用户问题、核心流程、页面结构、MVP 范围、非目标和验收标准，防止后续继续扩散。</p><span class="path">docs/mvp_definition.html</span><div class="tagrow"><span class="tag">当前</span><span class="tag">范围</span></div></a>
-        <a class="card" data-type="HTML" href="demo.html"><h3>技术 Demo</h3><p>workbench-first 技术叙事：五大机制 + L1/L2/L3 trust 分层；KiCad review/ask 作为证据链附录。</p><span class="path">docs/demo.html</span><div class="tagrow"><span class="tag">Demo</span></div></a>
-        <a class="card" data-type="HTML" href="hardware-demo.html"><h3>离线 SPA 工作台快照</h3><p>公开备份入口：25 components / 22 L1 rows / PASS-WARN-ERROR=5/13/4，并内置 audited Copilot trace。</p><span class="path">docs/hardware-demo.html</span><div class="tagrow"><span class="tag">当前</span><span class="tag">Demo</span></div></a>
-        <a class="card" data-type="HTML" href="evidence_chain_audit.html"><h3>证据链 Audit</h3><p>说明 L78 live retrieval smoke、reviewed profile token 和 coverage/ranking artifact 的边界。</p><span class="path">docs/evidence_chain_audit.html</span><div class="tagrow"><span class="tag">证据</span><span class="tag">边界</span></div></a>
-        <a class="card" data-type="HTML" href="docs_inventory.html"><h3>文档清单</h3><p>把 docs/ 下所有文件分成当前入口、参考资料、历史记录、阶段计划和资产。</p><span class="path">docs/docs_inventory.html</span><div class="tagrow"><span class="tag">入口</span><span class="tag">清单</span></div></a>
+        <a class="card" data-type="HTML" href="product-intro.html"><h3>产品介绍页</h3><p>Hardwise 的入口页：定位为进 Layout 前的评审工作台，不是泛化 AI 检查器。</p><span class="path">docs/product-intro.html</span><div class="tagrow"><span class="tag">当前</span><span class="tag">产品</span></div></a>
+        <a class="card" data-type="HTML" href="mvp_definition.html"><h3>MVP 定义</h3><p>固定用户问题、核心流程、页面结构、范围、非目标和验收标准，防止范围扩散。</p><span class="path">docs/mvp_definition.html</span><div class="tagrow"><span class="tag">当前</span><span class="tag">范围</span></div></a>
+        <a class="card" data-type="HTML" href="demo.html"><h3>技术 Demo</h3><p>工作台主线技术叙事：五个防编造机制 + 三档可信度分层；KiCad 证据链作附录。</p><span class="path">docs/demo.html</span><div class="tagrow"><span class="tag">Demo</span></div></a>
+        <a class="card" data-type="HTML" href="hardware-demo.html"><h3>离线工作台快照</h3><p>单文件 HTML 的真实产品界面：25 个器件、22 行确定性验证、内置可审计 AI 问答。</p><span class="path">docs/hardware-demo.html</span><div class="tagrow"><span class="tag">当前</span><span class="tag">Demo</span></div></a>
+        <a class="card" data-type="HTML" href="evidence_chain_audit.html"><h3>证据链边界</h3><p>哪些结论有真实检索证据、哪些是人工审核档案、哪些只是覆盖统计——边界讲清楚。</p><span class="path">docs/evidence_chain_audit.html</span><div class="tagrow"><span class="tag">证据</span><span class="tag">边界</span></div></a>
+        <a class="card" data-type="GH MD" href="https://github.com/liwenjinchn/hardwise/blob/main/docs/faq.md"><h3>常见技术问题</h3><p>六个高频问题的简明回答：输入输出、双库分工、工具边界、防编造三层合同。</p><span class="path">docs/faq.md</span><div class="tagrow"><span class="tag">FAQ</span></div></a>
       </div>
     </section>
 
     <section class="section">
-      <div class="section-head"><h2>项目展示</h2><p>适合给别人快速看效果</p></div>
+      <div class="section-head"><h2>演示材料</h2><p>适合快速给别人看效果</p></div>
       <div class="grid">
-        <a class="card" data-type="HTML" href="demo_recording_script.html"><h3>Demo 录屏脚本</h3><p>90 秒固定顺序：项目摘要、Must Review、U12 deterministic ERROR、Copilot trace、U999 wrapped、L78 evidence token。</p><span class="path">docs/demo_recording_script.html</span></a>
-        <a class="card" data-type="HTML" href="closeout_pressure_summary.html"><h3>Pressure-Test Summary</h3><p>Switch/mainboard fixture pressure-test 小摘要；不是主公开 demo。</p><span class="path">docs/closeout_pressure_summary.html</span></a>
-        <a class="card" data-type="HTML" href="midpoint_review.html"><h3>历史收束评审</h3><p>保留为 5 月中旬收束 memo；当前 Phase 4 口径以 demo.html 和 README 为准。</p><span class="path">docs/midpoint_review.html</span></a>
+        <a class="card" data-type="MP4" href="https://github.com/liwenjinchn/hardwise/releases/download/demo-video/hardwise-demo.mp4"><h3>1 分钟演示视频</h3><p>固定顺序走完主线：项目摘要、必须修队列、U12 确定性错误、AI 问答轨迹、U999 包裹、L78 证据页码。</p><span class="path">GitHub Release</span></a>
+        <a class="card" data-type="HTML" href="demo_recording_script.html"><h3>Demo 录屏脚本</h3><p>演示视频的分镜脚本：每一步看什么、说明什么结论。</p><span class="path">docs/demo_recording_script.html</span></a>
+        <a class="card" data-type="HTML" href="closeout_pressure_summary.html"><h3>压力测试摘要</h3><p>两块大型公开/合成单板的导入与覆盖复跑结果；是覆盖证据，不是主演示。</p><span class="path">docs/closeout_pressure_summary.html</span></a>
       </div>
     </section>
 
     <section class="section">
-      <div class="section-head"><h2>面试与岗位材料</h2><p>二级材料，服务当前公开 demo 叙事</p></div>
+      <div class="section-head"><h2>参考与路线图</h2><p>设计说明和长期记录（开发者向，英文为主）</p></div>
       <div class="grid">
-        <a class="card" data-type="GH MD" href="https://github.com/liwenjinchn/hardwise/blob/main/docs/interview_qa.md"><h3>Interview Q&A</h3><p>长证据库：六个高频问题、历史 slice 证据和最新 closeout 数字。</p><span class="path">GitHub rendered Markdown</span><div class="tagrow"><span class="tag">面试</span><span class="tag">证据库</span></div></a>
-        <a class="card" data-type="HTML" href="interview_narrative.html"><h3>面试叙事</h3><p>历史讲稿版：核心定位、30 秒开场、2 分钟版本、demo 顺序和红线。</p><span class="path">docs/interview_narrative.html</span><div class="tagrow"><span class="tag">面试</span><span class="tag">历史</span></div></a>
-        <a class="card" data-type="HTML" href="jd_alignment.html"><h3>JD 对齐表</h3><p>岗位要求到 Hardwise 文件、模块、文档和简历证据的映射。</p><span class="path">docs/jd_alignment.html</span><div class="tagrow"><span class="tag">岗位</span><span class="tag">辅助</span></div></a>
+        <a class="card" data-type="GH MD" href="https://github.com/liwenjinchn/hardwise/blob/main/docs/architecture.md"><h3>架构说明</h3><p>模块级设计、数据流和五个防编造机制的实现位置。</p><span class="path">docs/architecture.md</span></a>
+        <a class="card" data-type="HTML" href="PLAN.html"><h3>计划与决策记录</h3><p>路线图、范围边界和编号决策记录（DR-NNN）。</p><span class="path">docs/PLAN.html</span></a>
+        <a class="card" data-type="GH MD" href="https://github.com/liwenjinchn/hardwise/blob/main/docs/learning_log.md"><h3>学习日志</h3><p>调试日志：每个 bug 和踩坑的现象 / 根因 / 修复 / 收获。</p><span class="path">docs/learning_log.md</span></a>
+        <a class="card" data-type="GH MD" href="https://github.com/liwenjinchn/hardwise/blob/main/docs/docs_inventory.md"><h3>文档清单</h3><p>docs/ 目录的维护用读图：区分当前入口、参考资料和历史记录。</p><span class="path">docs/docs_inventory.md</span></a>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-head"><h2>参考与路线图</h2><p>当前设计说明和长期记录</p></div>
-      <div class="grid">
-        <a class="card" data-type="GH MD" href="https://github.com/liwenjinchn/hardwise/blob/main/docs/architecture.md"><h3>Architecture</h3><p>模块级设计、数据流和五大 trust 机制的实现位置。</p><span class="path">GitHub rendered Markdown</span></a>
-        <a class="card" data-type="HTML" href="PLAN.html"><h3>PLAN 阅读版</h3><p>Submission boundary、slice route、application gates 和 decision records 的活页路线图。</p><span class="path">docs/PLAN.html</span></a>
-        <a class="card" data-type="GH MD" href="https://github.com/liwenjinchn/hardwise/blob/main/docs/learning_log.md"><h3>Learning Log</h3><p>调试日志：每个 bug、框架 quirk 和收束决策的 symptom / cause / fix / takeaway。</p><span class="path">GitHub rendered Markdown</span></a>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head"><h2>本地投递材料</h2><p>不作为 GitHub Pages 公开入口</p></div>
-      <div class="grid">
-        <div class="card" data-type="LOCAL"><h3>简历与提交材料</h3><p><code>docs/submission/</code> 被 gitignore 保护，不从公开 Pages 发布。正式投递时使用本机该目录下的目标 HTML/PDF，并以 README、demo.html、hardware-demo.html 的公开口径为准。</p><span class="path">docs/submission/</span></div>
-      </div>
-    </section>
-
-    <p class="note">建议阅读顺序：README → 离线 SPA 快照 → 录屏脚本 → 产品介绍页 → MVP 定义 → 技术 Demo → Evidence Chain Audit → Docs Inventory。interview_narrative、JD 对齐和 midpoint_review 是辅助/历史材料，不再作为最终口径。</p>
+    <p class="note">建议阅读顺序：README → 离线工作台 Demo → 产品介绍 → 常见技术问题 → MVP 定义 → 技术 Demo → 证据链边界。架构说明、计划记录和学习日志是开发者向参考材料。</p>
   </main>
 </body>
 </html>
