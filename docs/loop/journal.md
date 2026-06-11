@@ -16,3 +16,16 @@
   (目标1收尾),为目标2拆 App.tsx 做准备;候选切入点:formatSummary/
   状态标签纯函数与 StatusBadge/TrustBadge 等叶子组件先行测试
 
+- 2026-06-11 14:06 | 目标1收尾:vitest 基建(node 环境,include 限
+  src/**/*.test.*,与 Playwright 的 e2e/ 互不抢);导出 App.tsx 12 个纯函数
+  并写 21 条单测(formatSummary 正则翻译含捕获组、queueSubtitle 拼装、
+  evidenceNodeKind 三分类、各 label 映射与 fallback);新命令
+  `npm --prefix frontend/workbench run test:unit` | commit 3cbd624
+  (unit 21 绿 + E2E 5 绿 + pytest 598 绿 + ruff 干净;export 被
+  tree-shaking,bundle 字节级不变) | 目标1两翼齐备,自检验收标准1已达。
+  下一步进目标2:第一刀把已测纯函数挪到 src/lib/format.ts、
+  StatusBadge/TrustBadge 等叶子组件挪到 src/components/,App.tsx 改 import,
+  E2E+unit 守行为。注意:拆出组件的 vitest 需要 DOM 环境,jsdom 不在依赖
+  白名单——届时优先用已测纯函数+E2E 覆盖,或标 ASK 问 jsdom
+
+
