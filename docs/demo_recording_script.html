@@ -32,12 +32,12 @@ uv run hardwise design-validator-ui \
     <p>直接用 <code>file://</code> 打开生成的 HTML，无需起服务、无需 API key（同一份校验真值与位号防护，复用产品界面和离线快照数据）。</p>
 
     <h2>分镜</h2>
-    <div class="step"><div class="num">01</div><div><b>项目摘要，10 秒</b><p>指顶部指标：25 个器件、22 行 L1 验证、通过-警告-错误=5/13/4、3 行人工缺口。Hardwise 消费导出的网表/PST + BOM，生成 Layout 前评审工作台；这不是实时 EDA 插件。</p></div></div>
+    <div class="step"><div class="num">01</div><div><b>项目摘要，10 秒</b><p>指顶部指标：25 个器件、22 行 L1 验证、通过-警告-错误=5/13/4、3 行人工缺口。Hardwise 消费导出的网表/PST + BOM，生成 Layout 前评审工作台——这种规模的板子，评审会前人工对位号、翻规格书通常以小时计，这里导入后约一分钟分出三类队列。这不是实时 EDA 插件。</p></div></div>
     <div class="step"><div class="num">02</div><div><b>必须修，10 秒</b><p>指"必须修"队列。工作台先回答评审会最关心的问题：哪些条目必须在交给 Layout 前看，哪些只是人工缺口，哪些已经确定性通过。</p></div></div>
-    <div class="step"><div class="num">03</div><div><b>U12 确定性错误，18 秒</b><p>点 U12，展示 XL1509 降压错误。这个错误不是模型意见，而是确定性验证器从网表和器件档案得到的结论：<code>L1=6.8uH</code> 低于最小值，<code>D5=1N4007W</code> 不是肖特基类续流二极管。</p></div></div>
+    <div class="step"><div class="num">03</div><div><b>U12 确定性错误，18 秒</b><p>点 U12，展示 XL1509 降压错误。这个错误不是模型意见，而是确定性验证器从网表和 XL1509 器件档案得到的结论：<code>L1=6.8uH</code> 低于档案最小值，<code>D5=1N4007W</code> 不是肖特基类续流二极管——1N4007 是慢恢复整流管，在 XL1509 约 150kHz 的开关频率下反向恢复损耗大，这正是评审会上人眼最容易放过的一类错。</p></div></div>
     <div class="step"><div class="num">04</div><div><b>AI 问答轨迹，18 秒</b><p>打开右下角 Hardwise 助手，点推荐问题（或直接提问），展开证据/工具轨迹。<code>--fake-ai</code> 只产出确定性的工具调用和文本，回答仍来自真实 Runner 的结构化工具；<code>run_component_validation</code> 是 L1 确定性，证据出处必须可见、可复制。</p></div></div>
     <div class="step"><div class="num">05</div><div><b>U999 包裹，12 秒</b><p>在助手里输入"板上有没有 U999?"。不存在的位号不会被模型编造成器件，工具返回 <code>found=false</code>，最终显示会把它包成 <code>⟨?U999⟩</code>。</p></div></div>
-    <div class="step"><div class="num">06</div><div><b>L78 证据页码，12 秒</b><p>点 L78 证据问题或 U1/L7805 轨迹，停在 <code>datasheet:l78.pdf#p4</code>。L78 是 L2 有出处证据：有页码级证据供评审人核对，但不会自动升级成模型自由判断。</p></div></div>
+    <div class="step"><div class="num">06</div><div><b>L78 证据页码，12 秒</b><p>点 L78 证据问题或 U1/L7805 轨迹，停在 <code>datasheet:l78.pdf#p4</code>。规格书 PDF 切块进 Chroma 向量库，按位号 + 页码挂 metadata，检索结果自带页码出处。L78 这条是 L2 有出处证据，供评审人核对，但不会自动升级成模型自由判断。</p></div></div>
     <div class="step"><div class="num">07</div><div><b>收束，10 秒</b><p>只做原理图侧评审，只用公开输入，不做 PCB layout、boardview、PLM、供应商、价格库存，也不碰公司内部硬件数据。</p></div></div>
 
     <h2>证据链复现附录</h2>
