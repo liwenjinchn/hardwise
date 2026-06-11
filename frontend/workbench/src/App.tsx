@@ -1,35 +1,22 @@
-import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Bot,
-  CheckCircle2,
   CircleHelp,
   Download,
-  FileArchive,
   FileSearch,
-  FileUp,
   Layers3,
   Link2,
   Loader2,
-  MessageSquare,
-  PackageCheck,
-  Play,
   Search,
-  ShieldCheck,
-  UploadCloud
+  ShieldCheck
 } from "lucide-react";
 import {
-  askCopilot,
-  exportWorkbench,
   fetchComponentDetail,
   fetchPrepPacketMarkdown,
-  fetchProjectPrepPacketMarkdown,
-  fetchWorkbenchState,
-  importWorkbench
+  fetchWorkbenchState
 } from "./api";
 import type {
-  ChatMessage,
-  ChatResponse,
   ComponentDetail,
   ImportResponse,
   ReviewQueueItem,
@@ -43,7 +30,6 @@ import {
   EvidenceCard,
   EvidenceToken,
   InfoCell,
-  Metric,
   StatusBadge,
   TrustBadge,
   VerdictBanner
@@ -56,21 +42,16 @@ import {
   pinStatusLabel,
   profileStatusLabel,
   queueSubtitle,
-  sourceLabel,
   statusGroup,
   taskKindLabel
 } from "./lib/format";
-
-type ViewId = "import" | "parse" | "review" | "copilot" | "findings" | "export";
-
-const NAV_ITEMS: Array<{ id: ViewId; label: string }> = [
-  { id: "import", label: "导入" },
-  { id: "parse", label: "解析" },
-  { id: "review", label: "审查" },
-  { id: "copilot", label: "AI 助手" },
-  { id: "findings", label: "问题清单" },
-  { id: "export", label: "导出" }
-];
+import { CopilotPanel } from "./views/CopilotPanel";
+import { ExportView } from "./views/ExportView";
+import { FindingsView } from "./views/FindingsView";
+import { Header } from "./views/Header";
+import { ImportView } from "./views/ImportView";
+import { ParseView } from "./views/ParseView";
+import type { ViewId } from "./views/nav";
 
 const FILTERS: Array<{ id: "all" | StatusGroup; label: string; hint: string }> = [
   { id: "all", label: "全部待看", hint: "所有被标记的器件" },
@@ -271,208 +252,6 @@ function App() {
       )}
       {view === "export" && <ExportView state={state} />}
     </main>
-  );
-}
-
-function Header({
-  state,
-  currentView,
-  onNavigate
-}: {
-  state: WorkbenchState;
-  currentView: ViewId;
-  onNavigate: (view: ViewId) => void;
-}) {
-  const { summary } = state;
-  const reviewComponentCount = state.queue.filter((item) => item.status_group !== "pass").length || state.queue.length;
-  const capabilityText = [
-    state.capabilities.chat ? "Copilot 可用" : "Copilot 关闭",
-    state.capabilities.datasheet_search_enabled ? "向量检索开启" : "向量检索关闭",
-    state.capabilities.risk_hints_enabled ? "外部提示已加载" : "外部提示未配置",
-    "Refdes Guard 在线"
-  ];
-
-  return (
-    <header className="topbar">
-      <div className="brand">
-        <span className="brand-mark"><ShieldCheck size={15} /></span>
-        <div>
-          <span className="brand-name">Hard<b>wise</b></span>
-          <span className="brand-tag">schematic review</span>
-        </div>
-      </div>
-      <nav className="flow-nav" aria-label="工作流导航">
-        {NAV_ITEMS.map((item) => (
-          <button
-            type="button"
-            key={item.id}
-            className={currentView === item.id ? "active" : ""}
-            onClick={() => onNavigate(item.id)}
-          >
-            {item.label}
-            {item.id === "review" && <span className="pip">{reviewComponentCount}</span>}
-            {item.id === "findings" && <span className="pip">{state.task_counts.error + state.task_counts.warn}</span>}
-          </button>
-        ))}
-      </nav>
-      <div className="topbar-right">
-        <div className="project-pill" title={`${state.project.netlist_type} · ${state.project.netlist_source}`}>
-          <span className="dot" />
-          <span>{state.project.name}</span>
-          <span className="src mono">真实数据</span>
-        </div>
-        <div className="mini-stats" aria-label="当前审查摘要">
-          <Metric label="器件" value={summary.components} />
-          <Metric label="已验证" value={summary.validated} />
-          <Metric label="ERROR" value={summary.error_count} tone="error" />
-          <Metric label="WARN" value={summary.warn_count} tone="warn" />
-        </div>
-        <div className="capability-strip" aria-label="工作台能力">
-          {capabilityText.slice(0, 2).map((item) => (
-            <span key={item}>{item}</span>
-          ))}
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function ImportView({
-  state,
-  onImported
-}: {
-  state: WorkbenchState;
-  onImported: (result: ImportResponse) => void;
-}) {
-  const [netlist, setNetlist] = useState<File | null>(null);
-  const [bom, setBom] = useState<File | null>(null);
-  const [riskHints, setRiskHints] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!netlist || busy) {
-      setError("请选择 netlist/PST 文件。");
-      return;
-    }
-    setBusy(true);
-    setError("");
-    try {
-      const result = await importWorkbench({ netlist, bom, riskHints });
-      onImported(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "导入失败");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <section className="flow-page import-page">
-      <div className="flow-copy">
-        <span className="eyebrow">Import</span>
-        <h2>上传 netlist / BOM，重建当前工作台</h2>
-        <p>
-          文件只写入本进程临时目录。上传成功后后端会重新运行
-          WorkbenchContext，浏览器进入 Parse 动画，再回到 Review。
-        </p>
-      </div>
-      <form className="upload-board" onSubmit={(event) => void submit(event)}>
-        <UploadSlot
-          icon={<UploadCloud size={20} />}
-          label="netlist / PST"
-          required
-          file={netlist}
-          accept=".net,.dat,.txt,.pst"
-          onPick={setNetlist}
-        />
-        <UploadSlot
-          icon={<FileArchive size={20} />}
-          label="BOM CSV"
-          file={bom}
-          accept=".csv,.tsv,.txt"
-          onPick={setBom}
-        />
-        <UploadSlot
-          icon={<FileUp size={20} />}
-          label="risk hints JSON"
-          file={riskHints}
-          accept=".json"
-          onPick={setRiskHints}
-        />
-        {error && <p className="form-error">{error}</p>}
-        <button className="primary-action" type="submit" disabled={busy}>
-          {busy ? <Loader2 className="spin" size={16} /> : <Play size={16} />}
-          {busy ? "正在导入" : "导入并解析"}
-        </button>
-      </form>
-      <div className="current-snapshot">
-        <span className="eyebrow">当前工作台</span>
-        <strong>{state.summary.components} components</strong>
-        <p>
-          已验证 {state.summary.validated}，PASS/WARN/ERROR=
-          {state.summary.pass_count}/{state.summary.warn_count}/{state.summary.error_count}，
-          manual={state.summary.manual}
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function UploadSlot(props: {
-  icon: ReactNode;
-  label: string;
-  required?: boolean;
-  file: File | null;
-  accept: string;
-  onPick: (file: File | null) => void;
-}) {
-  return (
-    <label className="upload-slot">
-      <span>{props.icon}</span>
-      <strong>{props.label}{props.required ? " *" : ""}</strong>
-      <small>{props.file?.name ?? "选择文件"}</small>
-      <input
-        type="file"
-        accept={props.accept}
-        onChange={(event) => props.onPick(event.target.files?.[0] ?? null)}
-      />
-    </label>
-  );
-}
-
-function ParseView({
-  state,
-  parseResult
-}: {
-  state: WorkbenchState;
-  parseResult: ImportResponse | null;
-}) {
-  const summary = parseResult?.summary ?? state.summary;
-  const steps = [
-    ["解析网表", `${summary.components} 个器件进入注册表`],
-    ["匹配 BOM", `${summary.bom_matched} 个 refdes 已锚定`],
-    ["运行确定性验证", `PASS/WARN/ERROR=${summary.pass_count}/${summary.warn_count}/${summary.error_count}`],
-    ["生成 finding", `${parseResult?.task_counts.total ?? state.task_counts.total} 个任务已排队`]
-  ];
-  return (
-    <section className="flow-page parse-page">
-      <div className="flow-copy">
-        <span className="eyebrow">Parse</span>
-        <h2>重建证据工作台</h2>
-        <p>这里只展示真实后端结果的解析过程；状态数字来自刚刚生成的 WorkbenchContext。</p>
-      </div>
-      <div className="parse-rail">
-        {steps.map(([title, body], index) => (
-          <article className="parse-step" key={title} style={{ animationDelay: `${index * 120}ms` }}>
-            <CheckCircle2 size={18} />
-            <strong>{title}</strong>
-            <p>{body}</p>
-          </article>
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -798,287 +577,6 @@ function EvidenceColumn({
       )}
       <RiskHintsPanel riskHints={riskHints} selectedRefdes={chainRefdes} />
     </aside>
-  );
-}
-
-function CopilotPanel({
-  state,
-  selectedRefdes,
-  className = ""
-}: {
-  state: WorkbenchState;
-  selectedRefdes: string | null;
-  className?: string;
-}) {
-  const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [lastResponse, setLastResponse] = useState<ChatResponse | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  const send = async (text: string) => {
-    const clean = text.trim();
-    if (!clean || busy) return;
-    setBusy(true);
-    setError("");
-    const nextHistory: ChatMessage[] = [...messages, { role: "user", content: clean }];
-    setMessages(nextHistory);
-    setQuestion("");
-    try {
-      const response = await askCopilot(clean, selectedRefdes, messages);
-      setLastResponse(response);
-      setMessages([...nextHistory, { role: "assistant", content: response.answer }]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Copilot 调用失败");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <section className={`copilot ${className}`}>
-      <div className="cop-main">
-        <div className="cop-thread">
-          <div className="cop-thread-inner">
-            {messages.length === 0 && (
-              <div className="msg ai">
-                <div className="mavatar"><Bot size={17} /></div>
-                <div className="mbody">
-                  <div className="mname">Hardwise Copilot <TrustBadge tier="l1" /></div>
-                  <div className="mtext">
-                    <p>我只基于当前 netlist、规则结果和 evidence token 回答。无法锚定的 refdes 会被 Refdes Guard 包裹。</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            {messages.map((message, index) => (
-              <div className={`msg ${message.role === "assistant" ? "ai" : "user"}`} key={`${message.role}-${index}`}>
-                <div className="mavatar">{message.role === "assistant" ? <Bot size={17} /> : "LW"}</div>
-                <div className="mbody">
-                  <div className="mname">{message.role === "assistant" ? "Hardwise Copilot" : "You"}</div>
-                  <div className="mtext"><p>{message.content}</p></div>
-                </div>
-              </div>
-            ))}
-            {lastResponse?.trace?.length ? (
-              <details className="trace" open>
-                <summary>tool trace · {lastResponse.trace.length}</summary>
-                {lastResponse.trace.map((trace, index) => (
-                  <div className="trace-row toolcall" key={`${trace.tool}-${index}`}>
-                    <div className="tc-h">
-                      <Bot size={13} />
-                      <strong>{trace.tool}</strong>
-                      <span>{trace.trust_label || "可信层级未标注"}</span>
-                    </div>
-                    <p>{trace.summary}</p>
-                    <div className="evidence-tokens">
-                      {trace.evidence_classification.map((item) => (
-                        <span className="token" key={item.token}>{item.token} · {sourceLabel(item.source_class)}</span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </details>
-            ) : null}
-            {error && <p className="chat-error">{error}</p>}
-          </div>
-        </div>
-        <form className="chat-form composer" onSubmit={(event) => { event.preventDefault(); void send(question); }}>
-          <div className="composer-box">
-            <MessageSquare size={15} />
-            <input
-              value={question}
-              onChange={(event) => setQuestion(event.target.value)}
-              placeholder={`询问 ${selectedRefdes ?? "当前器件"}，例如：板上有没有 U999?`}
-            />
-            <button type="submit" disabled={busy}>{busy ? "处理中" : "发送"}</button>
-          </div>
-          <div className="cop-disclaimer">
-            <ShieldCheck size={13} /> 回答必须被 netlist、规则或引用来源锚定；不可验证的问题会被标注。
-          </div>
-        </form>
-      </div>
-      <aside className="cop-side">
-        <div className="eyebrow">Suggested probes</div>
-        <div className="suggestions">
-          {(lastResponse?.suggestions ?? [`这个 ${selectedRefdes ?? "器件"} 为什么是 ERROR/WARN?`, "板上有没有 U999?"]).slice(0, 4).map((item) => (
-            <button type="button" key={item} onClick={() => void send(item)}>
-              <span className="sg-k">probe</span>
-              {item}
-            </button>
-          ))}
-        </div>
-        <div className="eyebrow trust-title">Trust tiers</div>
-        <div className="trust-list">
-          <p><TrustBadge tier="l1" /> 后端确定性规则和 netlist 事实。</p>
-          <p><TrustBadge tier="l2" /> 有引用来源的 grounded evidence。</p>
-          <p><TrustBadge tier="l3" /> 数据不足，交给 reviewer。</p>
-        </div>
-      </aside>
-    </section>
-  );
-}
-
-function FindingsView({
-  tasks,
-  resolvedTaskIds,
-  onToggleResolved,
-  onOpenTask
-}: {
-  tasks: ReviewTask[];
-  resolvedTaskIds: Set<string>;
-  onToggleResolved: (taskId: string) => void;
-  onOpenTask: (task: ReviewTask, view?: ViewId) => void;
-}) {
-  return (
-    <section className="flow-page findings-page">
-      <div className="flow-copy">
-        <span className="eyebrow">Findings</span>
-        <h2>全部任务登记册</h2>
-        <p>resolved 是当前浏览器本地状态，不回写 deterministic 结论。</p>
-      </div>
-      <div className="findings-list">
-        {tasks.map((task) => {
-          const resolved = resolvedTaskIds.has(task.id);
-          return (
-            <article className={`finding-row ${task.status_group} ${resolved ? "resolved" : ""}`} key={task.id}>
-              <div>
-                <span className="eyebrow">{task.id} · {task.refdes}</span>
-                <strong>{formatSummary(task.title)}</strong>
-                <p>{formatSummary(task.recommended_action)}</p>
-              </div>
-              <StatusBadge group={resolved ? "pass" : task.status_group} label={resolved ? "本地已处理" : task.status_label} />
-              <button type="button" onClick={() => onOpenTask(task)}>查看</button>
-              <button type="button" onClick={() => onOpenTask(task, "copilot")}>问 Copilot</button>
-              <button type="button" onClick={() => onToggleResolved(task.id)}>
-                {resolved ? "重新打开" : "标记处理"}
-              </button>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function ExportView({ state }: { state: WorkbenchState }) {
-  const [format, setFormat] = useState<"json" | "csv" | "annotations">("json");
-  const [preview, setPreview] = useState("");
-  const [projectPacketPreview, setProjectPacketPreview] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [packetBusy, setPacketBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [packetError, setPacketError] = useState("");
-
-  const loadPreview = async () => {
-    setBusy(true);
-    setError("");
-    try {
-      const body = await exportWorkbench(format);
-      setPreview(format === "json" ? JSON.stringify(JSON.parse(body), null, 2) : body);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "导出失败");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const download = () => {
-    if (!preview) return;
-    const extension = format === "json" ? "json" : format === "csv" ? "csv" : "txt";
-    const blob = new Blob([preview], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `hardwise-${format}.${extension}`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const loadProjectPacket = async (downloadPacket: boolean) => {
-    if (packetBusy) return;
-    setPacketBusy(true);
-    setPacketError("");
-    try {
-      const markdown = await fetchProjectPrepPacketMarkdown();
-      if (downloadPacket) {
-        const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = url;
-        anchor.download = "hardwise-project-prep.md";
-        anchor.click();
-        URL.revokeObjectURL(url);
-      } else {
-        setProjectPacketPreview(markdown);
-      }
-    } catch (err) {
-      setPacketError(err instanceof Error ? err.message : "项目准备包生成失败");
-    } finally {
-      setPacketBusy(false);
-    }
-  };
-
-  return (
-    <section className="flow-page export-page">
-      <div className="flow-copy">
-        <span className="eyebrow">Export</span>
-        <h2>导出当前审查状态</h2>
-        <p>
-          输出来自真实后端接口：{state.review_tasks.length} 个 finding，
-          不包含 API key 或浏览器聊天密钥。
-        </p>
-      </div>
-      <div className="export-stack">
-        <section className="project-prep-card" aria-label="项目评审准备包">
-          <div>
-            <span className="eyebrow">Project Prep Packet</span>
-            <strong>项目评审准备包</strong>
-            <p>
-              汇总全板摘要、重点器件组、review focus areas、开放问题、risk hints 和
-              evidence token，适合评审会前交接。
-            </p>
-          </div>
-          <div className="prep-button-row">
-            <button type="button" onClick={() => void loadProjectPacket(false)} disabled={packetBusy}>
-              {packetBusy ? <Loader2 className="spin" size={15} /> : <FileSearch size={15} />}
-              预览项目包
-            </button>
-            <button type="button" onClick={() => void loadProjectPacket(true)} disabled={packetBusy}>
-              <Download size={15} />
-              下载 MD
-            </button>
-          </div>
-        </section>
-        {packetError && <p className="form-error">{packetError}</p>}
-        {projectPacketPreview && <pre className="project-prep-preview">{projectPacketPreview}</pre>}
-        <div className="export-controls">
-          {(["json", "csv", "annotations"] as const).map((item) => (
-            <button
-              type="button"
-              className={format === item ? "active" : ""}
-              key={item}
-              onClick={() => {
-                setFormat(item);
-                setPreview("");
-              }}
-            >
-              {item}
-            </button>
-          ))}
-          <button className="primary-action" type="button" onClick={() => void loadPreview()} disabled={busy}>
-            {busy ? <Loader2 className="spin" size={16} /> : <PackageCheck size={16} />}
-            生成预览
-          </button>
-          <button type="button" onClick={download} disabled={!preview}>
-            <Download size={15} />
-            下载
-          </button>
-        </div>
-        {error && <p className="form-error">{error}</p>}
-        <pre className="export-preview">{preview || "选择格式后生成预览。"}</pre>
-      </div>
-    </section>
   );
 }
 
