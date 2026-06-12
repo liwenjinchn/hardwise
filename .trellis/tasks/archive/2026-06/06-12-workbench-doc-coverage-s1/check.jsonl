@@ -1,0 +1,4 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Quality gate standards"}
+{"file": ".trellis/spec/backend/workbench-guidelines.md", "reason": "Workbench trust invariants to verify against"}
+{"file": ".trellis/tasks/06-12-workbench-doc-coverage-s1/research/workbench-document-gap-findings.md", "reason": "Investigation facts to verify implementation against"}

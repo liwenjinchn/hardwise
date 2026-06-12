@@ -1,0 +1,5 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/backend/workbench-guidelines.md", "reason": "Copilot panel / snapshot / fake-live chat contracts that the workbench UI change must respect"}
+{"file": ".trellis/spec/backend/reporting-guidelines.md", "reason": "Deterministic report rendering and validator UI contracts"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Code standards and forbidden patterns"}
+{"file": ".trellis/tasks/06-12-workbench-doc-coverage-s1/research/workbench-document-gap-findings.md", "reason": "Verified investigation facts: the three breakpoints, file/line anchors, demo BOM MPNs, CSV column convention"}
