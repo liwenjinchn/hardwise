@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Hardwise 前端界面变迁记录</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #171a18;
+      --muted: #69716d;
+      --paper: #f8f6f0;
+      --panel: rgba(255, 255, 255, .78);
+      --panel-strong: #fffdf8;
+      --line: rgba(27, 32, 29, .13);
+      --green: #0d4c3c;
+      --cyan: #10b8c9;
+      --blue: #2f5fbe;
+      --red: #c7473f;
+      --amber: #b27b2d;
+      --shadow: 0 26px 68px rgba(34, 40, 36, .16);
+      --sans: -apple-system, "SF Pro Text", "PingFang SC", "Noto Sans SC", sans-serif;
+      --serif: "Songti SC", "Noto Serif CJK SC", Georgia, serif;
+      --mono: "SFMono-Regular", "Cascadia Code", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.7;
+      background:
+        radial-gradient(circle at 14% 0%, rgba(16, 184, 201, .16), transparent 24rem),
+        radial-gradient(circle at 86% 18%, rgba(199, 71, 63, .12), transparent 24rem),
+        linear-gradient(180deg, #fbfaf6 0%, var(--paper) 46%, #ece8de 100%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .page {
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 58px;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 44px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--ink);
+      font-weight: 760;
+    }
+
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #111614;
+      color: #fff;
+      font: 800 15px var(--mono);
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 16px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, .85fr) minmax(440px, 1.15fr);
+      gap: 34px;
+      align-items: end;
+      min-height: calc(100vh - 84px);
+      padding: 44px 0 38px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 32px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .68);
+      color: #40534c;
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 20px 0 0;
+      max-width: 720px;
+      font-family: var(--serif);
+      font-size: clamp(44px, 7.2vw, 98px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 24px 0 0;
+      max-width: 620px;
+      color: #3b423f;
+      font-size: clamp(18px, 2.1vw, 24px);
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .metric {
+      min-height: 90px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .7);
+      box-shadow: 0 12px 34px rgba(38, 46, 42, .08);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 29px;
+      line-height: 1;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .hero-shot {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(23, 26, 24, .14);
+      border-radius: 10px;
+      background: #111614;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-shot::before {
+      content: "CURRENT WORKBENCH";
+      position: absolute;
+      left: 16px;
+      top: 14px;
+      z-index: 2;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .88);
+      color: #27302c;
+      font: 800 11px var(--mono);
+      letter-spacing: .08em;
+    }
+
+    .hero-shot img,
+    .stage-shot img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .section-title {
+      display: grid;
+      grid-template-columns: minmax(0, .55fr) minmax(280px, .45fr);
+      gap: 24px;
+      align-items: end;
+      margin: 18px 0 20px;
+      padding-top: 10px;
+    }
+
+    h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(32px, 5vw, 58px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .section-title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 22px;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: minmax(0, .55fr) minmax(360px, .45fr);
+      gap: 18px;
+      align-items: stretch;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: 0 16px 44px rgba(34, 40, 36, .09);
+    }
+
+    .stage-shot {
+      overflow: hidden;
+      border: 1px solid rgba(23, 26, 24, .12);
+      border-radius: 8px;
+      background: #f3f0e8;
+    }
+
+    .stage-body {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 8px 4px 4px;
+    }
+
+    .stage-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .72);
+      color: #4b5651;
+      font: 760 12px var(--mono);
+    }
+
+    .pill.red { color: var(--red); }
+    .pill.blue { color: var(--blue); }
+    .pill.green { color: var(--green); }
+    .pill.amber { color: var(--amber); }
+
+    h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(26px, 3.2vw, 40px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .stage-body p {
+      margin: 14px 0 0;
+      color: #3e4742;
+      font-size: 16px;
+    }
+
+    .notes {
+      display: grid;
+      gap: 8px;
+      margin: 16px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .notes li {
+      position: relative;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .notes li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: .72em;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--cyan);
+    }
+
+    .command {
+      display: block;
+      overflow-wrap: anywhere;
+      padding: 12px;
+      border: 1px solid rgba(47, 95, 190, .18);
+      border-radius: 8px;
+      background: rgba(47, 95, 190, .07);
+      color: #213d73;
+      font: 12px/1.55 var(--mono);
+    }
+
+    .takeaway {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .takeaway-card {
+      min-height: 154px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-strong);
+    }
+
+    .takeaway-card b {
+      display: block;
+      color: var(--green);
+      font-family: var(--serif);
+      font-size: 21px;
+      line-height: 1.2;
+    }
+
+    .takeaway-card span {
+      display: block;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .footer-note {
+      margin-top: 24px;
+      padding: 18px 20px;
+      border-left: 5px solid var(--green);
+      background: rgba(13, 76, 60, .08);
+      color: #3f514b;
+    }
+
+    @media (max-width: 980px) {
+      .page { width: min(100% - 22px, 860px); }
+      .hero,
+      .section-title,
+      .stage {
+        grid-template-columns: 1fr;
+      }
+      .hero {
+        min-height: auto;
+        padding-top: 28px;
+      }
+      .takeaway,
+      .hero-stats {
+        grid-template-columns: 1fr;
+      }
+      .nav {
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <nav class="nav" aria-label="Hardwise docs navigation">
+      <a class="brand" href="index.html"><span class="mark">H</span><span>Hardwise</span></a>
+      <div class="nav-links">
+        <a href="hardware-demo.html">当前工作台</a>
+        <a href="product-intro.html">产品介绍</a>
+        <a href="faq.html">FAQ</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <section>
+        <span class="eyebrow">从工具页到评审工作台</span>
+        <h1>前端界面变迁记录</h1>
+        <p class="lead">这条线索能在 git 历史里复原：Hardwise 的前端先是单器件静态 validator，随后变成批量三栏评审页，再加上 tab/detail 和证据分层，最后收敛为带导航、队列、详情、证据栏和 Copilot 的 SaaS 化工作台。</p>
+        <div class="hero-stats">
+          <div class="metric"><strong>5</strong><span>可截图阶段</span></div>
+          <div class="metric"><strong>25</strong><span>当前 demo 器件数</span></div>
+          <div class="metric"><strong>22</strong><span>当前确定性验证行</span></div>
+        </div>
+      </section>
+      <figure class="hero-shot">
+        <img src="assets/ui-evolution/05-current-saas-workbench.png" alt="Hardwise 当前 SaaS 化工作台界面截图">
+      </figure>
+    </header>
+
+    <section aria-labelledby="timeline-title">
+      <div class="section-title">
+        <h2 id="timeline-title">五个可复原节点</h2>
+        <p>截图均由对应提交或当前工作区重新生成，没有手绘重构。旧界面来自临时 git worktree，当前界面来自本工作区的 `design-validator-ui --ai-snapshot`。</p>
+      </div>
+
+      <div class="timeline">
+        <article class="stage">
+          <figure class="stage-shot">
+            <img src="assets/ui-evolution/01-simple-validator.png" alt="Hardwise 早期单器件 validator 页面截图">
+          </figure>
+          <div class="stage-body">
+            <div>
+              <div class="stage-meta">
+                <span class="pill green">a69c1c4</span>
+                <span class="pill">单器件</span>
+                <span class="pill">静态 HTML</span>
+              </div>
+              <h3>阶段 1：简陋但已经有证据意识</h3>
+              <p>最早的 UI 是一个单器件 validator。它能展示 components、nets、selected、status，也有 pin validation 和 datasheet token，但还需要手动指定 refdes 与 profile，信息架构更像工程调试报告。</p>
+              <ul class="notes">
+                <li>入口是 `report-validator-ui`，一次只围绕一个器件展开。</li>
+                <li>左侧是 component index，右侧是 U1 的 pin-level 验证表。</li>
+                <li>已经出现防编造项目的核心材料：状态、net、summary、evidence token。</li>
+              </ul>
+            </div>
+            <code class="command">uv run hardwise report-validator-ui ... U1 data/datasheet_profiles/l78.json</code>
+          </div>
+        </article>
+
+        <article class="stage">
+          <figure class="stage-shot">
+            <img src="assets/ui-evolution/02-three-panel-batch.png" alt="Hardwise 批量三栏 validator 页面截图">
+          </figure>
+          <div class="stage-body">
+            <div>
+              <div class="stage-meta">
+                <span class="pill green">c53d0d0</span>
+                <span class="pill amber">批量验证</span>
+                <span class="pill">左表 + 顶部指标 + 右详情</span>
+              </div>
+              <h3>阶段 2：开始像工作台，支持多个问题排队</h3>
+              <p>批量 UI 把多个被验证器件放到同一屏，顶部出现 validated/errors 指标，右侧详情可以在 U1、U12 之间切换。这个阶段已经接近你说的“左上/左下/右边”的中间形态。</p>
+              <ul class="notes">
+                <li>从单点检查变成多个目标的 review queue。</li>
+                <li>错误器件可以和通过器件并列，评审优先级开始浮现。</li>
+                <li>视觉上仍是静态报告风格，交互与产品导航还比较弱。</li>
+              </ul>
+            </div>
+            <code class="command">uv run hardwise report-validator-ui-batch ... U1=... U12=...</code>
+          </div>
+        </article>
+
+        <article class="stage">
+          <figure class="stage-shot">
+            <img src="assets/ui-evolution/03-tabs-detail.png" alt="Hardwise 深色 tab detail 静态工作台截图">
+          </figure>
+          <div class="stage-body">
+            <div>
+              <div class="stage-meta">
+                <span class="pill green">87045cc</span>
+                <span class="pill blue">tabs/detail</span>
+                <span class="pill red">ERROR 队列</span>
+              </div>
+              <h3>阶段 3：detail 区被产品化，评审动作更明确</h3>
+              <p>这个节点变成深色“原理图检验工具”：左侧是器件队列，右侧是选中器件详情，顶部 metrics 更密集，详情页出现报告、原理图连接等 tab。它第一次有了明显的工作台气质。</p>
+              <ul class="notes">
+                <li>选择器件、查看报告、跳转连接这些动作形成固定结构。</li>
+                <li>PASS/WARN/ERROR 与 L1 确定性标签在视觉上更突出。</li>
+                <li>仍然是单页静态 UI，但已经从“表格报告”转向“审查界面”。</li>
+              </ul>
+            </div>
+            <code class="command">uv run hardwise report-validator-ui-batch ... --targets-manifest ...</code>
+          </div>
+        </article>
+
+        <article class="stage">
+          <figure class="stage-shot">
+            <img src="assets/ui-evolution/04-static-saas-workbench.png" alt="Hardwise 项目级静态工作台截图">
+          </figure>
+          <div class="stage-body">
+            <div>
+              <div class="stage-meta">
+                <span class="pill green">87045cc</span>
+                <span class="pill blue">项目级</span>
+                <span class="pill amber">自动匹配</span>
+              </div>
+              <h3>阶段 4：从器件验证页升级为项目工作台</h3>
+              <p>`design-validator-ui` 自动匹配 profile，生成项目级 index，并可嵌入 AI snapshot。左侧不再只是器件表，而是按 BOM 身份、类别、资料状态组织的评审对象，右下角出现 AI 入口。</p>
+              <ul class="notes">
+                <li>指标从 selected/errors 扩展到 BOM matched、validated、manual 等项目级状态。</li>
+                <li>资料缺口和人工确认成为界面一等公民。</li>
+                <li>这是静态离线快照和 live workbench 之间的桥。</li>
+              </ul>
+            </div>
+            <code class="command">uv run hardwise design-validator-ui ... --ai-snapshot</code>
+          </div>
+        </article>
+
+        <article class="stage">
+          <figure class="stage-shot">
+            <img src="assets/ui-evolution/05-current-saas-workbench.png" alt="Hardwise 当前多标签 SaaS 工作台截图">
+          </figure>
+          <div class="stage-body">
+            <div>
+              <div class="stage-meta">
+                <span class="pill green">current</span>
+                <span class="pill blue">React SPA 方向</span>
+                <span class="pill red">SaaS 产品化</span>
+              </div>
+              <h3>阶段 5：多标签 SaaS 化评审台</h3>
+              <p>当前界面已经形成完整产品骨架：顶部导航包含导入、解析、审查、AI 助手、问题清单、导出；左侧是 review queue，中间是器件详情和 task list，右侧是 evidence trace。它更像一个可反复使用的 SaaS 工具，而不是一次性 HTML 报告。</p>
+              <ul class="notes">
+                <li>导航、状态芯片、队列筛选、详情卡、证据栏和 Copilot 入口形成稳定信息架构。</li>
+                <li>错误、证据、人工判断、外部提示被拆成不同工作区，评审流程更可操作。</li>
+                <li>视觉从早期的 report printout 转为密集但清晰的 operational SaaS。</li>
+              </ul>
+            </div>
+            <code class="command">uv run hardwise design-validator-ui ... --ai-snapshot --output /tmp/hardwise-ui-evolution/html/05-current-saas-workbench.html</code>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="takeaway-title">
+      <div class="section-title">
+        <h2 id="takeaway-title">这条演进线说明了什么</h2>
+        <p>界面不是单纯变漂亮，而是逐步把审查工作的对象、状态和证据关系产品化。</p>
+      </div>
+      <div class="takeaway">
+        <div class="takeaway-card"><b>从 refdes 到队列</b><span>早期只能解释一个器件，后期能把 25 个器件按风险和状态组织成 review queue。</span></div>
+        <div class="takeaway-card"><b>从表格到任务</b><span>PASS/WARN/ERROR 不再只是统计，变成“必须修、看证据、人工判断”的工作项。</span></div>
+        <div class="takeaway-card"><b>从证据 token 到证据栏</b><span>最早的 datasheet token 最终发展成右侧 evidence trace，让每条结论可追溯。</span></div>
+        <div class="takeaway-card"><b>从静态报告到产品</b><span>顶部多标签和 Copilot 入口把导入、解析、审查、问答、导出串成完整闭环。</span></div>
+      </div>
+      <p class="footer-note">截图来源：`a69c1c4`、`c53d0d0`、`87045cc` 三个历史 worktree 和当前工作区。所有截图均以 1440x960 视口通过 Playwright 重新截取。</p>
+    </section>
+  </main>
+</body>
+</html>
