@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   attentionLabel,
   chainKindLabel,
+  documentStatusGroup,
   documentStatusLabel,
   evidenceNodeKind,
   formatSummary,
@@ -63,7 +64,18 @@ describe("profileStatusLabel / documentStatusLabel", () => {
 
   it("maps known document statuses", () => {
     expect(documentStatusLabel("matched")).toBe("已索引");
+    expect(documentStatusLabel("no_result")).toBe("未命中");
+    expect(documentStatusLabel("ambiguous")).toBe("多候选");
+    expect(documentStatusLabel("manual_needed")).toBe("需人工匹配");
     expect(documentStatusLabel("not_configured")).toBe("未配置");
+  });
+
+  it("groups document statuses onto badge colors", () => {
+    expect(documentStatusGroup("matched")).toBe("pass");
+    expect(documentStatusGroup("ambiguous")).toBe("warn");
+    expect(documentStatusGroup("no_result")).toBe("manual");
+    expect(documentStatusGroup("manual_needed")).toBe("manual");
+    expect(documentStatusGroup("not_configured")).toBe("manual");
   });
 
   it("treats empty status as unknown instead of crashing", () => {

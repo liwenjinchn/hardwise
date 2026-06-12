@@ -1,6 +1,7 @@
 import type {
   CheckView,
   ComponentDetail,
+  DocumentCoverageView,
   EvidenceChainItem,
   EvidenceView,
   PinView,
@@ -209,6 +210,18 @@ export function makeState(overrides: Partial<WorkbenchState> = {}): WorkbenchSta
       rejected_external_count: 0
     },
     risk_hint_details: makeRiskHints(),
+    ...overrides
+  };
+}
+
+export function makeDocument(overrides: Partial<DocumentCoverageView> = {}): DocumentCoverageView {
+  return {
+    status: "matched",
+    title: "L78 series public ST datasheet (l78.pdf)",
+    url: "https://www.st.com/resource/en/datasheet/l78.pdf",
+    source: "st.com",
+    candidates: 1,
+    reason: "Exactly one local document-index row matched this BOM identity.",
     ...overrides
   };
 }

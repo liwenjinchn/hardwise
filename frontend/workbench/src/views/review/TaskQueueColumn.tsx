@@ -1,6 +1,12 @@
 import { Search } from "lucide-react";
 import { StatusBadge, TrustBadge } from "../../components/ui";
-import { attentionLabel, formatSummary, queueSubtitle } from "../../lib/format";
+import {
+  attentionLabel,
+  documentStatusGroup,
+  documentStatusLabel,
+  formatSummary,
+  queueSubtitle
+} from "../../lib/format";
 import type { ReviewQueueItem, StatusGroup } from "../../types";
 
 const FILTERS: Array<{ id: "all" | StatusGroup; label: string; hint: string }> = [
@@ -74,6 +80,12 @@ export function TaskQueueColumn(props: {
                 <TrustBadge tier={item.trust_tier} />
                 {item.pin_table_task_count > 0 && (
                   <span className="source-badge">引脚表 × {item.pin_table_task_count}</span>
+                )}
+                {item.document_status !== "not_configured" && (
+                  <StatusBadge
+                    group={documentStatusGroup(item.document_status)}
+                    label={`资料 ${documentStatusLabel(item.document_status)}`}
+                  />
                 )}
               </span>
             </span>

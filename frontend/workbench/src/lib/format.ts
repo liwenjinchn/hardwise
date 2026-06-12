@@ -62,11 +62,20 @@ export function documentStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     matched: "已索引",
     loaded: "已索引",
+    no_result: "未命中",
+    ambiguous: "多候选",
+    manual_needed: "需人工匹配",
     not_configured: "未配置",
     not_found: "未找到",
     unknown: "未知"
   };
   return labels[status] ?? statusLabelFromRaw(status || "unknown");
+}
+
+export function documentStatusGroup(status: string): StatusGroup {
+  if (status === "matched" || status === "loaded") return "pass";
+  if (status === "ambiguous") return "warn";
+  return "manual";
 }
 
 export function queueSubtitle(item: ReviewQueueItem): string {

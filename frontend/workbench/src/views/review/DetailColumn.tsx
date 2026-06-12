@@ -3,6 +3,7 @@ import { Bot, Download, FileSearch, Layers3, Loader2 } from "lucide-react";
 import { fetchPrepPacketMarkdown } from "../../api";
 import { CheckCard, InfoCell, StatusBadge, TrustBadge, VerdictBanner } from "../../components/ui";
 import {
+  documentStatusGroup,
   documentStatusLabel,
   formatSummary,
   pinStatusLabel,
@@ -10,7 +11,7 @@ import {
   statusGroup,
   taskKindLabel
 } from "../../lib/format";
-import type { ComponentDetail, ReviewTask } from "../../types";
+import type { ComponentDetail, DocumentCoverageView, ReviewTask } from "../../types";
 
 export function DetailColumn({
   detail,
@@ -105,10 +106,10 @@ export function DetailColumn({
           <InfoCell label="器件档案" value={detail.profile_part_number || "待补"} />
           <InfoCell label="BOM 来源" value={detail.bom?.source || "-"} />
           <InfoCell label="档案状态" value={profileStatusLabel(detail.profile?.status || detail.match_status)} />
-          <InfoCell label="文档索引" value={documentStatusLabel(detail.document?.status || "not_configured")} />
           <InfoCell label="任务数" value={`${detail.task_counts.total} 项`} />
         </div>
         {detail.match_reason && <p className="scope-note">{formatSummary(detail.match_reason)}</p>}
+        <DocumentCoverageSection document={detail.document} />
         <section className="prep-actions" aria-label="评审准备包">
           <div>
             <span className="eyebrow">Prep Packet</span>
@@ -170,6 +171,46 @@ export function DetailColumn({
             ))}
           </div>
         </section>
+      </div>
+    </section>
+  );
+}
+
+function DocumentCoverageSection({ document }: { document: DocumentCoverageView | null | undefined }) {
+  const coverage = document ?? {
+    status: "not_configured",
+    title: null,
+    url: null,
+    source: null,
+    candidates: 0,
+    reason: "No document index was provided."
+  };
+  const matched = coverage.status === "matched" || coverage.status === "loaded";
+  return (
+    <section className="detail-section doc-coverage" aria-label="资料索引">
+      <div className="section-title">
+        <h3>资料索引</h3>
+        <StatusBadge group={documentStatusGroup(coverage.status)} label={documentStatusLabel(coverage.status)} />
+      </div>
+      <div className="doc-coverage-card">
+        {coverage.title && (
+          <div className="doc-coverage-line">
+            <strong className="doc-title">{coverage.title}</strong>
+            {coverage.source && <span className="source-badge">{coverage.source}</span>}
+          </div>
+        )}
+        {coverage.url && (
+          <a className="doc-link" href={coverage.url} target="_blank" rel="noreferrer">
+            {coverage.url}
+          </a>
+        )}
+        {!matched && (
+          <p className="doc-reason">
+            {formatSummary(coverage.reason)}
+            {coverage.candidates > 0 ? `（候选 ${coverage.candidates} 条）` : ""}
+          </p>
+        )}
+        <p className="doc-note">覆盖状态只说明本地公开资料索引是否有已审核链接，不构成电气结论。</p>
       </div>
     </section>
   );

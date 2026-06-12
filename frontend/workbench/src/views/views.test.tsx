@@ -11,6 +11,7 @@ import { EvidenceColumn } from "./review/EvidenceColumn";
 import { TaskQueueColumn } from "./review/TaskQueueColumn";
 import {
   makeDetail,
+  makeDocument,
   makeEvidence,
   makePinTable,
   makeQueueItem,
@@ -228,6 +229,27 @@ describe("TaskQueueColumn", () => {
     expect(html).toContain("通过");
     expect(html).toContain("cleared");
   });
+
+  it("shows a document badge only when an index status exists", () => {
+    const withDoc = renderToStaticMarkup(
+      <TaskQueueColumn
+        {...baseProps}
+        items={[makeQueueItem({ document_status: "matched" })]}
+        allItems={[makeQueueItem({ document_status: "matched" })]}
+        selectedRefdes={null}
+      />
+    );
+    expect(withDoc).toContain("资料 已索引");
+    const withoutIndex = renderToStaticMarkup(
+      <TaskQueueColumn
+        {...baseProps}
+        items={[makeQueueItem({ document_status: "not_configured" })]}
+        allItems={[makeQueueItem({ document_status: "not_configured" })]}
+        selectedRefdes={null}
+      />
+    );
+    expect(withoutIndex).not.toContain("资料 ");
+  });
 });
 
 describe("DetailColumn", () => {
@@ -281,6 +303,43 @@ describe("DetailColumn", () => {
     );
     expect(html).toContain("Capture 引脚表 · 6脚");
     expect(html).toContain("R009");
+  });
+
+  it("renders a matched document-index block with title, source, and link", () => {
+    const html = renderToStaticMarkup(
+      <DetailColumn detail={makeDetail({ document: makeDocument() })} loading={false} onAsk={() => {}} />
+    );
+    expect(html).toContain("资料索引");
+    expect(html).toContain("已索引");
+    expect(html).toContain("L78 series public ST datasheet (l78.pdf)");
+    expect(html).toContain("st.com");
+    expect(html).toContain(
+      'href="https://www.st.com/resource/en/datasheet/l78.pdf" target="_blank" rel="noreferrer"'
+    );
+    expect(html).toContain("不构成电气结论");
+  });
+
+  it("renders a no_result document gap with the matcher reason", () => {
+    const html = renderToStaticMarkup(
+      <DetailColumn
+        detail={makeDetail({
+          document: makeDocument({
+            status: "no_result",
+            title: null,
+            url: null,
+            source: null,
+            candidates: 0,
+            reason: "No local document-index row matched this BOM identity."
+          })
+        })}
+        loading={false}
+        onAsk={() => {}}
+      />
+    );
+    expect(html).toContain("资料索引");
+    expect(html).toContain("未命中");
+    expect(html).toContain("No local document-index row matched this BOM identity.");
+    expect(html).not.toContain("doc-link");
   });
 });
 
