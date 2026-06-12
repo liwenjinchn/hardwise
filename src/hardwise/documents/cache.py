@@ -8,8 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import BinaryIO
 from urllib.error import URLError
-from urllib.parse import unquote, urlparse
-from urllib.request import Request, urlopen
+from urllib.parse import urlparse
+from urllib.request import Request, url2pathname, urlopen
 
 from pydantic import BaseModel, Field
 
@@ -185,10 +185,12 @@ def _read_document(entry: DocumentIndexEntry, timeout_seconds: int) -> tuple[byt
     if parsed.scheme in {"http", "https"}:
         return _read_http_document(entry.url, timeout_seconds)
     if parsed.scheme == "file":
-        path = Path(unquote(parsed.path))
-    elif parsed.scheme:
+        path = Path(url2pathname(parsed.path))
+    elif len(parsed.scheme) > 1:
         raise DocumentFetchError("unsupported_url_scheme")
     else:
+        # No scheme, or a single-letter "scheme" that is really a Windows
+        # drive letter (urlparse reads C:\x.pdf as scheme "c").
         path = Path(entry.url)
         if not path.is_absolute():
             path = entry.source_file.parent / path

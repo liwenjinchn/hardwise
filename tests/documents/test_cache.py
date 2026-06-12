@@ -70,6 +70,34 @@ def test_fetch_approved_documents_rejects_non_pdf(tmp_path: Path) -> None:
     assert [row.reason for row in report.skipped] == ["not_pdf"]
 
 
+def test_fetch_approved_documents_treats_drive_letter_url_as_local_path(tmp_path: Path) -> None:
+    docs_path = tmp_path / "docs.csv"
+    docs_path.write_text(
+        "MPN,Title,URL,ReviewStatus\n"
+        "MPQ8626,MPQ8626 datasheet,C:\\datasheets\\missing.pdf,approved\n",
+        encoding="utf-8",
+    )
+
+    report = fetch_approved_documents(parse_document_index(docs_path), tmp_path / "cache")
+
+    assert report.fetched == []
+    assert [row.reason for row in report.skipped] == ["local_file_unreadable"]
+
+
+def test_fetch_approved_documents_rejects_unknown_url_scheme(tmp_path: Path) -> None:
+    docs_path = tmp_path / "docs.csv"
+    docs_path.write_text(
+        "MPN,Title,URL,ReviewStatus\n"
+        "MPQ8626,MPQ8626 datasheet,ftp://example.com/mpq8626.pdf,approved\n",
+        encoding="utf-8",
+    )
+
+    report = fetch_approved_documents(parse_document_index(docs_path), tmp_path / "cache")
+
+    assert report.fetched == []
+    assert [row.reason for row in report.skipped] == ["unsupported_url_scheme"]
+
+
 def test_fetch_approved_documents_cli_writes_cache_and_metadata(tmp_path: Path) -> None:
     pdf_path = tmp_path / "mpq8626.pdf"
     pdf_path.write_bytes(PDF_BYTES)
