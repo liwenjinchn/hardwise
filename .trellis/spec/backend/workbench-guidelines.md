@@ -210,3 +210,47 @@ if _needs_document_coverage(question):
         input={"refdes": refdes, "candidate_limit": 5},
     )
 ```
+
+## Convention: Demo-Entrypoint Parity for Optional Workbench Inputs
+
+**What**: When an optional workbench input exists (`--document-index`,
+`--pin-table`, `--risk-hints-json`, future flags), every demo entrypoint must
+either pass it with a committed public fixture or the feature is treated as
+not shipped for demo purposes. Demo entrypoints are: the README.md and
+README.zh-CN.md command blocks, `scripts/start_hardwise_workbench.command`,
+and `scripts/start_hardwise_workbench.ps1` (the `.cmd` delegates to the
+`.ps1`). The two READMEs and the two launchers must stay equivalent.
+
+**Why**: The document-index pipeline was fully built (parser, matcher, view
+model, Copilot tools) but stayed invisible for weeks because no demo command
+passed `--document-index` — every component rendered `not_configured` and the
+feature read as missing. A backend capability without a demo feed is
+indistinguishable from an unbuilt one (2026-06-12 learning-log entry).
+
+**Example**:
+
+```bash
+uv run hardwise serve-workbench "$NETLIST" "$BOM" --port 8765 \
+  --document-index data/document_indexes/mixed_controller_power_stage_docs.csv
+```
+
+**Check**: grep README.md, README.zh-CN.md, and both launcher scripts for the
+flag before declaring an optional-input feature demo-visible.
+
+## Convention: Frontend Bundle Is a Committed Build Artifact
+
+**What**: The workbench SPA source lives in `frontend/workbench/` (React +
+Vite); `npm run build` emits hashed assets into
+`src/hardwise/workbench/static/`. Any frontend source change must ship with
+the regenerated bundle in the same commit: delete the old hashed assets, add
+the new ones, and keep `static/index.html` referencing exactly the new pair.
+
+**Why**: Python entrypoints serve the committed bundle, not the source. A
+source-only change silently demos the old UI. The build is reproducible —
+running `npm run build` twice yields byte-identical hashes, so `git status`
+staying clean after a rebuild proves bundle freshness.
+
+**Check**: after `npm run build`, `git status` must show no unstaged
+`static/` changes, and `grep -o 'index-[A-Za-z0-9]*\.\(js\|css\)' src/hardwise/workbench/static/index.html`
+must list only assets that exist on disk.
+
