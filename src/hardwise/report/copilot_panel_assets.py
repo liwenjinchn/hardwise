@@ -221,7 +221,7 @@ COPILOT_SCRIPT = """
     const details = document.createElement('details');
     details.className = 'ai-trace';
     const summary = document.createElement('summary');
-    summary.textContent = '证据 / 工具调用';
+    summary.textContent = `工具调用 / 证据 · ${trace.length}`;
     details.appendChild(summary);
     const traceField = (label, valueNode, sourceLabel = '') => {
       const field = document.createElement('div');
