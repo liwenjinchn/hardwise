@@ -135,8 +135,8 @@ function chatHistory(messages: ThreadMessage[]): ChatMessage[] {
 
 function TraceDetails({ response }: { response: ChatResponse }) {
   return (
-    <details className="trace" open>
-      <summary>tool trace · {response.trace.length}</summary>
+    <details className="trace">
+      <summary>工具调用 / 证据 · {response.trace.length}</summary>
       {response.trace.map((trace, index) => (
         <div className="trace-row toolcall" key={`${trace.tool}-${index}`}>
           <div className="tc-h">
