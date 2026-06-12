@@ -8,6 +8,47 @@
 
 ---
 
+## 2026-06-12 — A finished backend feature was invisible because the demo never fed it
+
+**Symptom**
+
+Datasheet/document coverage looked entirely missing from the product: every
+component in the demo workbench showed 文档索引 "未配置". Yet the backend was
+complete — CSV index parser, BOM matcher, `DocumentCoverageView` in the view
+model, even a candidate-search API endpoint, all shipped with tests.
+
+**Root cause**
+
+Three independent last-mile gaps stacked on top of a working pipeline. The
+demo entrypoints (launcher script and every README command) never passed
+`--document-index`, so `context.document_report` was always `None`. The
+frontend consumed exactly one field of the view (a plain status string in one
+InfoCell) and rendered none of the title/url/source/reason payload. And no
+index CSV in the repo covered the demo fixture's real MPNs, so even manual
+wiring would have shown zero matches. Each layer was individually "done";
+nobody owned the path from feature to visible demo behavior.
+
+**Fix**
+
+S1 wired the last mile only — zero backend changes: a verified
+`mixed_controller_power_stage_docs.csv` (4 manufacturer URLs verified online,
+4 unverifiable MPNs honestly excluded as no_result gaps), `--document-index`
+added to the launcher scripts and all README demo blocks, and the frontend
+upgraded to a 资料索引 section (status badge + title + source + link + reason)
+plus a queue-row document badge. The offline snapshot picked the change up for
+free because it bakes the same view model.
+
+**Takeaway**
+
+"Backend shipped + frontend type exists" is not a feature; the demo command
+line is part of the feature's definition of done. When a capability has an
+optional input, audit the canonical demo entrypoints for whether they exercise
+it — a flag nobody passes and a payload nobody renders are silent ways for
+finished work to not exist. Checking coverage end-to-end costs one dry-run
+command; rediscovering it later cost a full investigation.
+
+---
+
 ## 2026-06-12 — Windows drive letters parse as URL schemes
 
 **Symptom**

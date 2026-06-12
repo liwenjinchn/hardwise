@@ -294,6 +294,45 @@ change, no PCB/PLM scope.
 
 ---
 
+## 规格书自动获取 S2/S3 — staged after workbench document coverage S1
+
+**Trigger**: S1 is shipped — the demo workbench feeds
+`--document-index data/document_indexes/mixed_controller_power_stage_docs.csv`
+and renders per-component document coverage (matched / no_result / ambiguous /
+manual_needed) in the detail panel and queue rows. S2 starts when the user
+wants coverage gaps to close themselves instead of by hand-built CSV rows.
+
+**Where it lands**: `documents/` provider + fetch pipeline tasks (S2) and
+`workbench/` review-queue tasks (S3), each as its own Trellis task. Update
+`docs/architecture.md` only when a stage ships.
+
+**What to build**:
+
+- **S2 — candidate discovery to liberal auto-approve**: candidate discovery
+  (`search-datasheets-com` / `build-document-index-candidates` shapes) feeds
+  auto-download with `needs_review` as the default state; an auto-approve rule
+  promotes a row only on normalized-MPN exact match with a single unambiguous
+  hit. Multi-candidate, fuzzy, or value-fallback hits stay in the engineer
+  confirmation queue. Calibrate against the user's real project with a batch
+  run that reports 自动放行 N / 需确认 M / 未命中 K before tuning thresholds.
+- **S3 — workbench confirmation queue**: surface the "需确认" rows as
+  workbench review tasks, reusing the pin-table L1 review-task shape (accepted
+  rows become tasks; rejections carry reasons). No new validation truth.
+- **Recorded user judgement (2026-06-12)**: the dominant risk is fetching the
+  *wrong* datasheet for a part (mismatched MPN), not untrustworthy datasheet
+  content — so auto-approve can be liberal, and engineer confirmation volume
+  must stay small.
+- **Closed-source evolution**: swap the provider behind the same interface
+  shape as `documents/datasheets_com.py` for a PLM provider — search by part
+  number, fetch the attached datasheet; the status enum
+  (matched / no_result / ambiguous / manual_needed) stays unchanged.
+
+Hard bounds: public sources only in the open repo; no PDF binaries committed;
+document coverage stays coverage evidence and never becomes an electrical
+verdict.
+
+---
+
 ## Eval dual-track: seeded-defect benchmark + defects4KiCad mining — staged for interview prep
 
 **Trigger**: interview scheduled (not a submission blocker). Motivation: the
