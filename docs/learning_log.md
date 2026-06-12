@@ -8,6 +8,42 @@
 
 ---
 
+## 2026-06-12 — Windows drive letters parse as URL schemes
+
+**Symptom**
+
+PR #3's Windows CI failed 4 tests in `tests/documents/test_cache.py` while
+macOS passed. Every approved local-path row was skipped with
+`unsupported_url_scheme`, so nothing was fetched into the cache.
+
+**Root cause**
+
+`_read_document` classified document-index URLs by `urlparse(url).scheme`. On
+Windows the test tmp paths look like `C:\Users\...\mpq8626.pdf`, and `urlparse`
+reads the drive letter as scheme `"c"` — a non-empty scheme, so the row fell
+into the reject branch. POSIX paths start with `/`, parse with an empty scheme,
+and took the local-file branch, which is why only Windows failed. The sibling
+`file:` branch had the same class of bug: `unquote(parsed.path)` yields
+`/C:/...` on Windows instead of a usable path.
+
+**Fix**
+
+Treat a single-letter scheme as a Windows drive path (real URL schemes are at
+least two characters — the same heuristic pip uses), and convert `file:` URLs
+with stdlib `url2pathname`, which equals `unquote` on POSIX and handles drive
+letters on Windows. Added cross-platform regression tests: a drive-letter URL
+now skips as `local_file_unreadable` (not scheme-rejected) and `ftp://` is
+still `unsupported_url_scheme`.
+
+**Takeaway**
+
+`urlparse` is not a path/URL discriminator — any `X:` prefix is a "scheme" to
+it. When a field can hold either a URL or a native path, decide locality first
+(drive letter, leading slash) before trusting the scheme, and remember CI on a
+second OS is what surfaces this class of bug; keep the Windows leg green.
+
+---
+
 ## 2026-06-12 — KiCad named-net checks should not pretend to know fanout
 
 **Symptom**
