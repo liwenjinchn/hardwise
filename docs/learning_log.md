@@ -8,6 +8,44 @@
 
 ---
 
+## 2026-06-12 — The same "tool trace" renders through two paths that drifted on fold state
+
+**Symptom**
+
+After a real closed-loop run the Copilot trace felt un-productized: the SPA
+panel dumped the whole tool trace open on screen, while the static offline
+report folded the same trace behind a summary. "I folded it" had only ever
+landed in one of the two.
+
+**Root cause**
+
+The tool/evidence trace renders through **two independent code paths**: the
+SPA's `CopilotPanel.tsx` `TraceDetails` (a React `<details>`), and the
+static-report hand-written JS in `report/copilot_panel_assets.py` `renderTrace`
+(DOM built by hand). A prior refactor (db8ae47) forced the SPA side to
+`<details open>` and never touched the static side, so the two disagreed on the
+same "should this be open?" question. Content-only tests stayed green because
+they assert which strings appear, not fold state or localized wording.
+
+**Fix**
+
+One policy across both paths — default-folded, count in the summary, Chinese
+wording (`工具调用 / 证据 · N`). Then rebuild the vendored SPA bundle
+(`npm run build` → `src/hardwise/workbench/static`) in the same change so the
+committed `index-*.js` artifact matches source — vite renames the hash and
+deletes the old file, so never hand-edit the bundle.
+
+**Takeaway**
+
+When one concept renders through more than one code path, a behavior change has
+to name every path or it silently drifts. Content-presence tests won't catch
+presentation drift — assert fold state and localized text when those are the
+actual deliverable. (The evidence column had the same disease at the time, but
+the document-coverage work rebuilt that column wholesale, so this entry keeps
+only the part still live after that merge.)
+
+---
+
 ## 2026-06-12 — A finished backend feature was invisible because the demo never fed it
 
 **Symptom**
