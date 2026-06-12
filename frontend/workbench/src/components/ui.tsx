@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2, CircleHelp, ExternalLink } from "lucide-react";
 import type { CheckView, EvidenceChainItem, EvidenceView, StatusGroup, TrustTier } from "../types";
-import { TRUST_LABEL, chainKindLabel, evidenceNodeKind, formatSummary } from "../lib/format";
+import { TRUST_LABEL, chainKindLabel, evidenceNodeKind, formatSummary, sourceLabel } from "../lib/format";
 
 // Shared chips, badges, evidence rows, and small presentational primitives —
 // mirrors the reference prototype's ui.jsx role.
@@ -67,7 +67,7 @@ export function EvidenceToken({ evidence }: { evidence: EvidenceView }) {
     <span className={`token ${evidence.source_class}`}>
       <ExternalLink size={11} />
       {evidence.token}
-      <small>{evidence.label} · {evidence.source_class}</small>
+      <small>{evidence.label} · {sourceLabel(evidence.source_class)}</small>
     </span>
   );
 }

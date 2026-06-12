@@ -60,6 +60,17 @@ class WorkbenchCapabilities(BaseModel):
     pin_table_enabled: bool = False
 
 
+class PinTableSummary(BaseModel):
+    """Capture pin-table intake status shown beside first-class imports."""
+
+    status: Literal["loaded", "not_configured"]
+    source: str | None = None
+    accepted_findings: int = 0
+    rejected_findings: int = 0
+    affected_refdes: int = 0
+    checks: dict[str, int] = Field(default_factory=dict)
+
+
 class EvidenceView(BaseModel):
     """One visible evidence token plus its provenance classification."""
 
@@ -102,6 +113,7 @@ class ReviewQueueItem(BaseModel):
     issue_count: int
     evidence_count: int
     risk_hint_count: int = 0
+    pin_table_task_count: int = 0
     task_count: int = 0
     task_counts: "ComponentTaskCounts" = Field(default_factory=lambda: ComponentTaskCounts())
     task_ids: list[str] = Field(default_factory=list)
@@ -309,6 +321,7 @@ class WorkbenchState(BaseModel):
     project: WorkbenchProject
     summary: WorkbenchSummary
     capabilities: WorkbenchCapabilities
+    pin_table: PinTableSummary
     selected_refdes: str | None
     queue: list[ReviewQueueItem]
     review_tasks: list[ReviewTask]
@@ -455,6 +468,7 @@ def build_workbench_state(
             risk_hints_enabled=context.risk_hints.source_path is not None,
             pin_table_enabled=context.pin_table_path is not None,
         ),
+        pin_table=_pin_table_summary(context),
         selected_refdes=_default_refdes(queue) or _default_task_refdes(review_tasks),
         queue=queue,
         review_tasks=review_tasks,
@@ -590,6 +604,7 @@ def _queue_item(
     issues = _issue_count(validation)
     evidence_count = len(_dedupe(_validation_evidence(validation)))
     task_counts = _component_task_counts(tasks)
+    pin_table_task_count = sum(1 for task in tasks if task.kind == "pin_table_check")
     return ReviewQueueItem(
         refdes=component.refdes,
         value=component.value or "",
@@ -608,6 +623,7 @@ def _queue_item(
         issue_count=issues,
         evidence_count=evidence_count,
         risk_hint_count=risk_hint_count,
+        pin_table_task_count=pin_table_task_count,
         task_count=task_counts.total,
         task_counts=task_counts,
         task_ids=[task.id for task in tasks],
@@ -902,11 +918,11 @@ def _pin_table_task(finding: Finding) -> ReviewTask:
         chain=[
             EvidenceChainItem(
                 kind="pin_table_row",
-                title=f"Capture pin-table · {finding.refdes}{pin}",
+                title=f"Capture 引脚表 · {finding.refdes}{pin}",
                 body=(
                     finding.evidence_chain[0].claim
                     if finding.evidence_chain
-                    else "Capture pin-table row triggered this deterministic check."
+                    else "Capture 引脚表记录触发了这条确定性检查。"
                 ),
                 status=status,
                 status_group=_status_group(status),
@@ -1060,6 +1076,22 @@ def _net_check_views(context: WorkbenchContext) -> list[NetCheckView]:
         )
         for net_check in context.index.net_checks
     ]
+
+
+def _pin_table_summary(context: WorkbenchContext) -> PinTableSummary:
+    """Summarize Capture pin-table findings without changing validation totals."""
+
+    if context.pin_table_path is None:
+        return PinTableSummary(status="not_configured")
+    checks = Counter(finding.rule_id for finding in context.pin_table_findings)
+    return PinTableSummary(
+        status="loaded",
+        source=str(context.pin_table_path),
+        accepted_findings=len(context.pin_table_findings),
+        rejected_findings=context.rejected_pin_table_findings,
+        affected_refdes=len({finding.refdes for finding in context.pin_table_findings if finding.refdes}),
+        checks=dict(sorted(checks.items())),
+    )
 
 
 def _risk_hint_view(hint: RiskHint) -> RiskHintView:

@@ -111,6 +111,10 @@ const SUMMARY_REPLACEMENTS: Array<[RegExp, string]> = [
   [/BJT base is connected to ([^.]+)\./g, "BJT 基极连接到 $1。"],
   [/BJT Vebo rating must exceed reverse base-emitter stress\./g, "BJT Vebo 额定值需要覆盖反向基极-发射极应力。"],
   [/MCU SWDIO is connected to SWCLK, expected SWDIO\./g, "MCU SWDIO 接到了 SWCLK，期望连接到 SWDIO。"],
+  [/R(\d{3}) · ([A-Z]+\d*) pin (\d+) \(([^)]+)\) is a POWER pin with no net at ([^@.]+)@([^,]+),([^.]+)\./g, "R$1 · $2 的 $3 脚（$4）是电源脚，但在原理图 $5 页没有连接网络。"],
+  [/([A-Z]+\d*) pin (\d+) \(([^)]+)\) is a POWER pin with no net at ([^@.]+)@([^,]+),([^.]+)\./g, "$1 的 $2 脚（$3）是电源脚，但在原理图 $4 页没有连接网络。"],
+  [/Pin-table row: ([A-Z]+\d*)\.(\d+) type ([^,]+), net empty, nc_marker (\d+) \(page ([^,]+), x=([^,]+), y=([^)]+)\)\./g, "Capture 引脚表显示：$1.$2 类型为 $3，网络为空，NC 标记为 $4，位于原理图 $5 页。"],
+  [/Connect the pin to its supply\/ground net, or document the omission with an explicit NC marker and a design note\./g, "把该引脚接到对应电源/地网络；如果确实不接，需要用明确 NC 标记和设计说明记录原因。"],
   [/No deterministic capacitance value could be parsed from '([^']+)'\./g, "无法从 '$1' 确定性解析电容值。"],
   [/Diode reverse voltage rating is about ([^,]+), below required ([^.]+)\./g, "二极管反向耐压约 $1，低于所需 $2。"],
   [/Input network voltage falls within the structured component profile limit\./g, "输入网络电压在结构化器件档案限制内。"],
@@ -136,7 +140,8 @@ export function chainKindLabel(kind: string): string {
     netlist_trace: "网表追踪",
     design_rule: "设计规则",
     datasheet_or_profile: "资料证据",
-    external_hint: "外部线索"
+    external_hint: "外部线索",
+    pin_table_row: "Capture 引脚表"
   };
   return labels[kind] ?? kind;
 }
@@ -147,6 +152,8 @@ export function taskKindLabel(kind: string): string {
     pin_check: "引脚检查",
     manual_gap: "人工缺口",
     external_risk_hint: "外部线索",
+    pin_table_check: "Capture 引脚表检查",
+    cleared_summary: "已通过",
     cleared: "已通过"
   };
   return labels[kind] ?? kind;

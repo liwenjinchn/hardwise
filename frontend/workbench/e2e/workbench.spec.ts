@@ -22,7 +22,7 @@ async function pickComponent(page: Page, refdes: string) {
   // Detail column reflects the picked component.
   await expect(page.locator(".detail-panel h2")).toHaveText(refdes);
   // Evidence column follows the same selection.
-  await expect(page.locator(".evidence-panel h2")).toHaveText(`${refdes} 证据链`);
+  await expect(page.locator(".evidence-panel h2")).toHaveText(`${refdes} 为什么被提醒`);
 }
 
 test("queue clicks on Q12 / U8 / U12 update detail and evidence columns", async ({ page }) => {

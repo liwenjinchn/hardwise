@@ -321,6 +321,7 @@ def create_workbench_app(
             "ok": True,
             "project": state.project.model_dump(),
             "summary": state.summary.model_dump(),
+            "pin_table": state.pin_table.model_dump(),
             "selected_refdes": state.selected_refdes,
             "task_counts": state.task_counts.model_dump(),
         }

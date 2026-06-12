@@ -7,9 +7,10 @@ import {
   formatSummary,
   pinStatusLabel,
   profileStatusLabel,
-  statusGroup
+  statusGroup,
+  taskKindLabel
 } from "../../lib/format";
-import type { ComponentDetail } from "../../types";
+import type { ComponentDetail, ReviewTask } from "../../types";
 
 export function DetailColumn({
   detail,
@@ -127,6 +128,18 @@ export function DetailColumn({
         {prepPreview && <pre className="prep-preview">{prepPreview}</pre>}
         <section className="detail-section">
           <div className="section-title">
+            <h3>审查任务</h3>
+            <span>{detail.tasks.length} tasks</span>
+          </div>
+          <div className="detail-task-list">
+            {detail.tasks.length === 0 && <p className="muted">当前器件没有进入 finding 队列。</p>}
+            {detail.tasks.map((task, index) => (
+              <TaskCard task={task} index={index} key={task.id} />
+            ))}
+          </div>
+        </section>
+        <section className="detail-section">
+          <div className="section-title">
             <h3>引脚 / 网络表</h3>
             <span>{detail.pins.length} pins</span>
           </div>
@@ -159,5 +172,21 @@ export function DetailColumn({
         </section>
       </div>
     </section>
+  );
+}
+
+function TaskCard({ task, index }: { task: ReviewTask; index: number }) {
+  const source = task.kind === "pin_table_check" ? "Capture 引脚表" : taskKindLabel(task.kind);
+  return (
+    <article className={`detail-task-card ${task.status_group}`}>
+      <div className="card-line">
+        <strong>问题 {index + 1}</strong>
+        <StatusBadge group={task.status_group} label={task.status_label} />
+        <span className={task.kind === "pin_table_check" ? "source-badge" : "task-source"}>
+          {source}{task.pin_number ? ` · ${task.pin_number}脚` : ""}
+        </span>
+      </div>
+      <p>{formatSummary(task.title)}</p>
+    </article>
   );
 }

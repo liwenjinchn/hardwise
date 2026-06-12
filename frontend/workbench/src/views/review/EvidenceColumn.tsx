@@ -1,7 +1,7 @@
 import { CircleHelp, Link2, ShieldCheck } from "lucide-react";
 import { EvidenceCard, EvidenceToken, StatusBadge, TrustBadge } from "../../components/ui";
-import { TRUST_LABEL, attentionLabel, formatSummary, taskKindLabel } from "../../lib/format";
-import type { ComponentDetail, ReviewTask, RiskHintsView } from "../../types";
+import { TRUST_LABEL, attentionLabel, chainKindLabel, formatSummary, taskKindLabel } from "../../lib/format";
+import type { ComponentDetail, EvidenceChainItem, ReviewTask, RiskHintsView } from "../../types";
 
 export function EvidenceColumn({
   tasks,
@@ -24,8 +24,8 @@ export function EvidenceColumn({
     <aside className="panel evidence-panel">
       <div className="panel-head">
         <div>
-          <span className="eyebrow">Evidence Chain</span>
-          <h2>{chainRefdes ? `${chainRefdes} 证据链` : "证据链"}</h2>
+          <span className="eyebrow">Review Evidence</span>
+          <h2>{chainRefdes ? `${chainRefdes} 为什么被提醒` : "为什么被提醒"}</h2>
         </div>
         <Link2 size={17} />
       </div>
@@ -47,19 +47,19 @@ export function EvidenceColumn({
       ) : (
         <div className="finding-chain">
           <div className="task-tabs" aria-label="当前器件 findings">
-            {tasks.map((task) => (
+            {tasks.map((task, index) => (
               <button
                 type="button"
                 key={task.id}
                 className={task.id === selected?.id ? "active" : ""}
                 onClick={() => onPickTask(task.id)}
               >
-                <span className="mono">{task.id}</span>
+                <span>{issueLabel(index)}</span>
                 <StatusBadge group={task.status_group} label={attentionLabel(task.status_group)} />
               </button>
             ))}
           </div>
-          {tasks.map((task) => (
+          {tasks.map((task, index) => (
             <article
               className={`evi-finding ${task.status_group} ${task.id === selected?.id ? "selected" : ""}`}
               key={task.id}
@@ -67,7 +67,7 @@ export function EvidenceColumn({
             >
               <div className="task-brief">
                 <div className="finding-meta">
-                  <span className="eyebrow">{task.id} · {taskKindLabel(task.kind)} · {task.refdes}</span>
+                  <span className="eyebrow">{issueLabel(index)} · {taskKindLabel(task.kind)} · {task.refdes}</span>
                   <StatusBadge group={task.status_group} label={attentionLabel(task.status_group)} />
                   <TrustBadge tier={task.trust_tier} />
                 </div>
@@ -76,24 +76,31 @@ export function EvidenceColumn({
                 <div className="guard-note">
                   <ShieldCheck size={15} />
                   <span>
-                    <b>How this was reached · {TRUST_LABEL[task.trust_tier]}.</b>
-                    {" "}结论只来自后端事实、规则和 evidence token；外部提示保持只读人工线索。
+                    <b>证据路径 · {TRUST_LABEL[task.trust_tier]}。</b>
+                    {" "}这条提醒来自后端解析事实、确定性规则和可追溯 token；外部提示只作为人工线索。
                   </span>
                 </div>
-              </div>
-              <div className="evidence-list">
-                {task.evidence_chain.length === 0 ? (
-                  <p className="muted">该 finding 没有可展示 evidence node。</p>
-                ) : (
-                  task.evidence_chain.map((item, index) => (
-                    <EvidenceCard item={item} key={`${task.id}-${item.kind}-${index}`} />
-                  ))
-                )}
               </div>
               <div className="recommended-action">
                 <b>建议动作</b>
                 <span>{formatSummary(task.recommended_action)}</span>
               </div>
+              <div className="evidence-compact">
+                <b>证据来源</b>
+                <span>{evidenceSourceSummary(task.evidence_chain)}</span>
+              </div>
+              <details className="evidence-details">
+                <summary>展开原始证据 token</summary>
+                <div className="evidence-list compact-evidence-list">
+                  {task.evidence_chain.length === 0 ? (
+                    <p className="muted">该提醒没有可展示 evidence node。</p>
+                  ) : (
+                    task.evidence_chain.map((item, itemIndex) => (
+                      <EvidenceCard item={item} key={`${task.id}-${item.kind}-${itemIndex}`} />
+                    ))
+                  )}
+                </div>
+              </details>
             </article>
           ))}
         </div>
@@ -101,6 +108,15 @@ export function EvidenceColumn({
       <RiskHintsPanel riskHints={riskHints} selectedRefdes={chainRefdes} />
     </aside>
   );
+}
+
+function issueLabel(index: number): string {
+  return `问题 ${index + 1}`;
+}
+
+function evidenceSourceSummary(items: EvidenceChainItem[]): string {
+  if (items.length === 0) return "暂无可展开证据";
+  return items.map((item) => chainKindLabel(item.kind)).join(" / ");
 }
 
 function RiskHintsPanel({ riskHints, selectedRefdes }: { riskHints: RiskHintsView; selectedRefdes: string | null }) {

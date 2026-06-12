@@ -4,6 +4,7 @@ import type {
   EvidenceChainItem,
   EvidenceView,
   PinView,
+  PinTableSummary,
   ReviewQueueItem,
   ReviewTask,
   ReviewTaskCounts,
@@ -66,6 +67,7 @@ export function makeQueueItem(overrides: Partial<ReviewQueueItem> = {}): ReviewQ
     issue_count: 1,
     evidence_count: 2,
     risk_hint_count: 1,
+    pin_table_task_count: 0,
     task_count: 1,
     task_counts: makeTaskCounts(),
     task_ids: ["T1"],
@@ -177,15 +179,29 @@ export function makeRiskHints(overrides: Partial<RiskHintsView> = {}): RiskHints
   };
 }
 
+export function makePinTable(overrides: Partial<PinTableSummary> = {}): PinTableSummary {
+  return {
+    status: "not_configured",
+    source: null,
+    accepted_findings: 0,
+    rejected_findings: 0,
+    affected_refdes: 0,
+    checks: {},
+    ...overrides
+  };
+}
+
 export function makeState(overrides: Partial<WorkbenchState> = {}): WorkbenchState {
   return {
     project: makeProject(),
     summary: makeSummary(),
     capabilities: makeCapabilities(),
+    pin_table: makePinTable(),
     selected_refdes: "U8",
     queue: [makeQueueItem()],
     review_tasks: [makeTask()],
     task_counts: makeTaskCounts(),
+    net_checks: [],
     risk_hints: {
       external_status: "not_configured",
       count: 0,

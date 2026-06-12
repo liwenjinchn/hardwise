@@ -1,5 +1,5 @@
 import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
-import { FileArchive, FileUp, Loader2, Play, UploadCloud } from "lucide-react";
+import { FileArchive, FileJson, FileSpreadsheet, Loader2, Play, UploadCloud } from "lucide-react";
 import { importWorkbench } from "../api";
 import type { ImportResponse, WorkbenchState } from "../types";
 
@@ -44,11 +44,18 @@ export function ImportView({
           文件只写入本进程临时目录。上传成功后后端会重新运行
           WorkbenchContext，浏览器进入 Parse 动画，再回到 Review。
         </p>
+        <p className="import-note">
+          Capture 引脚表 CSV 来自 Cadence Capture 导出脚本：
+          <code>scripts/capture_pin_table_export.tcl</code>。它补充 pin 类型、NC 标记、
+          页码和坐标，只生成 review tasks，不改变 PASS/WARN/ERROR 统计口径。
+        </p>
       </div>
       <form className="upload-board" onSubmit={(event) => void submit(event)}>
         <UploadSlot
           icon={<UploadCloud size={20} />}
           label="netlist / PST"
+          detail={state.project.netlist_type}
+          status="required"
           required
           file={netlist}
           accept=".net,.dat,.txt,.pst"
@@ -57,20 +64,30 @@ export function ImportView({
         <UploadSlot
           icon={<FileArchive size={20} />}
           label="BOM CSV"
+          detail={`${state.summary.bom_matched} matched refdes`}
+          status={state.summary.bom_matched > 0 ? "loaded" : "optional"}
           file={bom}
           accept=".csv,.tsv,.txt"
           onPick={setBom}
         />
         <UploadSlot
-          icon={<FileUp size={20} />}
-          label="pin table CSV"
+          icon={<FileSpreadsheet size={20} />}
+          label="Capture 引脚表 CSV"
+          detail={pinTableDetail(state)}
+          status={state.pin_table.status === "loaded" ? "loaded" : "optional"}
           file={pinTable}
           accept=".csv,.txt"
           onPick={setPinTable}
         />
         <UploadSlot
-          icon={<FileUp size={20} />}
+          icon={<FileJson size={20} />}
           label="risk hints JSON"
+          detail={
+            state.capabilities.risk_hints_enabled
+              ? `${state.risk_hints.accepted_external_count} accepted hints`
+              : "optional external hints"
+          }
+          status={state.capabilities.risk_hints_enabled ? "loaded" : "optional"}
           file={riskHints}
           accept=".json"
           onPick={setRiskHints}
@@ -89,6 +106,11 @@ export function ImportView({
           {state.summary.pass_count}/{state.summary.warn_count}/{state.summary.error_count}，
           manual={state.summary.manual}
         </p>
+        <div className="snapshot-assets" aria-label="导入资产状态">
+          <span>Netlist</span>
+          <span>BOM {state.summary.bom_matched > 0 ? "loaded" : "pending"}</span>
+          <span>引脚表 {state.pin_table.status === "loaded" ? `${state.pin_table.accepted_findings} 条任务` : "未加载"}</span>
+        </div>
       </div>
     </section>
   );
@@ -97,6 +119,8 @@ export function ImportView({
 function UploadSlot(props: {
   icon: ReactNode;
   label: string;
+  detail: string;
+  status: "required" | "loaded" | "optional";
   required?: boolean;
   file: File | null;
   accept: string;
@@ -118,14 +142,16 @@ function UploadSlot(props: {
 
   return (
     <label
-      className={`upload-slot${dragging ? " dragging" : ""}`}
+      className={`upload-slot ${props.status}${dragging ? " dragging" : ""}`}
       onDragEnter={() => setDragging(true)}
       onDragLeave={() => setDragging(false)}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <span>{props.icon}</span>
+      <span className="upload-icon">{props.icon}</span>
+      <span className="upload-status">{props.status === "required" ? "required" : props.status}</span>
       <strong>{props.label}{props.required ? " *" : ""}</strong>
+      <em>{props.detail}</em>
       <small>{props.file?.name ?? "拖入文件或点击选择"}</small>
       <input
         type="file"
@@ -134,4 +160,12 @@ function UploadSlot(props: {
       />
     </label>
   );
+}
+
+function pinTableDetail(state: WorkbenchState): string {
+  if (state.pin_table.status !== "loaded") return "optional script export";
+  const checks = Object.entries(state.pin_table.checks)
+    .map(([rule, count]) => `${rule} ${count}`)
+    .join(" / ");
+  return `${state.pin_table.accepted_findings} 条任务 · ${checks || "引脚检查"}`;
 }

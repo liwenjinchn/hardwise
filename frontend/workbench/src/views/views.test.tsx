@@ -12,6 +12,7 @@ import { TaskQueueColumn } from "./review/TaskQueueColumn";
 import {
   makeDetail,
   makeEvidence,
+  makePinTable,
   makeQueueItem,
   makeRiskHints,
   makeState,
@@ -57,10 +58,34 @@ describe("ImportView", () => {
     const html = renderToStaticMarkup(<ImportView state={makeState()} onImported={() => {}} />);
     expect(html).toContain("netlist / PST");
     expect(html).toContain("BOM CSV");
+    expect(html).toContain("Capture 引脚表 CSV");
     expect(html).toContain("risk hints JSON");
     expect(html).toContain("25 components");
+    expect(html).toContain("引脚表 未加载");
+    expect(html).toContain("scripts/capture_pin_table_export.tcl");
     expect(html).toContain("导入并解析");
     expect(html).toContain("拖入文件或点击选择");
+  });
+
+  it("renders pin-table intake as a loaded first-class asset", () => {
+    const html = renderToStaticMarkup(
+      <ImportView
+        state={makeState({
+          capabilities: { ...makeState().capabilities, pin_table_enabled: true },
+          pin_table: makePinTable({
+            status: "loaded",
+            source: "pin_table_demo.csv",
+            accepted_findings: 3,
+            rejected_findings: 1,
+            affected_refdes: 2,
+            checks: { R008: 1, R009: 1, R010: 1 }
+          })
+        })}
+        onImported={() => {}}
+      />
+    );
+    expect(html).toContain("引脚表 3 条任务");
+    expect(html).toContain("3 条任务 · R008 1 / R009 1 / R010 1");
   });
 });
 
@@ -69,8 +94,31 @@ describe("ParseView", () => {
     const html = renderToStaticMarkup(<ParseView state={makeState()} parseResult={null} />);
     expect(html).toContain("解析网表");
     expect(html).toContain("25 个器件进入注册表");
+    expect(html).toContain("读取 Capture 引脚表");
+    expect(html).toContain("未加载 Capture 引脚表 CSV");
     expect(html).toContain("PASS/WARN/ERROR=5/13/4");
     expect(html).toContain("1 个任务已排队");
+  });
+
+  it("renders pin-table import counts from the latest parse result", () => {
+    const html = renderToStaticMarkup(
+      <ParseView
+        state={makeState()}
+        parseResult={{
+          ok: true,
+          project: makeState().project,
+          summary: makeState().summary,
+          selected_refdes: "U8",
+          task_counts: makeTaskCounts({ total: 4, warn: 4 }),
+          pin_table: makePinTable({
+            status: "loaded",
+            accepted_findings: 3,
+            rejected_findings: 1
+          })
+        }}
+      />
+    );
+    expect(html).toContain("3 条引脚表任务，1 条被拒绝");
   });
 });
 
@@ -159,7 +207,13 @@ describe("TaskQueueColumn", () => {
   it("renders counts, filters, and queue rows with selection", () => {
     const items = [
       makeQueueItem({ refdes: "Q12", status_group: "warn" }),
-      makeQueueItem({ refdes: "U12", status_group: "pass", task_count: 0, top_task_id: null })
+      makeQueueItem({
+        refdes: "U12",
+        status_group: "pass",
+        task_count: 0,
+        top_task_id: null,
+        pin_table_task_count: 2
+      })
     ];
     const html = renderToStaticMarkup(
       <TaskQueueColumn {...baseProps} items={items} allItems={items} selectedRefdes="Q12" />
@@ -170,6 +224,7 @@ describe("TaskQueueColumn", () => {
     expect(html).toContain("queue-row warn selected");
     expect(html).toContain("Q12");
     expect(html).toContain("1 项");
+    expect(html).toContain("引脚表 × 2");
     expect(html).toContain("通过");
     expect(html).toContain("cleared");
   });
@@ -194,11 +249,38 @@ describe("DetailColumn", () => {
     expect(html).toContain("STM32F103C8T6");
     expect(html).toContain("已唯一匹配本地器件档案。");
     expect(html).toContain("评审准备包");
+    expect(html).toContain("审查任务");
     expect(html).toContain("引脚 / 网络表");
     expect(html).toContain("VBUS_5V");
     expect(html).toContain("确定性检查");
     expect(html).toContain("VEBO");
     expect(html).toContain("问 Copilot");
+  });
+
+  it("renders pin-table tasks inside the detail task list", () => {
+    const html = renderToStaticMarkup(
+      <DetailColumn
+        detail={makeDetail({
+          task_counts: makeTaskCounts({ total: 1, error: 1, warn: 0 }),
+          tasks: [
+            makeTask({
+              id: "F-005",
+              kind: "pin_table_check",
+              check: "R009",
+              pin_number: "6",
+              title: "R009 · Power pin is not connected.",
+              status: "ERROR",
+              status_label: "ERROR",
+              status_group: "error"
+            })
+          ]
+        })}
+        loading={false}
+        onAsk={() => {}}
+      />
+    );
+    expect(html).toContain("Capture 引脚表 · 6脚");
+    expect(html).toContain("R009");
   });
 });
 
@@ -230,7 +312,7 @@ describe("EvidenceColumn", () => {
         riskHints={makeRiskHints()}
       />
     );
-    expect(html).toContain("U8 证据链");
+    expect(html).toContain("U8 为什么被提醒");
     expect(html).toContain("当前器件没有 finding，显示组件级证据摘要。");
     expect(html).toContain("component-summary-chain");
   });
@@ -263,7 +345,7 @@ describe("EvidenceColumn", () => {
       />
     );
     expect(html).toContain("evi-finding warn selected");
-    expect(html).toContain("How this was reached · L1 确定性.");
+    expect(html).toContain("证据路径 · L1 确定性。");
     expect(html).toContain("建议动作");
     expect(html).toContain("外部提示 · 只读");
     expect(html).toContain("不改变 PASS/WARN/ERROR 结论");

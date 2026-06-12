@@ -72,6 +72,9 @@ export function TaskQueueColumn(props: {
               <span className="row-badges">
                 <StatusBadge group={item.status_group} label={attentionLabel(item.status_group)} />
                 <TrustBadge tier={item.trust_tier} />
+                {item.pin_table_task_count > 0 && (
+                  <span className="source-badge">引脚表 × {item.pin_table_task_count}</span>
+                )}
               </span>
             </span>
             <span className="queue-side">

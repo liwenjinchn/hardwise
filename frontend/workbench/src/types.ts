@@ -29,6 +29,15 @@ export interface WorkbenchCapabilities {
   pin_table_enabled: boolean;
 }
 
+export interface PinTableSummary {
+  status: "loaded" | "not_configured";
+  source?: string | null;
+  accepted_findings: number;
+  rejected_findings: number;
+  affected_refdes: number;
+  checks: Record<string, number>;
+}
+
 export interface EvidenceView {
   token: string;
   source_class: string;
@@ -57,6 +66,7 @@ export interface ReviewQueueItem {
   issue_count: number;
   evidence_count: number;
   risk_hint_count: number;
+  pin_table_task_count: number;
   task_count: number;
   task_counts: ReviewTaskCounts;
   task_ids: string[];
@@ -110,6 +120,17 @@ export interface CheckView {
   status_label: string;
   status_group: StatusGroup;
   summary: string;
+  evidence: EvidenceView[];
+}
+
+export interface NetCheckView {
+  net_name: string;
+  check: string;
+  status: string;
+  status_label: string;
+  status_group: StatusGroup;
+  summary: string;
+  nodes: string[];
   evidence: EvidenceView[];
 }
 
@@ -184,10 +205,12 @@ export interface WorkbenchState {
   project: WorkbenchProject;
   summary: WorkbenchSummary;
   capabilities: WorkbenchCapabilities;
+  pin_table: PinTableSummary;
   selected_refdes?: string | null;
   queue: ReviewQueueItem[];
   review_tasks: ReviewTask[];
   task_counts: ReviewTaskCounts;
+  net_checks: NetCheckView[];
   risk_hints: RiskHintsSummary;
   risk_hint_details: RiskHintsView;
 }
@@ -196,6 +219,7 @@ export interface ImportResponse {
   ok: boolean;
   project: WorkbenchProject;
   summary: WorkbenchSummary;
+  pin_table: PinTableSummary;
   selected_refdes?: string | null;
   task_counts: ReviewTaskCounts;
 }

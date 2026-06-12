@@ -87,7 +87,7 @@ describe("EvidenceToken", () => {
     );
     expect(html).toContain("token reviewed_profile");
     expect(html).toContain("EV-9");
-    expect(html).toContain("netlist · reviewed_profile");
+    expect(html).toContain("netlist · 已审档案");
   });
 });
 

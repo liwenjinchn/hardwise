@@ -17,6 +17,7 @@ export function Header({
   const capabilityText = [
     state.capabilities.chat ? "Copilot 可用" : "Copilot 关闭",
     state.capabilities.datasheet_search_enabled ? "向量检索开启" : "向量检索关闭",
+    state.capabilities.pin_table_enabled ? "引脚表已加载" : "引脚表未加载",
     state.capabilities.risk_hints_enabled ? "外部提示已加载" : "外部提示未配置",
     "Refdes Guard 在线"
   ];
@@ -57,7 +58,7 @@ export function Header({
           <Metric label="WARN" value={summary.warn_count} tone="warn" />
         </div>
         <div className="capability-strip" aria-label="工作台能力">
-          {capabilityText.slice(0, 2).map((item) => (
+          {capabilityText.slice(0, 3).map((item) => (
             <span key={item}>{item}</span>
           ))}
         </div>
