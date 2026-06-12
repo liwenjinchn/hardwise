@@ -14,12 +14,8 @@ This directory contains guidelines for backend development. Fill in each file wi
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Database Guidelines](./database-guidelines.md) | ORM patterns, queries, migrations | To fill |
 | [BOM Intake Guidelines](./bom-intake-guidelines.md) | Schematic BOM parsing and project-folder BOM selection contracts | Filled |
-| [Error Handling](./error-handling.md) | Error types, handling strategies | To fill |
 | [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | Filled |
-| [Logging Guidelines](./logging-guidelines.md) | Structured logging, log levels | To fill |
 | [Reporting Guidelines](./reporting-guidelines.md) | Deterministic report rendering and validator UI contracts | Filled |
 | [Validation Guidelines](./validation-guidelines.md) | Deterministic component validators | Filled |
 | [Workbench Guidelines](./workbench-guidelines.md) | Copilot panel, snapshot, and fake/live chat contracts | Filled |
@@ -35,7 +31,7 @@ For each guideline file:
 3. List **forbidden patterns** and why
 4. Add **common mistakes** your team has made
 
-The goal is to help AI assistants and new team members understand how YOUR project works.
+The goal is to help AI assistants and new team members understand how YOUR project works. Create new guideline files only when real project-specific patterns emerge from debugging or implementation — not as upfront templates.
 
 ---
 

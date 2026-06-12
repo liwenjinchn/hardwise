@@ -77,14 +77,7 @@ python3 ./.trellis/scripts/task.py create-pr [name] [--dry-run]
 
 ### Workspace System
 
-Records every AI session for cross-session tracking under `.trellis/workspace/<developer>/`.
-
-- `journal-N.md` — session log. **Max 2000 lines per file**; a new `journal-(N+1).md` is auto-created when exceeded.
-- `index.md` — personal index (total sessions, last active).
-
-```bash
-python3 ./.trellis/scripts/add_session.py --title "Title" --commit "hash" --summary "Summary"
-```
+Personal workspace directory under `.trellis/workspace/<developer>/` with `index.md` tracking total sessions and last active date. Journal mechanism has been removed — session records are optional and managed outside Trellis.
 
 ### Context Script
 

@@ -19,6 +19,8 @@ Architecture inspired by [Wrench Board](https://github.com/Junkz3/wrench-board) 
    Architecture borrowed from Wrench Board's `api/agent/sanitize.py`.
 4. **Two-week MVP scope.** Demo-able loop, not feature-complete product. If a task is stuck past 4 hours → propose downscope, don't grind.
 5. **Demo anchor: schematic-review node only.** Hardwise is bound to one workflow node — pre-Layout schematic review. Any cross-node feature (PCB review, simulation, test-result feedback loops, BOM management, FMEA, PLM) is out of scope. See `docs/review_node.md` for the full node profile and `docs/PLAN.md` DR-007 for the rationale.
+6. **Completion requires evidence.** Any agent claiming "done" must attach test output (`uv run pytest -q`) and commit hash. A claim without evidence is treated as incomplete. This applies especially to overnight tasks and cross-session handoffs.
+7. **Options before plans.** For non-trivial tasks spanning multiple files or introducing architectural choices, present 2-3 solution approaches with trade-offs before starting implementation. Let the human choose the direction, then proceed with a plan.
 
 ## Five mechanisms (architectural framing)
 
@@ -68,7 +70,7 @@ Two entrypoints render the Allegro project workbench with an optional Copilot pa
 - `design-validator-ui <netlist/pst> <bom> --ai-snapshot` — single static HTML with baked, audited chat transcripts; opens via `file://`, no server, no API key. Without `--ai-snapshot` the static workbench is unchanged.
 - `serve-workbench <netlist/pst> <bom>` — local FastAPI server exposing `POST /api/workbench/chat`; `--fake-ai` runs a deterministic fake Anthropic client, real mode reads `.env`. The browser never receives API keys.
 
-Trust invariants (do not regress):
+Trust invariants: detailed contracts and test requirements live in `.trellis/spec/backend/workbench-guidelines.md`. Key invariants (do not regress):
 - `--fake-ai` drives the **real** `Runner` + real tool dispatch + guard; the fake client only emits `tool_use`/text. It never bypasses the Runner.
 - Allegro reaches the agent via a `Design → BoardRegistry` shim populated into an in-memory relational `Session` (`workbench/context.py`); the Runner `registry`/`session` contract and the guard are unchanged.
 - Live mode keeps all five tools. Without a vector collection, `search_datasheet` returns its structured not-configured result.
