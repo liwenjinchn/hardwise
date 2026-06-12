@@ -52,7 +52,7 @@ Local quickstart:
 ```bash
 uv sync
 ./scripts/start_hardwise_workbench.command
-uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --ai-snapshot --output /tmp/hardwise-copilot-workbench.html
+uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --ai-snapshot --document-index data/document_indexes/mixed_controller_power_stage_docs.csv --output /tmp/hardwise-copilot-workbench.html
 ```
 
 On Windows, double-click `scripts/start_hardwise_workbench.cmd`. Both launchers
@@ -131,6 +131,7 @@ For deterministic recording without an API key, run the fake-agent server:
 uv run hardwise serve-workbench \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --document-index data/document_indexes/mixed_controller_power_stage_docs.csv \
   --fake-ai \
   --port 8765
 ```
@@ -142,13 +143,20 @@ uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
   --ai-snapshot \
+  --document-index data/document_indexes/mixed_controller_power_stage_docs.csv \
   --output reports/controller-workbench.html \
   --index-output reports/controller-design-validator-index.md \
   --index-json reports/controller-design-validator-index.json
 ```
 
 Both paths consume an exported schematic netlist/PST plus BOM, auto-match
-public datasheet profiles by BOM identity, and render the review workbench. The
+public datasheet profiles by BOM identity, and render the review workbench.
+`--document-index` feeds a reviewed public datasheet-link CSV; each component
+then shows a document coverage status — `matched` (one reviewed public link),
+`no_result` (no reviewed link yet, an honest coverage gap), `ambiguous`
+(several candidate rows need a reviewer pick), or `manual_needed` (the BOM
+identity is unusable for matching) — and a matched link proves document
+coverage only, never an electrical verdict. The
 offline snapshot is a single HTML file with baked state, component details,
 exports, prep packets, and audited Copilot responses; the live server exposes
 the same facts through local `/api/workbench/*` endpoints. What the workbench proves is the
@@ -312,12 +320,14 @@ The agent has five structured tools: `list_components`, `get_component`, `get_nc
 uv run hardwise design-validator-ui \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
-  --ai-snapshot --output reports/controller-workbench.html
+  --ai-snapshot --document-index data/document_indexes/mixed_controller_power_stage_docs.csv \
+  --output reports/controller-workbench.html
 
 # Local live server (deterministic fake model, no API key):
 uv run hardwise serve-workbench \
   tests/fixtures/allegro/mixed_controller_power_stage.net \
   tests/fixtures/allegro/mixed_controller_power_stage_bom.csv \
+  --document-index data/document_indexes/mixed_controller_power_stage_docs.csv \
   --fake-ai --port 8765
 ```
 

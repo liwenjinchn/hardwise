@@ -1,0 +1,5 @@
+MPN,Manufacturer,Title,URL,ReviewStatus,Source,LicenseNote
+L7805,ST,L78 series public ST datasheet (l78.pdf),https://www.st.com/resource/en/datasheet/l78.pdf,approved,st.com,Public manufacturer datasheet PDF; verified 200 application/pdf on 2026-06-12.
+XL1509-12E1,XLSEMI,XL1509 public XLSEMI datasheet (XL1509-EN.pdf),http://www.xlsemi.com/datasheet/XL1509-EN.pdf,approved,xlsemi.com,Public manufacturer datasheet PDF; ordering codes include XL1509-12E1; verified on 2026-06-12.
+EG2132,EG,EG2132 public EG micro product page with datasheet,http://www.egmicro.com/products/detail?name=EG2132,approved,egmicro.com,Public manufacturer product page embedding the EG2132 datasheet PDF; verified on 2026-06-12.
+STM32G030C8T6,ST,STM32G030x8 public ST datasheet (stm32g030c8.pdf),https://www.st.com/resource/en/datasheet/stm32g030c8.pdf,approved,st.com,Public manufacturer datasheet PDF; verified 200 application/pdf on 2026-06-12.
