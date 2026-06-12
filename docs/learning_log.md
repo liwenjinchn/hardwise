@@ -8,6 +8,44 @@
 
 ---
 
+## 2026-06-12 — Live workbench health check exposed trust-cost bugs
+
+**Symptom**
+
+The live workbench mostly worked end to end, but product trust degraded in
+small ways: Copilot trace blocks were expanded under every answer, Enter did
+not submit chat in the browser smoke, the nav showed 33 findings while Export
+said 41, a live answer suggested an unverified replacement MPN, and importing
+a new project without a pin-table upload kept the startup pin-table state.
+
+**Root cause**
+
+The system was correct at the API/tool layer but leaky at the product contract
+layer. The UI exposed raw tool evidence too eagerly, two count surfaces used
+different implicit denominators, and `POST /api/workbench/import` reused the
+server startup `pin_table` path as a default. The model prompt also told the
+AI not to invent refdes or datasheet facts, but did not explicitly forbid
+unverified replacement part examples or hypothetical refdes-shaped examples.
+
+**Fix**
+
+Copilot trace details now default collapsed, the chat input handles Enter
+explicitly, findings/export counts use the same "all tasks" denominator with
+an ERROR/WARN subset in the title/text, imports clear pin-table context unless
+the user uploads a new pin-table CSV, and the workbench prompt now requires
+constraint-level repair advice instead of unverified MPN examples. Regression
+coverage landed in frontend view tests, workbench context tests, and prompt
+tests.
+
+**Takeaway**
+
+Evidence-first UX still needs information economics: if proof takes more
+screen weight than the answer, the proof becomes noise. Any UI count needs an
+obvious denominator, and every optional project-scoped input should be either
+uploaded with the new project or visibly absent — never silently inherited.
+
+---
+
 ## 2026-06-12 — The same "tool trace" renders through two paths that drifted on fold state
 
 **Symptom**

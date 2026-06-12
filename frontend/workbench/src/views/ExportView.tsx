@@ -67,7 +67,8 @@ export function ExportView({ state }: { state: WorkbenchState }) {
         <span className="eyebrow">Export</span>
         <h2>导出当前审查状态</h2>
         <p>
-          输出来自真实后端接口：{state.review_tasks.length} 个 finding，
+          输出来自真实后端接口：{state.task_counts.total} 个任务，
+          其中 ERROR/WARN {state.task_counts.error + state.task_counts.warn} 个。
           不包含 API key 或浏览器聊天密钥。
         </p>
       </div>

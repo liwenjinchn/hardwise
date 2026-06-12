@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { CopilotPanel, RichMessageText } from "./CopilotPanel";
+import { CopilotPanel, RichMessageText, TraceDetails } from "./CopilotPanel";
 import { ExportView } from "./ExportView";
 import { FindingsView } from "./FindingsView";
 import { Header } from "./Header";
@@ -51,6 +51,17 @@ describe("Header", () => {
       <Header state={state} currentView="review" onNavigate={() => {}} />
     );
     expect(html).toContain('<span class="pip">2</span>');
+  });
+
+  it("uses total task count for the findings pip and explains the blocking subset", () => {
+    const state = makeState({
+      task_counts: makeTaskCounts({ total: 9, error: 2, warn: 3, manual: 1, pass_count: 3 })
+    });
+    const html = renderToStaticMarkup(
+      <Header state={state} currentView="review" onNavigate={() => {}} />
+    );
+    expect(html).toContain('title="全量任务 9；ERROR/WARN 5"');
+    expect(html).toContain('<span class="pip">9</span>');
   });
 });
 
@@ -161,6 +172,37 @@ describe("CopilotPanel", () => {
     expect(html).toContain("evidence-inline");
     expect(html).toContain("datasheet:stm32g030.pdf#p33");
   });
+
+  it("keeps tool trace collapsed by default", () => {
+    const html = renderToStaticMarkup(
+      <TraceDetails
+        response={{
+          answer: "ok",
+          mode: "real",
+          selected_refdes: "U8",
+          trace: [
+            {
+              tool: "run_component_validation",
+              input: { refdes: "U8" },
+              summary: "status=validated",
+              status: "ERROR",
+              evidence: [],
+              evidence_classification: [],
+              wrapped: 0,
+              trust_tier: "l1",
+              trust_label: "L1 deterministic"
+            }
+          ],
+          wrapped_count: 0,
+          suggestions: [],
+          datasheet_search_enabled: false
+        }}
+      />
+    );
+    expect(html).toContain("工具调用 / 证据 · 1");
+    expect(html).toContain("<details");
+    expect(html).not.toContain("<details open");
+  });
 });
 
 describe("FindingsView", () => {
@@ -184,9 +226,16 @@ describe("FindingsView", () => {
 
 describe("ExportView", () => {
   it("renders finding count, format switches, and prep packet card", () => {
-    const html = renderToStaticMarkup(<ExportView state={makeState()} />);
+    const html = renderToStaticMarkup(
+      <ExportView
+        state={makeState({
+          task_counts: makeTaskCounts({ total: 7, error: 2, warn: 3, manual: 1, pass_count: 1 })
+        })}
+      />
+    );
     expect(html).toContain("导出当前审查状态");
-    expect(html).toContain("1 个 finding");
+    expect(html).toContain("7 个任务");
+    expect(html).toContain("其中 ERROR/WARN 5 个");
     for (const fmt of ["json", "csv", "annotations"]) {
       expect(html).toContain(`>${fmt}</button>`);
     }

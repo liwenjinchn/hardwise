@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { Bot, MessageSquare, ShieldCheck } from "lucide-react";
 import { askCopilot } from "../api";
 import { TrustBadge } from "../components/ui";
@@ -92,6 +92,12 @@ export function CopilotPanel({
             <input
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
+              onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  void send(question);
+                }
+              }}
               placeholder={`询问 ${selectedRefdes ?? "当前器件"}，例如：板上有没有 U999?`}
             />
             <button type="submit" disabled={busy}>{busy ? "处理中" : "发送"}</button>
@@ -133,7 +139,7 @@ function chatHistory(messages: ThreadMessage[]): ChatMessage[] {
     .map(({ role, content }) => ({ role, content }));
 }
 
-function TraceDetails({ response }: { response: ChatResponse }) {
+export function TraceDetails({ response }: { response: ChatResponse }) {
   return (
     <details className="trace">
       <summary>工具调用 / 证据 · {response.trace.length}</summary>

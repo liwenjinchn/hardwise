@@ -174,9 +174,9 @@ Create new children with `task.py create "<title>" --slug <name> --parent <paren
 <!-- Per-turn breadcrumb: shown when there is no active task (before Phase 1) -->
 
 [workflow-state:no_task]
-No active task. First classify the current turn and ask for task-creation consent before creating any Trellis task.
-Simple conversation / small task: ask only whether this turn should create a Trellis task. If the user says no, skip Trellis for this session.
-Complex task: ask the user if you can create a Trellis task and enter the planning phase. If the user says no, explain, clarify scope, or suggest a smaller split.
+No active task. Default: do the requested work directly — do NOT create a Trellis task and do NOT ask for task-creation consent.
+Exception: if the work is clearly multi-day, multi-session, or needs cross-machine/cross-agent handoff, suggest `task.py create` once and respect the user's answer.
+Quality bar for direct work is unchanged (AGENTS.md: `uv run pytest -q` + `uv run ruff check .`).
 [/workflow-state:no_task]
 
 ### Phase 1: Plan

@@ -763,6 +763,45 @@ def test_workbench_import_accepts_uploaded_pin_table(tmp_path: Path) -> None:
         app.state.workbench_context["value"].session.close()
 
 
+def test_workbench_import_without_pin_table_clears_startup_pin_table(tmp_path: Path) -> None:
+    pin_table_path = tmp_path / "pin_table.csv"
+    _write_pin_table(pin_table_path)
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        pin_table=pin_table_path,
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+    app = create_workbench_app(
+        context,
+        DummyChatService(),  # type: ignore[arg-type]
+        pin_table=pin_table_path,
+    )
+    client = TestClient(app)
+
+    try:
+        assert client.get("/api/workbench/state").json()["capabilities"]["pin_table_enabled"]
+        with (
+            Path("tests/fixtures/allegro/l78_regulator.net").open("rb") as netlist,
+            Path("tests/fixtures/allegro/l78_regulator_bom.csv").open("rb") as bom,
+        ):
+            response = client.post(
+                "/api/workbench/import",
+                files={
+                    "netlist": ("l78_regulator.net", netlist, "text/plain"),
+                    "bom": ("l78_regulator_bom.csv", bom, "text/csv"),
+                },
+            )
+
+        assert response.status_code == 200, response.text
+        state = client.get("/api/workbench/state").json()
+        assert state["capabilities"]["pin_table_enabled"] is False
+        assert state["pin_table"]["status"] == "not_configured"
+    finally:
+        app.state.workbench_context["value"].session.close()
+
+
 def test_workbench_import_failure_keeps_previous_state(tmp_path: Path) -> None:
     context = build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),

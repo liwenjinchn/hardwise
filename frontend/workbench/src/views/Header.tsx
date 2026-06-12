@@ -14,6 +14,7 @@ export function Header({
 }) {
   const { summary } = state;
   const reviewComponentCount = state.queue.filter((item) => item.status_group !== "pass").length || state.queue.length;
+  const blockingTaskCount = state.task_counts.error + state.task_counts.warn;
   const capabilityText = [
     state.capabilities.chat ? "Copilot 可用" : "Copilot 关闭",
     state.capabilities.datasheet_search_enabled ? "向量检索开启" : "向量检索关闭",
@@ -38,10 +39,17 @@ export function Header({
             key={item.id}
             className={currentView === item.id ? "active" : ""}
             onClick={() => onNavigate(item.id)}
+            title={
+              item.id === "review"
+                ? "非 PASS 器件数"
+                : item.id === "findings"
+                  ? `全量任务 ${state.task_counts.total}；ERROR/WARN ${blockingTaskCount}`
+                  : item.label
+            }
           >
             {item.label}
             {item.id === "review" && <span className="pip">{reviewComponentCount}</span>}
-            {item.id === "findings" && <span className="pip">{state.task_counts.error + state.task_counts.warn}</span>}
+            {item.id === "findings" && <span className="pip">{state.task_counts.total}</span>}
           </button>
         ))}
       </nav>

@@ -293,7 +293,7 @@ def create_workbench_app(
             pin_table_path = (
                 _save_upload(pin_table_csv, import_dir, fallback_name="pin_table.csv")
                 if pin_table_csv
-                else pin_table
+                else None
             )
             next_context = build_workbench_context(
                 netlist_path=netlist_path,

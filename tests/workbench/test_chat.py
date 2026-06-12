@@ -11,6 +11,7 @@ from hardwise.workbench.chat import (
     WorkbenchChatService,
     build_snapshot_responses,
 )
+from hardwise.agent.prompts import WORKBENCH_SYSTEM_PROMPT
 from hardwise.workbench.context import build_workbench_context
 
 
@@ -322,3 +323,11 @@ def test_chat_layer_sanitizes_fallback_suggestions() -> None:
         assert any("⟨?U999⟩" in item for item in response.suggestions)
     finally:
         context.session.close()
+
+
+def test_workbench_prompt_forbids_unverified_replacement_mpns() -> None:
+    compact_prompt = " ".join(WORKBENCH_SYSTEM_PROMPT.split())
+    assert "Do not name replacement manufacturer part numbers" in WORKBENCH_SYSTEM_PROMPT
+    assert "unless that exact part number came from a tool result" in compact_prompt
+    assert "choose a diode with" in WORKBENCH_SYSTEM_PROMPT
+    assert "Do not write hypothetical refdes-shaped examples" in WORKBENCH_SYSTEM_PROMPT
