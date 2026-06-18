@@ -101,7 +101,7 @@ Hardwise 围绕 Layout handoff 前的原理图评审会组织：
 | Trust tier | 含义 | 出现位置 |
 |---|---|---|
 | **L1 deterministic** | Python rule / validator 产出 PASS/WARN/ERROR 真值；模型可以解释，但不负责判定。 | Component validation rows、`run_component_validation`、静态 workbench。 |
-| **L2 grounded** | 某次 datasheet search turn 真的带回页码级检索证据，供 reviewer 核验；它不是逐句 NLP 证明。 | C5 L78 Copilot trace：`datasheet:l78.pdf#p4`。 |
+| **L2 grounded** | 某次 datasheet search turn 真的带回页码级检索证据，供 reviewer 核验；它不是逐句 NLP 证明。 | L78 trace：`datasheet:l78.pdf#p4`；U12/XL1509 workbench trace：`datasheet:xl1509.pdf#p11`、`datasheet:xl1509.pdf#p9`。 |
 | **L3 manual** | 没有 ready profile 或没有 retrieval evidence，系统把问题留在人工确认区。 | no-profile workbench rows、无检索命中的 datasheet question。 |
 
 Coverage loop 是支撑材料：Hardwise 先给 profile gap 排序，再按 family 把有公开证据的 L3/manual group 推进到 L1 deterministic rows。它证明这条产品闭环可重复，但主角仍然是 trust：模型被 registry object、evidence token、deterministic validator 和 tool returns 约束住。
@@ -124,7 +124,7 @@ consolidator: 3 candidate rule(s) appended to memory/rules.md
 
 当前样例报告有 **29 条 finding**：6 条 R002 电容耐压字段 finding，22 条 R003 NC pin finding，以及 1 条 DS001 `U3` / L7805 finding，引用 reviewed profile token `datasheet:l78.pdf#p4`。DS001 因为当前 schematic path 不能推断实际 Vin rail，所以保持 `reviewer_to_confirm`，不会猜。每条 finding 都带 source token；NC pin 是从 KiCad `no_connect` 标记坐标反查到具体位号和管脚，不由模型生成。一次 review 还会写入关系库、运行 trace ledger，并把重复出现的问题沉淀为人工审核的候选规则。
 
-L78 这条路径还跑过真实检索 smoke：`l78.pdf` 被 ingest 到 Chroma，`query-datasheet "absolute maximum input voltage"` 返回 `[l78.pdf p4 part=L7805]`，`hardwise ask ... --vector` 会先调用 `search_datasheet` 再引用第 4 页。详见 [`docs/evidence_chain_audit.md`](docs/evidence_chain_audit.md)。其它 C4 profile token 是 reviewed public profile evidence；除非对应 PDF 已本地 staged 并检索过，否则不把它们说成 live Chroma retrieval。
+L78 和 XL1509 这两条路径都跑过真实检索 smoke：L78 把 `l78.pdf` ingest 到 Chroma，`query-datasheet "absolute maximum input voltage"` 返回 `[l78.pdf p4 part=L7805]`，`hardwise ask ... --vector` 会先调用 `search_datasheet` 再引用第 4 页；XL1509 把公开 XLSEMI PDF 作为 `xl1509.pdf` ingest，U12 workbench 的目标问题会返回 `datasheet:xl1509.pdf#p11`（12 V 应用 / 68 uH 电感）和 `datasheet:xl1509.pdf#p9`（Schottky diode table）。详见 [`docs/evidence_chain_audit.md`](docs/evidence_chain_audit.md)。其它 profile token 是 reviewed public profile evidence；除非对应 PDF 已 staged 并检索过，否则不把它们说成 live Chroma retrieval。
 
 Allegro 轨证明项目工作台。真实 Copilot 路径可直接双击启动器：
 
@@ -293,9 +293,9 @@ uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
 uv run hardwise review data/projects/pic_programmer --rules R003 --vector
 ```
 
-datasheet chunk 会携带 `[l78.pdf p4 part=L7805]` 这类 provenance，和 reviewed profile token `datasheet:l78.pdf#p4` 汇合到同一页码证据。
+datasheet chunk 会携带 `[l78.pdf p4 part=L7805]`、`[xl1509.pdf p11 part=XL1509-12E1]` 这类 provenance，和 reviewed profile token `datasheet:l78.pdf#p4`、`datasheet:xl1509.pdf#p11` 汇合到同一页码证据。
 
-当前证据链边界：只有 L78 datasheet 已本地 staged，并通过 `ingest -> retrieve -> agent citation` smoke。其它 profile JSON 是 reviewed deterministic inputs，不代表每个 profile fact 都已经从 Chroma live retrieval 得到。
+当前证据链边界：L78 和 XL1509 已通过 `ingest -> retrieve -> agent/workbench citation` smoke。其它 profile JSON 是 reviewed deterministic inputs，不代表每个 profile fact 都已经从 Chroma live retrieval 得到。
 
 ### 跑公开 eval pack
 

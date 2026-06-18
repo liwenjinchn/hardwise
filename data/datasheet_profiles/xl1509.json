@@ -56,7 +56,9 @@
       ],
       "evidence": [
         "datasheet:xl1509.pdf#p2",
-        "datasheet:xl1509.pdf#p9"
+        "datasheet:xl1509.pdf#p8",
+        "datasheet:xl1509.pdf#p9",
+        "datasheet:xl1509.pdf#p11"
       ]
     },
     {
@@ -72,7 +74,9 @@
       ],
       "evidence": [
         "datasheet:xl1509.pdf#p2",
-        "datasheet:xl1509.pdf#p8"
+        "datasheet:xl1509.pdf#p5",
+        "datasheet:xl1509.pdf#p7",
+        "datasheet:xl1509.pdf#p11"
       ]
     },
     {
@@ -145,10 +149,10 @@
     }
   ],
   "evidence": {
-    "recommended.output_topology": "datasheet:xl1509.pdf#p8",
-    "recommended.inductor": "datasheet:xl1509.pdf#p9",
-    "recommended.freewheel_diode": "datasheet:xl1509.pdf#p8",
-    "recommended.fixed_output_voltage": "datasheet:xl1509.pdf#p8"
+    "recommended.output_topology": "datasheet:xl1509.pdf#p11",
+    "recommended.inductor": "datasheet:xl1509.pdf#p8",
+    "recommended.freewheel_diode": "datasheet:xl1509.pdf#p9",
+    "recommended.fixed_output_voltage": "datasheet:xl1509.pdf#p5"
   },
   "extracted_at": "2026-05-27T00:00:00+00:00",
   "extracted_model": "deterministic-xl1509-v3.3",

@@ -113,7 +113,7 @@ Action labels in the product map to the trust tiers:
 | Trust tier | Meaning | Where it appears |
 |---|---|---|
 | **L1 deterministic** | Python rules / validators produce the PASS/WARN/ERROR truth. The model may explain it, but does not decide it. | Component validation rows, `run_component_validation`, static workbench. |
-| **L2 grounded** | A datasheet search turn surfaced page-level retrieval evidence for reviewer inspection. This is not sentence-level entailment. | L78 Copilot trace: `datasheet:l78.pdf#p4`. |
+| **L2 grounded** | A datasheet search turn surfaced page-level retrieval evidence for reviewer inspection. This is not sentence-level entailment. | L78 trace: `datasheet:l78.pdf#p4`; U12/XL1509 workbench trace: `datasheet:xl1509.pdf#p11` and `datasheet:xl1509.pdf#p9`. |
 | **L3 manual** | No ready profile or no retrieval evidence is present; the system keeps the row/question in human-review territory. | No-profile workbench rows, no-hit datasheet questions. |
 
 The coverage loop is supporting evidence: Hardwise ranks profile gaps, then moves selected public-evidence groups from L3/manual rows into L1 deterministic rows one family at a time. That proves the loop is repeatable, but the headline remains trust: the model is bounded by registry objects, evidence tokens, deterministic validators, and structured tool returns.
@@ -209,10 +209,13 @@ schematic-review rules:
 
 The current sample report has **29 findings**: 6 R002 capacitor-voltage-field findings, 22 R003 NC-pin findings after noise reduction, and one DS001 `U3` / L7805 finding that cites the reviewed profile token `datasheet:l78.pdf#p4`. DS001 stays `reviewer_to_confirm` because the current schematic path cannot infer the applied Vin rail; it does not guess. Each finding carries a source token; NC pins are coordinate-matched from KiCad `no_connect` markers rather than model-generated.
 
-The L78 path also has a live retrieval smoke: `l78.pdf` is ingested into Chroma,
-`query-datasheet "absolute maximum input voltage"` returns
+The L78 and XL1509 paths have live retrieval smokes. L78 ingests `l78.pdf`,
+then `query-datasheet "absolute maximum input voltage"` returns
 `[l78.pdf p4 part=L7805]`, and `hardwise ask ... --vector` calls
-`search_datasheet` before citing page 4. See
+`search_datasheet` before citing page 4. XL1509 ingests the public XLSEMI PDF
+as `xl1509.pdf`; targeted workbench turns for U12 return page-level evidence
+including `datasheet:xl1509.pdf#p11` for the 12 V application / 68 uH inductor
+and `datasheet:xl1509.pdf#p9` for the Schottky diode table. See
 [`docs/evidence_chain_audit.md`](docs/evidence_chain_audit.md). Other profile
 tokens are reviewed public profile evidence unless their PDFs have also been
 staged and queried.
@@ -269,7 +272,7 @@ Hardwise's main claim is narrow: **the model is not allowed to invent board obje
 | 4 | **Tiered Model Routing** | The agent chooses `fast` / `normal` / `deep` slots from env config; code does not hard-code a vendor model. | Live: `src/hardwise/agent/router.py` |
 | 5 | **Prompt Caching** | The cacheable static prompt has measured cache-read hits on the configured Anthropic-format endpoint. | Live: `src/hardwise/agent/prompts.py`, `src/hardwise/agent/runner.py` |
 
-The agent surface is tiered in the same vocabulary used by validation details: `L1 deterministic`, `L2 grounded`, and `L3 manual`. `run_component_validation` is L1 and can affect PASS/WARN/ERROR. `search_datasheet` becomes L2 only when a turn returns page-level retrieval evidence such as `datasheet:l78.pdf#p4`. No profile, no retrieval, or no configured vector store stays L3 and requires reviewer confirmation.
+The agent surface is tiered in the same vocabulary used by validation details: `L1 deterministic`, `L2 grounded`, and `L3 manual`. `run_component_validation` is L1 and can affect PASS/WARN/ERROR. `search_datasheet` becomes L2 only when a turn returns page-level retrieval evidence such as `datasheet:l78.pdf#p4` or `datasheet:xl1509.pdf#p11`. No profile, no retrieval, or no configured vector store stays L3 and requires reviewer confirmation.
 
 ## Quickstart
 
@@ -350,9 +353,9 @@ uv run hardwise query-datasheet "absolute maximum input voltage" --top-k 3
 uv run hardwise review data/projects/pic_programmer --rules R003 --vector
 ```
 
-Datasheet chunks carry provenance such as `[l78.pdf p4 part=L7805]`, which independently corroborates structured profile tokens such as `datasheet:l78.pdf#p4`. Rules such as DS001 read the reviewed profile JSON; they do not scrape Chroma text during `review`.
+Datasheet chunks carry provenance such as `[l78.pdf p4 part=L7805]` and `[xl1509.pdf p11 part=XL1509-12E1]`, which independently corroborate structured profile tokens such as `datasheet:l78.pdf#p4` and `datasheet:xl1509.pdf#p11`. Rules such as DS001 and component validation read the reviewed profile JSON; they do not scrape Chroma text during `review`.
 
-Current evidence-chain boundary: only the L78 datasheet is staged locally and smoke-tested through `ingest -> retrieve -> agent citation`. The remaining profile JSON files are reviewed deterministic inputs, not proof that every profile fact was retrieved live from Chroma.
+Current evidence-chain boundary: L78 and XL1509 have been smoke-tested through `ingest -> retrieve -> agent/workbench citation`. The remaining profile JSON files are reviewed deterministic inputs, not proof that every profile fact was retrieved live from Chroma.
 
 ### Run the eval pack
 
