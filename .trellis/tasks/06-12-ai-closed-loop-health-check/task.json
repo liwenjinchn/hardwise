@@ -16,7 +16,7 @@
   "base_branch": "feat/workbench-document-coverage",
   "worktree_path": null,
   "commit": "43dddc57a3e3c5a2bfd96e94db1ede7155fa72ef",
-  "pr_url": null,
+  "pr_url": "https://github.com/liwenjinchn/hardwise/pull/4",
   "subtasks": [],
   "children": [],
   "parent": null,

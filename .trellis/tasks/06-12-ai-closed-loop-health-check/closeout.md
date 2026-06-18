@@ -23,6 +23,7 @@ without moving or archiving the task directory.
   with the reviewed XL1509 profile evidence tokens.
 - `43dddc57a3e3c5a2bfd96e94db1ede7155fa72ef` records the XL1509 evidence-chain
   profile and documentation update.
+- Draft PR: https://github.com/liwenjinchn/hardwise/pull/4
 
 ## Verification Evidence
 
