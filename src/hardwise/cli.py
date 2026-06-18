@@ -638,15 +638,15 @@ def review(
     if output_format == "html":
         from hardwise.report.html import render
 
-        report_text = render(findings, project_meta)
+        report_text = render(findings, project_meta, registry=registry)
     elif report_style == "component":
         from hardwise.report.component_markdown import render
 
-        report_text = render(findings, project_meta, design)
+        report_text = render(findings, project_meta, design, registry=registry)
     else:
         from hardwise.report.markdown import render
 
-        report_text = render(findings, project_meta)
+        report_text = render(findings, project_meta, registry=registry)
 
     if output is None:
         date_stamp = now.strftime("%Y%m%d")

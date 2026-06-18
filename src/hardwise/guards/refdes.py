@@ -12,6 +12,7 @@ KiCad-style designators. Hits not present in `BoardRegistry.refdes_set` are wrap
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from hardwise.adapters.base import BoardRegistry
 from hardwise.checklist.finding import Finding
@@ -56,9 +57,11 @@ def sanitize_text(text: str, registry: BoardRegistry) -> tuple[str, int]:
     def _wrap(match: re.Match[str]) -> str:
         nonlocal wrapped
         token = match.group(0)
+        if _is_already_wrapped(text, match.start(), match.end()):
+            return token
         if _looks_like_pin_name(text, match.start(), match.end()):
             return token
-        if registry.has_refdes(token):
+        if _has_refdes(registry, token):
             return token
         if token in verified_identifiers and not _uses_common_refdes_prefix(token):
             return token
@@ -80,11 +83,34 @@ def _identity_tokens(registry: BoardRegistry) -> set[str]:
     entry pointed to exactly this: disambiguate via parsed facts, not the regex).
     """
     tokens: set[str] = set()
-    for component in registry.components:
-        for field_value in (component.value, component.footprint, component.datasheet):
+    components = getattr(registry, "components", [])
+    if isinstance(components, dict):
+        iterable = components.values()
+    else:
+        iterable = components
+    for component in iterable:
+        for field_name in (
+            "value",
+            "footprint",
+            "package",
+            "datasheet",
+            "datasheet_path",
+            "part_number",
+        ):
+            field_value = getattr(component, field_name, "")
             if field_value:
                 tokens.update(REFDES_PATTERN.findall(field_value))
     return tokens
+
+
+def _has_refdes(registry: Any, token: str) -> bool:
+    if hasattr(registry, "has_refdes"):
+        return bool(registry.has_refdes(token))
+    return token in getattr(registry, "refdes_set", set())
+
+
+def _is_already_wrapped(text: str, start: int, end: int) -> bool:
+    return text[max(0, start - 2) : start] == "⟨?" and text[end : end + 1] == "⟩"
 
 
 def _uses_common_refdes_prefix(token: str) -> bool:
@@ -114,11 +140,13 @@ def _looks_like_pin_name(text: str, start: int, end: int) -> bool:
     # Check if there's a "pin N/name" pattern before the opening paren
     prefix = text[max(0, open_paren - 18) : open_paren]
     if re.search(r"\bpin\s+[A-Z0-9_/-]+\s*$", prefix, re.IGNORECASE):
-        return True
+        return not _uses_common_refdes_prefix(text[start:end])
 
     # Connector pin names can be alphanumeric (`A4`, `B7`) and appear in
     # generated R003 connector summaries as `NC pins (A4, B7)`.
-    return bool(re.search(r"\bNC\s+pins?\s*$", prefix, re.IGNORECASE))
+    return bool(re.search(r"\bNC\s+pins?\s*$", prefix, re.IGNORECASE)) and not (
+        _uses_common_refdes_prefix(text[start:end])
+    )
 
 
 def sanitize_args(args: dict, registry: BoardRegistry) -> tuple[dict, int]:
@@ -157,7 +185,9 @@ def sanitize_finding(f: Finding, registry: BoardRegistry) -> tuple[Finding, int]
     wrapped_total += w
 
     new_refdes = f.refdes
-    if f.refdes and not registry.has_refdes(f.refdes):
+    if f.refdes and f.refdes.startswith("⟨?") and f.refdes.endswith("⟩"):
+        new_refdes = f.refdes
+    elif f.refdes and not _has_refdes(registry, f.refdes):
         new_refdes = f"⟨?{f.refdes}⟩"
         wrapped_total += 1
 

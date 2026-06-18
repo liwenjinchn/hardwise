@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from hardwise.adapters.base import BoardRegistry, ComponentRecord
 from hardwise.checklist.finding import Finding
 from hardwise.report.markdown import render
 
@@ -12,6 +15,23 @@ def _meta(**overrides):
     }
     base.update(overrides)
     return base
+
+
+def _registry(refdes: list[str]) -> BoardRegistry:
+    return BoardRegistry(
+        project_dir=Path("/tmp/demo_board"),
+        components=[
+            ComponentRecord(
+                refdes=item,
+                value="",
+                footprint="",
+                datasheet="",
+                source_file=Path("/tmp/main.kicad_sch"),
+                source_kind="schematic",
+            )
+            for item in refdes
+        ],
+    )
 
 
 def test_render_zero_findings_still_produces_valid_md() -> None:
@@ -73,3 +93,27 @@ def test_render_handles_optional_refdes_and_net() -> None:
     # refdes is None -> rendered as em-dash; net is set -> rendered.
     assert "| — |" in md  # refdes column
     assert "UNCONNECTED_4" in md
+
+
+def test_render_can_enforce_report_boundary_guards() -> None:
+    findings = [
+        Finding(
+            rule_id="R001",
+            severity="info",
+            refdes="U999",
+            message="U999 is unsupported",
+            evidence_tokens=["sch:main.kicad_sch#U999"],
+        ),
+        Finding(
+            rule_id="R002",
+            severity="high",
+            refdes="U1",
+            message="missing evidence should not render",
+        ),
+    ]
+
+    md = render(findings, _meta(), registry=_registry(["U1"]))
+
+    assert "⟨?U999⟩ is unsupported" in md
+    assert "missing evidence should not render" not in md
+    assert "Findings | 1" in md
