@@ -620,7 +620,7 @@ def test_serve_workbench_fake_ai_dry_run_accepts_document_index(tmp_path: Path) 
 
     assert result.exit_code == 0, result.output
     assert "serve-workbench:" in result.output
-    assert "document-index=on matched=1" in result.output
+    assert "document-index=on datasheets_matched=1" in result.output
     assert "no_result=14" in result.output
 
 
@@ -1163,7 +1163,7 @@ def test_design_validator_ui_auto_selects_bom_from_pst_project_dir(
     assert "switch_clean.csv" in result.output
     assert "bom-candidates: 3" in result.output
     assert "design-validator-ui:" in result.output
-    assert "BOM matched=3" in result.output
+    assert "BOM rows matched=3" in result.output
     assert "validated=2" in result.output
 
     html = html_output.read_text(encoding="utf-8")
@@ -1221,7 +1221,7 @@ def test_design_validator_ui_auto_selects_chinese_xlsx_bom_from_pst_project_dir(
     assert result.exit_code == 0, result.output
     assert "selected-bom:" in result.output
     assert "switch_clean.xlsx" in result.output
-    assert "BOM matched=3" in result.output
+    assert "BOM rows matched=3" in result.output
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"bom_source":' in index_payload
@@ -1246,7 +1246,7 @@ def test_suggest_validation_targets_writes_candidate_manifest(tmp_path: Path) ->
 
     assert result.exit_code == 0, result.output
     assert "target-candidates:" in result.output
-    assert "matched=4" in result.output
+    assert "profile_targets_matched=4" in result.output
     assert "no_result=6" in result.output
 
     text = output.read_text(encoding="utf-8")
@@ -1279,7 +1279,7 @@ def test_suggest_validation_targets_matches_eg2132_profile(tmp_path: Path) -> No
     )
 
     assert result.exit_code == 0, result.output
-    assert "matched=4" in result.output
+    assert "profile_targets_matched=4" in result.output
 
     text = output.read_text(encoding="utf-8")
     assert "refdes: U3" in text
@@ -1308,7 +1308,7 @@ def test_suggest_validation_targets_matches_stm32_profile(tmp_path: Path) -> Non
     )
 
     assert result.exit_code == 0, result.output
-    assert "matched=1" in result.output
+    assert "profile_targets_matched=1" in result.output
 
     text = output.read_text(encoding="utf-8")
     assert "refdes: U8" in text

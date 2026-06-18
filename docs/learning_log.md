@@ -8,6 +8,37 @@
 
 ---
 
+## 2026-06-19 — Value-field tokens can look like real refdes
+
+**Symptom**
+
+The Refdes Guard correctly allowed verified part/package identifiers such as
+`EG2132` and `SOP8`, but the same value-field exemption could allow a missing
+board object like `R47` if a component's value literally contained `R47`.
+
+**Root cause**
+
+The sanitizer treated every refdes-shaped token found in component identity
+fields as verified board vocabulary. That was too broad: `EG2132` is a part
+identity, while `R47` uses a normal resistor designator prefix and should still
+require a registry refdes hit.
+
+**Fix**
+
+Identity-field exemptions now exclude common schematic refdes prefixes. A token
+such as `R47`, `C10`, or `U9` must be present in the registry to pass through;
+non-refdes identity tokens such as `EG2132` and `SOP8` remain allowed when they
+come from parsed component fields. Regression coverage constructs a board where
+`R47` is only a value and asserts that outbound text wraps it as unverified.
+
+**Takeaway**
+
+Regex false-positive fixes need a second discriminator. "Appears in parsed
+identity" is enough for unusual part/package tokens, but not for normal
+reference-designator prefixes.
+
+---
+
 ## 2026-06-12 — Live workbench health check exposed trust-cost bugs
 
 **Symptom**

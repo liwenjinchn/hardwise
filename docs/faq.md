@@ -59,8 +59,11 @@ voltage"top-1 命中第 4 页；评审规则引用的是人工审核过的档案
 
 ## Q4. AI 助手有哪些工具？为什么不让模型自由回答？
 
-五个工具，输入输出全部经 Pydantic schema 校验：`list_components`、
+运行时工具面分两层：5 个核心查询工具 + 7 个工作台上下文/拓扑工具，合计约
+12 个。核心查询工具输入输出全部经 Pydantic schema 校验：`list_components`、
 `get_component`、`get_nc_pins`、`search_datasheet`、`run_component_validation`。
+工作台路径再增加器件/网络上下文、网络搜索、项目拓扑摘要、公开文档覆盖和
+已审核档案证据定位等工具，用来回答 Allegro/PST 工作台里的上下文问题。
 
 模型自由回答会编造位号、网络名和参数。强制走工具意味着每条回答都有查询
 和返回值，可审计、可复现。关键设计在"未命中"分支：问一个不存在的 `U999`，

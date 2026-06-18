@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-05-20T00:00:00+00:00",
+  "manifest_name": "hardwise-eval-pack-v0-static-snapshot",
+  "manifest_path": "eval/manifest.yaml",
+  "upstream": {
+    "corpus": "https://github.com/aklofas/kicad-happy-testharness",
+    "smoke_pack": "https://github.com/aklofas/kicad-happy-testharness/blob/main/reference/smoke_pack.md",
+    "methodology": "https://github.com/aklofas/kicad-happy-testharness/blob/main/methodology.md",
+    "trust_boundary": "public regression oracle / pseudo-gold, not expert gold labels",
+    "snapshot_note": "Accepted offline static snapshot from the full public-corpus smoke: 5 repos / 6 component-bearing KiCad project directories. Use for demo reproducibility when network checkouts are unavailable."
+  },
+  "rules": [
+    "R001",
+    "R002",
+    "R003"
+  ],
+  "repos_total": 5,
+  "projects_total": 6,
+  "projects_passed": 6,
+  "projects_failed": 0,
+  "projects_skipped_empty": 10,
+  "components_total": 1707,
+  "nc_pins_total": 231,
+  "findings_total": 437,
+  "findings_by_rule": {
+    "R001": 0,
+    "R002": 298,
+    "R003": 139
+  },
+  "findings_by_severity": {
+    "low": 40,
+    "medium": 397
+  },
+  "findings_by_decision": {
+    "likely_issue": 298,
+    "reviewer_to_confirm": 99,
+    "likely_ok": 40,
+    "undecided": 0
+  },
+  "findings_by_rule_decision": {
+    "R001": {
+      "likely_issue": 0,
+      "reviewer_to_confirm": 0,
+      "likely_ok": 0,
+      "undecided": 0
+    },
+    "R002": {
+      "likely_issue": 298,
+      "reviewer_to_confirm": 0,
+      "likely_ok": 0,
+      "undecided": 0
+    },
+    "R003": {
+      "likely_issue": 0,
+      "reviewer_to_confirm": 99,
+      "likely_ok": 40,
+      "undecided": 0
+    }
+  },
+  "unverified_refdes_wrapped": 0,
+  "unverified_refdes_samples": [],
+  "findings_dropped_no_evidence": 0,
+  "results": [
+    {
+      "repo": "static/eval-pack-v0",
+      "project_dir": "aggregate: 5 repos / 6 component-bearing KiCad project directories",
+      "status": "passed",
+      "components": 1707,
+      "nc_pins": 231,
+      "findings_total": 437,
+      "findings_by_rule": {
+        "R001": 0,
+        "R002": 298,
+        "R003": 139
+      },
+      "findings_by_severity": {
+        "low": 40,
+        "medium": 397
+      },
+      "findings_by_decision": {
+        "likely_issue": 298,
+        "reviewer_to_confirm": 99,
+        "likely_ok": 40,
+        "undecided": 0
+      },
+      "findings_by_rule_decision": {
+        "R001": {
+          "likely_issue": 0,
+          "reviewer_to_confirm": 0,
+          "likely_ok": 0,
+          "undecided": 0
+        },
+        "R002": {
+          "likely_issue": 298,
+          "reviewer_to_confirm": 0,
+          "likely_ok": 0,
+          "undecided": 0
+        },
+        "R003": {
+          "likely_issue": 0,
+          "reviewer_to_confirm": 99,
+          "likely_ok": 40,
+          "undecided": 0
+        }
+      },
+      "unverified_refdes_wrapped": 0,
+      "unverified_refdes_samples": [],
+      "findings_dropped_no_evidence": 0,
+      "error": null
+    }
+  ]
+}

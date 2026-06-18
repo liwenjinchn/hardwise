@@ -17,6 +17,26 @@ from hardwise.adapters.base import BoardRegistry
 from hardwise.checklist.finding import Finding
 
 REFDES_PATTERN = re.compile(r"\b[A-Z]{1,3}\d{1,4}\b")
+COMMON_REFDES_PREFIXES = {
+    "R",
+    "C",
+    "L",
+    "D",
+    "Q",
+    "U",
+    "J",
+    "P",
+    "TP",
+    "FB",
+    "F",
+    "Y",
+    "X",
+    "SW",
+    "RV",
+    "RN",
+    "IC",
+    "BAT",
+}
 
 
 def sanitize_text(text: str, registry: BoardRegistry) -> tuple[str, int]:
@@ -25,9 +45,9 @@ def sanitize_text(text: str, registry: BoardRegistry) -> tuple[str, int]:
     A token is left untouched when it is a verified refdes, a pin name (see
     `_looks_like_pin_name`), or a refdes-shaped identifier that literally appears
     in a parsed component's identity fields — a part number or package such as
-    `EG2132` or `SOP8`. Those are verified board facts, not hallucinated refdes;
-    a hallucinated designator like `U999` is absent from the board and stays
-    wrapped, so anti-hallucination is preserved.
+    `EG2132` or `SOP8`. Those are verified board facts, not hallucinated refdes.
+    A token that uses a common refdes prefix (`R47`, `C10`, `U9`) still needs a
+    registry hit; value-field collisions must not become fake board objects.
     """
 
     wrapped = 0
@@ -40,7 +60,7 @@ def sanitize_text(text: str, registry: BoardRegistry) -> tuple[str, int]:
             return token
         if registry.has_refdes(token):
             return token
-        if token in verified_identifiers:
+        if token in verified_identifiers and not _uses_common_refdes_prefix(token):
             return token
         wrapped += 1
         return f"⟨?{token}⟩"
@@ -65,6 +85,13 @@ def _identity_tokens(registry: BoardRegistry) -> set[str]:
             if field_value:
                 tokens.update(REFDES_PATTERN.findall(field_value))
     return tokens
+
+
+def _uses_common_refdes_prefix(token: str) -> bool:
+    """Return true for refdes-like tokens using normal schematic prefixes."""
+
+    match = re.match(r"([A-Z]{1,3})\d{1,4}\Z", token)
+    return bool(match and match.group(1) in COMMON_REFDES_PREFIXES)
 
 
 def _looks_like_pin_name(text: str, start: int, end: int) -> bool:

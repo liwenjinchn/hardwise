@@ -107,8 +107,8 @@ Action labels in the product map to the trust tiers:
 | Refdes Guard | User-visible refdes-like tokens must come from the parsed EDA registry, or they are wrapped before display. |
 | Evidence Ledger | Report findings need source tokens such as `sch:<file>#<refdes>`, `datasheet:<pdf>#p<N>`, or `rule:<id>`. |
 | Sleep Consolidator | Repeated findings become human-gated candidate rules, not auto-enabled model output. |
-| Tiered Model Routing | Runtime model slots are selected by env tier (`fast` / `normal` / `deep`), not hard-coded model names. |
-| Prompt Caching | The static agent prompt is cacheable and has a measured cache-read hit on the configured Anthropic-format proxy. |
+| Tiered Model Routing | Runtime model slots are selected by env tier (`fast` / `normal` / `deep`), not hard-coded model names. Maturity: placeholder slot structure; there is no query-level routing policy yet. |
+| Prompt Caching | The static agent prompt is wired as cacheable and usage accounting is tested. Maturity: cache-read was measured on the configured Anthropic-format proxy; true provider cache behavior is external measurement, not a CI assertion. |
 
 | Trust tier | Meaning | Where it appears |
 |---|---|---|
@@ -163,7 +163,7 @@ the same facts through local `/api/workbench/*` endpoints. What the workbench pr
 deterministic trust path, not a coverage trophy: U1/L7805 repeats the L78
 evidence path in the workbench, while U12/XL1509, U3/EG2132, U8/STM32G030, and
 Q12/SS8050 show deterministic topology, debug-interface, or profile-pin errors.
-The mixed controller fixture reports 25 components, 22 validated rows, BOM matched=25,
+The mixed controller fixture reports 25 components, 22 validated rows, BOM rows matched=25,
 PASS/WARN/ERROR = 5/13/4, and 3 manual/no-local-profile rows. The 22 L1 rows
 are 9 profile-backed targets (U1/U12/U3/U8, D1/D5, and Q1/Q2/Q12) plus 13
 generic passive checks; the passive checks are light deterministic coverage
@@ -183,9 +183,10 @@ Use this screen order for the canonical recording:
 `serve-workbench --fake-ai` drives the real agent loop with a deterministic fake
 client; real mode talks to any Anthropic-format endpoint configured in `.env`.
 `design-validator-ui --ai-snapshot` bakes audited offline chat responses into
-the single HTML file (no server, no API key). Every panel answer runs the same
-five-tool Runner and the same Refdes Guard, so an unknown refdes such as `U999`
-is wrapped as `⟨?U999⟩` rather than fabricated.
+the single HTML file (no server, no API key). Every panel answer uses the same
+Runner tool surface — 5 core query tools plus 7 context/topology tools at
+workbench runtime, about 12 tools total — and the same Refdes Guard, so an
+unknown refdes such as `U999` is wrapped as `⟨?U999⟩` rather than fabricated.
 
 If a project has zero local profile matches, the same command still emits a
 coverage/gap workbench plus optional markdown / JSON index sidecars instead of
@@ -220,7 +221,7 @@ and `datasheet:xl1509.pdf#p9` for the Schottky diode table. See
 tokens are reviewed public profile evidence unless their PDFs have also been
 staged and queried.
 
-Public/synthetic pressure-fixture imports are coverage-planning evidence, not the primary public demo. The closeout rerun reports Switch fixture 4010 components / 3794 validated / 216 manual / PASS/WARN/ERROR = 3663/125/6, and mainboard fixture 8180 components / 7248 BOM matched / 6847 validated / 1333 manual / PASS/WARN/ERROR = 3921/2926/0. See [`docs/closeout_pressure_summary.md`](docs/closeout_pressure_summary.md); the movement came from conservative generic inductor/ferrite coverage plus the reviewed PE537BA P-MOS profile, not from a full-board automatic correctness claim.
+Public/synthetic pressure-fixture imports are coverage-planning evidence, not the primary public demo. The closeout rerun reports Switch fixture 4010 components / 3794 validated / 216 manual / PASS/WARN/ERROR = 3663/125/6, and mainboard fixture 8180 components / 7248 BOM rows matched / 6847 validated / 1333 manual / PASS/WARN/ERROR = 3921/2926/0. See [`docs/closeout_pressure_summary.md`](docs/closeout_pressure_summary.md); the movement came from conservative generic inductor/ferrite coverage plus the reviewed PE537BA P-MOS profile, not from a full-board automatic correctness claim.
 
 For repeated component families, Hardwise can draft `needs_review` profile
 skeletons from reusable archetypes such as `74x165_piso_16pin`. See
@@ -269,8 +270,8 @@ Hardwise's main claim is narrow: **the model is not allowed to invent board obje
 | 1 | **Refdes Guard** | User-visible refdes-like tokens (`U1`, `R10`, `J5`) must hit the parsed EDA registry; unknowns are wrapped before output. | Live: `src/hardwise/guards/refdes.py` |
 | 2 | **Evidence Ledger** | Findings without evidence tokens are dropped. No token, no claim. | Live: `src/hardwise/guards/evidence.py` |
 | 3 | **Sleep Consolidator** | Repeated findings are recorded as human-gated candidate rules before they can become new deterministic checks. | Live: `src/hardwise/memory/consolidator.py` |
-| 4 | **Tiered Model Routing** | The agent chooses `fast` / `normal` / `deep` slots from env config; code does not hard-code a vendor model. | Live: `src/hardwise/agent/router.py` |
-| 5 | **Prompt Caching** | The cacheable static prompt has measured cache-read hits on the configured Anthropic-format endpoint. | Live: `src/hardwise/agent/prompts.py`, `src/hardwise/agent/runner.py` |
+| 4 | **Tiered Model Routing** | The agent chooses `fast` / `normal` / `deep` slots from env config; code does not hard-code a vendor model. | Live: `src/hardwise/agent/router.py`; maturity: placeholder slot structure, no query-level routing policy yet. |
+| 5 | **Prompt Caching** | The static prompt is sent with `cache_control`, and usage accounting tracks create/read tokens. | Live: `src/hardwise/agent/prompts.py`, `src/hardwise/agent/runner.py`; maturity: wiring + accounting are tested offline, true cache-read remains external provider measurement. |
 
 The agent surface is tiered in the same vocabulary used by validation details: `L1 deterministic`, `L2 grounded`, and `L3 manual`. `run_component_validation` is L1 and can affect PASS/WARN/ERROR. `search_datasheet` becomes L2 only when a turn returns page-level retrieval evidence such as `datasheet:l78.pdf#p4` or `datasheet:xl1509.pdf#p11`. No profile, no retrieval, or no configured vector store stays L3 and requires reviewer confirmation.
 
@@ -314,7 +315,14 @@ uv run hardwise ask data/projects/pic_programmer "U4 has how many NC pins?"
 uv run hardwise ask data/projects/pic_programmer "What is U999?"
 ```
 
-The agent has five structured tools: `list_components`, `get_component`, `get_nc_pins`, `search_datasheet`, and `run_component_validation`. Unknown objects return structured misses such as `found=false` plus closest matches; validation without a loaded design or profile returns `not_configured` / `no_profile` instead of a fabricated verdict.
+The runtime agent surface is 5 core query tools plus 7 context/topology tools
+(about 12 tools total). The core query tools are `list_components`,
+`get_component`, `get_nc_pins`, `search_datasheet`, and
+`run_component_validation`; the workbench adds parsed topology, document
+coverage, and reviewed-profile evidence locator tools. Unknown objects return
+structured misses such as `found=false` plus closest matches; validation without
+a loaded design or profile returns `not_configured` / `no_profile` instead of a
+fabricated verdict.
 
 ### Workbench with Copilot panel
 
@@ -362,6 +370,7 @@ Current evidence-chain boundary: L78 and XL1509 have been smoke-tested through `
 ```bash
 uv run hardwise eval --download
 uv run hardwise eval --limit-projects 1
+uv run hardwise eval --static-snapshot
 ```
 
 Outputs:
@@ -369,7 +378,7 @@ Outputs:
 - `reports/eval/eval-summary.json`
 - `reports/eval/eval-summary.html`
 
-The eval gate is intentionally narrow for the MVP: fail on parser/project failures, new unverified refdes wrapping, or newly dropped evidence-less findings. Finding-count changes are reported as observations because useful rule changes can legitimately add or remove findings.
+The eval gate is intentionally narrow for the MVP: fail on parser/project failures, new unverified refdes wrapping, or newly dropped evidence-less findings. Finding-count changes are reported as observations because useful rule changes can legitimately add or remove findings. `--static-snapshot` writes the accepted offline headline snapshot (1707 parsed components / 437 deterministic findings) when a demo environment should not depend on live GitHub checkouts.
 
 ### Use PostgreSQL instead of SQLite
 
@@ -413,7 +422,7 @@ Current MVP status:
 | 3 — R003 + Dual Store + Router | Done | NC-pin parser, SQLite/Chroma, datasheet ingest, tiered routing |
 | 4 — Agent Loop + Prompt Caching | Done | `hardwise ask`, structured tools, live prompt-cache read hit |
 | 5 — Submission Closeout | Done | Canonical workbench demo narrative, README/demo/docs closeout, final artifacts |
-| Workbench — Allegro Copilot | Done | `serve-workbench` live agent loop + `design-validator-ui --ai-snapshot` offline; reuses the five-tool Runner + Refdes Guard |
+| Workbench — Allegro Copilot | Done | `serve-workbench` live agent loop + `design-validator-ui --ai-snapshot` offline; reuses the 5-core + 7-context runtime tool surface and Refdes Guard |
 
 The MVP intentionally stops here. R004/R005-style net-aware checks, a
 schematic-side net parser, a human-labeled calibration set, Windows CI result

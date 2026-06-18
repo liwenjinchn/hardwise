@@ -37,7 +37,7 @@ def test_report_allegro_bom_writes_component_intake_report(tmp_path: Path) -> No
 
     assert result.exit_code == 0, result.output
     assert "report:" in result.output
-    assert "(3/3 matched, 0 mismatches)" in result.output
+    assert "(bom_rows_matched=3/3, 0 mismatches)" in result.output
     assert output_path.exists()
 
     md = output_path.read_text(encoding="utf-8")
@@ -164,7 +164,7 @@ def test_report_allegro_bom_mismatch_only_omits_indexes_and_component_table(
     )
 
     assert result.exit_code == 0, result.output
-    assert "(1/3 matched, 3 mismatches)" in result.output
+    assert "(bom_rows_matched=1/3, 3 mismatches)" in result.output
     md = output_path.read_text(encoding="utf-8")
     assert "## BOM / Design Registry Mismatches" in md
     assert "### BOM-Only Refdes" in md
