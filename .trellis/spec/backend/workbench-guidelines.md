@@ -211,6 +211,100 @@ if _needs_document_coverage(question):
     )
 ```
 
+## Scenario: Datasheets.com Reviewer-Only Candidates
+
+### 1. Scope / Trigger
+
+Applies when exposing public datasheet-provider search results through
+`serve-workbench`, profile-gap endpoints, component detail payloads, or the
+workbench SPA.
+
+### 2. Signatures
+
+- Live entrypoint:
+  `serve-workbench <netlist/pst> <bom> [--auto-datasheet-candidates|--no-auto-datasheet-candidates]`
+- State payload:
+  `WorkbenchCapabilities.datasheet_candidate_lookup_enabled: bool`
+- Component detail payload:
+  `DocumentCoverageView.candidate_search: DatasheetCandidateSearchView | None`
+- Search endpoint:
+  `GET /api/workbench/profile-gaps/{group_id}/datasheet-candidates?format=json|markdown|csv&limit=<1..10>&page=<n>&timeout=<1..60>`
+
+### 3. Contracts
+
+- Provider lookup reads `DATASHEETS_API_KEY` from the server environment. Missing
+  keys produce `status="not_configured"` and must not fall back to model memory,
+  browser search, supplier summaries, or cached private data.
+- Component detail auto-lookup runs only when
+  `auto_datasheet_candidates=True`, the local document-index result is still a
+  gap, and the BOM identity is a searchable MPN-like value. Passive value-only
+  identities such as `100nF` are skipped.
+- Candidate rows carry `review_status="candidate"` and
+  `source="datasheets.com_api"`. They are reviewable document-index suggestions,
+  not approved evidence, profile facts, or deterministic validation inputs.
+- CSV/Markdown exports are handoff artifacts for reviewers. They may help build
+  a future approved public document index, but this endpoint must not download
+  PDFs or write profile JSON.
+- The SPA must display the guardrail near the candidates: candidate search does
+  not download PDFs, does not auto-approve, and does not change
+  PASS/WARN/ERROR.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required behavior |
+|---|---|
+| Unknown `group_id` | Return 404 with `found=false`, `reason="unknown_component_group"`, and `closest_matches` |
+| Missing `DATASHEETS_API_KEY` | Return `status="not_configured"` with empty candidates |
+| Provider returns no rows | Return `status="no_result"` and keep the document gap manual |
+| Provider rate limit / challenge / error | Return the provider status and reason; do not cache or promote anything |
+| Direct PDF candidates found | Count and display them as reviewer-only candidates |
+| `--no-auto-datasheet-candidates` | State capability is false and component detail omits `candidate_search` |
+
+### 5. Good/Base/Bad Cases
+
+- Good: A missed local document row for `SS8050` embeds a
+  `candidate_search` block that says Datasheets.com is `not_configured` when no
+  key is present.
+- Good: A found result renders MPN, manufacturer, title, and direct PDF URL as
+  `candidate` rows, plus a reviewer handoff CSV.
+- Base: A passive capacitor value with no real MPN keeps `candidate_search`
+  absent; the reviewer sees the local document-index gap only.
+- Bad: Treating a provider result as L1 evidence or as proof that an electrical
+  limit exists.
+- Bad: Changing validation status, task counts, or deterministic evidence based
+  on candidate search output.
+
+### 6. Tests Required
+
+- Provider endpoint tests for found, unknown group, missing API key, and export
+  formats.
+- Component-detail tests proving auto lookup attaches candidate status for MPN
+  gaps, respects `--no-auto-datasheet-candidates`, and skips passive values.
+- SPA tests proving candidate status, reason, direct-PDF count, and guardrail
+  text render in the detail column.
+- CLI dry-run test asserting `serve-workbench` prints whether
+  `datasheet-candidates` is `auto` or `off`.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```python
+if document.status == "no_result":
+    document.status = "matched"
+    document.url = candidate.datasheet_url
+```
+
+#### Correct
+
+```python
+if document.status in {"no_result", "manual_needed", "ambiguous"}:
+    document.candidate_search = DatasheetCandidateSearchView(
+        status=packet.status,
+        candidates=packet.candidates,
+    )
+```
+
 ## Convention: Demo-Entrypoint Parity for Optional Workbench Inputs
 
 **What**: When an optional workbench input exists (`--document-index`,
@@ -253,4 +347,3 @@ staying clean after a rebuild proves bundle freshness.
 **Check**: after `npm run build`, `git status` must show no unstaged
 `static/` changes, and `grep -o 'index-[A-Za-z0-9]*\.\(js\|css\)' src/hardwise/workbench/static/index.html`
 must list only assets that exist on disk.
-

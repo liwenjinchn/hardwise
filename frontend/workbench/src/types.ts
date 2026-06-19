@@ -24,6 +24,7 @@ export interface WorkbenchSummary {
 export interface WorkbenchCapabilities {
   chat: boolean;
   datasheet_search_enabled: boolean;
+  datasheet_candidate_lookup_enabled: boolean;
   document_index_enabled: boolean;
   risk_hints_enabled: boolean;
   pin_table_enabled: boolean;
@@ -194,11 +195,41 @@ export interface ProfileView {
 
 export interface DocumentCoverageView {
   status: string;
+  group_id?: string | null;
+  identity: string;
+  identity_kind: string;
+  suggested_family: string;
   title?: string | null;
   url?: string | null;
   source?: string | null;
   candidates: number;
   reason: string;
+  candidate_search?: DatasheetCandidateSearchView | null;
+}
+
+export interface DatasheetCandidateView {
+  mpn: string;
+  manufacturer?: string | null;
+  title?: string | null;
+  description?: string | null;
+  datasheet_url?: string | null;
+  product_url?: string | null;
+  lifecycle_status?: string | null;
+  package_type?: string | null;
+  review_status: string;
+  source: string;
+}
+
+export interface DatasheetCandidateSearchView {
+  provider: string;
+  status: string;
+  reason?: string | null;
+  query: string;
+  count: number;
+  direct_datasheet_count: number;
+  remaining_month?: number | null;
+  candidates: DatasheetCandidateView[];
+  next_actions: string[];
 }
 
 export interface WorkbenchState {

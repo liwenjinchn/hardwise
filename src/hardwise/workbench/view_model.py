@@ -55,6 +55,7 @@ class WorkbenchCapabilities(BaseModel):
 
     chat: bool = True
     datasheet_search_enabled: bool
+    datasheet_candidate_lookup_enabled: bool = False
     document_index_enabled: bool
     risk_hints_enabled: bool
     pin_table_enabled: bool = False
@@ -179,11 +180,45 @@ class DocumentCoverageView(BaseModel):
     """Document-index coverage for one component's BOM identity."""
 
     status: str = "not_configured"
+    group_id: str | None = None
+    identity: str = ""
+    identity_kind: str = ""
+    suggested_family: str = ""
     title: str | None = None
     url: str | None = None
     source: str | None = None
     candidates: int = 0
     reason: str = ""
+    candidate_search: "DatasheetCandidateSearchView | None" = None
+
+
+class DatasheetCandidateView(BaseModel):
+    """One provider candidate shown as reviewer-only data."""
+
+    mpn: str
+    manufacturer: str | None = None
+    title: str | None = None
+    description: str | None = None
+    datasheet_url: str | None = None
+    product_url: str | None = None
+    lifecycle_status: str | None = None
+    package_type: str | None = None
+    review_status: str = "candidate"
+    source: str = "datasheets.com_api"
+
+
+class DatasheetCandidateSearchView(BaseModel):
+    """Provider lookup status embedded in component detail."""
+
+    provider: str = "datasheets.com"
+    status: str
+    reason: str | None = None
+    query: str = ""
+    count: int = 0
+    direct_datasheet_count: int = 0
+    remaining_month: int | None = None
+    candidates: list[DatasheetCandidateView] = Field(default_factory=list)
+    next_actions: list[str] = Field(default_factory=list)
 
 
 class PinView(BaseModel):
@@ -430,6 +465,7 @@ def build_workbench_state(
     context: WorkbenchContext,
     *,
     datasheet_search_enabled: bool,
+    datasheet_candidate_lookup_enabled: bool = False,
 ) -> WorkbenchState:
     """Build the SPA's top-level state from deterministic backend context."""
 
@@ -464,6 +500,7 @@ def build_workbench_state(
         ),
         capabilities=WorkbenchCapabilities(
             datasheet_search_enabled=datasheet_search_enabled,
+            datasheet_candidate_lookup_enabled=datasheet_candidate_lookup_enabled,
             document_index_enabled=context.document_report is not None,
             risk_hints_enabled=context.risk_hints.source_path is not None,
             pin_table_enabled=context.pin_table_path is not None,
@@ -1171,6 +1208,10 @@ def _document_view(context: WorkbenchContext, refdes: str) -> DocumentCoverageVi
         )
     return DocumentCoverageView(
         status=group.document_status,
+        group_id=group.group_id,
+        identity=group.identity,
+        identity_kind=group.identity_kind,
+        suggested_family=group.suggested_family,
         title=group.document_title,
         url=group.document_url,
         source=group.document_source,
