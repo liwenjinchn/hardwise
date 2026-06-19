@@ -184,6 +184,33 @@ def test_render_datasheets_com_csv_is_candidate_and_cache_ineligible(tmp_path: P
     ]
 
 
+def test_render_datasheets_com_csv_neutralizes_formula_injection() -> None:
+    # Result fields come straight from an external API and are untrusted; a
+    # title/manufacturer beginning with =/@ must be quote-prefixed so it cannot
+    # execute as a formula when the candidate CSV is opened in a spreadsheet.
+    report = DatasheetsComLookupReport(
+        status="found",
+        query="EVIL",
+        page=1,
+        limit=5,
+        count=1,
+        results=[
+            DatasheetsComPart(
+                mpn="EVIL1",
+                manufacturer="@evilcorp",
+                title="=HYPERLINK(\"http://evil\")",
+                datasheetUrl="https://static.datasheets.com/doc/evil.pdf",
+            )
+        ],
+    )
+
+    csv_text = render_datasheets_com_document_index_csv(report)
+
+    assert "'=HYPERLINK" in csv_text
+    assert "'@evilcorp" in csv_text
+    assert ",=HYPERLINK" not in csv_text
+
+
 def test_search_datasheets_com_cli_writes_candidate_csv(tmp_path: Path, monkeypatch) -> None:
     output = tmp_path / "mpq8626-candidates.csv"
 

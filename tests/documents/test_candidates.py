@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 
 from hardwise.documents.candidates import (
+    DocumentCandidateReport,
+    DocumentCandidateRow,
     build_document_candidate_report,
     render_document_candidate_csv,
 )
@@ -114,6 +116,43 @@ def test_document_candidates_skip_generic_inductor_and_ferrite_families(
 
     assert report.skipped_passive == 2
     assert [row.mpn for row in report.candidates] == ["BAV99"]
+
+
+def test_candidate_csv_neutralizes_formula_injection() -> None:
+    # BOM-derived Title/Description/Value/Notes are not fully trusted. A cell that
+    # begins with =/+/-/@ executes as a formula when opened in Excel/Sheets; the
+    # exporter must quote-prefix it. `+5V` is a legitimate value that needs it too.
+    report = DocumentCandidateReport(
+        input_file=Path("fixture.json"),
+        project_name="inject-fixture",
+        component_group_count=1,
+        candidates=[
+            DocumentCandidateRow(
+                mpn="MP1234",
+                title="=HYPERLINK(\"http://evil\",\"click\")",
+                description="@SUM(1+1)",
+                value="+5V",
+                notes="-2+3",
+                identity_kind="mpn",
+                family="ic",
+                refdes_count=1,
+                refdes_sample="U1",
+                document_status="no_result",
+                profile_status="no_result",
+                search_query="MP1234",
+            )
+        ],
+    )
+
+    text = render_document_candidate_csv(report)
+
+    assert "'=HYPERLINK" in text
+    assert "'@SUM(1+1)" in text
+    assert "'+5V" in text
+    assert "'-2+3" in text
+    # No raw formula-leading cell survives.
+    assert ",=HYPERLINK" not in text
+    assert ",+5V" not in text
 
 
 def _write_index(tmp_path: Path, *, groups: list[dict]) -> Path:

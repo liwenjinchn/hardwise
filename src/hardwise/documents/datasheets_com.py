@@ -14,6 +14,8 @@ from urllib.request import Request, urlopen
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from hardwise.csv_safety import csv_safe_cell
+
 DATASHEETS_COM_BASE_URL = "https://www.datasheets.com"
 DATASHEETS_COM_API_KEY_ENV = "DATASHEETS_API_KEY"
 DATASHEETS_COM_API_KEY_ENV_LEGACY = "DATASHEETS_COM_API_KEY"
@@ -259,18 +261,21 @@ def render_datasheets_com_document_index_csv(
     for result in report.results:
         writer.writerow(
             {
-                "MPN": result.mpn,
-                "Manufacturer": result.manufacturer or "",
-                "Title": result.title or result.mpn,
-                "URL": result.datasheet_url or "",
-                "Description": result.description or "",
-                "Source": "datasheets.com_api",
-                "ReviewStatus": "candidate",
-                "LicenseNote": "Candidate from Datasheets.com API; review Terms before caching.",
-                "ProductURL": result.url or "",
-                "LifecycleStatus": result.lifecycle_status or "",
-                "PackageType": result.package_type or "",
-                "SearchQuery": report.query,
+                key: csv_safe_cell(value)
+                for key, value in {
+                    "MPN": result.mpn,
+                    "Manufacturer": result.manufacturer or "",
+                    "Title": result.title or result.mpn,
+                    "URL": result.datasheet_url or "",
+                    "Description": result.description or "",
+                    "Source": "datasheets.com_api",
+                    "ReviewStatus": "candidate",
+                    "LicenseNote": "Candidate from Datasheets.com API; review Terms before caching.",
+                    "ProductURL": result.url or "",
+                    "LifecycleStatus": result.lifecycle_status or "",
+                    "PackageType": result.package_type or "",
+                    "SearchQuery": report.query,
+                }.items()
             }
         )
     return output.getvalue()

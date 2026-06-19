@@ -4554,3 +4554,39 @@ of silently losing them.
 Trust mechanisms should be cheap to repeat at user-visible exits. If a report
 writer can be called directly, it should enforce the same evidence and refdes
 contracts as the orchestration path that normally feeds it.
+
+## 2026-06-20 — CSV formula-injection fix only covered one of four export exits
+
+**Symptom**
+
+A prior commit added `_csv_safe()` to neutralize spreadsheet formula injection,
+but only on the workbench server's annotation/findings export. The two CLI CSV
+exporters (`render_document_candidate_csv`,
+`render_datasheets_com_document_index_csv`) and the offline SPA snapshot's
+`_tasks_csv` still wrote raw cells. A BOM `Title`/`Description` — or, worse, an
+external Datasheets.com API field — beginning with `=`/`+`/`-`/`@` would execute
+as a formula when the exported `reports/*.csv` was opened in Excel/Sheets.
+
+**Root cause**
+
+The neutralizer was defined privately inside `workbench/server.py`, so the other
+three export exits had no way to share it and were fixed-by-omission. It is the
+same "trust boundary at user-facing exits" lesson as the 2026-06-19 report-exit
+entry, but for the CSV channel: the guard lived one layer too deep and was not
+applied at every exit. A second surprise: legitimate hardware values such as
+`+5V` / `-12V` / `-10%` also start with formula characters, so this was a
+data-correctness bug as well as a security one.
+
+**Fix**
+
+Extracted `csv_safe_cell` into a top-level leaf module `hardwise/csv_safety.py`
+(documents/ must not depend on report/, so the helper cannot live in either) and
+routed all four CSV/annotation export exits through it. Added a dedicated unit
+test plus per-exporter injection tests, including the `+5V` rail-label case.
+
+**Takeaway**
+
+When you add a guard at one exit, grep for every sibling exit of the same class
+and route them through a single shared helper. A private neutralizer invites a
+fixed-by-omission gap; a shared leaf module makes "apply at every exit" the easy
+path.

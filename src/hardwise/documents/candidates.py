@@ -10,6 +10,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, ValidationError
 
+from hardwise.csv_safety import csv_safe_cell
 from hardwise.validation.coverage_priority import score_candidate
 from hardwise.validation.component_groups import ProjectComponentGroup
 from hardwise.validation.project_index import ProjectValidationIndex
@@ -136,22 +137,25 @@ def render_document_candidate_csv(report: DocumentCandidateReport) -> str:
     for row in report.candidates:
         writer.writerow(
             {
-                "MPN": row.mpn,
-                "Manufacturer": row.manufacturer,
-                "Title": row.title,
-                "URL": row.url,
-                "Path": row.path,
-                "Description": row.description,
-                "Value": row.value,
-                "IdentityKind": row.identity_kind,
-                "Family": row.family,
-                "RefdesCount": row.refdes_count,
-                "RefdesSample": row.refdes_sample,
-                "DocumentStatus": row.document_status,
-                "ProfileStatus": row.profile_status,
-                "SearchQuery": row.search_query,
-                "Notes": row.notes,
-                "Priority": row.priority_band,
+                key: csv_safe_cell(value)
+                for key, value in {
+                    "MPN": row.mpn,
+                    "Manufacturer": row.manufacturer,
+                    "Title": row.title,
+                    "URL": row.url,
+                    "Path": row.path,
+                    "Description": row.description,
+                    "Value": row.value,
+                    "IdentityKind": row.identity_kind,
+                    "Family": row.family,
+                    "RefdesCount": row.refdes_count,
+                    "RefdesSample": row.refdes_sample,
+                    "DocumentStatus": row.document_status,
+                    "ProfileStatus": row.profile_status,
+                    "SearchQuery": row.search_query,
+                    "Notes": row.notes,
+                    "Priority": row.priority_band,
+                }.items()
             }
         )
     return output.getvalue()

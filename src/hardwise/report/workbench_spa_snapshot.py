@@ -10,6 +10,7 @@ from html import escape
 from pathlib import Path
 
 from hardwise.bom.types import sort_refdes_key
+from hardwise.csv_safety import csv_safe_cell
 from hardwise.workbench.chat import ChatResponse, build_snapshot_responses
 from hardwise.workbench.context import WorkbenchContext
 from hardwise.workbench.prep_packet import (
@@ -103,13 +104,13 @@ def _tasks_csv(context: WorkbenchContext) -> str:
     for task in build_review_tasks(context):
         writer.writerow(
             {
-                "id": task.id,
-                "refdes": task.refdes,
-                "status_group": task.status_group,
-                "trust_tier": task.trust_tier,
-                "title": task.title,
-                "recommended_action": task.recommended_action,
-                "source_classes": ";".join(task.source_classes),
+                "id": csv_safe_cell(task.id),
+                "refdes": csv_safe_cell(task.refdes),
+                "status_group": csv_safe_cell(task.status_group),
+                "trust_tier": csv_safe_cell(task.trust_tier),
+                "title": csv_safe_cell(task.title),
+                "recommended_action": csv_safe_cell(task.recommended_action),
+                "source_classes": csv_safe_cell(";".join(task.source_classes)),
             }
         )
     return buffer.getvalue()

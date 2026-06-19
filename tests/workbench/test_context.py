@@ -1153,7 +1153,9 @@ def test_workbench_import_cleans_up_superseded_temp_dirs(tmp_path: Path, monkeyp
 
 
 def test_csv_safe_neutralizes_formula_injection() -> None:
-    from hardwise.workbench.server import _csv_safe
+    # The workbench CSV/annotation exports route cells through the shared
+    # `csv_safe_cell` neutralizer (see also tests/test_csv_safety.py).
+    from hardwise.csv_safety import csv_safe_cell as _csv_safe
 
     assert _csv_safe("=cmd()") == "'=cmd()"
     assert _csv_safe("+1") == "'+1"

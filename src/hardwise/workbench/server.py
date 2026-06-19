@@ -18,6 +18,7 @@ from hardwise.agent.evidence_locator import (
     LocateComponentEvidenceInput,
     locate_component_evidence,
 )
+from hardwise.csv_safety import csv_safe_cell
 from hardwise.report.copilot_panel import render_copilot_panel
 from hardwise.report.validator_project_ui import render_project_workbench
 from hardwise.workbench.chat import ChatRequest, ChatResponse, WorkbenchChatService, default_refdes
@@ -454,13 +455,13 @@ def _task_csv_response(context: WorkbenchContext) -> Response:
     for task in build_review_tasks(context):
         writer.writerow(
             {
-                "id": _csv_safe(task.id),
-                "refdes": _csv_safe(task.refdes),
-                "status_group": _csv_safe(task.status_group),
-                "trust_tier": _csv_safe(task.trust_tier),
-                "title": _csv_safe(task.title),
-                "recommended_action": _csv_safe(task.recommended_action),
-                "source_classes": _csv_safe(";".join(task.source_classes)),
+                "id": csv_safe_cell(task.id),
+                "refdes": csv_safe_cell(task.refdes),
+                "status_group": csv_safe_cell(task.status_group),
+                "trust_tier": csv_safe_cell(task.trust_tier),
+                "title": csv_safe_cell(task.title),
+                "recommended_action": csv_safe_cell(task.recommended_action),
+                "source_classes": csv_safe_cell(";".join(task.source_classes)),
             }
         )
     return Response(
@@ -495,20 +496,4 @@ def _annotations_response(context: WorkbenchContext) -> Response:
 
 
 def _annotation_cell(value: object) -> str:
-    return _csv_safe(str(value).replace("\n", " ").replace(",", "；"))
-
-
-def _csv_safe(value: object) -> str:
-    """Neutralize spreadsheet formula injection in exported cell text.
-
-    A cell beginning with ``=``, ``+``, ``-``, ``@`` (or a tab/CR) can execute as
-    a formula when the CSV/annotation file is opened in Excel or Sheets. Prefix
-    such cells with a single quote so they render as literal text. BOM-derived
-    titles and refdes flow into these exports, so the values are not fully
-    trusted.
-    """
-
-    text = str(value)
-    if text[:1] in {"=", "+", "-", "@", "\t", "\r"}:
-        return "'" + text
-    return text
+    return csv_safe_cell(str(value).replace("\n", " ").replace(",", "；"))
