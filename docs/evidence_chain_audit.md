@@ -3,6 +3,7 @@
 > 首次梳理：2026-05-31。2026-06-05 在 d3a/d3b 验证器迁移合入 `main` 后复核
 > （器件档案从 C4 集合增长到 25 个）。
 > 2026-06-18 追加 U12 / XL1509 公开 PDF ingest、retrieval、Workbench trace 冒烟。
+> 2026-06-19 台账对账：档案增长到 30 个（新增 5 个 audited、尚未检索冒烟）。
 >
 > 目的：把"真实入库/检索/AI 引用证明过的"与"人工审核过的结构化档案出处"
 > 分开。
@@ -173,17 +174,31 @@ XL1509 这次 proof 使用 `/tmp/xl1509.pdf` 和一次性的 `/tmp/hardwise-xl15
 向量库；PDF 没有提交到 repo，也没有放进 `data/datasheets/`。不存在已提交的
 Chroma 库（`data/chroma/` 不存在且已 gitignore）。
 
-## 完整档案台账（2026-06-05 复核，25 个档案，全部 `review_status: ready`）
+## 测试门禁边界
+
+`uv run pytest -q` 默认带 `-m 'not slow'`（见 `pyproject.toml`），会**排除** 7 个
+slow 测试——其中 `tests/store/test_vector.py` 的 4 个正是真实 Chroma 入库→检索
+集成（招牌的规格书检索路径），另 3 个是 Postgres round-trip。所以默认绿灯的
+“NNN passed” 并不覆盖实时向量检索；要端到端跑这条链，用
+`uv run pytest -m slow`（需安装 `chromadb`）。这与上文“只有 L78 / XL1509 端到端
+冒烟过”一致：默认快测试集证明确定性逻辑，真检索集成单独按需运行。
+
+## 完整档案台账（2026-06-19 复核，30 个档案，全部 `review_status: ready`）
 
 两个档案有真实 PDF 检索冒烟支撑；其余是人工审核过的公开档案证据。
 
 | 类别 | 数量 | 档案 |
 |---|---|---|
 | **真实 PDF 检索冒烟支撑** | 2 | `l78.json`（`l78.pdf` p3/p4/p6）、`xl1509.json`（`xl1509.pdf` p5/p8/p9/p11） |
-| **审核出处、尚未检索冒烟**（`datasheet:<file>.pdf#pN`） | 21 | `2n3904`、`74lv165`、`bas316`、`connector_2x5`、`eg2132`、`ina180a1`、`irf540n`、`l2n7002klt1g`、`lm393`、`lmv358`、`ln2312lt1g`、`mmbt3904`、`mpq8626`、`pca9548a`、`pca9617a`、`sd103aws_7_f`、`sm340af`、`smbj24ca`、`ss34`、`stm32g030c8t6`、`tlv9062` |
+| **审核出处、尚未检索冒烟**（`datasheet:<file>.pdf#pN`） | 26 | `1n4007w`、`2n3904`、`74lv165`、`bas316`、`connector_2x5`、`eg2132`、`ina180a1`、`irf540n`、`jmtk3005a`、`l2n7002klt1g`、`lm393`、`lmv358`、`ln2312lt1g`、`mbra210lt3g`、`mmbt3904`、`mpq8626`、`pca9548a`、`pca9617a`、`pe537ba`、`sd103aws_7_f`、`sm340af`、`smbj24ca`、`ss34`、`ss8050`、`stm32g030c8t6`、`tlv9062` |
 | **非 PDF 出处**（构造即合成） | 2 | `1_5smc15a`（`datasheet:..._product_page#...`）、`ltst-c190kgkt`（`public_profile:...#...`） |
 
-21 个尚未检索冒烟档案使用的 `datasheet:<file>#pN` 字符串形态，与
+> 2026-06-19 对账：`data/datasheet_profiles/` 实际 30 个档案。相对 2026-06-05
+> 复核新增 5 个 audited（尚未检索冒烟）档案——`1n4007w`、`jmtk3005a`、
+> `mbra210lt3g`、`pe537ba`、`ss8050`，均带 `datasheet:<file>.pdf#pN` 审核出处，
+> 归入"审核出处、尚未检索冒烟"类，不暗示实时检索。
+
+26 个尚未检索冒烟档案使用的 `datasheet:<file>#pN` 字符串形态，与
 `ingest/pdf.py:evidence_token()` 为实时检索分块生成的形态**完全相同**。这个
 共享形态正是过度声称的风险点：脱离证据类别展示出处，会被读成实时检索。
 目前只有 L78 和 XL1509 端到端冒烟过。首次梳理之后加入的 d3a/d3b 器件族（`mpq8626`、
@@ -208,5 +223,5 @@ C3 排序 -> C4 器件族切片 -> 人工行变成确定性行
 不要只用覆盖数字开头，也不要说每个档案出处都来自实时检索。最强且诚实的
 说法是：
 
-> L78 和 XL1509 有完整的入库/检索/AI 或 Workbench 引用冒烟；其它 23 个档案
+> L78 和 XL1509 有完整的入库/检索/AI 或 Workbench 引用冒烟；其它 28 个档案
 > 是人工审核过的公开档案证据，进入确定性验证器，但不能说成实时 Chroma 检索。

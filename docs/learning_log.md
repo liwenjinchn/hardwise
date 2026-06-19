@@ -8,6 +8,48 @@
 
 ---
 
+## 2026-06-19 — The evidence channel had no guard; only refdes did
+
+**Symptom**
+
+A multi-lane audit found that the Copilot panel renders any `datasheet:`/`doc:`
+token in the model's free prose as an authoritative evidence chip
+(`CopilotPanel.renderInline`), identical to tokens that came from a real tool
+trace. A hallucinated or injection-induced token in prose got the same visual
+authority as a retrieved one — directly undermining the "every claim carries a
+verifiable source" pitch.
+
+**Root cause**
+
+Hard rule #3 built two defense layers for *refdes* (`guards/refdes.py`), and
+`evidence_class.py` classifies the *structured* trace tokens, but nothing
+checked the *prose* answer tokens against what the turn's tools actually
+produced. The refdes regex `\b[A-Z]{1,3}\d{1,4}\b` never matched `datasheet:…`
+shapes, so the answer text passed through untouched. Defense-in-depth existed
+for one channel and was simply missing for the other.
+
+**Fix**
+
+Added `guards/evidence.py::unsupported_evidence_tokens(text, verified)` — the
+evidence-channel analogue of the Refdes Guard: a `datasheet:`/`doc:` token in
+the answer must trace back to a tool result from the same turn. `chat.py`
+populates a new additive `ChatResponse.unsupported_evidence_tokens`, and the
+panel renders those as an amber "未验证" chip instead of the authoritative blue
+one. A real subtlety surfaced while writing it: Python's `\b` uses Unicode `\w`,
+so `\bdatasheet` would *miss* a token glued to Chinese prose
+(`电感不足datasheet:…`) that the JS renderer (ASCII `\w`) still chips — leaving a
+CJK-adjacent fabricated token unguarded. Switched the backend to a negative
+lookbehind `(?<![A-Za-z0-9_])` and aligned both token char-classes (added
+`；：、`) so backend detection and frontend chip boundaries agree exactly.
+
+**Takeaway**
+
+A guard is only as wide as its channels. When you add a second rendering path
+that can carry the same trusted-looking token (prose vs. structured trace),
+the guard has to cover it too. And `\b` is not portable across a Python/JS
+boundary once non-ASCII text is in play — pin word boundaries to an explicit
+ASCII class when both sides must agree.
+
 ## 2026-06-19 — Value-field tokens can look like real refdes
 
 **Symptom**
