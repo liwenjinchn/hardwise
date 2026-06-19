@@ -1547,6 +1547,14 @@ def serve_workbench(
             "does not change ValidationReport PASS/WARN/ERROR totals."
         ),
     ),
+    auto_datasheet_candidates: bool = typer.Option(
+        True,
+        "--auto-datasheet-candidates/--no-auto-datasheet-candidates",
+        help=(
+            "On component detail views, query Datasheets.com for MPN-like missing "
+            "document candidates. This never downloads PDFs or changes validation verdicts."
+        ),
+    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
@@ -1620,7 +1628,8 @@ def serve_workbench(
         f"validated={len(context.index.validated_rows)}, "
         f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'}, "
         f"document-index={document_state}, risk-hints={risk_hints_state}, "
-        f"pin-table={pin_table_state})"
+        f"pin-table={pin_table_state}, "
+        f"datasheet-candidates={'auto' if auto_datasheet_candidates else 'off'})"
     )
     if dry_run:
         return
@@ -1633,6 +1642,7 @@ def serve_workbench(
         profiles=profiles,
         document_index=document_index,
         pin_table=pin_table,
+        auto_datasheet_candidates=auto_datasheet_candidates,
     )
     uvicorn.run(app_obj, host=host, port=port)
 

@@ -27,12 +27,17 @@ from hardwise.workbench.context import (
     close_workbench_context,
 )
 from hardwise.workbench.datasheet_candidates import (
+    DatasheetCandidateSearchPacket,
     DatasheetCandidateSearchMiss,
     build_datasheet_candidate_search_packet,
     render_datasheet_candidate_search_markdown,
 )
 from hardwise.workbench.view_model import (
     ComponentMiss,
+    ComponentDetail,
+    DatasheetCandidateSearchView,
+    DatasheetCandidateView,
+    DocumentCoverageView,
     build_review_prep_packet,
     build_component_detail,
     build_review_tasks,
@@ -66,6 +71,7 @@ def create_workbench_app(
     profiles: Path = Path("data/datasheet_profiles"),
     document_index: Path | None = None,
     pin_table: Path | None = None,
+    auto_datasheet_candidates: bool = True,
 ) -> FastAPI:
     """Create the local live workbench app."""
 
@@ -114,6 +120,7 @@ def create_workbench_app(
         return build_workbench_state(
             context,
             datasheet_search_enabled=chat_service.datasheet_search_enabled,
+            datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
         ).model_dump()
 
     @app.get("/api/workbench/components/{refdes}")
@@ -122,6 +129,8 @@ def create_workbench_app(
         detail = build_component_detail(context, refdes)
         if isinstance(detail, ComponentMiss):
             return JSONResponse(status_code=404, content=detail.model_dump())
+        if auto_datasheet_candidates:
+            detail = _attach_auto_datasheet_candidates(context, detail)
         return detail.model_dump()
 
     @app.get("/api/workbench/components/{refdes}/prep-packet")
@@ -316,6 +325,7 @@ def create_workbench_app(
         state = build_workbench_state(
             next_context,
             datasheet_search_enabled=chat_service.datasheet_search_enabled,
+            datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
         )
         return {
             "ok": True,
@@ -335,6 +345,7 @@ def create_workbench_app(
             state_payload = build_workbench_state(
                 context,
                 datasheet_search_enabled=chat_service.datasheet_search_enabled,
+                datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
             ).model_dump(mode="json")
             return JSONResponse(
                 content=state_payload,
@@ -349,6 +360,58 @@ def create_workbench_app(
         return chat_service.ask(request)
 
     return app
+
+
+def _attach_auto_datasheet_candidates(
+    context: WorkbenchContext,
+    detail: ComponentDetail,
+) -> ComponentDetail:
+    """Attach one low-volume provider lookup for an MPN-like missing document group."""
+
+    document = detail.document
+    if document is None or not _should_auto_lookup(document):
+        return detail
+    packet = build_datasheet_candidate_search_packet(
+        context,
+        document.group_id or "",
+        api_key=_datasheets_api_key(),
+        limit=3,
+        timeout_seconds=10,
+    )
+    if isinstance(packet, DatasheetCandidateSearchMiss):
+        return detail
+    return detail.model_copy(
+        update={
+            "document": document.model_copy(
+                update={"candidate_search": _candidate_search_view(packet)}
+            )
+        }
+    )
+
+
+def _should_auto_lookup(document: DocumentCoverageView) -> bool:
+    if document.status not in {"no_result", "ambiguous", "manual_needed"}:
+        return False
+    if not document.group_id:
+        return False
+    return document.identity_kind in {"mpn", "value_mpn"}
+
+
+def _candidate_search_view(packet: DatasheetCandidateSearchPacket) -> DatasheetCandidateSearchView:
+    return DatasheetCandidateSearchView(
+        provider=packet.provider,
+        status=packet.status,
+        reason=packet.reason,
+        query=packet.query,
+        count=packet.count,
+        direct_datasheet_count=packet.direct_datasheet_count,
+        remaining_month=packet.remaining_month,
+        candidates=[
+            DatasheetCandidateView.model_validate(candidate.model_dump(mode="json"))
+            for candidate in packet.candidates
+        ],
+        next_actions=packet.next_actions,
+    )
 
 
 def _datasheets_api_key() -> str | None:

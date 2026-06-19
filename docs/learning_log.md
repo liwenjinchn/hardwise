@@ -8,6 +8,40 @@
 
 ---
 
+## 2026-06-15 — Datasheet candidate lookup must surface provider blocks without promoting evidence
+
+**Symptom**
+
+After adding a Datasheets.com API key, `search-datasheets-com` no longer failed
+as `not_configured`, but every request returned HTTP 403 with
+`cf-mitigated: challenge` and an HTML "Just a moment..." body instead of JSON.
+The product question was whether automatic datasheet lookup could still be
+plugged into the workbench without wasting traffic or weakening trust.
+
+**Root cause**
+
+The blocker sat in front of the business API: Cloudflare challenged the request
+before Datasheets.com returned search results. A valid-looking credential is
+not enough evidence that the provider lookup path is usable, and a provider
+HTML challenge must not be cached or treated as a datasheet candidate.
+
+**Fix**
+
+The live workbench now performs only low-volume, on-detail candidate lookup for
+MPN-like groups with missing document coverage. It skips passive values and
+connector placeholders, never downloads PDFs, and displays provider states such
+as `cloudflare_challenge` or `not_configured` in the document coverage panel.
+Candidates remain reviewer-only data and never change PASS/WARN/ERROR.
+
+**Takeaway**
+
+Automatic discovery is safe only when it enters a candidate lane, not an
+evidence lane. Provider failures are first-class product states; hiding them
+makes the demo look flaky, while promoting them would contaminate the trust
+model.
+
+---
+
 ## 2026-06-12 — Live workbench health check exposed trust-cost bugs
 
 **Symptom**

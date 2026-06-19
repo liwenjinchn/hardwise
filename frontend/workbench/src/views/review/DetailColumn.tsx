@@ -179,11 +179,16 @@ export function DetailColumn({
 function DocumentCoverageSection({ document }: { document: DocumentCoverageView | null | undefined }) {
   const coverage = document ?? {
     status: "not_configured",
+    group_id: null,
+    identity: "",
+    identity_kind: "",
+    suggested_family: "",
     title: null,
     url: null,
     source: null,
     candidates: 0,
-    reason: "No document index was provided."
+    reason: "No document index was provided.",
+    candidate_search: null
   };
   const matched = coverage.status === "matched" || coverage.status === "loaded";
   return (
@@ -210,10 +215,69 @@ function DocumentCoverageSection({ document }: { document: DocumentCoverageView 
             {coverage.candidates > 0 ? `（候选 ${coverage.candidates} 条）` : ""}
           </p>
         )}
+        {coverage.candidate_search && (
+          <DatasheetCandidateSearchBlock search={coverage.candidate_search} />
+        )}
         <p className="doc-note">覆盖状态只说明本地公开资料索引是否有已审核链接，不构成电气结论。</p>
       </div>
     </section>
   );
+}
+
+function DatasheetCandidateSearchBlock({
+  search
+}: {
+  search: NonNullable<DocumentCoverageView["candidate_search"]>;
+}) {
+  return (
+    <div className="candidate-search-block" aria-label="公开资料候选">
+      <div className="doc-coverage-line">
+        <strong>公开候选</strong>
+        <StatusBadge group={candidateStatusGroup(search.status)} label={candidateStatusLabel(search.status)} />
+        <span className="source-badge">{search.provider}</span>
+      </div>
+      <p className="doc-reason">
+        查询 {search.query || "-"}：{search.count} 个结果，direct PDF {search.direct_datasheet_count} 个
+        {typeof search.remaining_month === "number" ? `，本月剩余 ${search.remaining_month}` : ""}
+        {search.reason ? `；${search.reason}` : ""}
+      </p>
+      {search.candidates.length > 0 && (
+        <div className="candidate-list">
+          {search.candidates.slice(0, 3).map((candidate) => (
+            <article className="candidate-card" key={`${candidate.mpn}-${candidate.datasheet_url ?? candidate.product_url ?? ""}`}>
+              <div className="candidate-line">
+                <strong>{candidate.mpn}</strong>
+                <span>{candidate.manufacturer || "-"}</span>
+                <span>{candidate.review_status}</span>
+              </div>
+              {candidate.title && <p>{candidate.title}</p>}
+              {candidate.datasheet_url && (
+                <code className="candidate-url">{candidate.datasheet_url}</code>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+      <p className="doc-note">候选只进入人工审核队列；不会下载 PDF、不会自动 approve，也不会改变 PASS/WARN/ERROR。</p>
+    </div>
+  );
+}
+
+function candidateStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    found: "有候选",
+    no_result: "无结果",
+    not_configured: "未配置",
+    rate_limited: "限流",
+    cloudflare_challenge: "被拦截",
+    provider_error: "查询失败"
+  };
+  return labels[status] ?? status;
+}
+
+function candidateStatusGroup(status: string) {
+  if (status === "found") return "warn";
+  return "manual";
 }
 
 function TaskCard({ task, index }: { task: ReviewTask; index: number }) {

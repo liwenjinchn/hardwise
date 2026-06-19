@@ -160,6 +160,7 @@ export function makeCapabilities(
   return {
     chat: true,
     datasheet_search_enabled: false,
+    datasheet_candidate_lookup_enabled: false,
     document_index_enabled: false,
     risk_hints_enabled: false,
     pin_table_enabled: false,
@@ -217,11 +218,16 @@ export function makeState(overrides: Partial<WorkbenchState> = {}): WorkbenchSta
 export function makeDocument(overrides: Partial<DocumentCoverageView> = {}): DocumentCoverageView {
   return {
     status: "matched",
+    group_id: "1",
+    identity: "L7805",
+    identity_kind: "mpn",
+    suggested_family: "ic",
     title: "L78 series public ST datasheet (l78.pdf)",
     url: "https://www.st.com/resource/en/datasheet/l78.pdf",
     source: "st.com",
     candidates: 1,
     reason: "Exactly one local document-index row matched this BOM identity.",
+    candidate_search: null,
     ...overrides
   };
 }

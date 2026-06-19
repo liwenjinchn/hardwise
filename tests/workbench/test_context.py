@@ -685,6 +685,136 @@ def test_workbench_datasheet_candidate_search_fails_closed_without_api_key(
         context.session.close()
 
 
+def test_workbench_component_detail_auto_attaches_mpn_candidate_status(
+    monkeypatch,
+) -> None:
+    seen: list[str] = []
+
+    def fake_lookup(query: str, **_kwargs: object) -> DatasheetsComLookupReport:
+        seen.append(query)
+        return DatasheetsComLookupReport(
+            status="cloudflare_challenge",
+            query=query,
+            reason="http_403",
+        )
+
+    monkeypatch.setenv("DATASHEETS_API_KEY", "test-key")
+    monkeypatch.setattr(
+        "hardwise.workbench.datasheet_candidates.lookup_datasheets_com", fake_lookup
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        document_index=Path("data/document_indexes/mixed_controller_power_stage_docs.csv"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        response = client.get("/api/workbench/components/Q12")
+        state = client.get("/api/workbench/state")
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["document"]["status"] == "no_result"
+        assert payload["document"]["group_id"] == "9"
+        assert payload["document"]["identity_kind"] == "mpn"
+        assert payload["document"]["candidate_search"]["status"] == "cloudflare_challenge"
+        assert payload["document"]["candidate_search"]["reason"] == "http_403"
+        assert payload["document"]["candidate_search"]["direct_datasheet_count"] == 0
+        assert seen == ["SS8050"]
+
+        assert state.status_code == 200
+        assert state.json()["capabilities"]["datasheet_candidate_lookup_enabled"] is True
+    finally:
+        context.session.close()
+
+
+def test_workbench_component_detail_respects_disabled_auto_candidate_lookup(
+    monkeypatch,
+) -> None:
+    seen: list[str] = []
+
+    def fake_lookup(query: str, **_kwargs: object) -> DatasheetsComLookupReport:
+        seen.append(query)
+        return DatasheetsComLookupReport(
+            status="cloudflare_challenge",
+            query=query,
+            reason="http_403",
+        )
+
+    monkeypatch.setenv("DATASHEETS_API_KEY", "test-key")
+    monkeypatch.setattr(
+        "hardwise.workbench.datasheet_candidates.lookup_datasheets_com", fake_lookup
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        document_index=Path("data/document_indexes/mixed_controller_power_stage_docs.csv"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(
+            create_workbench_app(
+                context,
+                DummyChatService(),  # type: ignore[arg-type]
+                auto_datasheet_candidates=False,
+            )
+        )
+        response = client.get("/api/workbench/components/Q12")
+        state = client.get("/api/workbench/state")
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["document"]["status"] == "no_result"
+        assert payload["document"]["identity_kind"] == "mpn"
+        assert payload["document"]["candidate_search"] is None
+        assert seen == []
+
+        assert state.status_code == 200
+        assert state.json()["capabilities"]["datasheet_candidate_lookup_enabled"] is False
+    finally:
+        context.session.close()
+
+
+def test_workbench_component_detail_skips_auto_candidate_lookup_for_passive_values(
+    monkeypatch,
+) -> None:
+    seen: list[str] = []
+
+    def fake_lookup(query: str, **_kwargs: object) -> DatasheetsComLookupReport:
+        seen.append(query)
+        return DatasheetsComLookupReport(status="found", query=query)
+
+    monkeypatch.setenv("DATASHEETS_API_KEY", "test-key")
+    monkeypatch.setattr(
+        "hardwise.workbench.datasheet_candidates.lookup_datasheets_com", fake_lookup
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        document_index=Path("data/document_indexes/mixed_controller_power_stage_docs.csv"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        response = client.get("/api/workbench/components/C1")
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["document"]["status"] == "no_result"
+        assert payload["document"]["identity_kind"] == "passive_value"
+        assert payload["document"]["candidate_search"] is None
+        assert seen == []
+    finally:
+        context.session.close()
+
+
 def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
     context = build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/l78_regulator.net"),

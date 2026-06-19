@@ -390,6 +390,54 @@ describe("DetailColumn", () => {
     expect(html).toContain("No local document-index row matched this BOM identity.");
     expect(html).not.toContain("doc-link");
   });
+
+  it("renders automatic datasheet candidates as reviewer-only text", () => {
+    const html = renderToStaticMarkup(
+      <DetailColumn
+        detail={makeDetail({
+          document: makeDocument({
+            status: "no_result",
+            title: null,
+            url: null,
+            source: null,
+            candidates: 0,
+            reason: "No local document-index row matched this BOM identity.",
+            candidate_search: {
+              provider: "datasheets.com",
+              status: "found",
+              reason: null,
+              query: "SS8050",
+              count: 2,
+              direct_datasheet_count: 1,
+              remaining_month: 4998,
+              candidates: [
+                {
+                  mpn: "SS8050",
+                  manufacturer: "Fixture Semi",
+                  title: "SS8050 public datasheet",
+                  datasheet_url: "https://static.example.test/ss8050.pdf",
+                  product_url: "https://www.datasheets.com/example/ss8050",
+                  lifecycle_status: null,
+                  package_type: "TO-92",
+                  review_status: "candidate",
+                  source: "datasheets.com_api"
+                }
+              ],
+              next_actions: []
+            }
+          })
+        })}
+        loading={false}
+        onAsk={() => {}}
+      />
+    );
+    expect(html).toContain("公开候选");
+    expect(html).toContain("有候选");
+    expect(html).toContain("direct PDF 1 个");
+    expect(html).toContain("https://static.example.test/ss8050.pdf");
+    expect(html).toContain("不会下载 PDF、不会自动 approve");
+    expect(html).not.toContain('href="https://static.example.test/ss8050.pdf"');
+  });
 });
 
 describe("EvidenceColumn", () => {
