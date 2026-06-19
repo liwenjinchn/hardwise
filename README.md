@@ -57,6 +57,8 @@ with tool-traced Copilot explanations and 687-test regression coverage.
 
 [![Hardwise — 50-second product tour](docs/assets/hardwise-promo-poster.png)](https://github.com/liwenjinchn/hardwise/raw/main/docs/assets/hardwise-promo.mp4)
 
+<sub>Music: “Coffee Shop” by Snoozy Beats ([SoundCloud](https://soundcloud.com/snoozybeats)), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).</sub>
+
 Two ways in, no setup for either:
 
 - **Demo video (~90 s):** [hardwise-demo.mp4](https://github.com/liwenjinchn/hardwise/releases/download/demo-video/hardwise-demo.mp4)

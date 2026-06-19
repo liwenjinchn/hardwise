@@ -55,6 +55,8 @@ Copilot 解释呈现证据化评审队列，配套 687 条回归测试。
 
 [![Hardwise —— 50 秒产品短片](docs/assets/hardwise-promo-poster.png)](https://github.com/liwenjinchn/hardwise/raw/main/docs/assets/hardwise-promo.mp4)
 
+<sub>配乐:《Coffee Shop》— Snoozy Beats（[SoundCloud](https://soundcloud.com/snoozybeats)），采用 [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) 许可。</sub>
+
 两个入口，都不用安装：
 
 - **Demo 视频（约 90 秒）：** [hardwise-demo.mp4](https://github.com/liwenjinchn/hardwise/releases/download/demo-video/hardwise-demo.mp4)
