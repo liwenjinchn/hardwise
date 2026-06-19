@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from hardwise.agent.runner import RunResult, ToolCallTrace
 from hardwise.workbench.chat import (
     C5_L2_SNAPSHOT_QUESTION,
     ChatMessage,
@@ -39,6 +40,44 @@ def _context(document_index: Path | None = None):
         document_index=document_index,
         generated_at="2026-05-30T00:00:00+00:00",
     )
+
+
+def test_response_flags_unsupported_evidence_token_in_answer() -> None:
+    context = _context()
+    try:
+        service = WorkbenchChatService(context, mode="fake")
+        result = RunResult(
+            text="L1 见 datasheet:l78.pdf#p4；另有未检索的 datasheet:ghost.pdf#p9。",
+            tool_calls=[
+                ToolCallTrace(
+                    name="search_datasheet",
+                    input={},
+                    output_summary="hits=1",
+                    evidence=["datasheet:l78.pdf#p4"],
+                    trust_tier="l2",
+                )
+            ],
+        )
+
+        response = service._response_from_result(result, "U12")
+
+        assert response.unsupported_evidence_tokens == ["datasheet:ghost.pdf#p9"]
+        assert "datasheet:l78.pdf#p4" not in response.unsupported_evidence_tokens
+    finally:
+        context.session.close()
+
+
+def test_response_has_no_unsupported_tokens_when_all_backed() -> None:
+    context = _context()
+    try:
+        service = WorkbenchChatService(context, mode="fake")
+        result = RunResult(text="见 datasheet:l78.pdf#p4。", tool_calls=[])
+
+        response = service._response_from_result(result, "U12")
+
+        assert response.unsupported_evidence_tokens == ["datasheet:l78.pdf#p4"]
+    finally:
+        context.session.close()
 
 
 def test_fake_chat_drives_real_runner_validation_tool() -> None:

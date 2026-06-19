@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from hardwise.agent.prompts import WORKBENCH_SYSTEM_PROMPT
 from hardwise.agent.router import ModelRouter, Tier
 from hardwise.agent.runner import RunResult, Runner, ToolCallTrace
+from hardwise.guards.evidence import unsupported_evidence_tokens
 from hardwise.guards.evidence_class import EvidenceClassification, classify_evidence_tokens
 from hardwise.guards.refdes import sanitize_text
 from hardwise.report.ui_terms import check_label, validation_summary_label
@@ -64,6 +65,10 @@ class ChatResponse(BaseModel):
     wrapped_count: int = 0
     suggestions: list[str] = Field(default_factory=list)
     datasheet_search_enabled: bool = False
+    # `datasheet:`/`doc:` tokens the answer prose cites that no tool produced
+    # this turn. The Copilot panel renders these as unverified, not as
+    # authoritative evidence chips (second-layer evidence guard).
+    unsupported_evidence_tokens: list[str] = Field(default_factory=list)
 
 
 @dataclass
@@ -562,6 +567,7 @@ class WorkbenchChatService:
     def _response_from_result(self, result: RunResult, selected: str | None) -> ChatResponse:
         traces = [self._trace_from_runner_trace(trace) for trace in result.tool_calls]
         wrapped_count = result.text_wrapped + sum(trace.wrapped for trace in result.tool_calls)
+        verified_tokens = {token for trace in traces for token in trace.evidence}
         return ChatResponse(
             answer=result.text,
             mode=self.mode,
@@ -570,6 +576,7 @@ class WorkbenchChatService:
             wrapped_count=wrapped_count,
             suggestions=self._suggestions(selected),
             datasheet_search_enabled=self.datasheet_search_enabled,
+            unsupported_evidence_tokens=unsupported_evidence_tokens(result.text, verified_tokens),
         )
 
     def _trace_from_runner_trace(self, trace: ToolCallTrace) -> EvidenceTrace:
