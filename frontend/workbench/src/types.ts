@@ -434,6 +434,7 @@ export interface ChatResponse {
   wrapped_count: number;
   suggestions: string[];
   datasheet_search_enabled: boolean;
+  unsupported_evidence_tokens?: string[];
 }
 
 export interface WorkbenchOfflineSnapshot {

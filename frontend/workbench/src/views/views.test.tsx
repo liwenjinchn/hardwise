@@ -173,6 +173,19 @@ describe("CopilotPanel", () => {
     expect(html).toContain("datasheet:stm32g030.pdf#p33");
   });
 
+  it("downgrades unsupported evidence tokens to an unverified chip", () => {
+    const html = renderToStaticMarkup(
+      <RichMessageText
+        text="见 datasheet:real.pdf#p4 与 datasheet:ghost.pdf#p9。"
+        unsupportedTokens={["datasheet:ghost.pdf#p9"]}
+      />
+    );
+    expect(html).toContain("evidence-inline unverified");
+    expect(html).toContain("datasheet:ghost.pdf#p9");
+    // the backed token keeps the plain authoritative chip, not the unverified one
+    expect(html).toContain('class="evidence-inline">datasheet:real.pdf#p4');
+  });
+
   it("keeps tool trace collapsed by default", () => {
     const html = renderToStaticMarkup(
       <TraceDetails

@@ -76,7 +76,10 @@ export function CopilotPanel({
                   <div className="mname">
                     {message.role === "assistant" ? "Hardwise Copilot" : "You"}
                   </div>
-                  <RichMessageText text={message.content} />
+                  <RichMessageText
+                    text={message.content}
+                    unsupportedTokens={message.response?.unsupported_evidence_tokens}
+                  />
                   {message.response?.trace?.length ? (
                     <TraceDetails response={message.response} />
                   ) : null}
@@ -164,15 +167,22 @@ export function TraceDetails({ response }: { response: ChatResponse }) {
   );
 }
 
-export function RichMessageText({ text }: { text: string }) {
+export function RichMessageText({
+  text,
+  unsupportedTokens
+}: {
+  text: string;
+  unsupportedTokens?: string[];
+}) {
   const blocks = messageBlocks(text);
+  const unsupported = new Set(unsupportedTokens ?? []);
   return (
     <div className="mtext">
       {blocks.map((block, index) => {
         if (block.kind === "heading") {
           return (
             <strong className="message-heading" key={`${block.kind}-${index}`}>
-              {renderInline(block.text)}
+              {renderInline(block.text, unsupported)}
             </strong>
           );
         }
@@ -180,7 +190,7 @@ export function RichMessageText({ text }: { text: string }) {
           return (
             <ol className="message-list" key={`${block.kind}-${index}`}>
               {block.items.map((item, itemIndex) => (
-                <li key={`${item}-${itemIndex}`}>{renderInline(item)}</li>
+                <li key={`${item}-${itemIndex}`}>{renderInline(item, unsupported)}</li>
               ))}
             </ol>
           );
@@ -189,7 +199,7 @@ export function RichMessageText({ text }: { text: string }) {
           return (
             <ul className="message-list" key={`${block.kind}-${index}`}>
               {block.items.map((item, itemIndex) => (
-                <li key={`${item}-${itemIndex}`}>{renderInline(item)}</li>
+                <li key={`${item}-${itemIndex}`}>{renderInline(item, unsupported)}</li>
               ))}
             </ul>
           );
@@ -201,7 +211,7 @@ export function RichMessageText({ text }: { text: string }) {
                 <thead>
                   <tr>
                     {block.headers.map((header, headerIndex) => (
-                      <th key={`${header}-${headerIndex}`}>{renderInline(header)}</th>
+                      <th key={`${header}-${headerIndex}`}>{renderInline(header, unsupported)}</th>
                     ))}
                   </tr>
                 </thead>
@@ -210,7 +220,7 @@ export function RichMessageText({ text }: { text: string }) {
                     <tr key={`row-${rowIndex}`}>
                       {block.headers.map((_header, cellIndex) => (
                         <td key={`cell-${rowIndex}-${cellIndex}`}>
-                          {renderInline(row[cellIndex] ?? "")}
+                          {renderInline(row[cellIndex] ?? "", unsupported)}
                         </td>
                       ))}
                     </tr>
@@ -220,7 +230,7 @@ export function RichMessageText({ text }: { text: string }) {
             </div>
           );
         }
-        return <p key={`${block.kind}-${index}`}>{renderInline(block.text)}</p>;
+        return <p key={`${block.kind}-${index}`}>{renderInline(block.text, unsupported)}</p>;
       })}
     </div>
   );
@@ -287,13 +297,24 @@ function tableCells(line: string): string[] {
     .map((cell) => cell.trim());
 }
 
-function renderInline(text: string) {
-  const parts = text.split(/(`[^`]+`|\b(?:datasheet|doc):[^\s,;，。)）]+|EV-[A-Z0-9_-]+)/g);
+function renderInline(text: string, unsupported?: Set<string>) {
+  const parts = text.split(/(`[^`]+`|\b(?:datasheet|doc):[^\s,;，。；：、)）]+|EV-[A-Z0-9_-]+)/g);
   return parts.filter(Boolean).map((part, index) => {
     if (part.startsWith("`") && part.endsWith("`")) {
       return <code key={`${part}-${index}`}>{part.slice(1, -1)}</code>;
     }
     if (/^(?:datasheet|doc):|^EV-[A-Z0-9_-]+/.test(part)) {
+      if (unsupported?.has(part)) {
+        return (
+          <code
+            className="evidence-inline unverified"
+            title="未验证引用：本回合工具未产出该来源 token"
+            key={`${part}-${index}`}
+          >
+            {part} ⚠︎
+          </code>
+        );
+      }
       return <code className="evidence-inline" key={`${part}-${index}`}>{part}</code>;
     }
     return renderEmphasis(part, index);

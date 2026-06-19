@@ -2217,6 +2217,12 @@ p {
   color: var(--blue-ink);
 }
 
+.mtext .evidence-inline.unverified {
+  border-color: var(--amber-line, #d9a441);
+  background: var(--amber-wash, #fdf6e3);
+  color: var(--amber-ink, #8a6300);
+}
+
 .message-heading {
   display: block;
   margin-bottom: 7px;
