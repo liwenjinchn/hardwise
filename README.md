@@ -152,18 +152,20 @@ uv run hardwise design-validator-ui \
 Both paths consume an exported schematic netlist/PST plus BOM, auto-match
 public datasheet profiles by BOM identity, and render the review workbench.
 `--document-index` feeds a reviewed public datasheet-link CSV; each component
-then shows a document coverage status — `matched` (one reviewed public link),
+then shows a document coverage status — `document_index_matched` in prose
+(`matched` in the machine-readable index: one reviewed public link),
 `no_result` (no reviewed link yet, an honest coverage gap), `ambiguous`
 (several candidate rows need a reviewer pick), or `manual_needed` (the BOM
-identity is unusable for matching) — and a matched link proves document
-coverage only, never an electrical verdict. The
+identity is unusable for matching) — and a document-index match proves
+document coverage only, never an electrical verdict. The
 offline snapshot is a single HTML file with baked state, component details,
 exports, prep packets, and audited Copilot responses; the live server exposes
 the same facts through local `/api/workbench/*` endpoints. What the workbench proves is the
 deterministic trust path, not a coverage trophy: U1/L7805 repeats the L78
 evidence path in the workbench, while U12/XL1509, U3/EG2132, U8/STM32G030, and
 Q12/SS8050 show deterministic topology, debug-interface, or profile-pin errors.
-The mixed controller fixture reports 25 components, 22 validated rows, BOM rows matched=25,
+The mixed controller fixture reports 25 components, 22 validated rows,
+bom_rows_matched=25,
 PASS/WARN/ERROR = 5/13/4, and 3 manual/no-local-profile rows. The 22 L1 rows
 are 9 profile-backed targets (U1/U12/U3/U8, D1/D5, and Q1/Q2/Q12) plus 13
 generic passive checks; the passive checks are light deterministic coverage
@@ -221,7 +223,7 @@ and `datasheet:xl1509.pdf#p9` for the Schottky diode table. See
 tokens are reviewed public profile evidence unless their PDFs have also been
 staged and queried.
 
-Public/synthetic pressure-fixture imports are coverage-planning evidence, not the primary public demo. The closeout rerun reports Switch fixture 4010 components / 3794 validated / 216 manual / PASS/WARN/ERROR = 3663/125/6, and mainboard fixture 8180 components / 7248 BOM rows matched / 6847 validated / 1333 manual / PASS/WARN/ERROR = 3921/2926/0. See [`docs/closeout_pressure_summary.md`](docs/closeout_pressure_summary.md); the movement came from conservative generic inductor/ferrite coverage plus the reviewed PE537BA P-MOS profile, not from a full-board automatic correctness claim.
+Public/synthetic pressure-fixture imports are coverage-planning evidence, not the primary public demo. The closeout rerun reports Switch fixture 4010 components / 3794 validated / 216 manual / PASS/WARN/ERROR = 3663/125/6, and mainboard fixture 8180 components / bom_rows_matched=7248 / 6847 validated / 1333 manual / PASS/WARN/ERROR = 3921/2926/0. See [`docs/closeout_pressure_summary.md`](docs/closeout_pressure_summary.md); the movement came from conservative generic inductor/ferrite coverage plus the reviewed PE537BA P-MOS profile, not from a full-board automatic correctness claim.
 
 For repeated component families, Hardwise can draft `needs_review` profile
 skeletons from reusable archetypes such as `74x165_piso_16pin`. See

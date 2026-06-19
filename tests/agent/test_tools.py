@@ -1,8 +1,8 @@
 """Tests for the agent tool manifest.
 
-Cover the four tools' success and structured-null/unknown branches plus the
-Anthropic-SDK manifest shape. Uses in-memory SQLite + a stub Chroma collection
-so the suite stays in the fast subset (no ONNX embedder load).
+Cover the core query tools, workbench context tools, structured-null/unknown
+branches, and Anthropic-SDK manifest shape. Uses in-memory SQLite + a stub
+Chroma collection so the suite stays in the fast subset (no ONNX embedder load).
 """
 
 from pathlib import Path

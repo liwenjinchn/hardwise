@@ -107,12 +107,18 @@ def _validation_section(summary: TrustDashboardSummary) -> str:
         <span class="pill">static index JSON</span>
       </div>
       <div class="cards">
-        {_card("Components", coverage.components_in_design, f"{coverage.bom_matched} BOM matched")}
-        {_card(
+        {
+        _card(
+            "Components", coverage.components_in_design, f"bom_rows_matched={coverage.bom_matched}"
+        )
+    }
+        {
+        _card(
             "Validated",
             coverage.validated_components,
             f"{coverage.coverage_percent:.1f}% coverage",
-        )}
+        )
+    }
         {_card("Manual", coverage.manual_components, f"{coverage.manual_percent:.1f}% remaining")}
         {_card("PASS", coverage.pass_warn_error.get("PASS", 0), "component verdicts")}
         {_card("WARN", coverage.pass_warn_error.get("WARN", 0), "component verdicts")}
@@ -151,7 +157,7 @@ def _trace_section(summary: TrustDashboardSummary) -> str:
       </div>
       {_bar_table("Trust Tier Counts", _trust_labels(trace.trust_tier_counts))}
       {_trace_examples(trace.examples)}
-      {f'<ul class="notes">{note_rows}</ul>' if note_rows else ''}
+      {f'<ul class="notes">{note_rows}</ul>' if note_rows else ""}
     </section>
 """
 
@@ -160,7 +166,7 @@ def _source_section(summary: TrustDashboardSummary) -> str:
     rows = "".join(
         "<tr>"
         f"<td>{escape(name)}</td>"
-        f"<td><span class=\"status {escape(state.status)}\">{escape(state.status)}</span></td>"
+        f'<td><span class="status {escape(state.status)}">{escape(state.status)}</span></td>'
         f"<td>{escape(state.path or '-')}</td>"
         f"<td>{escape(state.message)}</td>"
         "</tr>"
@@ -214,8 +220,8 @@ def _bar_table(title: str, values: dict[str, int]) -> str:
         rows.append(
             "<tr>"
             f"<td>{escape(str(key))}</td>"
-            f"<td><div class=\"bar\"><i style=\"width:{width}%\"></i></div></td>"
-            f"<td class=\"num\">{value}</td>"
+            f'<td><div class="bar"><i style="width:{width}%"></i></div></td>'
+            f'<td class="num">{value}</td>'
             "</tr>"
         )
     if not rows:
@@ -223,9 +229,7 @@ def _bar_table(title: str, values: dict[str, int]) -> str:
     return (
         '<div class="panel">'
         f"<h3>{escape(title)}</h3>"
-        "<table><tbody>"
-        + "".join(rows)
-        + "</tbody></table></div>"
+        "<table><tbody>" + "".join(rows) + "</tbody></table></div>"
     )
 
 

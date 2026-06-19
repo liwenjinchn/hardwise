@@ -27,7 +27,7 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
     lines.append(f"| BOM source | `{index.bom_source}` |")
     lines.append(f"| Profiles dir | `{index.profiles_dir}` |")
     lines.append(f"| Components in design | {index.components_in_design} |")
-    lines.append(f"| BOM matched | {index.bom_matched} |")
+    lines.append(f"| bom_rows_matched | {index.bom_matched} |")
     lines.append(f"| Validated components | {len(index.validated_rows)} |")
     lines.append(f"| Manual / no-profile components | {len(index.manual_rows)} |")
     lines.append(
