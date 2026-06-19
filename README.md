@@ -13,6 +13,18 @@ transcript.
 > review queues, evidence-backed findings, registry-verified refdes, and
 > deterministic validation.
 
+**Why it matters:** schematic review is evidence-heavy manual work before
+Layout; Hardwise turns exported netlist+BOM files into a bounded review
+queue instead of an ungrounded chatbot.
+
+**What I built:** a local AI-assisted workbench with deterministic validators,
+registry-verified reference designators, datasheet/document coverage, and
+tool-backed Copilot traces.
+
+**Proof:** public fixtures, a clickable offline SPA demo, GitHub Actions CI,
+and a 687-test regression suite covering refdes guards, evidence filtering,
+workbench APIs, CLI flows, and report exits.
+
 Pre-layout schematic review still runs on manual labor: cross-checking
 reference designators, digging through datasheets, and assembling evidence for
 every finding before a board goes to Layout. Hardwise targets that single
@@ -27,6 +39,15 @@ pre-layout schematic-review node only.
 Architecture is inspired by [Wrench Board](https://github.com/Junkz3/wrench-board) (Anthropic *Build with Opus 4.7* hackathon, 2nd place, April 2026). Design ideas only, no code copied.
 
 Built with AI assistance. All design decisions and final code are reviewed and owned by the author.
+
+---
+
+## Resume bullet
+
+Built **Hardwise**, a local AI-assisted schematic review workbench that imports
+netlist+BOM files, runs deterministic hardware validators, prevents
+hallucinated reference designators, and surfaces evidence-backed review queues
+with tool-traced Copilot explanations and 687-test regression coverage.
 
 ---
 
