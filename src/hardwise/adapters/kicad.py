@@ -291,7 +291,7 @@ def _is_library_symbol(node: list[Sexp]) -> bool:
     return len(node) > 1 and isinstance(node[1], str)
 
 
-def _refdes_sort_key(component: ComponentRecord) -> tuple[str, int, str]:
+def _refdes_sort_key(component: ComponentRecord) -> tuple[str, str, int, str]:
     prefix = "".join(ch for ch in component.refdes if ch.isalpha() or ch == "#")
     digits = "".join(ch for ch in component.refdes if ch.isdigit())
     virtual_rank = 1 if component.refdes.startswith("#") else 0
