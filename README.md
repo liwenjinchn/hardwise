@@ -53,9 +53,9 @@ with tool-traced Copilot explanations and 687-test regression coverage.
 
 ## Demo
 
-**▶ 60-second product tour** — the problem, the anti-hallucination core (Refdes Guard + Evidence Ledger), the live workbench, and the trust tiers. Click the poster to play:
+**▶ 50-second product tour** — the problem, the anti-hallucination core (Refdes Guard + Evidence Ledger), the live workbench, and the trust tiers. Click the poster to play:
 
-[![Hardwise — 60-second product tour](docs/assets/hardwise-promo-poster.png)](https://github.com/liwenjinchn/hardwise/raw/main/docs/assets/hardwise-promo.mp4)
+[![Hardwise — 50-second product tour](docs/assets/hardwise-promo-poster.png)](https://github.com/liwenjinchn/hardwise/raw/main/docs/assets/hardwise-promo.mp4)
 
 Two ways in, no setup for either:
 
