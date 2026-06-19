@@ -1,9 +1,16 @@
 from pathlib import Path
 
 import yaml
+from typer.testing import CliRunner
 
+from hardwise.cli import app
 from hardwise.eval_report import render_eval_html
-from hardwise.eval_pack import compare_summaries, load_manifest, run_eval
+from hardwise.eval_pack import (
+    compare_summaries,
+    load_manifest,
+    load_static_eval_snapshot,
+    run_eval,
+)
 
 
 def test_load_eval_manifest() -> None:
@@ -12,6 +19,50 @@ def test_load_eval_manifest() -> None:
     assert manifest.rules == ["R001", "R002", "R003"]
     assert manifest.repos
     assert manifest.upstream["trust_boundary"].startswith("public regression oracle")
+
+
+def test_static_eval_snapshot_pins_public_headline() -> None:
+    summary = load_static_eval_snapshot()
+
+    assert summary.projects_passed == 6
+    assert summary.projects_total == 6
+    assert summary.projects_skipped_empty == 10
+    assert summary.components_total == 1707
+    assert summary.findings_total == 437
+    assert summary.nc_pins_total == 231
+    assert summary.unverified_refdes_wrapped == 0
+    assert summary.findings_dropped_no_evidence == 0
+    assert summary.findings_by_decision == {
+        "likely_issue": 298,
+        "reviewer_to_confirm": 99,
+        "likely_ok": 40,
+        "undecided": 0,
+    }
+
+
+def test_eval_cli_writes_static_snapshot_without_network(tmp_path: Path) -> None:
+    output_dir = tmp_path / "eval"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "eval",
+            "--static-snapshot",
+            "--output-dir",
+            str(output_dir),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "eval static-snapshot:" in result.output
+    assert "6/6 projects passed" in result.output
+    assert "437 findings" in result.output
+    summary_path = output_dir / "eval-summary.json"
+    html_path = output_dir / "eval-summary.html"
+    assert summary_path.exists()
+    assert html_path.exists()
+    assert '"components_total": 1707' in summary_path.read_text(encoding="utf-8")
+    assert "Hardwise Eval Summary" in html_path.read_text(encoding="utf-8")
 
 
 def test_run_eval_against_local_project(tmp_path: Path) -> None:

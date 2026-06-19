@@ -8,6 +8,35 @@
 
 ---
 
+## 2026-06-19 — Value-field tokens can look like real refdes
+
+**Symptom**
+
+The Refdes Guard correctly allowed verified part/package identifiers such as
+`EG2132` and `SOP8`, but the same value-field exemption could allow a missing
+board object like `R47` if a component's value literally contained `R47`.
+
+**Root cause**
+
+The sanitizer treated every refdes-shaped token found in component identity
+fields as verified board vocabulary. That was too broad: `EG2132` is a part
+identity, while `R47` uses a normal resistor designator prefix and should still
+require a registry refdes hit.
+
+**Fix**
+
+Identity-field exemptions now exclude common schematic refdes prefixes. A token
+such as `R47`, `C10`, or `U9` must be present in the registry to pass through;
+non-refdes identity tokens such as `EG2132` and `SOP8` remain allowed when they
+come from parsed component fields. Regression coverage constructs a board where
+`R47` is only a value and asserts that outbound text wraps it as unverified.
+
+**Takeaway**
+
+Regex false-positive fixes need a second discriminator. "Appears in parsed
+identity" is enough for unusual part/package tokens, but not for normal
+reference-designator prefixes.
+
 ## 2026-06-15 — Datasheet candidate lookup must surface provider blocks without promoting evidence
 
 **Symptom**
@@ -4451,3 +4480,35 @@ pin-table evidence chain.
 For deterministic checks, separate "the source facts are contradictory" from
 "the board is electrically wrong". The former can be L1 evidence while the
 recommended fix still belongs to the reviewer.
+
+## 2026-06-19 — Report exits need their own trust boundary
+
+**Symptom**
+
+The CLI review path stripped evidence-less findings and sanitized refdes before
+calling the markdown/HTML renderers, but the renderers themselves accepted raw
+`Finding` objects. A future caller could accidentally render an unsupported
+finding or an unknown refdes. The component report also dropped a sanitized
+unknown-refdes finding because it was keyed by a refdes absent from the design.
+
+**Root cause**
+
+The guard/evidence invariants lived one layer before rendering. That worked for
+the main CLI path, but reports are user-facing exits and need the same invariant
+locally. DR-009 also added structured `evidence_chain` tokens, while
+`strip_unsupported` still only recognized the legacy `evidence_tokens` field.
+
+**Fix**
+
+`strip_unsupported` now accepts either legacy tokens or structured
+`evidence_chain` tokens. Report renderers call `prepare_findings()` to drop
+unsupported findings and, when a registry is available, apply the Refdes Guard
+at the render boundary. The guard is idempotent for already wrapped tokens, and
+component reports place unknown-refdes findings in the unscoped section instead
+of silently losing them.
+
+**Takeaway**
+
+Trust mechanisms should be cheap to repeat at user-visible exits. If a report
+writer can be called directly, it should enforce the same evidence and refdes
+contracts as the orchestration path that normally feeds it.

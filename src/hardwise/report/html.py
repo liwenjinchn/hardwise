@@ -8,6 +8,7 @@ from html import escape
 from typing import Any
 
 from hardwise.checklist.finding import Finding
+from hardwise.report.safety import prepare_findings
 
 _SEVERITY_ORDER = ("critical", "high", "medium", "low", "info")
 _SEVERITY_LABELS = {
@@ -84,9 +85,15 @@ summary::-webkit-details-marker{display:none}
 """
 
 
-def render(findings: list[Finding], project_meta: dict[str, Any]) -> str:
+def render(
+    findings: list[Finding],
+    project_meta: dict[str, Any],
+    *,
+    registry: Any | None = None,
+) -> str:
     """Return a standalone HTML document for a schematic review report."""
 
+    findings = prepare_findings(findings, registry).findings
     project_name = str(project_meta.get("project_name", "(unknown)"))
     project_dir = str(project_meta.get("project_dir", "(unknown)"))
     components_reviewed = int(project_meta.get("components_reviewed", 0))
@@ -197,7 +204,7 @@ def _finding_markup(finding: Finding, index: int) -> str:
     refdes = escape(finding.refdes or "-")
     net = escape(finding.net or "-")
     action = escape(_friendly_action(finding))
-    evidence = finding.evidence_tokens or ["未提供证据定位 token"]
+    evidence = _evidence_tokens(finding) or ["未提供证据定位 token"]
     evidence_markup = "".join(f'<code class="token">{escape(token)}</code>' for token in evidence)
     message = escape(_friendly_message(finding))
     severity = escape(finding.severity)
@@ -305,6 +312,12 @@ def _friendly_action(finding: Finding) -> str:
     if finding.rule_id == "R003":
         return "打开对应 datasheet 的 pin description / NC 说明，确认该 NC 脚的推荐处理方式。"
     return finding.suggested_action or "未提供建议动作。"
+
+
+def _evidence_tokens(finding: Finding) -> list[str]:
+    if finding.evidence_tokens:
+        return finding.evidence_tokens
+    return [step.token for step in finding.evidence_chain if step.token]
 
 
 def _pin_type_label(pin_type: str) -> str:

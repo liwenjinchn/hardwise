@@ -104,3 +104,29 @@ def test_component_report_escapes_pipe_chars() -> None:
     assert "value \\| weird" in md
     assert "sch:x#C1\\|bad" in md
     assert "a\\|b" in md
+
+
+def test_component_report_sanitizes_and_drops_at_render_boundary() -> None:
+    design = _design()
+    findings = [
+        Finding(
+            rule_id="R002",
+            severity="medium",
+            refdes="U999",
+            message="U999 missing voltage",
+            evidence_tokens=["sch:main.kicad_sch#U999"],
+        ),
+        Finding(
+            rule_id="R003",
+            severity="medium",
+            refdes="U1",
+            message="missing evidence should not render",
+        ),
+    ]
+
+    md = render(findings, _meta(), design)
+
+    assert "### Unscoped Findings" in md
+    assert "⟨?U999⟩ missing voltage" in md
+    assert "missing evidence should not render" not in md
+    assert "Findings | 1" in md

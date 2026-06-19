@@ -11,11 +11,18 @@ from __future__ import annotations
 from typing import Any
 
 from hardwise.checklist.finding import Finding
+from hardwise.report.safety import prepare_findings
 
 
-def render(findings: list[Finding], project_meta: dict[str, Any]) -> str:
+def render(
+    findings: list[Finding],
+    project_meta: dict[str, Any],
+    *,
+    registry: Any | None = None,
+) -> str:
     """Return a markdown string. Always returns a valid document, even with 0 findings."""
 
+    findings = prepare_findings(findings, registry).findings
     project_name = project_meta.get("project_name", "(unknown)")
     project_dir = project_meta.get("project_dir", "(unknown)")
     components_reviewed = project_meta.get("components_reviewed", 0)

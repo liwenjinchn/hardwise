@@ -1,4 +1,7 @@
-from hardwise.checklist.finding import Finding
+from pathlib import Path
+
+from hardwise.adapters.base import BoardRegistry, ComponentRecord
+from hardwise.checklist.finding import EvidenceStep, Finding
 from hardwise.report.html import render
 
 
@@ -15,6 +18,23 @@ def _meta(**overrides):
     }
     base.update(overrides)
     return base
+
+
+def _registry(refdes: list[str]) -> BoardRegistry:
+    return BoardRegistry(
+        project_dir=Path("/tmp/demo_board"),
+        components=[
+            ComponentRecord(
+                refdes=item,
+                value="",
+                footprint="",
+                datasheet="",
+                source_file=Path("/tmp/main.kicad_sch"),
+                source_kind="schematic",
+            )
+            for item in refdes
+        ],
+    )
 
 
 def test_render_zero_findings_still_produces_valid_html() -> None:
@@ -94,3 +114,48 @@ def test_render_translates_declared_cap_voltage_without_leaking_english() -> Non
     assert "C3 的 value 字段为 22uF/25V" in html
     assert "Reviewer must confirm" not in html
     assert "不超过 20 V" in html
+
+
+def test_render_uses_structured_evidence_chain_tokens() -> None:
+    finding = Finding(
+        rule_id="R009",
+        severity="high",
+        refdes="U1",
+        message="Power pin issue",
+        evidence_chain=[
+            EvidenceStep(
+                source="eda",
+                claim="U1 pin 3 is unconnected",
+                token="sch:main.kicad_sch#U1",
+            )
+        ],
+    )
+
+    html = render([finding], _meta(rules_run=["R009"]), registry=_registry(["U1"]))
+
+    assert "sch:main.kicad_sch#U1" in html
+    assert "未提供证据定位 token" not in html
+
+
+def test_render_can_enforce_report_boundary_guards() -> None:
+    findings = [
+        Finding(
+            rule_id="R001",
+            severity="info",
+            refdes="U999",
+            message="U999 is unsupported",
+            evidence_tokens=["sch:main.kicad_sch#U999"],
+        ),
+        Finding(
+            rule_id="R002",
+            severity="high",
+            refdes="U1",
+            message="missing evidence should not render",
+        ),
+    ]
+
+    html = render(findings, _meta(), registry=_registry(["U1"]))
+
+    assert "⟨?U999⟩ 的 Footprint 字段为空" in html
+    assert "missing evidence should not render" not in html
+    assert "<strong>1</strong>" in html

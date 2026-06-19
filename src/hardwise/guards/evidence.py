@@ -18,10 +18,22 @@ from hardwise.guards.evidence_class import (
 )
 
 
+def has_evidence(finding: Finding) -> bool:
+    """Return true when a finding carries at least one source token.
+
+    DR-009 added structured `evidence_chain` alongside legacy
+    `evidence_tokens`; either path is a valid source-token carrier.
+    """
+
+    if finding.evidence_tokens:
+        return True
+    return any(step.token for step in finding.evidence_chain)
+
+
 def strip_unsupported(findings: list[Finding]) -> tuple[list[Finding], int]:
     """Return (findings_with_evidence, num_dropped)."""
 
-    kept = [f for f in findings if f.evidence_tokens]
+    kept = [f for f in findings if has_evidence(f)]
     dropped = len(findings) - len(kept)
     return kept, dropped
 
@@ -32,5 +44,6 @@ __all__ = [
     "EvidenceSourceClass",
     "classify_evidence_token",
     "classify_evidence_tokens",
+    "has_evidence",
     "strip_unsupported",
 ]

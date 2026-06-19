@@ -64,6 +64,38 @@ def test_sanitize_text_passes_verified_part_number_and_package() -> None:
     assert wrapped == 2
 
 
+def test_sanitize_text_wraps_missing_refdes_even_when_equal_to_component_value() -> None:
+    """A common-refdes-prefix value such as `R47` is not a verified board object."""
+    reg = BoardRegistry(
+        project_dir=Path("/tmp/x"),
+        components=[
+            ComponentRecord(
+                refdes="U1",
+                value="R47",
+                footprint="SOT-23",
+                datasheet="",
+                source_file=Path("/tmp/x.kicad_sch"),
+                source_kind="schematic",
+            )
+        ],
+    )
+
+    out, wrapped = sanitize_text("U1 mentions R47, but R47 is not a board refdes", reg)
+
+    assert "U1" in out
+    assert "⟨?R47⟩" in out
+    assert wrapped == 2
+
+
+def test_sanitize_text_is_idempotent_for_already_wrapped_tokens() -> None:
+    reg = _registry([])
+
+    out, wrapped = sanitize_text("already marked ⟨?U999⟩ plus U999", reg)
+
+    assert out == "already marked ⟨?U999⟩ plus ⟨?U999⟩"
+    assert wrapped == 1
+
+
 def test_sanitize_text_handles_no_refdes_in_text() -> None:
     reg = _registry(["U1"])
     out, wrapped = sanitize_text("plain prose with no designators here", reg)
@@ -80,6 +112,15 @@ def test_sanitize_text_leaves_pin_name_parentheses_untouched() -> None:
     assert "RB1" in out
     assert "⟨?" not in out
     assert wrapped == 0
+
+
+def test_sanitize_text_does_not_let_pin_parentheses_hide_common_refdes() -> None:
+    reg = _registry(["U1"])
+
+    out, wrapped = sanitize_text("U1 pin 5 (Q47) needs checking", reg)
+
+    assert "⟨?Q47⟩" in out
+    assert wrapped == 1
 
 
 def test_sanitize_text_leaves_multi_function_pin_names_untouched() -> None:

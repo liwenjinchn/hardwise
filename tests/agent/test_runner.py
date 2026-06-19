@@ -175,6 +175,30 @@ def test_runner_first_create_call_uses_cacheable_system_blocks() -> None:
     ]
 
 
+def test_runner_accumulates_offline_cache_read_usage() -> None:
+    """Synthetic usage pins cache-read wiring without requiring a live endpoint."""
+    runner, _ = _build_runner(
+        [
+            FakeResponse(
+                content=[FakeTextBlock(text="done")],
+                usage=FakeUsage(
+                    input_tokens=5,
+                    output_tokens=2,
+                    cache_creation_input_tokens=0,
+                    cache_read_input_tokens=5440,
+                ),
+            )
+        ]
+    )
+
+    result = runner.run("hello")
+
+    assert result.input_tokens == 5
+    assert result.output_tokens == 2
+    assert result.cache_creation_tokens == 0
+    assert result.cache_read_tokens == 5440
+
+
 def test_runner_single_tool_use_dispatches_then_text() -> None:
     runner, client = _build_runner(
         [

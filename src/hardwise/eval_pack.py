@@ -8,6 +8,7 @@ import subprocess
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from importlib import resources
 from pathlib import Path
 
 import yaml
@@ -25,6 +26,7 @@ from hardwise.ir.build import build_design
 
 EVAL_SCHEMA_VERSION = 1
 DECISION_BUCKETS = ("likely_issue", "reviewer_to_confirm", "likely_ok", "undecided")
+STATIC_SNAPSHOT_RESOURCE = "eval_static_snapshot.json"
 
 
 class EvalRepo(BaseModel):
@@ -190,13 +192,7 @@ def run_eval(
             results.append(_run_one_project(project_dir, repo.name, manifest.rules))
 
     summary = _build_summary(manifest_path, manifest, results)
-    summary_path = output_dir / "eval-summary.json"
-    html_path = output_dir / "eval-summary.html"
-    summary_path.write_text(
-        json.dumps(summary.model_dump(mode="json"), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    html_path.write_text(render_eval_html(summary), encoding="utf-8")
+    outputs = write_eval_outputs(summary, output_dir)
 
     comparison_path: Path | None = None
     comparison: EvalComparison | None = None
@@ -207,7 +203,7 @@ def run_eval(
                 baseline=baseline,
                 current=summary,
                 baseline_path=baseline_path,
-                current_path=summary_path,
+                current_path=outputs.summary_path,
             )
             comparison_path = output_dir / "eval-comparison.json"
             comparison_path.write_text(
@@ -216,15 +212,38 @@ def run_eval(
             )
         if accept_baseline:
             baseline_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(summary_path, baseline_path)
+            shutil.copyfile(outputs.summary_path, baseline_path)
 
     return EvalOutputs(
-        summary_path=summary_path,
-        html_path=html_path,
+        summary_path=outputs.summary_path,
+        html_path=outputs.html_path,
         summary=summary,
         comparison_path=comparison_path,
         comparison=comparison,
     )
+
+
+def write_eval_outputs(summary: EvalRunSummary, output_dir: Path) -> EvalOutputs:
+    """Write a summary JSON + HTML pair without running the corpus."""
+
+    summary_path = output_dir / "eval-summary.json"
+    html_path = output_dir / "eval-summary.html"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(
+        json.dumps(summary.model_dump(mode="json"), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    html_path.write_text(render_eval_html(summary), encoding="utf-8")
+    return EvalOutputs(summary_path=summary_path, html_path=html_path, summary=summary)
+
+
+def load_static_eval_snapshot() -> EvalRunSummary:
+    """Load the accepted offline Eval Pack snapshot bundled with Hardwise."""
+
+    text = resources.files("hardwise").joinpath(STATIC_SNAPSHOT_RESOURCE).read_text(
+        encoding="utf-8"
+    )
+    return EvalRunSummary.model_validate_json(text)
 
 
 def load_summary(path: Path) -> EvalRunSummary:

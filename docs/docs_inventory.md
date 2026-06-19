@@ -32,7 +32,7 @@ entry pages.
 | Fact | Current value |
 |---|---:|
 | Components | 25 |
-| BOM matched | 25 |
+| bom_rows_matched | 25 |
 | Validated rows | 22 |
 | PASS / WARN / ERROR | 5 / 13 / 4 |
 | Manual / no-local-profile rows | 3 |

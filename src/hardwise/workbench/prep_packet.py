@@ -145,7 +145,7 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
         "| Metric | Value |",
         "|---|---:|",
         f"| Components | {summary.components} |",
-        f"| BOM matched | {summary.bom_matched} |",
+        f"| bom_rows_matched | {summary.bom_matched} |",
         f"| Validated | {summary.validated} |",
         f"| Manual | {summary.manual} |",
         f"| PASS / WARN / ERROR | {summary.pass_count} / {summary.warn_count} / {summary.error_count} |",

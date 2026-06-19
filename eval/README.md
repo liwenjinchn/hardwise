@@ -19,6 +19,16 @@ Outputs:
 - `reports/eval/eval-summary.json`
 - `reports/eval/eval-summary.html`
 
+Offline demo fallback:
+
+```bash
+uv run hardwise eval --static-snapshot
+```
+
+This writes the accepted static headline snapshot without cloning public repos:
+5 repos / 6 component-bearing KiCad project directories / 1707 parsed
+components / 437 deterministic findings / 0 unverified refdes wrapped.
+
 Use `--limit-projects N` while iterating.
 
 Harness loop:

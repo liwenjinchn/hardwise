@@ -7,9 +7,15 @@ from pathlib import Path
 
 import typer
 
+from hardwise.cli_agent import register_agent_commands
+from hardwise.cli_eval import register_eval_commands
+from hardwise.cli_workbench import register_workbench_commands
 from hardwise.path_display import display_path
 
 app = typer.Typer(help="Hardwise — hardware R&D review Agent.")
+register_agent_commands(app)
+register_eval_commands(app)
+register_workbench_commands(app)
 
 
 @app.callback()
@@ -146,7 +152,9 @@ def inspect_kicad(
     if schematic_net:
         typer.echo(f"schematic named nets: {len(registry.schematic_nets)}")
         typer.echo("source: .kicad_sch labels/power symbols (pre-Layout naming evidence)")
-        typer.echo("scope: net names only; no wire fanout, pin endpoints, .kicad_pcb, or PCB geometry")
+        typer.echo(
+            "scope: net names only; no wire fanout, pin endpoints, .kicad_pcb, or PCB geometry"
+        )
         if check_net_names:
             try:
                 policy = load_naming_policy(naming_policy) if naming_policy is not None else None
@@ -269,7 +277,7 @@ def inspect_bom_match(
     typer.echo(f"bom items: {report.bom_item_count}")
     typer.echo(f"bom refdes rows: {report.bom_row_count}")
     typer.echo(f"non-refdes bom items: {report.non_refdes_item_count}")
-    typer.echo(f"matched refdes: {len(report.matched_refdes)}")
+    typer.echo(f"bom_rows_matched: {len(report.matched_refdes)}")
     typer.echo(f"bom-only refdes: {len(report.bom_only_refdes)}")
     typer.echo(f"design-only refdes: {len(report.design_only_refdes)}")
     typer.echo(f"duplicate bom refdes: {len(report.duplicate_bom_refdes)}")
@@ -389,7 +397,7 @@ def report_allegro_bom(
     mismatch_count = _bom_report_mismatch_count(report)
     typer.echo(
         f"report: {output} "
-        f"({len(report.matched_refdes)}/{report.design_refdes_count} matched, "
+        f"(bom_rows_matched={len(report.matched_refdes)}/{report.design_refdes_count}, "
         f"{mismatch_count} mismatches)"
     )
 
@@ -446,7 +454,7 @@ def suggest_validation_targets(
     counts = report.counts_by_status
     typer.echo(
         f"target-candidates: {output} "
-        f"(matched={counts['matched']}, no_result={counts['no_result']}, "
+        f"(profile_targets_matched={counts['matched']}, no_result={counts['no_result']}, "
         f"ambiguous={counts['ambiguous']}, manual_needed={counts['manual_needed']})"
     )
 
@@ -636,15 +644,15 @@ def review(
     if output_format == "html":
         from hardwise.report.html import render
 
-        report_text = render(findings, project_meta)
+        report_text = render(findings, project_meta, registry=registry)
     elif report_style == "component":
         from hardwise.report.component_markdown import render
 
-        report_text = render(findings, project_meta, design)
+        report_text = render(findings, project_meta, design, registry=registry)
     else:
         from hardwise.report.markdown import render
 
-        report_text = render(findings, project_meta)
+        report_text = render(findings, project_meta, registry=registry)
 
     if output is None:
         date_stamp = now.strftime("%Y%m%d")
@@ -1018,8 +1026,7 @@ def report_pin_table(
     r009_n = sum(1 for f in findings if f.rule_id == "R009")
     r010_n = sum(1 for f in findings if f.rule_id == "R010")
     typer.echo(
-        f"pin-table: {output} ({len(records)} pins, "
-        f"R008={r008_n}, R009={r009_n}, R010={r010_n})"
+        f"pin-table: {output} ({len(records)} pins, R008={r008_n}, R009={r009_n}, R010={r010_n})"
     )
 
 
@@ -1140,513 +1147,6 @@ def report_component_validation(
     )
 
 
-@app.command(name="report-validator-ui")
-def report_validator_ui(
-    netlist_path: Path = typer.Argument(
-        ...,
-        help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
-    ),
-    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
-    refdes: str = typer.Argument(..., help="Component refdes to validate in the UI detail pane."),
-    profile_path: Path = typer.Argument(..., help="Path to a structured DatasheetProfile JSON."),
-    output: Path | None = typer.Option(
-        None,
-        "--output",
-        "-o",
-        help="Output HTML path (default: reports/<source>-validator-ui.html).",
-    ),
-) -> None:
-    """Write a local static validator UI over one Allegro+BOM validation run."""
-    from datetime import datetime, timezone
-
-    from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
-    from hardwise.ir.profile import DatasheetProfile
-    from hardwise.report.validator_ui import render
-    from hardwise.validation import validate_component_against_profile
-
-    try:
-        design, source, _input_type, _property_count = _load_allegro_design(netlist_path)
-        bom = parse_bom(bom_path)
-        bom_report = match_bom_to_design(bom, design)
-        design = apply_bom_to_design(design, bom_report)
-        component = design.components.get(refdes.upper())
-        if component is None:
-            typer.echo(f"error: refdes not found in design: {refdes}", err=True)
-            raise typer.Exit(1)
-        profile = DatasheetProfile.load(profile_path)
-        validation_report = validate_component_against_profile(component, profile, design)
-    except typer.Exit:
-        raise
-    except Exception as e:
-        typer.echo(f"error: validator UI failed: {type(e).__name__}: {e}", err=True)
-        raise typer.Exit(1) from e
-
-    now = datetime.now(timezone.utc)
-    project_name = _report_source_name(source)
-    if output is None:
-        reports_dir = Path("reports")
-        reports_dir.mkdir(exist_ok=True)
-        output = reports_dir / f"{project_name}-validator-ui.html"
-    else:
-        output.parent.mkdir(parents=True, exist_ok=True)
-
-    html = render(
-        design,
-        validation_report,
-        project_name=project_name,
-        netlist_source=source,
-        profile_path=profile_path,
-        profile=profile,
-        bom_report=bom_report,
-        generated_at=now.isoformat(timespec="seconds"),
-    )
-    output.write_text(html, encoding="utf-8")
-    counts = validation_report.counts_by_status
-    typer.echo(
-        f"validator-ui: {output} "
-        f"({len(design.components)} components, selected={validation_report.refdes}, "
-        f"{validation_report.status}, "
-        f"PASS/WARN/ERROR={counts['PASS']}/{counts['WARN']}/{counts['ERROR']})"
-    )
-
-
-@app.command(name="report-validator-ui-batch")
-def report_validator_ui_batch(
-    netlist_path: Path = typer.Argument(
-        ...,
-        help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
-    ),
-    bom_path: Path = typer.Argument(..., help="Path to a schematic-exported BOM file."),
-    targets: list[str] | None = typer.Argument(
-        None,
-        help="Validation targets as REFDES=profile.json. Example: U1=data/datasheet_profiles/l78.json",
-    ),
-    targets_manifest: Path | None = typer.Option(
-        None,
-        "--targets-manifest",
-        help="YAML manifest with explicit validation targets. Cannot be combined with positional targets.",
-    ),
-    output: Path | None = typer.Option(
-        None,
-        "--output",
-        "-o",
-        help="Output HTML path (default: reports/<source>-validator-ui-batch.html).",
-    ),
-) -> None:
-    """Write a local static validator UI over multiple component validation runs."""
-    from datetime import datetime, timezone
-
-    from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
-    from hardwise.ir.profile import DatasheetProfile
-    from hardwise.report.validator_multi_ui import ValidatorUiResult, render
-    from hardwise.validation import (
-        ValidationTargetParseError,
-        load_targets_manifest,
-        parse_inline_targets,
-        validate_component_against_profile,
-    )
-
-    try:
-        if targets and targets_manifest is not None:
-            typer.echo(
-                "error: use either positional REFDES=profile.json targets or "
-                "--targets-manifest, not both",
-                err=True,
-            )
-            raise typer.Exit(1)
-        if targets_manifest is not None:
-            target_specs = load_targets_manifest(targets_manifest)
-        else:
-            target_specs = parse_inline_targets(targets or [])
-
-        design, source, _input_type, _property_count = _load_allegro_design(netlist_path)
-        bom = parse_bom(bom_path)
-        bom_report = match_bom_to_design(bom, design)
-        design = apply_bom_to_design(design, bom_report)
-        validation_results = []
-        for target in target_specs:
-            component = design.components.get(target.refdes)
-            if component is None:
-                typer.echo(f"error: refdes not found in design: {target.refdes}", err=True)
-                raise typer.Exit(1)
-            profile = DatasheetProfile.load(target.profile_path)
-            validation = validate_component_against_profile(component, profile, design)
-            validation_results.append(
-                ValidatorUiResult(
-                    validation=validation,
-                    profile_path=target.profile_path,
-                    profile=profile,
-                )
-            )
-    except typer.Exit:
-        raise
-    except ValidationTargetParseError as e:
-        typer.echo(f"error: invalid validation targets: {e}", err=True)
-        raise typer.Exit(1) from e
-    except Exception as e:
-        typer.echo(f"error: batch validator UI failed: {type(e).__name__}: {e}", err=True)
-        raise typer.Exit(1) from e
-
-    now = datetime.now(timezone.utc)
-    project_name = _report_source_name(source)
-    if output is None:
-        reports_dir = Path("reports")
-        reports_dir.mkdir(exist_ok=True)
-        output = reports_dir / f"{project_name}-validator-ui-batch.html"
-    else:
-        output.parent.mkdir(parents=True, exist_ok=True)
-
-    html = render(
-        design,
-        validation_results,
-        project_name=project_name,
-        netlist_source=source,
-        bom_report=bom_report,
-        generated_at=now.isoformat(timespec="seconds"),
-    )
-    output.write_text(html, encoding="utf-8")
-    status_counts = {
-        "PASS": sum(item.validation.status == "PASS" for item in validation_results),
-        "WARN": sum(item.validation.status == "WARN" for item in validation_results),
-        "ERROR": sum(item.validation.status == "ERROR" for item in validation_results),
-    }
-    target_names = ",".join(item.validation.refdes for item in validation_results)
-    typer.echo(
-        f"validator-ui-batch: {output} "
-        f"({len(design.components)} components, validated={target_names}, "
-        f"PASS/WARN/ERROR={status_counts['PASS']}/{status_counts['WARN']}/{status_counts['ERROR']})"
-    )
-
-
-@app.command(name="design-validator-ui")
-def design_validator_ui(
-    netlist_path: Path = typer.Argument(
-        ...,
-        help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
-    ),
-    bom_path: Path | None = typer.Argument(
-        None,
-        help=(
-            "Path to a schematic-exported BOM file. If omitted, "
-            "BOM candidates are auto-selected from an Allegro/PST project directory."
-        ),
-    ),
-    profiles: Path = typer.Option(
-        Path("data/datasheet_profiles"),
-        "--profiles",
-        help="Directory containing structured DatasheetProfile JSON files.",
-    ),
-    output: Path | None = typer.Option(
-        None,
-        "--output",
-        "-o",
-        help="Output HTML path (default: reports/<source>-design-validator.html).",
-    ),
-    index_output: Path | None = typer.Option(
-        None,
-        "--index-output",
-        help="Optional markdown project validation index path.",
-    ),
-    index_json: Path | None = typer.Option(
-        None,
-        "--index-json",
-        help="Optional JSON sidecar path for the project validation index.",
-    ),
-    document_index: Path | None = typer.Option(
-        None,
-        "--document-index",
-        help=(
-            "Optional CSV/TSV index of public datasheet/document links. "
-            "Adds grouped document coverage; no live supplier lookup."
-        ),
-    ),
-    risk_hints_json: Path | None = typer.Option(
-        None,
-        "--risk-hints-json",
-        help="Optional external risk-hints JSON anchored to registry-verified refdes.",
-    ),
-    pin_table: Path | None = typer.Option(
-        None,
-        "--pin-table",
-        help=(
-            "Optional Capture pin-table CSV. Runs R008/R009 into workbench review tasks; "
-            "does not change ValidationReport PASS/WARN/ERROR totals."
-        ),
-    ),
-    manual_limit: int = typer.Option(
-        50,
-        "--manual-limit",
-        help="Maximum no-profile/manual rows shown in the optional markdown index.",
-    ),
-    ai_snapshot: bool = typer.Option(
-        False,
-        "--ai-snapshot",
-        help="Embed the offline audited Copilot panel snapshot in the static HTML.",
-    ),
-) -> None:
-    """Write a screenshot-like static design-validator workbench for matched profiles."""
-    from hardwise.report.project_validation_markdown import (
-        render as render_project_index,
-        write_json,
-    )
-    from hardwise.report.validator_project_ui import render_project_workbench
-    from hardwise.report.workbench_spa_snapshot import render_spa_snapshot
-    from hardwise.validation import ProfileCandidateError
-    from hardwise.workbench.context import build_workbench_context
-
-    if manual_limit < 0:
-        typer.echo("error: --manual-limit must be >= 0", err=True)
-        raise typer.Exit(1)
-
-    try:
-        context = build_workbench_context(
-            netlist_path=netlist_path,
-            bom_path=bom_path,
-            profiles=profiles,
-            document_index=document_index,
-            risk_hints_json=risk_hints_json,
-            pin_table=pin_table,
-        )
-    except ProfileCandidateError as e:
-        typer.echo(f"error: profile candidate generation failed: {e}", err=True)
-        raise typer.Exit(1) from e
-    except Exception as e:
-        typer.echo(f"error: design validator UI failed: {type(e).__name__}: {e}", err=True)
-        raise typer.Exit(1) from e
-
-    if output is None:
-        reports_dir = Path("reports")
-        reports_dir.mkdir(exist_ok=True)
-        output = reports_dir / f"{context.project_name}-design-validator.html"
-    else:
-        output.parent.mkdir(parents=True, exist_ok=True)
-
-    if ai_snapshot:
-        html = render_spa_snapshot(context, datasheet_search_enabled=False)
-    else:
-        html = render_project_workbench(
-            context.design,
-            context.index,
-            project_name=context.project_name,
-            netlist_source=context.netlist_source,
-            bom_report=context.bom_report,
-            generated_at=context.index.generated_at,
-            risk_hints=context.risk_hints if context.risk_hints.source_path else None,
-        )
-    output.write_text(html, encoding="utf-8")
-
-    if index_output is not None:
-        index_output.parent.mkdir(parents=True, exist_ok=True)
-        index_output.write_text(
-            render_project_index(context.index, manual_limit=manual_limit),
-            encoding="utf-8",
-        )
-    if index_json is not None:
-        write_json(context.index, index_json)
-
-    totals = context.index.totals
-    typer.echo(f"selected-netlist: {display_path(context.netlist_source)}")
-    typer.echo(f"selected-bom: {display_path(context.bom.source_file)}")
-    if context.document_report is not None:
-        doc_counts = context.document_report.counts_by_status
-        typer.echo(
-            f"document-index: {display_path(context.document_report.document_index_file)} "
-            f"(matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
-            f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']})"
-        )
-    if context.risk_hints.source_path is not None:
-        typer.echo(
-            "risk-hints: loaded "
-            f"(accepted={context.risk_hints.accepted_count}, "
-            f"rejected={context.risk_hints.rejected_count})"
-        )
-    if context.pin_table_path is not None:
-        typer.echo(
-            f"pin-table: {display_path(context.pin_table_path)} "
-            f"(findings={len(context.pin_table_findings)}, "
-            f"rejected_unknown_refdes={context.rejected_pin_table_findings})"
-        )
-    if context.resolved_bom.auto_selected:
-        parseable_count = sum(
-            item.status != "parse_error" for item in context.resolved_bom.candidates
-        )
-        typer.echo(
-            f"bom-candidates: {len(context.resolved_bom.candidates)} "
-            f"(parseable={parseable_count}, selected={context.bom.source_file.name})"
-        )
-    if ai_snapshot:
-        typer.echo("ai-snapshot: enabled")
-    typer.echo(
-        f"design-validator-ui: {output} "
-        f"({context.index.components_in_design} components, "
-        f"validated={len(context.index.validated_rows)}, "
-        f"BOM matched={context.index.bom_matched}, "
-        f"PASS/WARN/ERROR={totals['PASS']}/{totals['WARN']}/{totals['ERROR']}, "
-        f"manual={len(context.index.manual_rows)})"
-    )
-    if index_output is not None:
-        typer.echo(f"validation-index: {index_output}")
-    if index_json is not None:
-        typer.echo(f"validation-index-json: {index_json} ({len(context.index.rows)} rows)")
-
-
-@app.command(name="serve-workbench")
-def serve_workbench(
-    netlist_path: Path = typer.Argument(
-        ...,
-        help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
-    ),
-    bom_path: Path | None = typer.Argument(
-        None,
-        help=(
-            "Path to a schematic-exported BOM file. If omitted, "
-            "BOM candidates are auto-selected from an Allegro/PST project directory."
-        ),
-    ),
-    profiles: Path = typer.Option(
-        Path("data/datasheet_profiles"),
-        "--profiles",
-        help="Directory containing structured DatasheetProfile JSON files.",
-    ),
-    host: str = typer.Option("127.0.0.1", "--host", help="Host interface for localhost UI."),
-    port: int = typer.Option(8765, "--port", help="Port for localhost UI."),
-    tier: str = typer.Option("normal", "--tier", "-t", help="Model tier: fast | normal | deep."),
-    fake_ai: bool = typer.Option(
-        False,
-        "--fake-ai",
-        help="Use deterministic fake model blocks while still running the real Runner/tools.",
-    ),
-    persist_dir: Path = typer.Option(
-        Path("data/chroma"),
-        "--persist-dir",
-        help="Chroma persistence directory (only used with --vector).",
-    ),
-    use_vector: bool = typer.Option(
-        False,
-        "--vector/--no-vector",
-        help="Enable search_datasheet against the local Chroma store.",
-    ),
-    document_index: Path | None = typer.Option(
-        None,
-        "--document-index",
-        help=(
-            "Optional CSV/TSV index of public datasheet/document links. "
-            "Enables document-coverage Copilot tools; no live supplier lookup."
-        ),
-    ),
-    risk_hints_json: Path | None = typer.Option(
-        None,
-        "--risk-hints-json",
-        help="Optional external risk-hints JSON anchored to registry-verified refdes.",
-    ),
-    pin_table: Path | None = typer.Option(
-        None,
-        "--pin-table",
-        help=(
-            "Optional Capture pin-table CSV. Runs R008/R009 into workbench review tasks; "
-            "does not change ValidationReport PASS/WARN/ERROR totals."
-        ),
-    ),
-    auto_datasheet_candidates: bool = typer.Option(
-        True,
-        "--auto-datasheet-candidates/--no-auto-datasheet-candidates",
-        help=(
-            "On component detail views, query Datasheets.com for MPN-like missing "
-            "document candidates. This never downloads PDFs or changes validation verdicts."
-        ),
-    ),
-    dry_run: bool = typer.Option(
-        False,
-        "--dry-run",
-        help="Build the workbench context and exit without starting the server.",
-    ),
-) -> None:
-    """Serve the Allegro-first validator workbench with live Copilot chat."""
-    from dotenv import load_dotenv
-
-    from hardwise.validation import ProfileCandidateError
-    from hardwise.workbench.chat import WorkbenchChatService
-    from hardwise.workbench.context import build_workbench_context
-    from hardwise.workbench.server import create_workbench_app
-
-    if tier not in ("fast", "normal", "deep"):
-        typer.echo(f"error: tier must be fast|normal|deep, got {tier!r}", err=True)
-        raise typer.Exit(1)
-
-    load_dotenv(override=True)
-    try:
-        context = build_workbench_context(
-            netlist_path=netlist_path,
-            bom_path=bom_path,
-            profiles=profiles,
-            document_index=document_index,
-            risk_hints_json=risk_hints_json,
-            pin_table=pin_table,
-        )
-        collection = None
-        if use_vector:
-            from hardwise.store.vector import create_collection
-
-            collection = create_collection(persist_dir)
-        chat_service = WorkbenchChatService(
-            context,
-            mode="fake" if fake_ai else "real",
-            tier=tier,  # type: ignore[arg-type]
-            collection=collection,
-        )
-    except ProfileCandidateError as e:
-        typer.echo(f"error: profile candidate generation failed: {e}", err=True)
-        raise typer.Exit(1) from e
-    except Exception as e:
-        typer.echo(f"error: serve-workbench failed: {type(e).__name__}: {e}", err=True)
-        raise typer.Exit(1) from e
-
-    url = f"http://{host}:{port}"
-    document_state = "off"
-    if context.document_report is not None:
-        doc_counts = context.document_report.counts_by_status
-        document_state = (
-            f"on matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
-            f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']}"
-        )
-    risk_hints_state = "not_configured"
-    if context.risk_hints.source_path is not None:
-        risk_hints_state = (
-            "loaded "
-            f"accepted={context.risk_hints.accepted_count}, "
-            f"rejected={context.risk_hints.rejected_count}"
-        )
-    pin_table_state = "not_configured"
-    if context.pin_table_path is not None:
-        pin_table_state = (
-            f"loaded findings={len(context.pin_table_findings)}, "
-            f"rejected_unknown_refdes={context.rejected_pin_table_findings}"
-        )
-    typer.echo(
-        f"serve-workbench: {url} "
-        f"({context.index.components_in_design} components, "
-        f"validated={len(context.index.validated_rows)}, "
-        f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'}, "
-        f"document-index={document_state}, risk-hints={risk_hints_state}, "
-        f"pin-table={pin_table_state}, "
-        f"datasheet-candidates={'auto' if auto_datasheet_candidates else 'off'})"
-    )
-    if dry_run:
-        return
-
-    import uvicorn
-
-    app_obj = create_workbench_app(
-        context,
-        chat_service,
-        profiles=profiles,
-        document_index=document_index,
-        pin_table=pin_table,
-        auto_datasheet_candidates=auto_datasheet_candidates,
-    )
-    uvicorn.run(app_obj, host=host, port=port)
-
-
 @app.command(name="build-document-index-candidates")
 def build_document_index_candidates(
     validation_index: Path = typer.Argument(
@@ -1749,8 +1249,7 @@ def fetch_approved_documents_cmd(
     )
     for skipped in report.skipped[:5]:
         typer.echo(
-            f"skip line {skipped.source_line}: {skipped.reason} "
-            f"({skipped.title})",
+            f"skip line {skipped.source_line}: {skipped.reason} ({skipped.title})",
             err=True,
         )
 
@@ -2022,96 +1521,6 @@ def trust_dashboard(
         typer.echo(f"trust-dashboard-json: {json_output}")
 
 
-@app.command(name="eval")
-def eval_pack(
-    manifest: Path = typer.Option(
-        Path("eval/manifest.yaml"),
-        "--manifest",
-        help="Eval manifest YAML.",
-    ),
-    projects_root: Path = typer.Option(
-        Path("eval/projects"),
-        "--projects-root",
-        help="Directory containing checked-out public eval repos.",
-    ),
-    output_dir: Path = typer.Option(
-        Path("reports/eval"),
-        "--output-dir",
-        help="Directory for eval-summary.json/html.",
-    ),
-    download: bool = typer.Option(
-        False,
-        "--download/--no-download",
-        help="Clone missing repos from the manifest at their pinned commits.",
-    ),
-    limit_projects: int | None = typer.Option(
-        None,
-        "--limit-projects",
-        help="Stop after N discovered project directories. Useful while iterating.",
-    ),
-    baseline: Path | None = typer.Option(
-        None,
-        "--baseline",
-        help="Accepted eval-summary.json to compare against.",
-    ),
-    accept_baseline: bool = typer.Option(
-        False,
-        "--accept-baseline",
-        help="Copy this run's summary to --baseline after the run.",
-    ),
-) -> None:
-    """Run the public-corpus Hardwise Eval Pack MVP."""
-    from hardwise.eval_pack import run_eval
-
-    if accept_baseline and baseline is None:
-        typer.echo("error: --accept-baseline requires --baseline", err=True)
-        raise typer.Exit(1)
-
-    try:
-        outputs = run_eval(
-            manifest_path=manifest,
-            projects_root=projects_root,
-            output_dir=output_dir,
-            download=download,
-            limit_projects=limit_projects,
-            baseline_path=baseline,
-            accept_baseline=accept_baseline,
-        )
-    except Exception as e:
-        typer.echo(f"error: eval failed: {type(e).__name__}: {e}", err=True)
-        raise typer.Exit(1) from e
-
-    summary = outputs.summary
-    typer.echo(
-        f"eval: {summary.manifest_name} "
-        f"({summary.projects_passed}/{summary.projects_total} projects passed, "
-        f"{summary.findings_total} findings)"
-    )
-    _echo_decision_counts(summary.findings_by_decision, summary.findings_total)
-    typer.echo(f"summary: {outputs.summary_path}")
-    typer.echo(f"html: {outputs.html_path}")
-    if outputs.comparison is not None and outputs.comparison_path is not None:
-        typer.echo(
-            f"comparison: {outputs.comparison_path} "
-            f"({outputs.comparison.status}, "
-            f"{len(outputs.comparison.regressions)} regressions)"
-        )
-        if outputs.comparison.status == "failed":
-            for regression in outputs.comparison.regressions:
-                typer.echo(f"regression: {regression}", err=True)
-            raise typer.Exit(2)
-    if accept_baseline and baseline is not None:
-        typer.echo(f"baseline accepted: {baseline}")
-
-
-def _echo_decision_counts(counts: dict[str, int], total: int) -> None:
-    typer.echo("decisions:")
-    for decision in ("likely_issue", "reviewer_to_confirm", "likely_ok", "undecided"):
-        count = int(counts.get(decision, 0))
-        percentage = (count / total * 100) if total else 0.0
-        typer.echo(f"  {decision}: {count} ({percentage:.1f}%)")
-
-
 def _load_allegro_design(netlist_path: Path):
     """Load an Allegro schematic netlist/PST input into Design plus display metadata."""
     from hardwise.workbench.context import load_allegro_design
@@ -2163,130 +1572,6 @@ def _review_db_path(project_name: str, db_path: str | None) -> Path | None:
     if not value:
         return None
     return Path(value)
-
-
-@app.command()
-def ask(
-    project_dir: Path = typer.Argument(..., help="Path to a KiCad project directory."),
-    question: str = typer.Argument(..., help="Natural-language question about the project."),
-    tier: str = typer.Option("normal", "--tier", "-t", help="Model tier: fast | normal | deep."),
-    db_path: Path | None = typer.Option(
-        None,
-        "--db-path",
-        help="SQLite DB path used during the run. Default: in-memory.",
-    ),
-    persist_dir: Path = typer.Option(
-        Path("data/chroma"),
-        "--persist-dir",
-        help="Chroma persistence directory (only used with --vector).",
-    ),
-    use_vector: bool = typer.Option(
-        False,
-        "--vector/--no-vector",
-        help="Enable search_datasheet against the local Chroma store. "
-        "Off by default — turn on after `ingest-datasheet` has populated chunks.",
-    ),
-    max_iterations: int = typer.Option(
-        10, "--max-iterations", help="Cap on tool-use loop iterations."
-    ),
-    show_trace: bool = typer.Option(
-        True,
-        "--trace/--no-trace",
-        help="Print one line per tool call after the answer.",
-    ),
-) -> None:
-    """Ask the agent a question about a KiCad project; runs the tool-use loop."""
-    import os
-
-    from anthropic import Anthropic
-    from dotenv import load_dotenv
-
-    from hardwise.adapters.kicad import parse_project
-    from hardwise.agent.router import ModelRouter
-    from hardwise.agent.runner import Runner
-    from hardwise.store.relational import create_store, populate_from_registry
-
-    load_dotenv(override=True)
-
-    if tier not in ("fast", "normal", "deep"):
-        typer.echo(f"error: tier must be fast|normal|deep, got {tier!r}", err=True)
-        raise typer.Exit(1)
-
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    base_url = os.environ.get("ANTHROPIC_BASE_URL", "")
-    if not api_key or api_key == "replace_me":
-        typer.echo("error: ANTHROPIC_API_KEY missing or unset in .env", err=True)
-        raise typer.Exit(1)
-
-    try:
-        registry = parse_project(project_dir)
-    except Exception as e:
-        typer.echo(f"error: failed to parse {project_dir}: {type(e).__name__}: {e}", err=True)
-        raise typer.Exit(1) from e
-
-    db_path_str = ":memory:" if db_path is None else str(db_path)
-    if db_path is not None:
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        if db_path.exists():
-            db_path.unlink()
-    session = create_store(db_path_str)
-    try:
-        n_comp, n_pin = populate_from_registry(session, registry)
-    except Exception as e:
-        session.close()
-        typer.echo(f"error: failed to populate store: {type(e).__name__}: {e}", err=True)
-        raise typer.Exit(1) from e
-
-    collection = None
-    if use_vector:
-        from hardwise.store.vector import create_collection
-
-        collection = create_collection(persist_dir)
-
-    client = Anthropic(api_key=api_key, base_url=base_url)
-    router = ModelRouter()
-    runner = Runner(
-        client=client,
-        router=router,
-        session=session,
-        registry=registry,
-        collection=collection,
-        tier=tier,  # type: ignore[arg-type]
-        max_iterations=max_iterations,
-    )
-
-    typer.echo(
-        f"project: {project_dir.name} ({n_comp} components, {n_pin} NC pins) "
-        f"tier={tier} model={router.select(tier)}"  # type: ignore[arg-type]
-    )
-    typer.echo(f"question: {question}")
-    typer.echo("---")
-
-    try:
-        result = runner.run(question)
-    finally:
-        session.close()
-
-    answer = result.text if result.text else "(no text returned)"
-    trace_wrapped = sum(tc.wrapped for tc in result.tool_calls)
-    total_wrapped = result.text_wrapped + trace_wrapped
-    typer.echo(answer)
-    typer.echo("---")
-    typer.echo(
-        f"iterations: {result.iterations} | "
-        f"tool calls: {len(result.tool_calls)} | "
-        f"tokens in/out: {result.input_tokens}/{result.output_tokens}"
-        + (
-            f" | cache create/read: {result.cache_creation_tokens}/{result.cache_read_tokens}"
-            if result.cache_creation_tokens or result.cache_read_tokens
-            else ""
-        )
-        + (f" | unverified refdes wrapped: {total_wrapped}" if total_wrapped else "")
-        + (" | STOPPED AT CAP" if result.stopped_at_cap else "")
-    )
-    if show_trace and result.tool_calls:
-        for i, tc in enumerate(result.tool_calls, start=1):
-            typer.echo(f"  {i}. {tc.name}({tc.input}) → {tc.output_summary}")
 
 
 if __name__ == "__main__":

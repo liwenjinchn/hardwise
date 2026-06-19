@@ -7,11 +7,19 @@ from typing import Any
 from hardwise.checklist.finding import Finding
 from hardwise.ir.types import Component, Design
 from hardwise.report.markdown import _escape_pipe
+from hardwise.report.safety import prepare_findings
 
 
-def render(findings: list[Finding], project_meta: dict[str, Any], design: Design) -> str:
+def render(
+    findings: list[Finding],
+    project_meta: dict[str, Any],
+    design: Design,
+    *,
+    registry: Any | None = None,
+) -> str:
     """Return a markdown report grouped by component."""
 
+    findings = prepare_findings(findings, registry or design).findings
     project_name = project_meta.get("project_name", "(unknown)")
     project_dir = project_meta.get("project_dir", "(unknown)")
     components_reviewed = project_meta.get("components_reviewed", 0)
@@ -22,7 +30,7 @@ def render(findings: list[Finding], project_meta: dict[str, Any], design: Design
     findings_by_refdes: dict[str, list[Finding]] = {}
     unscoped_findings: list[Finding] = []
     for finding in findings:
-        if finding.refdes:
+        if finding.refdes and finding.refdes in design.components:
             findings_by_refdes.setdefault(finding.refdes, []).append(finding)
         else:
             unscoped_findings.append(finding)

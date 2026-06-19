@@ -30,7 +30,7 @@ def test_inspect_bom_match_pst_fixture_clean_match(tmp_path: Path) -> None:
     assert "scope: component identity match only" in result.output
     assert "design refdes: 3" in result.output
     assert "bom refdes rows: 3" in result.output
-    assert "matched refdes: 3" in result.output
+    assert "bom_rows_matched: 3" in result.output
     assert "status: clean refdes match" in result.output
 
 

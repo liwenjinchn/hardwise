@@ -1,4 +1,4 @@
-from hardwise.checklist.finding import Finding
+from hardwise.checklist.finding import EvidenceStep, Finding
 from hardwise.guards.evidence import strip_unsupported
 
 
@@ -43,6 +43,26 @@ def test_strip_no_op_when_all_have_evidence() -> None:
     kept, dropped = strip_unsupported(findings)
     assert dropped == 0
     assert kept == findings
+
+
+def test_strip_keeps_structured_evidence_chain_tokens() -> None:
+    finding = Finding(
+        rule_id="R009",
+        severity="high",
+        message="power pin unconnected",
+        evidence_chain=[
+            EvidenceStep(
+                source="eda",
+                claim="U1 pin 3 is unconnected",
+                token="sch:main.kicad_sch#U1",
+            )
+        ],
+    )
+
+    kept, dropped = strip_unsupported([finding])
+
+    assert dropped == 0
+    assert kept == [finding]
 
 
 def test_strip_handles_empty_input() -> None:
