@@ -51,6 +51,10 @@ Copilot 解释呈现证据化评审队列，配套 687 条回归测试。
 
 ## Demo
 
+**▶ 60 秒产品短片** —— 问题、反幻觉内核（Refdes Guard + Evidence Ledger）、真实工作台与信任分级。点击封面播放：
+
+[![Hardwise —— 60 秒产品短片](docs/assets/hardwise-promo-poster.png)](https://github.com/liwenjinchn/hardwise/raw/main/docs/assets/hardwise-promo.mp4)
+
 两个入口，都不用安装：
 
 - **Demo 视频（约 90 秒）：** [hardwise-demo.mp4](https://github.com/liwenjinchn/hardwise/releases/download/demo-video/hardwise-demo.mp4)
