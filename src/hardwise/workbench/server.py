@@ -321,6 +321,12 @@ def create_workbench_app(
         if hasattr(chat_service, "context"):
             chat_service.context = next_context
         close_workbench_context(previous)
+        # Drop temp dirs from superseded imports; only the live context's upload
+        # dir must survive. Without this, repeated imports leak temp dirs on disk
+        # for the whole server lifetime.
+        for stale_dir in import_dirs:
+            shutil.rmtree(stale_dir, ignore_errors=True)
+        import_dirs.clear()
         import_dirs.append(import_dir)
         state = build_workbench_state(
             next_context,
@@ -448,13 +454,13 @@ def _task_csv_response(context: WorkbenchContext) -> Response:
     for task in build_review_tasks(context):
         writer.writerow(
             {
-                "id": task.id,
-                "refdes": task.refdes,
-                "status_group": task.status_group,
-                "trust_tier": task.trust_tier,
-                "title": task.title,
-                "recommended_action": task.recommended_action,
-                "source_classes": ";".join(task.source_classes),
+                "id": _csv_safe(task.id),
+                "refdes": _csv_safe(task.refdes),
+                "status_group": _csv_safe(task.status_group),
+                "trust_tier": _csv_safe(task.trust_tier),
+                "title": _csv_safe(task.title),
+                "recommended_action": _csv_safe(task.recommended_action),
+                "source_classes": _csv_safe(";".join(task.source_classes)),
             }
         )
     return Response(
@@ -489,4 +495,20 @@ def _annotations_response(context: WorkbenchContext) -> Response:
 
 
 def _annotation_cell(value: object) -> str:
-    return str(value).replace("\n", " ").replace(",", "；")
+    return _csv_safe(str(value).replace("\n", " ").replace(",", "；"))
+
+
+def _csv_safe(value: object) -> str:
+    """Neutralize spreadsheet formula injection in exported cell text.
+
+    A cell beginning with ``=``, ``+``, ``-``, ``@`` (or a tab/CR) can execute as
+    a formula when the CSV/annotation file is opened in Excel or Sheets. Prefix
+    such cells with a single quote so they render as literal text. BOM-derived
+    titles and refdes flow into these exports, so the values are not fully
+    trusted.
+    """
+
+    text = str(value)
+    if text[:1] in {"=", "+", "-", "@", "\t", "\r"}:
+        return "'" + text
+    return text

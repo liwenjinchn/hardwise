@@ -1098,3 +1098,75 @@ def test_workbench_state_exposes_net_checks() -> None:
         assert first["evidence"][0]["trust_tier"] == "l1"
     finally:
         context.session.close()
+
+
+def test_workbench_import_cleans_up_superseded_temp_dirs(tmp_path: Path, monkeypatch) -> None:
+    import tempfile
+
+    from hardwise.workbench import server as server_module
+
+    real_mkdtemp = tempfile.mkdtemp
+    created: list[Path] = []
+
+    def tracked_mkdtemp(*args, **kwargs):
+        kwargs.setdefault("dir", str(tmp_path))
+        path = real_mkdtemp(*args, **kwargs)
+        created.append(Path(path))
+        return path
+
+    monkeypatch.setattr(server_module.tempfile, "mkdtemp", tracked_mkdtemp)
+
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/l78_regulator.net"),
+        bom_path=Path("tests/fixtures/allegro/l78_regulator_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+    app = create_workbench_app(context, DummyChatService())  # type: ignore[arg-type]
+    client = TestClient(app)
+
+    try:
+        for _ in range(2):
+            with (
+                Path("tests/fixtures/allegro/mixed_controller_power_stage.net").open(
+                    "rb"
+                ) as netlist,
+                Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv").open(
+                    "rb"
+                ) as bom,
+            ):
+                response = client.post(
+                    "/api/workbench/import",
+                    files={
+                        "netlist": ("mixed_controller_power_stage.net", netlist, "text/plain"),
+                        "bom": ("mixed_controller_power_stage_bom.csv", bom, "text/csv"),
+                    },
+                )
+                assert response.status_code == 200, response.text
+
+        # Two imports created two temp dirs; only the live context's dir survives.
+        assert len(created) == 2
+        surviving = [d for d in created if d.exists()]
+        assert surviving == [created[-1]]
+    finally:
+        app.state.workbench_context["value"].session.close()
+
+
+def test_csv_safe_neutralizes_formula_injection() -> None:
+    from hardwise.workbench.server import _csv_safe
+
+    assert _csv_safe("=cmd()") == "'=cmd()"
+    assert _csv_safe("+1") == "'+1"
+    assert _csv_safe("-2") == "'-2"
+    assert _csv_safe("@x") == "'@x"
+    assert _csv_safe("U12") == "U12"
+    assert _csv_safe("") == ""
+
+
+def test_annotation_cell_neutralizes_formula_and_delimiters() -> None:
+    from hardwise.workbench.server import _annotation_cell
+
+    assert _annotation_cell("=SUM(A1)").startswith("'=")
+    cell = _annotation_cell("line1\nline2, x")
+    assert "\n" not in cell
+    assert "," not in cell
