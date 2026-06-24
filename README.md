@@ -1,29 +1,29 @@
-# Hardwise
+# Hardwise — a production-grade AI agent for real engineering workflows
 
-[English](README.md) | [中文](README.zh-CN.md)
+[English](README.md) · [中文 README](README.zh-CN.md)
 
-**[▶ Open the live workbench demo](https://liwenjinchn.github.io/hardwise/hardware-demo.html)** — an
-offline snapshot of the review workbench, straight in the browser: review
-queues, deterministic findings with evidence tokens, and an audited Copilot
-transcript.
+**What it is:** a from-scratch AI agent that is *mechanically* unable to make
+things up. Every answer is forced through tool calls and an evidence ledger, so
+the model can only conclude from real data — and has to say "not found" when it
+can't. That guarantee is the whole point: in any serious B2B setting, a
+confident wrong answer is worse than no answer.
+
+I deliberately ran it on the most unforgiving workflow I know — **hardware
+schematic review**, where one missed call scraps a board worth tens of
+thousands. So this isn't a toy demo; it's grounded in a real workflow and backed
+by **687 tests + GitHub Actions CI**.
 
 [![Hardwise review workbench — component queue, validation detail, and Copilot panel](docs/assets/hardwise-workbench-snapshot.png)](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
 
-> A trusted pre-layout schematic-review workbench for public hardware projects:
-> review queues, evidence-backed findings, registry-verified refdes, and
-> deterministic validation.
+**See it in 3 links — no install:**
 
-**Why it matters:** schematic review is evidence-heavy manual work before
-Layout; Hardwise turns exported netlist+BOM files into a bounded review
-queue instead of an ungrounded chatbot.
+- ▶ **[50-second product tour](https://github.com/liwenjinchn/hardwise/raw/main/docs/assets/hardwise-promo.mp4)**
+- ▶ **[Click-through demo in your browser](https://liwenjinchn.github.io/hardwise/hardware-demo.html)**
+- 🧩 **Engineering highlights:** tool-calling agent loop (12 tools) · Refdes Guard anti-hallucination · Evidence Ledger · prompt caching · tiered model routing · 687 tests + CI
 
-**What I built:** a local AI-assisted workbench with deterministic validators,
-registry-verified reference designators, datasheet/document coverage, and
-tool-backed Copilot traces.
-
-**Proof:** public fixtures, a clickable offline SPA demo, GitHub Actions CI,
-and a 687-test regression suite covering refdes guards, evidence filtering,
-workbench APIs, CLI flows, and report exits.
+**Who I am:** 5 years of front-line hardware R&D, now joining "understands real
+engineering workflows" with "can build AI tooling that actually ships." Open to
+AI product / AI application / R&D-productivity roles.
 
 Pre-layout schematic review still runs on manual labor: cross-checking
 reference designators, digging through datasheets, and assembling evidence for

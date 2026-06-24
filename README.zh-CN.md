@@ -1,26 +1,26 @@
-# Hardwise
+# Hardwise —— 给真实工程流程做的 AI Agent 工作台
 
-[English](README.md) | [中文](README.zh-CN.md)
+[English](README.md) · [中文](README.zh-CN.md)
 
-**[▶ 打开在线工作台 demo](https://liwenjinchn.github.io/hardwise/hardware-demo.html)** ——
-评审工作台的离线快照，浏览器直接打开：评审队列、带证据 token 的确定性
-finding、可审计的 Copilot 问答轨迹。
+**这是什么：** 我独立从 0 做的一个 AI Agent，它在机制上**没法编造**——每个回答都被
+强制走工具调用 + 证据账本，模型只能基于真实数据下结论，查不到就必须说"查不到"。
+这个保证就是全部重点：在任何严肃的 to B 场景里，一个自信的错误答案比"没有答案"更
+危险。
+
+我故意把它跑在一个最不容错的流程上——**硬件原理图评审**，评审漏一条就报废一块几
+万块的板。所以它不是玩具 demo，是扎在真实流程上、有 **687 条测试 + GitHub Actions
+CI** 兜底的工程。
 
 [![Hardwise 评审工作台——器件队列、验证明细与 Copilot 面板](docs/assets/hardwise-workbench-snapshot.png)](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
 
-> 面向公开硬件项目的 pre-Layout 原理图评审工作台：review queue、证据化
-> finding、registry-verified 位号和确定性验证。
+**3 个链接看懂——都不用装：**
 
-**为什么重要：** Layout 前原理图评审是重证据、重搬运的人工工作；Hardwise
-把导出的 netlist+BOM 文件变成有边界的评审队列，而不是无依据聊天机器人。
+- ▶ **[50 秒产品短片](https://github.com/liwenjinchn/hardwise/raw/main/docs/assets/hardwise-promo.mp4)**
+- ▶ **[浏览器直接点的 demo](https://liwenjinchn.github.io/hardwise/hardware-demo.html)**
+- 🧩 **技术亮点：** tool-calling agent loop（12 个工具）· Refdes Guard 防幻觉 · Evidence Ledger 证据账本 · prompt caching · 分层模型路由 · 687 测试 + CI
 
-**我做了什么：** 一个本地 AI 辅助评审工作台，包含确定性硬件 validator、
-registry-verified 位号防护、规格书/文档覆盖状态，以及带工具 trace 的
-Copilot 解释路径。
-
-**可验证证据：** 公开 fixture、可点击的离线 SPA demo、GitHub Actions CI，
-以及覆盖位号防护、证据过滤、workbench API、CLI 流程和报告出口的 687 条
-回归测试。
+**我是谁：** 5 年一线硬件研发，现在把"懂真实工程流程"和"能造能上线的 AI 工具"接在
+一起。找 AI 产品 / AI 应用落地 / 研发效能方向。
 
 Layout 前的原理图评审至今仍靠人肉：对位号、翻规格书、给每条结论找证据。
 Hardwise 只锚定 **pre-layout 原理图评审** 这一个节点。它不声称大模型已经
