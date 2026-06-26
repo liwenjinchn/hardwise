@@ -108,6 +108,48 @@ def register_eval_commands(app: typer.Typer) -> None:
         if accept_baseline and baseline is not None:
             typer.echo(f"baseline accepted: {baseline}")
 
+    @app.command(name="eval-seeded-defects")
+    def eval_seeded_defects(
+        fixture: Path = typer.Option(
+            Path("tests/fixtures/allegro/pst"),
+            "--fixture",
+            help="Clean Allegro PST fixture directory to mutate.",
+        ),
+        profiles: Path = typer.Option(
+            Path("data/datasheet_profiles"),
+            "--profiles",
+            help="Directory containing structured DatasheetProfile JSON files.",
+        ),
+        output: Path | None = typer.Option(
+            None,
+            "--output",
+            help="Optional JSON output path for seeded benchmark details.",
+        ),
+    ) -> None:
+        """Run the minimal Allegro seeded-defect benchmark."""
+        from hardwise.eval_seeded import (
+            run_seeded_defect_benchmark,
+            write_seeded_defect_summary,
+        )
+
+        try:
+            summary = run_seeded_defect_benchmark(fixture=fixture, profiles=profiles)
+            if output is not None:
+                write_seeded_defect_summary(summary, output)
+        except Exception as e:
+            typer.echo(f"error: seeded-defect eval failed: {type(e).__name__}: {e}", err=True)
+            raise typer.Exit(1) from e
+
+        typer.echo(f"eval seeded-defects: {summary.headline}")
+        for case in summary.cases:
+            status = "detected" if case.detected else "missed"
+            typer.echo(
+                f"  {case.name}: {status} "
+                f"({len(case.false_positives)} false positives)"
+            )
+        if output is not None:
+            typer.echo(f"summary: {output}")
+
 
 def _echo_decision_counts(counts: dict[str, int], total: int) -> None:
     typer.echo("decisions:")
