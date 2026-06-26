@@ -11,7 +11,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ValidationError
 
 from hardwise.csv_safety import csv_safe_cell
-from hardwise.documents.datasheets_com import DatasheetsComLookupReport
+from hardwise.documents.datasheets_com import DatasheetsComLookupReport, DatasheetsComPart
 from hardwise.validation.coverage_priority import score_candidate
 from hardwise.validation.component_groups import ProjectComponentGroup
 from hardwise.validation.project_index import ProjectValidationIndex
@@ -157,8 +157,9 @@ def enrich_document_candidates_with_datasheets_com(
     return report.model_copy(
         update={
             "candidates": [
-                _enrich_candidate_with_datasheets_com(row, lookup=lookup)
+                enriched
                 for row in report.candidates
+                for enriched in _enrich_candidate_with_datasheets_com(row, lookup=lookup)
             ]
         }
     )
@@ -248,43 +249,52 @@ def _enrich_candidate_with_datasheets_com(
     row: DocumentCandidateRow,
     *,
     lookup: DocumentCandidateLookup,
-) -> DocumentCandidateRow:
+) -> list[DocumentCandidateRow]:
     lookup_report = lookup(row.search_query)
     base_notes = row.notes
     if lookup_report.status == "no_result":
-        return _row_with_note(
+        return [_row_with_note(
             row.model_copy(update={"document_status": "no_result"}),
             "datasheets.com:no_result",
             base_notes=base_notes,
-        )
+        )]
     if lookup_report.status != "found":
-        return _row_with_note(
+        return [_row_with_note(
             row.model_copy(update={"document_status": "manual_needed"}),
             f"datasheets.com:{lookup_report.status}",
             base_notes=base_notes,
-        )
+        )]
     if len(lookup_report.results) != 1:
-        return _row_with_note(
-            row.model_copy(update={"document_status": "ambiguous"}),
-            f"datasheets.com:{len(lookup_report.results)} candidates",
-            base_notes=base_notes,
-        )
+        rows = [
+            _row_with_note(
+                row.model_copy(
+                    update={
+                        **_datasheets_com_result_update(result, row, preserve_identity=True),
+                        "document_status": "ambiguous",
+                        "review_status": "needs_review",
+                    }
+                ),
+                f"datasheets.com:ambiguous_candidate {index}/{len(lookup_report.results)}",
+                base_notes=base_notes,
+            )
+            for index, result in enumerate(lookup_report.results, start=1)
+            if result.datasheet_url
+        ]
+        if rows:
+            return rows
+        return [
+            _row_with_note(
+                row.model_copy(update={"document_status": "ambiguous"}),
+                f"datasheets.com:{len(lookup_report.results)} candidates_without_direct_pdf",
+                base_notes=base_notes,
+            )
+        ]
 
     result = lookup_report.results[0]
-    selected_update = {
-        "mpn": result.mpn or row.mpn,
-        "manufacturer": result.manufacturer or row.manufacturer,
-        "title": result.title or row.title or result.mpn,
-        "url": result.datasheet_url or row.url,
-        "description": result.description or row.description,
-        "source": "datasheets.com_api",
-        "product_url": result.url or row.product_url,
-        "lifecycle_status": result.lifecycle_status or row.lifecycle_status,
-        "package_type": result.package_type or row.package_type,
-    }
+    selected_update = _datasheets_com_result_update(result, row)
     exact_mpn = _normalize_mpn(result.mpn) == _normalize_mpn(row.mpn)
     if row.identity_kind == "mpn" and row.mpn and exact_mpn and result.datasheet_url:
-        return _row_with_note(
+        return [_row_with_note(
             row.model_copy(
                 update={
                     **selected_update,
@@ -294,9 +304,9 @@ def _enrich_candidate_with_datasheets_com(
             ),
             "datasheets.com:auto_approved_exact_mpn_single_hit",
             base_notes=base_notes,
-        )
+        )]
 
-    return _row_with_note(
+    return [_row_with_note(
         row.model_copy(
             update={
                 **selected_update,
@@ -306,7 +316,46 @@ def _enrich_candidate_with_datasheets_com(
         ),
         "datasheets.com:manual_review_required",
         base_notes=base_notes,
-    )
+    )]
+
+
+def _datasheets_com_result_update(
+    result: DatasheetsComPart,
+    row: DocumentCandidateRow,
+    *,
+    preserve_identity: bool = False,
+) -> dict[str, str]:
+    update = {
+        "mpn": result.mpn or row.mpn,
+        "manufacturer": row.manufacturer or result.manufacturer,
+        "title": result.title or row.title or result.mpn,
+        "url": result.datasheet_url or row.url,
+        "description": result.description or row.description,
+        "source": "datasheets.com_api",
+        "product_url": result.url or row.product_url,
+        "lifecycle_status": result.lifecycle_status or row.lifecycle_status,
+        "package_type": result.package_type or row.package_type,
+    }
+    if preserve_identity:
+        update["mpn"] = row.mpn
+        update["value"] = row.value
+        provider_notes = []
+        if result.mpn and result.mpn != row.mpn:
+            provider_notes.append(f"Datasheets.com candidate MPN: {result.mpn}")
+        if result.manufacturer and result.manufacturer != row.manufacturer:
+            provider_notes.append(
+                f"Datasheets.com candidate manufacturer: {result.manufacturer}"
+            )
+        if provider_notes:
+            update["description"] = "; ".join(
+                part
+                for part in [
+                    *provider_notes,
+                    result.description or row.description,
+                ]
+                if part
+            )
+    return update
 
 
 def _row_with_note(

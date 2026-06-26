@@ -4621,3 +4621,34 @@ states that auto-approval is coverage approval, not page-level parameter proof.
 "Approved document coverage" is a routing decision for reviewer workload. It is
 not a validation verdict unless a later deterministic or grounded evidence path
 cites page-level facts from that document.
+
+## 2026-06-27 — Datasheet candidates need stable BOM identity keys
+
+**Symptom**
+
+Datasheets.com multiple-hit enrichment expanded ambiguous provider results into
+separate CSV rows with direct PDF URLs, but the workbench still did not surface
+those rows as ambiguous document-candidate tasks for the original component
+group. The rows were usable as URLs, but not matchable as document-index rows.
+
+**Root cause**
+
+`match_documents_to_bom()` matches document-index rows by the BOM identity
+columns (`MPN` / part-like value) and filters by BOM manufacturer. The expanded
+candidate rows had overwritten those matching keys with provider result MPNs or
+provider manufacturer names, so fuzzy provider hits no longer joined back to the
+component group that produced the query.
+
+**Fix**
+
+Ambiguous candidate expansion now keeps BOM `MPN`, value, and manufacturer as
+stable match keys, while provider-specific MPN/manufacturer details are recorded
+in the row description, title, product URL, and source fields. A round-trip test
+now covers enrichment -> CSV -> document-index parse -> BOM matching and asserts
+that multiple direct-PDF hits become an `ambiguous` match.
+
+**Takeaway**
+
+Candidate rows can carry provider metadata, but join keys must remain the board
+or BOM facts that produced the candidate. Otherwise a review queue turns into a
+loose search result dump instead of an actionable per-component workflow.

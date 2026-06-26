@@ -7,7 +7,9 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
+from hardwise.bom.parser import parse_bom
 from hardwise.cli import app
+from hardwise.documents import match_documents_to_bom, parse_document_index
 from hardwise.documents.candidates import (
     DocumentCandidateReport,
     DocumentCandidateRow,
@@ -126,7 +128,7 @@ def test_datasheets_com_enrichment_auto_approves_exact_single_mpn_hit(
     assert "auto_approved_exact_mpn_single_hit" in row.notes
 
 
-def test_datasheets_com_enrichment_marks_multiple_hits_ambiguous(tmp_path: Path) -> None:
+def test_datasheets_com_enrichment_expands_multiple_hits_for_review(tmp_path: Path) -> None:
     index_path = _write_index(
         tmp_path,
         groups=[_group("gap-ic", ["U1"], "ic", "MPQ8626GD-Z", "no_result")],
@@ -139,17 +141,78 @@ def test_datasheets_com_enrichment_marks_multiple_hits_ambiguous(tmp_path: Path)
             query="MPQ8626GD-Z Fixture datasheet",
             count=2,
             results=[
-                DatasheetsComPart(mpn="MPQ8626GD-Z", datasheetUrl="https://a.example/a.pdf"),
-                DatasheetsComPart(mpn="MPQ8626GD", datasheetUrl="https://a.example/b.pdf"),
+                DatasheetsComPart(
+                    mpn="MPQ8626GD-Z",
+                    manufacturer="Monolithic Power Systems",
+                    datasheetUrl="https://a.example/a.pdf",
+                ),
+                DatasheetsComPart(
+                    mpn="MPQ8626GD",
+                    manufacturer="MPS",
+                    datasheetUrl="https://a.example/b.pdf",
+                ),
             ],
         ),
     )
 
+    assert len(report.candidates) == 2
+    assert [row.mpn for row in report.candidates] == ["MPQ8626GD-Z", "MPQ8626GD-Z"]
+    assert [row.manufacturer for row in report.candidates] == ["Fixture", "Fixture"]
+    assert {row.document_status for row in report.candidates} == {"ambiguous"}
+    assert {row.review_status for row in report.candidates} == {"needs_review"}
+    assert [row.url for row in report.candidates] == [
+        "https://a.example/a.pdf",
+        "https://a.example/b.pdf",
+    ]
+    assert all("ambiguous_candidate" in row.notes for row in report.candidates)
+    assert "Datasheets.com candidate MPN: MPQ8626GD" in report.candidates[1].description
+    assert "Datasheets.com candidate manufacturer: MPS" in report.candidates[1].description
+
+    csv_path = tmp_path / "candidates.csv"
+    csv_path.write_text(render_document_candidate_csv(report), encoding="utf-8")
+    bom_path = tmp_path / "bom.csv"
+    bom_path.write_text(
+        "Reference,Quantity,Value,Manufacturer,MPN\n"
+        "U1,1,MPQ8626GD-Z,Fixture,MPQ8626GD-Z\n",
+        encoding="utf-8",
+    )
+    match_report = match_documents_to_bom(parse_bom(bom_path), parse_document_index(csv_path))
+    match = next(iter(match_report.matches_by_item_key.values()))
+    assert match.status == "ambiguous"
+    assert len(match.candidates) == 2
+    assert {candidate.url for candidate in match.candidates} == {
+        "https://a.example/a.pdf",
+        "https://a.example/b.pdf",
+    }
+
+
+def test_datasheets_com_enrichment_keeps_ambiguous_summary_without_pdf(
+    tmp_path: Path,
+) -> None:
+    index_path = _write_index(
+        tmp_path,
+        groups=[_group("gap-ic", ["U1"], "ic", "MPQ8626GD-Z", "no_result")],
+    )
+
+    report = build_document_candidate_report(
+        index_path,
+        datasheets_com_lookup=lambda _query: DatasheetsComLookupReport(
+            status="found",
+            query="MPQ8626GD-Z Fixture datasheet",
+            count=2,
+            results=[
+                DatasheetsComPart(mpn="MPQ8626GD-Z"),
+                DatasheetsComPart(mpn="MPQ8626GD"),
+            ],
+        ),
+    )
+
+    assert len(report.candidates) == 1
     row = report.candidates[0]
     assert row.document_status == "ambiguous"
     assert row.review_status == "needs_review"
     assert row.url == ""
-    assert "2 candidates" in row.notes
+    assert "candidates_without_direct_pdf" in row.notes
 
 
 def test_datasheets_com_enrichment_keeps_value_fallback_manual(tmp_path: Path) -> None:
