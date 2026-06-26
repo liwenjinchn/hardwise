@@ -11,7 +11,7 @@ confident wrong answer is worse than no answer.
 I deliberately ran it on the most unforgiving workflow I know — **hardware
 schematic review**, where one missed call scraps a board worth tens of
 thousands. So this isn't a toy demo; it's grounded in a real workflow and backed
-by **687 tests + GitHub Actions CI**.
+by **715 tests + GitHub Actions CI**.
 
 [![Hardwise review workbench — component queue, validation detail, and Copilot panel](docs/assets/hardwise-workbench-snapshot.png)](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
 
@@ -19,7 +19,7 @@ by **687 tests + GitHub Actions CI**.
 
 - ▶ **[50-second product tour](https://github.com/liwenjinchn/hardwise/raw/main/docs/assets/hardwise-promo.mp4)**
 - ▶ **[Click-through demo in your browser](https://liwenjinchn.github.io/hardwise/hardware-demo.html)**
-- 🧩 **Engineering highlights:** tool-calling agent loop (12 tools) · Refdes Guard anti-hallucination · Evidence Ledger · prompt caching · tiered model routing · 687 tests + CI
+- 🧩 **Engineering highlights:** tool-calling agent loop (12 tools) · Refdes Guard anti-hallucination · Evidence Ledger · prompt caching · tiered model routing · 715 tests + CI
 
 **Who I am:** 5 years of front-line hardware R&D, now joining "understands real
 engineering workflows" with "can build AI tooling that actually ships." Open to
@@ -47,7 +47,7 @@ Built with AI assistance. All design decisions and final code are reviewed and o
 Built **Hardwise**, a local AI-assisted schematic review workbench that imports
 netlist+BOM files, runs deterministic hardware validators, prevents
 hallucinated reference designators, and surfaces evidence-backed review queues
-with tool-traced Copilot explanations and 687-test regression coverage.
+with tool-traced Copilot explanations and 715-test regression coverage.
 
 ---
 
@@ -80,6 +80,7 @@ Local quickstart:
 uv sync
 ./scripts/start_hardwise_workbench.command
 uv run hardwise design-validator-ui tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --ai-snapshot --document-index data/document_indexes/mixed_controller_power_stage_docs.csv --output /tmp/hardwise-copilot-workbench.html
+uv run hardwise document-candidate-smoke tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --candidate-csv /tmp/hardwise-document-candidates.csv --summary-json /tmp/hardwise-document-smoke.json
 ```
 
 On Windows, double-click `scripts/start_hardwise_workbench.cmd`. Both launchers
