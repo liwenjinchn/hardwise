@@ -4652,3 +4652,36 @@ that multiple direct-PDF hits become an `ambiguous` match.
 Candidate rows can carry provider metadata, but join keys must remain the board
 or BOM facts that produced the candidate. Otherwise a review queue turns into a
 loose search result dump instead of an actionable per-component workflow.
+
+## 2026-06-27 — Candidate CSV rows are not always document-index rows
+
+**Symptom**
+
+The project-level document-candidate smoke helper generated a candidate CSV and
+then immediately reused that CSV as a workbench `--document-index`. When the
+candidate rows had no direct URL/path yet, `parse_document_index()` correctly
+reported `no document rows found`, so the smoke failed even though candidate
+generation itself had succeeded.
+
+**Root cause**
+
+`build-document-index-candidates` emits reviewer workload rows. Some rows are
+search targets without a usable public document URL yet; those rows are valid
+candidate evidence, but they are not valid document-index entries. The smoke had
+collapsed S2 candidate generation and S3 workbench projection without checking
+whether any row had a URL/path suitable for document matching.
+
+**Fix**
+
+`run_document_candidate_smoke()` now always writes the candidate CSV and summary,
+but only rebuilds the workbench with that CSV when at least one candidate row has
+a URL. URL-less candidates keep `workbench_document_candidate_tasks=0` and still
+assert that PASS/WARN/ERROR totals are unchanged. The new
+`document-candidate-smoke` CLI command records this as a reproducible JSON
+summary.
+
+**Takeaway**
+
+Keep candidate discovery and document-index projection as adjacent but distinct
+states. A reviewable search target is useful evidence of workload, not yet a
+document coverage row until it carries a concrete public URL or path.

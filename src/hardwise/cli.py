@@ -1256,6 +1256,144 @@ def build_document_index_candidates(
     )
 
 
+@app.command(name="document-candidate-smoke")
+def document_candidate_smoke(
+    netlist_path: Path = typer.Argument(
+        ...,
+        help=(
+            "Path to an Allegro/Telesis third-party ASCII netlist, or a "
+            "Capture/Allegro PST input."
+        ),
+    ),
+    bom_path: Path | None = typer.Argument(
+        None,
+        help=(
+            "Path to a schematic-exported BOM file. If omitted, "
+            "BOM candidates are auto-selected from an Allegro/PST project directory."
+        ),
+    ),
+    profiles: Path = typer.Option(
+        Path("data/datasheet_profiles"),
+        "--profiles",
+        help="Directory containing structured DatasheetProfile JSON files.",
+    ),
+    baseline_document_index: Path | None = typer.Option(
+        None,
+        "--document-index",
+        help=(
+            "Optional reviewed document index used for the baseline workbench context. "
+            "Candidate CSV output remains separate."
+        ),
+    ),
+    candidate_csv: Path | None = typer.Option(
+        None,
+        "--candidate-csv",
+        help=(
+            "Output candidate CSV path "
+            "(default: reports/<project>-document-candidate-smoke.csv)."
+        ),
+    ),
+    summary_json: Path | None = typer.Option(
+        None,
+        "--summary-json",
+        help=(
+            "Output smoke summary JSON path "
+            "(default: reports/<candidate-csv-stem>-summary.json)."
+        ),
+    ),
+    families: list[str] | None = typer.Option(
+        None,
+        "--family",
+        help="Only include candidate rows for this suggested family; may be repeated.",
+    ),
+    datasheets_com: bool = typer.Option(
+        False,
+        "--datasheets-com",
+        help="Classify rows with Datasheets.com lookup; exact single MPN PDF hits are approved.",
+    ),
+    limit: int = typer.Option(
+        5,
+        "--limit",
+        help="Datasheets.com search result limit when --datasheets-com is enabled (1-10).",
+    ),
+    timeout_seconds: int = typer.Option(
+        20,
+        "--timeout",
+        help="Datasheets.com HTTP timeout in seconds when --datasheets-com is enabled.",
+    ),
+) -> None:
+    """Run document-candidate generation plus workbench queue projection smoke."""
+
+    from hardwise.documents import (
+        run_document_candidate_smoke,
+        write_document_candidate_smoke_summary,
+    )
+
+    lookup = None
+    if datasheets_com:
+        import os
+
+        from dotenv import load_dotenv
+
+        from hardwise.documents.datasheets_com import (
+            DATASHEETS_COM_API_KEY_ENV,
+            DATASHEETS_COM_API_KEY_ENV_LEGACY,
+            lookup_datasheets_com,
+        )
+
+        if limit < 1 or limit > 10:
+            typer.echo("error: --limit must be between 1 and 10", err=True)
+            raise typer.Exit(1)
+        if timeout_seconds < 1:
+            typer.echo("error: --timeout must be >= 1", err=True)
+            raise typer.Exit(1)
+        load_dotenv(override=True)
+        api_key = os.environ.get(DATASHEETS_COM_API_KEY_ENV) or os.environ.get(
+            DATASHEETS_COM_API_KEY_ENV_LEGACY
+        )
+        if api_key == "replace_me":
+            api_key = None
+
+        def lookup(query: str):
+            return lookup_datasheets_com(
+                query,
+                api_key=api_key,
+                limit=limit,
+                timeout_seconds=timeout_seconds,
+            )
+
+    try:
+        summary = run_document_candidate_smoke(
+            netlist_path=netlist_path,
+            bom_path=bom_path,
+            profiles=profiles,
+            baseline_document_index=baseline_document_index,
+            candidate_csv=candidate_csv,
+            families=families,
+            datasheets_com_lookup=lookup,
+            datasheets_com_enabled=datasheets_com,
+        )
+    except Exception as e:
+        typer.echo(f"error: document candidate smoke failed: {type(e).__name__}: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    if summary_json is None:
+        candidate_path = Path(summary.candidate_csv)
+        summary_json = candidate_path.with_name(f"{candidate_path.stem}-summary.json")
+    write_document_candidate_smoke_summary(summary, summary_json)
+    typer.echo(
+        f"document-candidate-smoke: {summary_json} "
+        f"(candidate_csv={summary.candidate_csv}, "
+        f"candidates={summary.candidate_rows}, "
+        f"approved={summary.candidate_approved}, "
+        f"needs_review={summary.candidate_needs_review}, "
+        f"rows_with_url={summary.candidate_rows_with_url}, "
+        f"queue={summary.workbench_document_candidate_tasks}, "
+        f"PASS/WARN/ERROR={summary.pass_count}/{summary.warn_count}/{summary.error_count}, "
+        f"unchanged={summary.pass_warn_error_unchanged})"
+    )
+
+
 @app.command(name="fetch-approved-documents")
 def fetch_approved_documents_cmd(
     document_index: Path = typer.Argument(

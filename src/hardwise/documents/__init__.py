@@ -22,6 +22,7 @@ __all__ = [
     "DocumentMatch",
     "DocumentMatchReport",
     "DocumentMatchStatus",
+    "DocumentCandidateSmokeSummary",
     "DatasheetsComLookupReport",
     "DatasheetsComLookupStatus",
     "build_document_candidate_report",
@@ -32,6 +33,8 @@ __all__ = [
     "parse_document_index",
     "render_datasheets_com_document_index_csv",
     "render_document_candidate_csv",
+    "run_document_candidate_smoke",
+    "write_document_candidate_smoke_summary",
 ]
 
 _CANDIDATE_EXPORTS = {
@@ -43,6 +46,12 @@ _CANDIDATE_EXPORTS = {
     "enrich_document_candidates_with_datasheets_com",
     "fetch_approved_documents",
     "render_document_candidate_csv",
+}
+
+_SMOKE_EXPORTS = {
+    "DocumentCandidateSmokeSummary",
+    "run_document_candidate_smoke",
+    "write_document_candidate_smoke_summary",
 }
 
 _DATASHEETS_COM_EXPORTS = {
@@ -64,6 +73,10 @@ def __getattr__(name: str):
         from hardwise.documents import candidates
 
         return getattr(candidates, name)
+    if name in _SMOKE_EXPORTS:
+        from hardwise.documents import smoke
+
+        return getattr(smoke, name)
     if name in _DATASHEETS_COM_EXPORTS:
         from hardwise.documents import datasheets_com
 

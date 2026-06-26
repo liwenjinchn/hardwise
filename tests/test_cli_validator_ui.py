@@ -967,6 +967,32 @@ def test_build_document_index_candidates_writes_review_csv(tmp_path: Path) -> No
     assert "EG2132" not in transistor_text
 
 
+def test_document_candidate_smoke_cli_writes_summary_and_candidates(tmp_path: Path) -> None:
+    candidate_csv = tmp_path / "document-candidate-smoke.csv"
+    summary_json = tmp_path / "document-candidate-smoke-summary.json"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "document-candidate-smoke",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--candidate-csv",
+            str(candidate_csv),
+            "--summary-json",
+            str(summary_json),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "document-candidate-smoke:" in result.output
+    assert "unchanged=True" in result.output
+    assert candidate_csv.read_text(encoding="utf-8").startswith("MPN,Manufacturer,Title,URL")
+    summary_text = summary_json.read_text(encoding="utf-8")
+    assert '"candidate_rows":' in summary_text
+    assert '"pass_warn_error_unchanged": true' in summary_text
+
+
 def test_recommend_next_family_writes_markdown(tmp_path: Path) -> None:
     index_json = tmp_path / "motor-index.json"
     result = CliRunner().invoke(
