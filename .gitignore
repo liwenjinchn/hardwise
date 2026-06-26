@@ -53,6 +53,9 @@ reports/eval/
 # Browser automation/debug artifacts
 .playwright-mcp/
 
+# Local promo design source/video; keep release media out of git history.
+designs/hardwise-promo/
+
 # Submission package — resumes and role-specific materials are delivered
 # separately by email/cloud drive, not committed to the repo.
 docs/submission/
