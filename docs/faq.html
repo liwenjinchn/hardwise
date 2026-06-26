@@ -77,7 +77,7 @@
         <li>Markdown/HTML 评审报告与可导出的评审反馈清单</li>
         <li>SQLite/PostgreSQL 结构化存储与运行轨迹台账</li>
       </ul>
-      <p class="callout">公开演示数字：mixed controller 样例 25 个器件 / BOM 全配 / 22 行确定性验证 / 通过-警告-错误 = 5-13-4 / 3 行人工缺口；KiCad <code>pic_programmer</code> 121 个器件 / 77 个 NC 引脚 / 29 条带证据评审发现。</p>
+      <p class="callout">公开演示数字：mixed controller 样例 25 个器件 / BOM 全配 / 22 行确定性验证 / 通过-警告-错误 = 5-13-4 / 3 行人工缺口；KiCad <code>pic_programmer</code> 121 个器件 / 77 个 NC 引脚 / 19 个显式 schematic-side 命名网络 / 29 条带证据评审发现。pin-table 检查进入工作台队列，但不改写这组 PASS/WARN/ERROR 总账。<code>document-candidate-smoke</code> 在同一个 mixed controller 样例上生成 8 行资料候选；无直接 URL 的候选不会伪装成 document-index row，工作台资料候选队列为 0，且 PASS/WARN/ERROR 仍保持 5/13/4。</p>
 
       <h2>Q3. 哪些数据进向量库，哪些进关系库？为什么这样分？</h2>
       <ul>
