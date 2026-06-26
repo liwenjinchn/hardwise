@@ -316,6 +316,104 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
         context.session.close()
 
 
+def test_workbench_state_surfaces_document_candidate_confirmation_tasks(
+    tmp_path: Path,
+) -> None:
+    docs = tmp_path / "document_candidates.csv"
+    docs.write_text(
+        "\n".join(
+            [
+                "MPN,Manufacturer,Title,URL,ReviewStatus,Source,Description",
+                (
+                    "SS8050,Fixture,SS8050 approved datasheet,"
+                    "https://example.test/ss8050-approved.pdf,approved,datasheets.com,"
+                    "Exact MPN public datasheet row."
+                ),
+                (
+                    "SS8050,Fixture,SS8050 needs review datasheet,"
+                    "https://example.test/ss8050-review.pdf,needs_review,datasheets.com,"
+                    "Fuzzy package fallback needs engineer confirmation."
+                ),
+                (
+                    "SS8050,Fixture,SS8050 rejected datasheet,"
+                    "https://example.test/ss8050-rejected.pdf,rejected,datasheets.com,"
+                    "Wrong package candidate rejected by reviewer."
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        document_index=docs,
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        payload = client.get("/api/workbench/state").json()
+
+        assert payload["summary"] == {
+            "components": 25,
+            "bom_matched": 25,
+            "validated": 22,
+            "manual": 3,
+            "pass_count": 5,
+            "warn_count": 13,
+            "error_count": 4,
+        }
+        queue_by_refdes = {item["refdes"]: item for item in payload["queue"]}
+        assert queue_by_refdes["Q12"]["deterministic_status"] == "ERROR"
+        assert queue_by_refdes["Q12"]["document_status"] == "ambiguous"
+        assert queue_by_refdes["Q12"]["task_counts"]["manual"] >= 3
+
+        doc_tasks = [
+            task
+            for task in payload["review_tasks"]
+            if task["kind"] == "document_candidate" and task["refdes"] == "Q12"
+        ]
+        assert len(doc_tasks) == 3
+        assert {task["status"] for task in doc_tasks} == {"manual_needed"}
+        assert {task["status_group"] for task in doc_tasks} == {"manual"}
+        assert {task["trust_tier"] for task in doc_tasks} == {"l3"}
+        assert {task["check"] for task in doc_tasks} == {
+            "document_candidate_confirmation"
+        }
+        assert {tuple(task["source_classes"]) for task in doc_tasks} == {
+            ("document_index",)
+        }
+        assert all(
+            {item["kind"] for item in task["evidence_chain"]}
+            == {"document_index_row", "document_coverage"}
+            for task in doc_tasks
+        )
+        assert all(
+            task["evidence_chain"][0]["evidence"][0]["token"].startswith(
+                "doc:document_candidates.csv#line"
+            )
+            for task in doc_tasks
+        )
+        by_status = {
+            task["body"].split("ReviewStatus=", 1)[1].split("。", 1)[0]: task
+            for task in doc_tasks
+        }
+        assert set(by_status) == {"approved", "needs_review", "rejected"}
+        assert "coverage evidence" in by_status["approved"]["recommended_action"]
+        assert (
+            "Fuzzy package fallback needs engineer confirmation"
+            in by_status["needs_review"]["recommended_action"]
+        )
+        assert (
+            "Wrong package candidate rejected by reviewer"
+            in by_status["rejected"]["recommended_action"]
+        )
+    finally:
+        context.session.close()
+
+
 def test_workbench_component_detail_exposes_evidence_classification() -> None:
     context = build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),

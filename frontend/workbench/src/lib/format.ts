@@ -150,7 +150,9 @@ export function chainKindLabel(kind: string): string {
     design_rule: "设计规则",
     datasheet_or_profile: "资料证据",
     external_hint: "外部线索",
-    pin_table_row: "Capture 引脚表"
+    pin_table_row: "Capture 引脚表",
+    document_index_row: "资料索引行",
+    document_coverage: "资料覆盖"
   };
   return labels[kind] ?? kind;
 }
@@ -162,6 +164,7 @@ export function taskKindLabel(kind: string): string {
     manual_gap: "人工缺口",
     external_risk_hint: "外部线索",
     pin_table_check: "Capture 引脚表检查",
+    document_candidate: "资料候选确认",
     cleared_summary: "已通过",
     cleared: "已通过"
   };
