@@ -961,7 +961,9 @@ def test_build_document_index_candidates_writes_review_csv(tmp_path: Path) -> No
     assert result.exit_code == 0, result.output
     assert "families=transistor" in result.output
     transistor_text = transistor_candidates.read_text(encoding="utf-8")
-    assert transistor_text.startswith("MPN,Manufacturer,Title,URL,Path,Description,Value,")
+    assert transistor_text.startswith("MPN,Manufacturer,Title,URL,Path,Description,")
+    assert "ReviewStatus" in transistor_text.splitlines()[0]
+    assert ",Value," in transistor_text.splitlines()[0]
     assert "EG2132" not in transistor_text
 
 

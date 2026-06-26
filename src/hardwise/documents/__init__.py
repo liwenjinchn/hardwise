@@ -25,6 +25,7 @@ __all__ = [
     "DatasheetsComLookupReport",
     "DatasheetsComLookupStatus",
     "build_document_candidate_report",
+    "enrich_document_candidates_with_datasheets_com",
     "fetch_approved_documents",
     "lookup_datasheets_com",
     "match_documents_to_bom",
@@ -39,6 +40,7 @@ _CANDIDATE_EXPORTS = {
     "DocumentCandidateReport",
     "DocumentCandidateRow",
     "build_document_candidate_report",
+    "enrich_document_candidates_with_datasheets_com",
     "fetch_approved_documents",
     "render_document_candidate_csv",
 }

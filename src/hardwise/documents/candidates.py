@@ -5,12 +5,13 @@ from __future__ import annotations
 import csv
 import io
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from pydantic import BaseModel, Field, ValidationError
 
 from hardwise.csv_safety import csv_safe_cell
+from hardwise.documents.datasheets_com import DatasheetsComLookupReport
 from hardwise.validation.coverage_priority import score_candidate
 from hardwise.validation.component_groups import ProjectComponentGroup
 from hardwise.validation.project_index import ProjectValidationIndex
@@ -30,6 +31,11 @@ class DocumentCandidateRow(BaseModel):
     url: str = ""
     path: str = ""
     description: str = ""
+    source: str = ""
+    review_status: str = "needs_review"
+    product_url: str = ""
+    lifecycle_status: str = ""
+    package_type: str = ""
     identity_kind: str
     family: str
     refdes_count: int
@@ -58,6 +64,8 @@ class DocumentCandidateReport(BaseModel):
     skipped_other: int = 0
 
 
+DocumentCandidateLookup = Callable[[str], DatasheetsComLookupReport]
+
 CSV_COLUMNS = [
     "MPN",
     "Manufacturer",
@@ -65,6 +73,11 @@ CSV_COLUMNS = [
     "URL",
     "Path",
     "Description",
+    "Source",
+    "ReviewStatus",
+    "ProductURL",
+    "LifecycleStatus",
+    "PackageType",
     "Value",
     "IdentityKind",
     "Family",
@@ -87,6 +100,7 @@ def build_document_candidate_report(
     index_path: Path,
     *,
     families: Iterable[str] | None = None,
+    datasheets_com_lookup: DocumentCandidateLookup | None = None,
 ) -> DocumentCandidateReport:
     """Load a project validation index and return document-index candidate rows."""
 
@@ -125,7 +139,29 @@ def build_document_candidate_report(
         else:
             report.skipped_other += 1
     report.candidates.sort(key=_candidate_sort_key)
+    if datasheets_com_lookup is not None:
+        report = enrich_document_candidates_with_datasheets_com(
+            report,
+            lookup=datasheets_com_lookup,
+        )
     return report
+
+
+def enrich_document_candidates_with_datasheets_com(
+    report: DocumentCandidateReport,
+    *,
+    lookup: DocumentCandidateLookup,
+) -> DocumentCandidateReport:
+    """Classify candidate rows using Datasheets.com without downloading PDFs."""
+
+    return report.model_copy(
+        update={
+            "candidates": [
+                _enrich_candidate_with_datasheets_com(row, lookup=lookup)
+                for row in report.candidates
+            ]
+        }
+    )
 
 
 def render_document_candidate_csv(report: DocumentCandidateReport) -> str:
@@ -145,6 +181,11 @@ def render_document_candidate_csv(report: DocumentCandidateReport) -> str:
                     "URL": row.url,
                     "Path": row.path,
                     "Description": row.description,
+                    "Source": row.source,
+                    "ReviewStatus": row.review_status,
+                    "ProductURL": row.product_url,
+                    "LifecycleStatus": row.lifecycle_status,
+                    "PackageType": row.package_type,
                     "Value": row.value,
                     "IdentityKind": row.identity_kind,
                     "Family": row.family,
@@ -201,6 +242,85 @@ def _candidate_for_group(group: ProjectComponentGroup) -> tuple[DocumentCandidat
         ),
         "",
     )
+
+
+def _enrich_candidate_with_datasheets_com(
+    row: DocumentCandidateRow,
+    *,
+    lookup: DocumentCandidateLookup,
+) -> DocumentCandidateRow:
+    lookup_report = lookup(row.search_query)
+    base_notes = row.notes
+    if lookup_report.status == "no_result":
+        return _row_with_note(
+            row.model_copy(update={"document_status": "no_result"}),
+            "datasheets.com:no_result",
+            base_notes=base_notes,
+        )
+    if lookup_report.status != "found":
+        return _row_with_note(
+            row.model_copy(update={"document_status": "manual_needed"}),
+            f"datasheets.com:{lookup_report.status}",
+            base_notes=base_notes,
+        )
+    if len(lookup_report.results) != 1:
+        return _row_with_note(
+            row.model_copy(update={"document_status": "ambiguous"}),
+            f"datasheets.com:{len(lookup_report.results)} candidates",
+            base_notes=base_notes,
+        )
+
+    result = lookup_report.results[0]
+    selected_update = {
+        "mpn": result.mpn or row.mpn,
+        "manufacturer": result.manufacturer or row.manufacturer,
+        "title": result.title or row.title or result.mpn,
+        "url": result.datasheet_url or row.url,
+        "description": result.description or row.description,
+        "source": "datasheets.com_api",
+        "product_url": result.url or row.product_url,
+        "lifecycle_status": result.lifecycle_status or row.lifecycle_status,
+        "package_type": result.package_type or row.package_type,
+    }
+    exact_mpn = _normalize_mpn(result.mpn) == _normalize_mpn(row.mpn)
+    if row.identity_kind == "mpn" and row.mpn and exact_mpn and result.datasheet_url:
+        return _row_with_note(
+            row.model_copy(
+                update={
+                    **selected_update,
+                    "document_status": "matched",
+                    "review_status": "approved",
+                }
+            ),
+            "datasheets.com:auto_approved_exact_mpn_single_hit",
+            base_notes=base_notes,
+        )
+
+    return _row_with_note(
+        row.model_copy(
+            update={
+                **selected_update,
+                "document_status": "manual_needed",
+                "review_status": "needs_review",
+            }
+        ),
+        "datasheets.com:manual_review_required",
+        base_notes=base_notes,
+    )
+
+
+def _row_with_note(
+    row: DocumentCandidateRow,
+    note: str,
+    *,
+    base_notes: str,
+) -> DocumentCandidateRow:
+    notes = "; ".join(part for part in [base_notes, note] if part)
+    return row.model_copy(update={"notes": notes})
+
+
+def _normalize_mpn(value: str) -> str:
+    return re.sub(r"[^A-Z0-9]", "", value.upper())
 
 
 def _candidate_sort_key(row: DocumentCandidateRow) -> tuple[int, float, int, str]:

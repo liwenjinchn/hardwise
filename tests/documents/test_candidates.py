@@ -5,13 +5,18 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from typer.testing import CliRunner
+
+from hardwise.cli import app
 from hardwise.documents.candidates import (
     DocumentCandidateReport,
     DocumentCandidateRow,
     build_document_candidate_report,
+    enrich_document_candidates_with_datasheets_com,
     render_document_candidate_csv,
 )
 from hardwise.documents.candidates import _looks_like_passive_identity
+from hardwise.documents.datasheets_com import DatasheetsComLookupReport, DatasheetsComPart
 
 
 def test_candidate_filter_recognizes_passive_values_with_ratings() -> None:
@@ -40,6 +45,7 @@ def test_document_candidates_sort_profile_gaps_before_backfill(
     assert [row.value for row in report.candidates] == ["", "", ""]
     assert [row.priority_band for row in report.candidates] == ["high", "medium", "high"]
     text = render_document_candidate_csv(report)
+    assert "ReviewStatus" in text.splitlines()[0]
     assert text.splitlines()[0].endswith(",Notes,Priority")
     assert ",high" in text
 
@@ -79,8 +85,190 @@ def test_document_candidates_preserve_mpn_and_part_like_value(
     assert by_identity[chinese_value].mpn == ""
     assert by_identity[chinese_value].value == chinese_value
     text = render_document_candidate_csv(report)
-    assert text.startswith("MPN,Manufacturer,Title,URL,Path,Description,Value,")
-    assert f",fixture,{chinese_value},part_like_value,transistor" in text
+    assert text.startswith("MPN,Manufacturer,Title,URL,Path,Description,Source,")
+    assert f",needs_review,,,,{chinese_value},part_like_value,transistor" in text
+
+
+def test_datasheets_com_enrichment_auto_approves_exact_single_mpn_hit(
+    tmp_path: Path,
+) -> None:
+    index_path = _write_index(
+        tmp_path,
+        groups=[_group("gap-ic", ["U1"], "ic", "MPQ8626GD-Z", "no_result")],
+    )
+
+    report = build_document_candidate_report(
+        index_path,
+        datasheets_com_lookup=lambda _query: DatasheetsComLookupReport(
+            status="found",
+            query="MPQ8626GD-Z Fixture datasheet",
+            count=1,
+            results=[
+                DatasheetsComPart(
+                    mpn="MPQ8626GD-Z",
+                    manufacturer="MPS",
+                    title="MPQ8626 datasheet",
+                    datasheetUrl="https://static.datasheets.com/doc/mpq8626.pdf",
+                    url="https://www.datasheets.com/mps/mpq8626gd-z",
+                    lifecycleStatus="Active",
+                    packageType="QFN",
+                )
+            ],
+        ),
+    )
+
+    row = report.candidates[0]
+    assert row.document_status == "matched"
+    assert row.review_status == "approved"
+    assert row.url == "https://static.datasheets.com/doc/mpq8626.pdf"
+    assert row.source == "datasheets.com_api"
+    assert row.product_url == "https://www.datasheets.com/mps/mpq8626gd-z"
+    assert "auto_approved_exact_mpn_single_hit" in row.notes
+
+
+def test_datasheets_com_enrichment_marks_multiple_hits_ambiguous(tmp_path: Path) -> None:
+    index_path = _write_index(
+        tmp_path,
+        groups=[_group("gap-ic", ["U1"], "ic", "MPQ8626GD-Z", "no_result")],
+    )
+
+    report = build_document_candidate_report(
+        index_path,
+        datasheets_com_lookup=lambda _query: DatasheetsComLookupReport(
+            status="found",
+            query="MPQ8626GD-Z Fixture datasheet",
+            count=2,
+            results=[
+                DatasheetsComPart(mpn="MPQ8626GD-Z", datasheetUrl="https://a.example/a.pdf"),
+                DatasheetsComPart(mpn="MPQ8626GD", datasheetUrl="https://a.example/b.pdf"),
+            ],
+        ),
+    )
+
+    row = report.candidates[0]
+    assert row.document_status == "ambiguous"
+    assert row.review_status == "needs_review"
+    assert row.url == ""
+    assert "2 candidates" in row.notes
+
+
+def test_datasheets_com_enrichment_keeps_value_fallback_manual(tmp_path: Path) -> None:
+    value = "N-MOS管 L2N7002KLT1G SOT23 1.5 LRC"
+    index_path = _write_index(
+        tmp_path,
+        groups=[
+            _group(
+                "value-transistor",
+                ["PQ10"],
+                "transistor",
+                value,
+                "no_result",
+                identity_kind="part_like_value",
+                value=value,
+                part_number="",
+            )
+        ],
+    )
+
+    report = build_document_candidate_report(
+        index_path,
+        datasheets_com_lookup=lambda _query: DatasheetsComLookupReport(
+            status="found",
+            query=f"{value} Fixture datasheet",
+            count=1,
+            results=[
+                DatasheetsComPart(
+                    mpn="L2N7002KLT1G",
+                    datasheetUrl="https://static.datasheets.com/doc/l2n7002.pdf",
+                )
+            ],
+        ),
+    )
+
+    row = report.candidates[0]
+    assert row.document_status == "manual_needed"
+    assert row.review_status == "needs_review"
+    assert row.mpn == "L2N7002KLT1G"
+    assert row.value == value
+    assert "manual_review_required" in row.notes
+
+
+def test_datasheets_com_enrichment_preserves_no_result_status() -> None:
+    report = DocumentCandidateReport(
+        input_file=Path("fixture.json"),
+        project_name="fixture",
+        component_group_count=1,
+        candidates=[
+            DocumentCandidateRow(
+                mpn="BAV99",
+                identity_kind="mpn",
+                family="diode",
+                refdes_count=1,
+                refdes_sample="D1",
+                document_status="manual_needed",
+                profile_status="no_result",
+                search_query="BAV99 datasheet",
+            )
+        ],
+    )
+
+    enriched = enrich_document_candidates_with_datasheets_com(
+        report,
+        lookup=lambda _query: DatasheetsComLookupReport(
+            status="no_result",
+            query="BAV99 datasheet",
+        ),
+    )
+
+    row = enriched.candidates[0]
+    assert row.document_status == "no_result"
+    assert row.review_status == "needs_review"
+    assert "no_result" in row.notes
+
+
+def test_build_document_candidates_cli_can_run_datasheets_com_enrichment(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    index_path = _write_index(
+        tmp_path,
+        groups=[_group("gap-ic", ["U1"], "ic", "MPQ8626GD-Z", "no_result")],
+    )
+    output = tmp_path / "document-candidates.csv"
+
+    def fake_lookup(query: str, **_kwargs) -> DatasheetsComLookupReport:
+        return DatasheetsComLookupReport(
+            status="found",
+            query=query,
+            count=1,
+            results=[
+                DatasheetsComPart(
+                    mpn="MPQ8626GD-Z",
+                    datasheetUrl="https://static.datasheets.com/doc/mpq8626.pdf",
+                )
+            ],
+        )
+
+    monkeypatch.setenv("DATASHEETS_API_KEY", "test-key")
+    monkeypatch.setattr("hardwise.documents.datasheets_com.lookup_datasheets_com", fake_lookup)
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "build-document-index-candidates",
+            str(index_path),
+            "--datasheets-com",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "matched=1" in result.output
+    assert "approved=1" in result.output
+    csv_text = output.read_text(encoding="utf-8")
+    assert "approved" in csv_text
+    assert "https://static.datasheets.com/doc/mpq8626.pdf" in csv_text
 
 
 def test_document_candidates_can_filter_by_family(tmp_path: Path) -> None:

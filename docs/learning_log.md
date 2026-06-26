@@ -4590,3 +4590,34 @@ When you add a guard at one exit, grep for every sibling exit of the same class
 and route them through a single shared helper. A private neutralizer invites a
 fixed-by-omission gap; a shared leaf module makes "apply at every exit" the easy
 path.
+
+## 2026-06-27 — Document coverage approval must not become validation truth
+
+**Symptom**
+
+Datasheets.com candidate discovery can now auto-approve a row when exactly one
+normalized MPN match has a direct PDF URL. Without an explicit boundary, that
+could read as if Hardwise had validated the datasheet contents or promoted a
+component to PASS/FAIL.
+
+**Root cause**
+
+Document-index rows and deterministic validator findings share the same
+workbench queue surface, but they answer different questions. The document row
+only says "this public document likely belongs to this BOM identity"; the
+validator says whether a board fact violates a reviewed profile/rule.
+
+**Fix**
+
+The S2 candidate enrichment records `ReviewStatus=approved` only for exact
+single MPN hits, while fuzzy/value-fallback/multiple/no-result rows stay in
+review states. The S3 workbench projection renders document candidates as L3
+manual review tasks with evidence-chain kinds `document_index_row` and
+`document_coverage`, and keeps PASS/WARN/ERROR totals unchanged. The FAQ now
+states that auto-approval is coverage approval, not page-level parameter proof.
+
+**Takeaway**
+
+"Approved document coverage" is a routing decision for reviewer workload. It is
+not a validation verdict unless a later deterministic or grounded evidence path
+cites page-level facts from that document.

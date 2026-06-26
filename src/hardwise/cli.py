@@ -1164,6 +1164,21 @@ def build_document_index_candidates(
         "--family",
         help="Only include candidate rows for this suggested family; may be repeated.",
     ),
+    datasheets_com: bool = typer.Option(
+        False,
+        "--datasheets-com",
+        help="Classify rows with Datasheets.com lookup; exact single MPN PDF hits are approved.",
+    ),
+    limit: int = typer.Option(
+        5,
+        "--limit",
+        help="Datasheets.com search result limit when --datasheets-com is enabled (1-10).",
+    ),
+    timeout_seconds: int = typer.Option(
+        20,
+        "--timeout",
+        help="Datasheets.com HTTP timeout in seconds when --datasheets-com is enabled.",
+    ),
 ) -> None:
     """Write reviewable document-index candidate rows from grouped coverage."""
 
@@ -1173,8 +1188,45 @@ def build_document_index_candidates(
         render_document_candidate_csv,
     )
 
+    lookup = None
+    if datasheets_com:
+        import os
+
+        from dotenv import load_dotenv
+
+        from hardwise.documents.datasheets_com import (
+            DATASHEETS_COM_API_KEY_ENV,
+            DATASHEETS_COM_API_KEY_ENV_LEGACY,
+            lookup_datasheets_com,
+        )
+
+        if limit < 1 or limit > 10:
+            typer.echo("error: --limit must be between 1 and 10", err=True)
+            raise typer.Exit(1)
+        if timeout_seconds < 1:
+            typer.echo("error: --timeout must be >= 1", err=True)
+            raise typer.Exit(1)
+        load_dotenv(override=True)
+        api_key = os.environ.get(DATASHEETS_COM_API_KEY_ENV) or os.environ.get(
+            DATASHEETS_COM_API_KEY_ENV_LEGACY
+        )
+        if api_key == "replace_me":
+            api_key = None
+
+        def lookup(query: str):
+            return lookup_datasheets_com(
+                query,
+                api_key=api_key,
+                limit=limit,
+                timeout_seconds=timeout_seconds,
+            )
+
     try:
-        report = build_document_candidate_report(validation_index, families=families)
+        report = build_document_candidate_report(
+            validation_index,
+            families=families,
+            datasheets_com_lookup=lookup,
+        )
     except DocumentCandidateError as e:
         typer.echo(f"error: document candidate generation failed: {e}", err=True)
         raise typer.Exit(1) from e
@@ -1183,10 +1235,20 @@ def build_document_index_candidates(
         output = Path("reports") / f"{validation_index.stem}-document-candidates.csv"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(render_document_candidate_csv(report), encoding="utf-8")
+    document_counts = {
+        status: sum(row.document_status == status for row in report.candidates)
+        for status in ("matched", "no_result", "ambiguous", "manual_needed")
+    }
+    approved = sum(row.review_status == "approved" for row in report.candidates)
     typer.echo(
         f"document-index-candidates: {output} "
         f"(groups={report.component_group_count}, candidates={len(report.candidates)}, "
         f"families={','.join(report.family_filter) if report.family_filter else 'all'}, "
+        f"matched={document_counts['matched']}, "
+        f"no_result={document_counts['no_result']}, "
+        f"ambiguous={document_counts['ambiguous']}, "
+        f"manual_needed={document_counts['manual_needed']}, "
+        f"approved={approved}, "
         f"skipped_passive={report.skipped_passive}, "
         f"skipped_mechanical={report.skipped_mechanical}, "
         f"skipped_matched={report.skipped_matched_document}, "
