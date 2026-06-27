@@ -30,12 +30,14 @@ For public-facing docs, keep this short fact block aligned with `README.md` and
 entry pages.
 
 | Fact | Current value |
-|---|---:|
+|---|---|
 | Components | 25 |
 | bom_rows_matched | 25 |
 | Validated rows | 22 |
 | PASS / WARN / ERROR | 5 / 13 / 4 |
 | Manual / no-local-profile rows | 3 |
+| Regression tests | 715 passed / 7 deselected / 1 warning |
+| Document candidate smoke | 8 candidate rows / 0 workbench document-candidate tasks / PASS-WARN-ERROR unchanged at 5 / 13 / 4 |
 
 ## Status Key
 
