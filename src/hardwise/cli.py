@@ -1188,38 +1188,11 @@ def build_document_index_candidates(
         render_document_candidate_csv,
     )
 
-    lookup = None
-    if datasheets_com:
-        import os
-
-        from dotenv import load_dotenv
-
-        from hardwise.documents.datasheets_com import (
-            DATASHEETS_COM_API_KEY_ENV,
-            DATASHEETS_COM_API_KEY_ENV_LEGACY,
-            lookup_datasheets_com,
-        )
-
-        if limit < 1 or limit > 10:
-            typer.echo("error: --limit must be between 1 and 10", err=True)
-            raise typer.Exit(1)
-        if timeout_seconds < 1:
-            typer.echo("error: --timeout must be >= 1", err=True)
-            raise typer.Exit(1)
-        load_dotenv(override=True)
-        api_key = os.environ.get(DATASHEETS_COM_API_KEY_ENV) or os.environ.get(
-            DATASHEETS_COM_API_KEY_ENV_LEGACY
-        )
-        if api_key == "replace_me":
-            api_key = None
-
-        def lookup(query: str):
-            return lookup_datasheets_com(
-                query,
-                api_key=api_key,
-                limit=limit,
-                timeout_seconds=timeout_seconds,
-            )
+    lookup = _datasheets_com_candidate_lookup(
+        datasheets_com,
+        limit=limit,
+        timeout_seconds=timeout_seconds,
+    )
 
     try:
         report = build_document_candidate_report(
@@ -1254,6 +1227,51 @@ def build_document_index_candidates(
         f"skipped_matched={report.skipped_matched_document}, "
         f"skipped_family_filter={report.skipped_family_filter})"
     )
+
+
+def _datasheets_com_candidate_lookup(
+    enabled: bool,
+    *,
+    limit: int,
+    timeout_seconds: int,
+):
+    """Return a Datasheets.com lookup callback for candidate enrichment."""
+
+    if not enabled:
+        return None
+
+    import os
+
+    from dotenv import load_dotenv
+
+    from hardwise.documents.datasheets_com import (
+        DATASHEETS_COM_API_KEY_ENV,
+        DATASHEETS_COM_API_KEY_ENV_LEGACY,
+        lookup_datasheets_com,
+    )
+
+    if limit < 1 or limit > 10:
+        typer.echo("error: --limit must be between 1 and 10", err=True)
+        raise typer.Exit(1)
+    if timeout_seconds < 1:
+        typer.echo("error: --timeout must be >= 1", err=True)
+        raise typer.Exit(1)
+    load_dotenv(override=True)
+    api_key = os.environ.get(DATASHEETS_COM_API_KEY_ENV) or os.environ.get(
+        DATASHEETS_COM_API_KEY_ENV_LEGACY
+    )
+    if api_key == "replace_me":
+        api_key = None
+
+    def lookup(query: str):
+        return lookup_datasheets_com(
+            query,
+            api_key=api_key,
+            limit=limit,
+            timeout_seconds=timeout_seconds,
+        )
+
+    return lookup
 
 
 @app.command(name="document-candidate-smoke")
@@ -1329,38 +1347,11 @@ def document_candidate_smoke(
         write_document_candidate_smoke_summary,
     )
 
-    lookup = None
-    if datasheets_com:
-        import os
-
-        from dotenv import load_dotenv
-
-        from hardwise.documents.datasheets_com import (
-            DATASHEETS_COM_API_KEY_ENV,
-            DATASHEETS_COM_API_KEY_ENV_LEGACY,
-            lookup_datasheets_com,
-        )
-
-        if limit < 1 or limit > 10:
-            typer.echo("error: --limit must be between 1 and 10", err=True)
-            raise typer.Exit(1)
-        if timeout_seconds < 1:
-            typer.echo("error: --timeout must be >= 1", err=True)
-            raise typer.Exit(1)
-        load_dotenv(override=True)
-        api_key = os.environ.get(DATASHEETS_COM_API_KEY_ENV) or os.environ.get(
-            DATASHEETS_COM_API_KEY_ENV_LEGACY
-        )
-        if api_key == "replace_me":
-            api_key = None
-
-        def lookup(query: str):
-            return lookup_datasheets_com(
-                query,
-                api_key=api_key,
-                limit=limit,
-                timeout_seconds=timeout_seconds,
-            )
+    lookup = _datasheets_com_candidate_lookup(
+        datasheets_com,
+        limit=limit,
+        timeout_seconds=timeout_seconds,
+    )
 
     try:
         summary = run_document_candidate_smoke(
