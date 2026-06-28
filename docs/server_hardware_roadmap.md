@@ -16,11 +16,14 @@ Current AI hardware tools cluster around four product shapes:
 | Quilter | Physics-driven PCB placement/routing automation that works with existing Altium, Cadence, Siemens, and KiCad workflows. Source: [Quilter product page](https://www.quilter.ai/). | Do not promise schematic-to-fabrication automation or layout ownership. | The market values transparent constraint coverage and explicit "done vs needs review" status. |
 | JITX | Software-defined electronics: requirements, constraints, stackups, and rules as code, with HFSS in the loop for high-speed optimization. Source: [JITX product page](https://www.jitx.com/). | Do not turn Hardwise into a code-defined hardware compiler or SI optimization loop. | Server/high-speed teams care about requirements, stackup, SI targets, and evidence loops; these can inform review checks without making Hardwise a simulator. |
 
-Across public design-review material, the repeated review axes are PI, SI, EMI,
-DFM/DFA, thermal, BOM/document readiness, and manufacturing handoff. Those are
-real concerns, but Hardwise should only accept the subset that can be supported
-by pre-layout schematic exports, BOM identity, Capture pin evidence, and public
-datasheet/profile tokens.
+Across public design-review material, the repeated review axes are pin-by-pin
+datasheet checks, PI, SI, EMI, DFM/DFA, thermal, BOM/document readiness, and
+manufacturing handoff. Cadence/Capture review workflows also treat the schematic
+PDF, ERC/DRC output, PST netlist, BOM, pin table, checklist, and review notes as
+an evidence package before Layout handoff. Those are real concerns, but
+Hardwise should only accept the subset that can be supported by pre-layout
+schematic exports, BOM identity, Capture pin evidence, review-artifact metadata,
+and public datasheet/profile tokens.
 
 ## Positioning
 
@@ -37,6 +40,9 @@ boxed inside a verifiable evidence path:
 - BOM identity is joined to schematic topology by refdes.
 - Pin-table facts can upgrade checklist items into deterministic L1 review
   tasks when they are exported from Capture.
+- Review-artifact metadata, such as schematic PDF, ERC/DRC report, and checklist
+  attachment names, can be tracked as package evidence without turning Hardwise
+  into a signoff or PLM system.
 - Datasheet/profile facts carry public source tokens.
 - The UI separates deterministic findings, evidence-backed answers, and manual
   gaps instead of flattening everything into one model-written verdict.
@@ -78,13 +84,16 @@ Goal: make Cadence/Allegro export ingestion boring and trustworthy.
 - Keep PST + BOM as the default product path.
 - Add Capture pin-table import as a first-class evidence input, not a side
   artifact.
+- Add a lightweight review-package manifest for schematic PDF, ERC/DRC reports,
+  checklist exports, and review notes. Store names, hashes, source paths, and
+  missing-artifact status; do not parse them into electrical conclusions yet.
 - Preserve KiCad as public fixture/regression only.
 - Add fixture diversity around server-style BOM groups: regulators, controllers,
   connectors, clocks, high-speed interfaces, power stages, and management ICs.
 
 Done when: a fresh exported project produces a component group index, pin-table
-coverage report, and explicit missing-evidence rows without requiring code
-changes.
+coverage report, review-package evidence manifest, and explicit missing-evidence
+rows without requiring code changes.
 
 ### 2. Server Review Rule Families
 
@@ -165,10 +174,13 @@ machine, keep API keys local, and reproduce the report without opening Cadence.
 The next highest-leverage slice is Capture pin-table and server-review coverage:
 
 1. Normalize Capture pin-table import as a named evidence source.
-2. Map pin-table facts into L1 review tasks for NC/reserved/mode pins.
-3. Add one server-style fixture family where pin evidence changes the review
+2. Add a review-package manifest for schematic PDF, ERC/DRC, checklist, and
+   notes artifacts so the workbench can say which required evidence is present
+   or missing.
+3. Map pin-table facts into L1 review tasks for NC/reserved/mode pins.
+4. Add one server-style fixture family where pin evidence changes the review
    queue.
-4. Update workbench/export text so the reviewer can see exactly which row came
+5. Update workbench/export text so the reviewer can see exactly which row came
    from netlist, BOM, pin table, profile, or datasheet evidence.
 
 This keeps Hardwise pointed at the gap competitors leave open: auditable
