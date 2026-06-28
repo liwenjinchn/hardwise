@@ -18,6 +18,7 @@ from hardwise.documents.types import DocumentIndexEntry, DocumentMatch
 from hardwise.guards.evidence_class import EvidenceClassification, classify_evidence_tokens
 from hardwise.ir.types import Component
 from hardwise.report.ui_terms import reason_label, status_label, validation_summary_label
+from hardwise.review_package import ReviewPackageArtifact, ReviewPackageReport
 from hardwise.validation.component_groups import ProjectComponentGroup
 from hardwise.validation.project_index import ProjectValidationRow
 from hardwise.validation.risk_hints import RiskHint, RiskHintReport
@@ -61,6 +62,7 @@ class WorkbenchCapabilities(BaseModel):
     document_index_enabled: bool
     risk_hints_enabled: bool
     pin_table_enabled: bool = False
+    review_package_enabled: bool = False
 
 
 class PinTableSummary(BaseModel):
@@ -72,6 +74,32 @@ class PinTableSummary(BaseModel):
     rejected_findings: int = 0
     affected_refdes: int = 0
     checks: dict[str, int] = Field(default_factory=dict)
+
+
+class ReviewPackageArtifactView(BaseModel):
+    """One exported review-package artifact shown as evidence coverage."""
+
+    kind: str
+    status: str
+    required: bool
+    name: str
+    path: str
+    sha256: str | None = None
+    expected_sha256: str | None = None
+    note: str | None = None
+
+
+class ReviewPackageSummary(BaseModel):
+    """Review-package manifest status; not an electrical conclusion."""
+
+    status: Literal["loaded", "not_configured"]
+    source: str | None = None
+    total: int = 0
+    present: int = 0
+    missing_required: int = 0
+    missing_optional: int = 0
+    hash_mismatch: int = 0
+    artifacts: list[ReviewPackageArtifactView] = Field(default_factory=list)
 
 
 class EvidenceView(BaseModel):
@@ -359,6 +387,7 @@ class WorkbenchState(BaseModel):
     summary: WorkbenchSummary
     capabilities: WorkbenchCapabilities
     pin_table: PinTableSummary
+    review_package: ReviewPackageSummary
     selected_refdes: str | None
     queue: list[ReviewQueueItem]
     review_tasks: list[ReviewTask]
@@ -506,8 +535,10 @@ def build_workbench_state(
             document_index_enabled=context.document_report is not None,
             risk_hints_enabled=context.risk_hints.source_path is not None,
             pin_table_enabled=context.pin_table_path is not None,
+            review_package_enabled=context.review_package.source_path is not None,
         ),
         pin_table=_pin_table_summary(context),
+        review_package=_review_package_summary(context.review_package),
         selected_refdes=_default_refdes(queue) or _default_task_refdes(review_tasks),
         queue=queue,
         review_tasks=review_tasks,
@@ -1228,6 +1259,39 @@ def _pin_table_summary(context: WorkbenchContext) -> PinTableSummary:
         rejected_findings=context.rejected_pin_table_findings,
         affected_refdes=len({finding.refdes for finding in context.pin_table_findings if finding.refdes}),
         checks=dict(sorted(checks.items())),
+    )
+
+
+def _review_package_summary(report: ReviewPackageReport) -> ReviewPackageSummary:
+    """Summarize exported review package artifacts without creating findings."""
+
+    if report.source_path is None:
+        return ReviewPackageSummary(status="not_configured")
+    counts = report.counts
+    return ReviewPackageSummary(
+        status="loaded",
+        source=report.source_path,
+        total=counts["total"],
+        present=counts["present"],
+        missing_required=counts["missing_required"],
+        missing_optional=counts["missing_optional"],
+        hash_mismatch=counts["hash_mismatch"],
+        artifacts=[_review_package_artifact_view(item) for item in report.artifacts],
+    )
+
+
+def _review_package_artifact_view(
+    artifact: ReviewPackageArtifact,
+) -> ReviewPackageArtifactView:
+    return ReviewPackageArtifactView(
+        kind=artifact.kind,
+        status=artifact.status,
+        required=artifact.required,
+        name=artifact.name,
+        path=artifact.path,
+        sha256=artifact.sha256,
+        expected_sha256=artifact.expected_sha256,
+        note=artifact.note,
     )
 
 

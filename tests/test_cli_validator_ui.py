@@ -572,6 +572,50 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     assert "⟨?U999⟩" in html
 
 
+def test_design_validator_ui_accepts_review_package_manifest(tmp_path: Path) -> None:
+    schematic = tmp_path / "schematic.pdf"
+    schematic.write_text("schematic pdf", encoding="utf-8")
+    manifest = tmp_path / "review_package.yaml"
+    manifest.write_text(
+        "\n".join(
+            [
+                "artifacts:",
+                "  - kind: schematic_pdf",
+                "    path: schematic.pdf",
+                "  - kind: erc_drc_report",
+                "    path: missing-erc.txt",
+                "    required: true",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    html_output = tmp_path / "controller-design-validator-ai.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--review-package",
+            str(manifest),
+            "--ai-snapshot",
+            "--output",
+            str(html_output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "review-package:" in result.output
+    assert "present=1" in result.output
+    assert "missing_required=1" in result.output
+    html = html_output.read_text(encoding="utf-8")
+    assert '"review_package"' in html
+    assert '"kind": "schematic_pdf"' in html
+    assert "Review Package Evidence" in html
+    assert "does not parse these files into electrical findings" not in html
+
+
 def test_serve_workbench_fake_ai_dry_run_does_not_require_api_key() -> None:
     result = CliRunner().invoke(
         app,
@@ -623,6 +667,40 @@ def test_serve_workbench_fake_ai_dry_run_accepts_document_index(tmp_path: Path) 
     assert "serve-workbench:" in result.output
     assert "document-index=on document_index_matched=1" in result.output
     assert "no_result=14" in result.output
+
+
+def test_serve_workbench_dry_run_accepts_review_package_manifest(tmp_path: Path) -> None:
+    schematic = tmp_path / "schematic.pdf"
+    schematic.write_text("schematic pdf", encoding="utf-8")
+    docs = tmp_path / "docs.csv"
+    docs.write_text(
+        "MPN,Manufacturer,Title,URL,Description\n"
+        "XL1509-12E1,XLSEMI,XL1509 public datasheet,"
+        "https://example.test/xl1509.pdf,fixture\n",
+        encoding="utf-8",
+    )
+    manifest = tmp_path / "review_package.yaml"
+    manifest.write_text(
+        "artifacts:\n  - kind: schematic_pdf\n    path: schematic.pdf\n",
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "serve-workbench",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--review-package",
+            str(manifest),
+            "--fake-ai",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "review-package=loaded present=1" in result.output
+    assert "missing_required=0" in result.output
 
     disabled = CliRunner().invoke(
         app,

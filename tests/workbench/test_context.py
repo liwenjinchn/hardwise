@@ -14,6 +14,7 @@ from hardwise.workbench.context import (
     build_workbench_context,
     load_allegro_design,
 )
+from hardwise.workbench.view_model import build_workbench_state
 
 
 class DummyChatService:
@@ -41,6 +42,27 @@ def _write_pin_table(path: Path) -> None:
             ]
         )
         + "\n",
+        encoding="utf-8",
+    )
+
+
+def _write_review_package(path: Path) -> None:
+    (path.parent / "schematic.pdf").write_text("schematic pdf", encoding="utf-8")
+    path.write_text(
+        "\n".join(
+            [
+                "artifacts:",
+                "  - kind: schematic_pdf",
+                "    path: schematic.pdf",
+                "    required: true",
+                "  - kind: erc_drc_report",
+                "    path: missing-erc.txt",
+                "    required: true",
+                "  - kind: review_notes",
+                "    path: notes.md",
+                "    required: false",
+            ]
+        ),
         encoding="utf-8",
     )
 
@@ -96,6 +118,39 @@ def test_build_workbench_context_populates_relational_store_from_registry() -> N
         assert context.risk_hints.source_path is None
         assert context.risk_hints.accepted_count == 0
         assert context.risk_hints.rejected_count == 0
+        assert context.review_package.source_path is None
+    finally:
+        context.session.close()
+
+
+def test_build_workbench_context_loads_review_package_manifest(tmp_path: Path) -> None:
+    review_package = tmp_path / "review_package.yaml"
+    _write_review_package(review_package)
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        review_package_manifest=review_package,
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+
+    try:
+        assert context.review_package.source_path == str(review_package)
+        assert context.review_package.counts == {
+            "total": 3,
+            "present": 1,
+            "missing_required": 1,
+            "missing_optional": 1,
+            "hash_mismatch": 0,
+        }
+        payload = build_workbench_state(
+            context,
+            datasheet_search_enabled=False,
+        ).model_dump(mode="json")
+        assert payload["capabilities"]["review_package_enabled"] is True
+        assert payload["review_package"]["status"] == "loaded"
+        assert payload["review_package"]["missing_required"] == 1
+        assert payload["review_package"]["artifacts"][0]["kind"] == "schematic_pdf"
     finally:
         context.session.close()
 
@@ -986,6 +1041,48 @@ def test_workbench_import_accepts_uploaded_pin_table(tmp_path: Path) -> None:
             ("U8", "R008"),
             ("U8", "R010"),
             ("U3", "R009"),
+        }
+    finally:
+        app.state.workbench_context["value"].session.close()
+
+
+def test_workbench_import_accepts_uploaded_review_package(tmp_path: Path) -> None:
+    review_package_path = tmp_path / "review_package.yaml"
+    review_package_path.write_text(
+        "artifacts:\n  - kind: checklist\n    path: review_package.yaml\n",
+        encoding="utf-8",
+    )
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/l78_regulator.net"),
+        bom_path=Path("tests/fixtures/allegro/l78_regulator_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+    app = create_workbench_app(context, DummyChatService())  # type: ignore[arg-type]
+    client = TestClient(app)
+
+    try:
+        with (
+            Path("tests/fixtures/allegro/mixed_controller_power_stage.net").open("rb") as netlist,
+            Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv").open("rb") as bom,
+            review_package_path.open("rb") as review_package,
+        ):
+            response = client.post(
+                "/api/workbench/import",
+                files={
+                    "netlist": ("mixed_controller_power_stage.net", netlist, "text/plain"),
+                    "bom": ("mixed_controller_power_stage_bom.csv", bom, "text/csv"),
+                    "review_package": ("review_package.yaml", review_package, "text/yaml"),
+                },
+            )
+
+        assert response.status_code == 200, response.text
+        assert response.json()["review_package"]["present"] == 1
+        state = client.get("/api/workbench/state").json()
+        assert state["capabilities"]["review_package_enabled"] is True
+        assert state["review_package"]["missing_required"] == 0
+        assert "checklist" in {
+            artifact["kind"] for artifact in state["review_package"]["artifacts"]
         }
     finally:
         app.state.workbench_context["value"].session.close()

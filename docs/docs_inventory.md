@@ -39,6 +39,7 @@ entry pages.
 | Manual / no-local-profile rows | 3 |
 | Regression tests | 715 passed / 7 deselected / 1 warning |
 | Document candidate smoke | 8 candidate rows / 0 workbench document-candidate tasks / PASS-WARN-ERROR unchanged at 5 / 13 / 4 |
+| Review-package manifest | Tracks exported schematic PDF / ERC-DRC / checklist / notes presence; no electrical verdicts or signoff replacement |
 
 ## Status Key
 

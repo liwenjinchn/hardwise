@@ -286,6 +286,9 @@ It is designed around a practical anti-hallucination stance: first make the agen
 - Not a PCB layout, SI/PI, EMC, or thermal simulator
 - Not a PLM or production BOM management system
 - Not a real-time Cadence/Allegro plugin; it consumes exported netlist/PST+BOM artifacts offline or through a local server
+- Not a formal signoff system; it can track exported review evidence packages
+  such as schematic PDFs, ERC/DRC reports, checklists, and notes, but does not
+  parse those files into electrical verdicts
 - Not a board repair tool; Wrench Board is the reference project for that domain
 - Not a production product; this is a portfolio MVP
 

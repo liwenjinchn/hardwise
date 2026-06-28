@@ -72,6 +72,7 @@ def create_workbench_app(
     profiles: Path = Path("data/datasheet_profiles"),
     document_index: Path | None = None,
     pin_table: Path | None = None,
+    review_package_manifest: Path | None = None,
     auto_datasheet_candidates: bool = True,
 ) -> FastAPI:
     """Create the local live workbench app."""
@@ -288,6 +289,7 @@ def create_workbench_app(
         bom: UploadFile | None = File(None),
         pin_table_csv: UploadFile | None = File(None),
         risk_hints_json: UploadFile | None = File(None),
+        review_package: UploadFile | None = File(None),
     ) -> dict[str, object]:
         import_dir = Path(tempfile.mkdtemp(prefix="hardwise-workbench-import-"))
         try:
@@ -305,12 +307,18 @@ def create_workbench_app(
                 if pin_table_csv
                 else None
             )
+            review_package_path = (
+                _save_upload(review_package, import_dir, fallback_name="review_package.yaml")
+                if review_package
+                else None
+            )
             next_context = build_workbench_context(
                 netlist_path=netlist_path,
                 bom_path=bom_path,
                 profiles=profiles,
                 document_index=document_index,
                 risk_hints_json=hints_path,
+                review_package_manifest=review_package_path,
                 pin_table=pin_table_path,
             )
         except Exception as exc:
@@ -339,6 +347,7 @@ def create_workbench_app(
             "project": state.project.model_dump(),
             "summary": state.summary.model_dump(),
             "pin_table": state.pin_table.model_dump(),
+            "review_package": state.review_package.model_dump(),
             "selected_refdes": state.selected_refdes,
             "task_counts": state.task_counts.model_dump(),
         }

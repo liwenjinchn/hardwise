@@ -61,11 +61,19 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
             "--risk-hints-json",
             help="Optional external risk-hints JSON anchored to registry-verified refdes.",
         ),
+        review_package_manifest: Path | None = typer.Option(
+            None,
+            "--review-package",
+            help=(
+                "Optional YAML/JSON manifest for schematic PDF, ERC/DRC, checklist, "
+                "and review-note artifacts. Records evidence presence only."
+            ),
+        ),
         pin_table: Path | None = typer.Option(
             None,
             "--pin-table",
             help=(
-                "Optional Capture pin-table CSV. Runs R008/R009 into workbench review tasks; "
+                "Optional Capture pin-table CSV. Runs R008/R009/R010 into workbench review tasks; "
                 "does not change ValidationReport PASS/WARN/ERROR totals."
             ),
         ),
@@ -103,6 +111,7 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
                 profiles=profiles,
                 document_index=document_index,
                 risk_hints_json=risk_hints_json,
+                review_package_manifest=review_package_manifest,
                 pin_table=pin_table,
             )
             collection = None
@@ -144,6 +153,15 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
                 f"loaded findings={len(context.pin_table_findings)}, "
                 f"rejected_unknown_refdes={context.rejected_pin_table_findings}"
             )
+        review_package_state = "not_configured"
+        if context.review_package.source_path is not None:
+            pkg_counts = context.review_package.counts
+            review_package_state = (
+                f"loaded present={pkg_counts['present']}, "
+                f"missing_required={pkg_counts['missing_required']}, "
+                f"missing_optional={pkg_counts['missing_optional']}, "
+                f"hash_mismatch={pkg_counts['hash_mismatch']}"
+            )
         typer.echo(
             f"serve-workbench: {url} "
             f"({context.index.components_in_design} components, "
@@ -151,6 +169,7 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
             f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'}, "
             f"document-index={document_state}, risk-hints={risk_hints_state}, "
             f"pin-table={pin_table_state}, "
+            f"review-package={review_package_state}, "
             f"datasheet-candidates={'auto' if auto_datasheet_candidates else 'off'})"
         )
         if dry_run:
@@ -164,6 +183,7 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
             profiles=profiles,
             document_index=document_index,
             pin_table=pin_table,
+            review_package_manifest=review_package_manifest,
             auto_datasheet_candidates=auto_datasheet_candidates,
         )
         uvicorn.run(app_obj, host=host, port=port)

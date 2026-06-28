@@ -4685,3 +4685,35 @@ summary.
 Keep candidate discovery and document-index projection as adjacent but distinct
 states. A reviewable search target is useful evidence of workload, not yet a
 document coverage row until it carries a concrete public URL or path.
+
+## 2026-06-28 — Review package evidence is manifest state, not signoff
+
+**Symptom**
+
+Grok Search recalibration showed that server-hardware schematic review workflows
+do not stop at netlist + BOM + pin table. Engineers also archive a schematic
+PDF, ERC/DRC output, checklist export, and review notes as the evidence package
+before Layout handoff. The existing roadmap mentioned this but the software had
+no place to carry those artifacts.
+
+**Root cause**
+
+Hardwise already had strong L1/L2/L3 boundaries for parsed board facts and
+datasheet/profile evidence, but exported review-package files are a different
+kind of evidence. Treating them as electrical inputs would overclaim; ignoring
+them would make the workflow feel unlike a real hardware review packet.
+
+**Fix**
+
+Added a shallow review-package manifest path. It records artifact kind, path,
+file name, required/optional state, sha256, missing status, and hash mismatch.
+Workbench state, offline snapshot export, project prep packet, and CLI summaries
+can surface package completeness, but no package artifact creates
+PASS/WARN/ERROR or a validator finding.
+
+**Takeaway**
+
+Review-package evidence answers "is the review packet complete enough to
+audit?" It does not answer "is the circuit correct?" Keep it beside pin-table
+and document/profile evidence, but never promote it into signoff or electrical
+truth.

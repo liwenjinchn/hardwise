@@ -20,6 +20,7 @@ from hardwise.workbench.profile_promotion import (
 from hardwise.workbench.view_model import (
     EvidenceView,
     ReviewQueueItem,
+    ReviewPackageSummary,
     ReviewTask,
     ReviewTaskCounts,
     RiskHintsView,
@@ -87,6 +88,7 @@ class ProjectReviewPrepPacket(BaseModel):
     profile_promotion_candidates: list[ProfilePromotionCandidate] = Field(default_factory=list)
     open_questions: list[ProjectPrepOpenQuestion] = Field(default_factory=list)
     risk_hints: RiskHintsView
+    review_package: ReviewPackageSummary
     evidence: list[EvidenceView] = Field(default_factory=list)
     guardrails: list[str] = Field(default_factory=list)
 
@@ -114,12 +116,14 @@ def build_project_review_prep_packet(context: WorkbenchContext) -> ProjectReview
         profile_promotion_candidates=promotion_candidates,
         open_questions=open_questions,
         risk_hints=build_risk_hints_view(context.risk_hints),
+        review_package=state.review_package,
         evidence=evidence,
         guardrails=[
             "项目级 Prep Packet 只用于评审准备，不替代硬件工程师最终签核。",
             "所有 refdes 来自解析后的 EDA 注册表；未知位号不能进入 packet。",
             "PASS/WARN/ERROR 来自后端确定性验证；本 packet 不重新解释判定。",
             "外部 risk hints 只作为人工线索，不改变 deterministic 结论。",
+            "review package 只记录导出证据包是否齐备，不解析为电气结论。",
             "模块/接口/时钟复位分组是公开项目事实上的阅读索引，不是电气拓扑保证。",
             "draft summaries 只基于 schematic netlist/BOM/validation task，不代表供电层级或 layout truth。",
             "profile promotion candidates 只生成 `needs_review` 人审路径，不会自动进入 L1。",
@@ -265,6 +269,23 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
     if packet.risk_hints.accepted:
         for hint in packet.risk_hints.accepted:
             lines.append(f"- `{hint.refdes}` {hint.title}：{hint.body}")
+
+    lines.extend(["", "## Review Package Evidence", ""])
+    review_package = packet.review_package
+    lines.append(
+        "- "
+        f"状态：{review_package.status}；"
+        f"present {review_package.present}/{review_package.total}；"
+        f"missing_required {review_package.missing_required}；"
+        f"missing_optional {review_package.missing_optional}；"
+        f"hash_mismatch {review_package.hash_mismatch}。"
+    )
+    if review_package.artifacts:
+        for artifact in review_package.artifacts:
+            required = "required" if artifact.required else "optional"
+            lines.append(
+                f"- `{artifact.kind}` {artifact.status} / {required}：`{artifact.name}`"
+            )
 
     lines.extend(["", "## Guardrails"])
     lines.extend(f"- {item}" for item in packet.guardrails)

@@ -18,6 +18,7 @@ from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Design
 from hardwise.project_inputs import ResolvedBomInput, project_name_for_inputs, resolve_bom_input
+from hardwise.review_package import ReviewPackageReport, load_review_package_manifest
 from hardwise.store.relational import create_store, populate_from_registry
 from hardwise.validation import suggest_profile_candidates
 from hardwise.validation.profile_candidates import ProfileCandidateReport
@@ -43,6 +44,7 @@ class WorkbenchContext:
     candidate_report: ProfileCandidateReport
     document_report: DocumentMatchReport | None
     risk_hints: RiskHintReport
+    review_package: ReviewPackageReport
     pin_table_path: Path | None
     pin_table_findings: list[Finding]
     rejected_pin_table_findings: int
@@ -119,6 +121,7 @@ def build_workbench_context(
     profiles: Path,
     document_index: Path | None = None,
     risk_hints_json: Path | None = None,
+    review_package_manifest: Path | None = None,
     pin_table: Path | None = None,
     generated_at: str | None = None,
 ) -> WorkbenchContext:
@@ -141,6 +144,11 @@ def build_workbench_context(
         )
     except ValueError as exc:
         raise ValueError(f"risk-hints JSON failed validation: {exc}") from exc
+    review_package = (
+        load_review_package_manifest(review_package_manifest)
+        if review_package_manifest is not None
+        else ReviewPackageReport()
+    )
     document_report = (
         match_documents_to_bom(bom, parse_document_index(document_index))
         if document_index is not None
@@ -185,6 +193,7 @@ def build_workbench_context(
         candidate_report=candidate_report,
         document_report=document_report,
         risk_hints=risk_hints,
+        review_package=review_package,
         pin_table_path=pin_table,
         pin_table_findings=pin_table_findings,
         rejected_pin_table_findings=rejected_pin_table_findings,

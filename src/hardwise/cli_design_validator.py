@@ -59,11 +59,19 @@ def register_design_validator_commands(app: typer.Typer) -> None:
             "--risk-hints-json",
             help="Optional external risk-hints JSON anchored to registry-verified refdes.",
         ),
+        review_package_manifest: Path | None = typer.Option(
+            None,
+            "--review-package",
+            help=(
+                "Optional YAML/JSON manifest for schematic PDF, ERC/DRC, checklist, "
+                "and review-note artifacts. Records evidence presence only."
+            ),
+        ),
         pin_table: Path | None = typer.Option(
             None,
             "--pin-table",
             help=(
-                "Optional Capture pin-table CSV. Runs R008/R009 into workbench review tasks; "
+                "Optional Capture pin-table CSV. Runs R008/R009/R010 into workbench review tasks; "
                 "does not change ValidationReport PASS/WARN/ERROR totals."
             ),
         ),
@@ -99,6 +107,7 @@ def register_design_validator_commands(app: typer.Typer) -> None:
                 profiles=profiles,
                 document_index=document_index,
                 risk_hints_json=risk_hints_json,
+                review_package_manifest=review_package_manifest,
                 pin_table=pin_table,
             )
         except ProfileCandidateError as e:
@@ -126,6 +135,9 @@ def register_design_validator_commands(app: typer.Typer) -> None:
                 bom_report=context.bom_report,
                 generated_at=context.index.generated_at,
                 risk_hints=context.risk_hints if context.risk_hints.source_path else None,
+                review_package=(
+                    context.review_package if context.review_package.source_path else None
+                ),
             )
         output.write_text(html, encoding="utf-8")
 
@@ -153,6 +165,15 @@ def register_design_validator_commands(app: typer.Typer) -> None:
                 "risk-hints: loaded "
                 f"(accepted={context.risk_hints.accepted_count}, "
                 f"rejected={context.risk_hints.rejected_count})"
+            )
+        if context.review_package.source_path is not None:
+            pkg_counts = context.review_package.counts
+            typer.echo(
+                f"review-package: {context.review_package.source_path} "
+                f"(present={pkg_counts['present']}, "
+                f"missing_required={pkg_counts['missing_required']}, "
+                f"missing_optional={pkg_counts['missing_optional']}, "
+                f"hash_mismatch={pkg_counts['hash_mismatch']})"
             )
         if context.pin_table_path is not None:
             typer.echo(

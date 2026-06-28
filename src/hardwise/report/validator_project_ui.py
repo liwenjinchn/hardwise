@@ -25,6 +25,7 @@ from hardwise.report.validator_project_group_ui import (
     component_group_table_rows,
 )
 from hardwise.report.validator_ui import _status_class
+from hardwise.review_package import ReviewPackageReport
 from hardwise.validation.project_index import (
     ProjectValidationGapGroup,
     ProjectValidationIndex,
@@ -46,6 +47,7 @@ def render_project_workbench(
     generated_at: str = "",
     copilot_html: str = "",
     risk_hints: RiskHintReport | None = None,
+    review_package: ReviewPackageReport | None = None,
 ) -> str:
     """Return a static project workbench for validated and no-profile rows."""
 
@@ -118,7 +120,7 @@ def render_project_workbench(
           </aside>
         </div>
         <section class="detail" aria-label="验证报告">
-          {_detail_area(design, ordered, active_refdes, generated_at, index, risk_hints)}
+          {_detail_area(design, ordered, active_refdes, generated_at, index, risk_hints, review_package)}
         </section>
       </section>
     </section>
@@ -274,14 +276,46 @@ def _detail_area(
     generated_at: str,
     index: ProjectValidationIndex,
     risk_hints: RiskHintReport | None,
+    review_package: ReviewPackageReport | None,
 ) -> str:
     if results:
         detail = _detail_panels(design, results, active_refdes, generated_at)
     else:
         detail = _coverage_detail(index, generated_at)
-    if risk_hints is None:
-        return detail
-    return detail + render_project_risk_hints(risk_hints, design)
+    if review_package is not None and review_package.source_path is not None:
+        detail += _review_package_detail(review_package)
+    if risk_hints is not None:
+        detail += render_project_risk_hints(risk_hints, design)
+    return detail
+
+
+def _review_package_detail(report: ReviewPackageReport) -> str:
+    counts = report.counts
+    rows = []
+    for artifact in report.artifacts:
+        rows.append(
+            "<tr>"
+            f"<td>{escape(artifact.kind)}</td>"
+            f'<td><span class="status {_coverage_status_class(artifact.status)}">{escape(artifact.status)}</span></td>'
+            f"<td>{'required' if artifact.required else 'optional'}</td>"
+            f"<td>{escape(artifact.name)}</td>"
+            f"<td>{escape(artifact.note or '')}</td>"
+            "</tr>"
+        )
+    return (
+        '<section class="section table-section">'
+        '<div class="section-head"><h3>Review Package Evidence</h3></div>'
+        '<p class="scope">导出评审证据包只记录文件齐备性、路径和 hash；不会解析成电气结论，也不替代正式签核。</p>'
+        '<div class="coverage-grid">'
+        f"{_coverage_card('present', counts['present'])}"
+        f"{_coverage_card('missing_required', counts['missing_required'])}"
+        f"{_coverage_card('missing_optional', counts['missing_optional'])}"
+        f"{_coverage_card('hash_mismatch', counts['hash_mismatch'])}"
+        "</div>"
+        "<table><thead><tr><th>类型</th><th>状态</th><th>要求</th><th>文件</th><th>备注</th></tr></thead><tbody>"
+        f"{''.join(rows)}"
+        "</tbody></table></section>"
+    )
 
 
 def _coverage_detail(index: ProjectValidationIndex, generated_at: str) -> str:
