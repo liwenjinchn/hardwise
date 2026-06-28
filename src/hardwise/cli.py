@@ -1036,6 +1036,48 @@ def report_pin_table(
     )
 
 
+@app.command(name="report-review-package")
+def report_review_package(
+    manifest_path: Path = typer.Argument(
+        ...,
+        help="YAML/JSON review-package manifest for schematic PDF, ERC/DRC, checklist, and notes.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output markdown path (default: reports/<manifest>-review-package.md).",
+    ),
+) -> None:
+    """Summarize exported review-package evidence without parsing it into findings."""
+    from hardwise.review_package import (
+        ReviewPackageParseError,
+        load_review_package_manifest,
+        render_review_package_markdown,
+    )
+
+    try:
+        report = load_review_package_manifest(manifest_path)
+    except ReviewPackageParseError as e:
+        typer.echo(f"error: review-package manifest failed: {e}", err=True)
+        raise typer.Exit(1) from e
+
+    if output is None:
+        reports_dir = Path("reports")
+        reports_dir.mkdir(exist_ok=True)
+        output = reports_dir / f"{manifest_path.stem}-review-package.md"
+    else:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+    output.write_text(render_review_package_markdown(report), encoding="utf-8")
+    counts = report.counts
+    typer.echo(
+        f"review-package: {output} "
+        f"(present={counts['present']}, missing_required={counts['missing_required']}, "
+        f"missing_optional={counts['missing_optional']}, hash_mismatch={counts['hash_mismatch']})"
+    )
+
+
 @app.command(name="store-datasheet-profile")
 def store_datasheet_profile(
     profile_path: Path = typer.Argument(..., help="Path to a DatasheetProfile JSON file."),
