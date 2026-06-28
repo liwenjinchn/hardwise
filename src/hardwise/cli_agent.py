@@ -12,7 +12,13 @@ def register_agent_commands(app: typer.Typer) -> None:
 
     @app.command()
     def ask(
-        project_dir: Path = typer.Argument(..., help="Path to a KiCad project directory."),
+        project_dir: Path = typer.Argument(
+            ...,
+            help=(
+                "Path to a KiCad appendix/regression project directory. "
+                "The product workbench path is exported Allegro/PST + BOM."
+            ),
+        ),
         question: str = typer.Argument(..., help="Natural-language question about the project."),
         tier: str = typer.Option(
             "normal", "--tier", "-t", help="Model tier: fast | normal | deep."
@@ -44,7 +50,7 @@ def register_agent_commands(app: typer.Typer) -> None:
             help="Print one line per tool call after the answer.",
         ),
     ) -> None:
-        """Ask the agent a question about a KiCad project; runs the tool-use loop."""
+        """Ask about the KiCad appendix path; runs the guarded tool-use loop."""
         import os
 
         from anthropic import Anthropic

@@ -461,7 +461,13 @@ def suggest_validation_targets(
 
 @app.command()
 def review(
-    project_dir: Path = typer.Argument(..., help="Path to a KiCad project directory."),
+    project_dir: Path = typer.Argument(
+        ...,
+        help=(
+            "Path to a KiCad appendix/regression project directory. "
+            "The product workbench path is exported Allegro/PST + BOM."
+        ),
+    ),
     rules: str = typer.Option(
         "R001",
         "--rules",
@@ -536,7 +542,7 @@ def review(
         help="Append a machine-readable review run record to trace.jsonl.",
     ),
 ) -> None:
-    """Run a schematic review on a KiCad project and write a report."""
+    """Run the KiCad appendix schematic-review path and write a report."""
     from datetime import datetime, timezone
 
     from hardwise.adapters.kicad import parse_project
