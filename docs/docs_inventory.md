@@ -16,7 +16,8 @@ Use this order for the current public narrative:
 6. `docs/demo.md` or `docs/demo.html`
 7. `docs/evidence_chain_audit.html`
 8. `docs/closeout_pressure_summary.html`
-9. `docs/faq.md` or `docs/faq.html`
+9. `docs/server_hardware_roadmap.md`
+10. `docs/faq.md` or `docs/faq.html`
 
 The pressure summary is fixture/aggregate evidence for stress testing the
 intake and validator layers. It is not the primary demo path.
@@ -79,6 +80,7 @@ entry pages.
 | `docs/faq.html` | `public_entry` | Rendered GitHub Pages view of the technical FAQ. |
 | `docs/evidence_chain_audit.html` | `current_reference` | Rendered GitHub Pages view of the evidence boundary. |
 | `docs/evidence_chain_audit.md` | `current_reference` | Boundary between L78 live retrieval and reviewed profile tokens. |
+| `docs/server_hardware_roadmap.md` | `current_reference` | Cadence/Allegro-first server-hardware review positioning, industry comparison, trust tiers, and roadmap. |
 | `docs/closeout_pressure_summary.html` | `current_reference` | Rendered GitHub Pages view of the public/synthetic fixture pressure-test summary. |
 | `docs/closeout_pressure_summary.md` | `current_reference` | Small committed aggregate summary for Switch/mainboard fixture pressure tests. |
 | `docs/architecture.md` | `current_reference` | Module-level architecture and trust-mechanism design. |
