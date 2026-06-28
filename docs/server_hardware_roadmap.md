@@ -185,3 +185,29 @@ The next highest-leverage slice is Capture pin-table and server-review coverage:
 
 This keeps Hardwise pointed at the gap competitors leave open: auditable
 pre-layout review trust, not layout automation.
+
+## Next Implementation Order
+
+The next development round should start with pin-table evidence summary, because
+the parser, registry guard, deterministic R008/R009/R010 findings, CLI report,
+and workbench task path already exist. The missing product value is project-level
+visibility: whether pin-table evidence was loaded, which findings were accepted
+against the Allegro/PST registry, which refdes were rejected as unknown, and
+which review rows were affected.
+
+Recommended sequence:
+
+| Priority | Slice | Done when |
+|---|---|---|
+| P0 | Pin-table evidence project summary/export | Import summaries, prep packets, static snapshots, and workbench JSON show loaded/missing state, accepted findings, rejected unknown refdes, and affected refdes without allowing rejected rows into the L1 queue. |
+| P1 | Review-package manifest polish | Manifest status remains shallow and provenance-only; missing required artifacts create manual-gap/package-status warnings, not electrical findings. |
+| P2 | Evidence package completeness dashboard | Workbench shows netlist/PST, BOM, pin table, document index/profile, and review-package coverage together with trust-tier wording. |
+
+Keep these as explicit non-goals for the next round:
+
+- Do not add more KiCad parser surface unless a public regression fixture needs
+  it.
+- Do not start layout automation, SI/PI simulation, thermal, DFM, PLM, or formal
+  signoff flows.
+- Do not parse schematic PDFs or ERC/DRC reports into electrical conclusions in
+  manifest v1.
