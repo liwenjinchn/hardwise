@@ -6,6 +6,7 @@ import type {
   EvidenceView,
   PinView,
   PinTableSummary,
+  ReviewPackageSummary,
   ReviewQueueItem,
   ReviewTask,
   ReviewTaskCounts,
@@ -164,6 +165,7 @@ export function makeCapabilities(
     document_index_enabled: false,
     risk_hints_enabled: false,
     pin_table_enabled: false,
+    review_package_enabled: false,
     ...overrides
   };
 }
@@ -188,7 +190,27 @@ export function makePinTable(overrides: Partial<PinTableSummary> = {}): PinTable
     accepted_findings: 0,
     rejected_findings: 0,
     affected_refdes: 0,
+    accepted_refdes: [],
+    affected_refdes_list: [],
+    rejected_unknown_refdes: [],
+    rejected: [],
     checks: {},
+    ...overrides
+  };
+}
+
+export function makeReviewPackage(
+  overrides: Partial<ReviewPackageSummary> = {}
+): ReviewPackageSummary {
+  return {
+    status: "not_configured",
+    source: null,
+    total: 0,
+    present: 0,
+    missing_required: 0,
+    missing_optional: 0,
+    hash_mismatch: 0,
+    artifacts: [],
     ...overrides
   };
 }
@@ -199,6 +221,7 @@ export function makeState(overrides: Partial<WorkbenchState> = {}): WorkbenchSta
     summary: makeSummary(),
     capabilities: makeCapabilities(),
     pin_table: makePinTable(),
+    review_package: makeReviewPackage(),
     selected_refdes: "U8",
     queue: [makeQueueItem()],
     review_tasks: [makeTask()],

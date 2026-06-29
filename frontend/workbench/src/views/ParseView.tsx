@@ -10,14 +10,22 @@ export function ParseView({
 }) {
   const summary = parseResult?.summary ?? state.summary;
   const pinTable = parseResult?.pin_table ?? state.pin_table;
+  const affected = pinTable.affected_refdes_list.join(", ") || "-";
+  const rejected = pinTable.rejected_unknown_refdes.join(", ") || "-";
   const steps = [
     ["解析网表", `${summary.components} 个器件进入注册表`],
     ["匹配 BOM", `${summary.bom_matched} 个 refdes 已锚定`],
     [
       "读取 Capture 引脚表",
       pinTable.status === "loaded"
-        ? `${pinTable.accepted_findings} 条引脚表任务，${pinTable.rejected_findings} 条被拒绝`
+        ? `${pinTable.accepted_findings} 条进入 L1，${pinTable.rejected_findings} 条未知位号被拒绝`
         : "未加载 Capture 引脚表 CSV"
+    ],
+    [
+      "汇总引脚表证据",
+      pinTable.status === "loaded"
+        ? `影响 ${pinTable.affected_refdes} 个 refdes（${affected}），拒绝未知位号 ${rejected}`
+        : "无 pin-table evidence summary"
     ],
     ["运行确定性验证", `PASS/WARN/ERROR=${summary.pass_count}/${summary.warn_count}/${summary.error_count}`],
     ["生成 finding", `${parseResult?.task_counts.total ?? state.task_counts.total} 个任务已排队`]

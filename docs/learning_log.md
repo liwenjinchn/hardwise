@@ -4717,3 +4717,32 @@ Review-package evidence answers "is the review packet complete enough to
 audit?" It does not answer "is the circuit correct?" Keep it beside pin-table
 and document/profile evidence, but never promote it into signoff or electrical
 truth.
+
+## 2026-06-28 — Pin-table summary is coverage state, not a second verdict
+
+**Symptom**
+
+Capture pin-table findings already entered the workbench as registry-backed L1
+tasks, but project-level outputs only showed a count. That made rejected
+unknown-refdes rows invisible and made it harder to audit whether pin-table
+evidence was loaded, accepted, or blocked by the registry guard.
+
+**Root cause**
+
+`WorkbenchContext` kept accepted findings plus only a rejected count. The queue
+guard was correct, but downstream summaries could not explain which refdes were
+accepted, which unknown refdes were rejected, or which components were affected.
+
+**Fix**
+
+Keep rejected pin-table findings as shallow summary rows with rule, refdes, pin,
+net, message, and `reason=unknown_refdes`. Workbench JSON, import/export,
+static snapshots, CLI output, and project prep packets now surface accepted
+findings, rejected unknown refdes, and affected refdes while still excluding
+rejected rows from the L1 queue.
+
+**Takeaway**
+
+Pin-table evidence is a first-class coverage signal, but it is not a parallel
+electrical verdict. Accepted registry-backed rows can become L1 review tasks;
+unknown-refdes rows remain audit-only evidence that the guard did its job.

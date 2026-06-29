@@ -19,6 +19,7 @@ from hardwise.workbench.profile_promotion import (
 )
 from hardwise.workbench.view_model import (
     EvidenceView,
+    PinTableSummary,
     ReviewQueueItem,
     ReviewPackageSummary,
     ReviewTask,
@@ -88,6 +89,7 @@ class ProjectReviewPrepPacket(BaseModel):
     profile_promotion_candidates: list[ProfilePromotionCandidate] = Field(default_factory=list)
     open_questions: list[ProjectPrepOpenQuestion] = Field(default_factory=list)
     risk_hints: RiskHintsView
+    pin_table: PinTableSummary
     review_package: ReviewPackageSummary
     evidence: list[EvidenceView] = Field(default_factory=list)
     guardrails: list[str] = Field(default_factory=list)
@@ -116,6 +118,7 @@ def build_project_review_prep_packet(context: WorkbenchContext) -> ProjectReview
         profile_promotion_candidates=promotion_candidates,
         open_questions=open_questions,
         risk_hints=build_risk_hints_view(context.risk_hints),
+        pin_table=state.pin_table,
         review_package=state.review_package,
         evidence=evidence,
         guardrails=[
@@ -123,6 +126,7 @@ def build_project_review_prep_packet(context: WorkbenchContext) -> ProjectReview
             "所有 refdes 来自解析后的 EDA 注册表；未知位号不能进入 packet。",
             "PASS/WARN/ERROR 来自后端确定性验证；本 packet 不重新解释判定。",
             "外部 risk hints 只作为人工线索，不改变 deterministic 结论。",
+            "pin-table evidence 只汇总 Capture 导出事实；未知位号行被拒绝，不能进入 L1 队列。",
             "review package 只记录导出证据包是否齐备，不解析为电气结论。",
             "模块/接口/时钟复位分组是公开项目事实上的阅读索引，不是电气拓扑保证。",
             "draft summaries 只基于 schematic netlist/BOM/validation task，不代表供电层级或 layout truth。",
@@ -269,6 +273,29 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
     if packet.risk_hints.accepted:
         for hint in packet.risk_hints.accepted:
             lines.append(f"- `{hint.refdes}` {hint.title}：{hint.body}")
+
+    lines.extend(["", "## Pin Table Evidence", ""])
+    pin_table = packet.pin_table
+    lines.append(
+        "- "
+        f"状态：{pin_table.status}；"
+        f"accepted {pin_table.accepted_findings}；"
+        f"rejected_unknown_refdes {pin_table.rejected_findings}；"
+        f"affected_refdes {pin_table.affected_refdes}。"
+    )
+    if pin_table.source:
+        lines.append(f"- Source：`{pin_table.source}`")
+    if pin_table.checks:
+        checks = ", ".join(f"{rule}={count}" for rule, count in pin_table.checks.items())
+        lines.append(f"- Checks：{checks}")
+    if pin_table.affected_refdes_list:
+        lines.append("- Accepted refdes：" + ", ".join(f"`{item}`" for item in pin_table.affected_refdes_list))
+    if pin_table.rejected_unknown_refdes:
+        lines.append(
+            "- Rejected unknown refdes："
+            + ", ".join(f"`{item}`" for item in pin_table.rejected_unknown_refdes)
+            + "（未进入 L1 review queue）"
+        )
 
     lines.extend(["", "## Review Package Evidence", ""])
     review_package = packet.review_package

@@ -11,6 +11,9 @@ export function ExportView({ state }: { state: WorkbenchState }) {
   const [packetBusy, setPacketBusy] = useState(false);
   const [error, setError] = useState("");
   const [packetError, setPacketError] = useState("");
+  const pinTable = state.pin_table;
+  const pinTableAffected = pinTable.affected_refdes_list.join(", ") || "-";
+  const pinTableRejected = pinTable.rejected_unknown_refdes.join(", ") || "-";
 
   const loadPreview = async () => {
     setBusy(true);
@@ -91,6 +94,23 @@ export function ExportView({ state }: { state: WorkbenchState }) {
               <Download size={15} />
               下载 MD
             </button>
+          </div>
+        </section>
+        <section className="project-prep-card" aria-label="Pin-table evidence summary">
+          <div>
+            <span className="eyebrow">Pin Table Evidence</span>
+            <strong>Capture 引脚表证据摘要</strong>
+            <p>
+              {pinTable.status === "loaded"
+                ? `accepted ${pinTable.accepted_findings}，rejected unknown ${pinTable.rejected_findings}，affected ${pinTable.affected_refdes}。`
+                : "未加载 Capture 引脚表 CSV。"}
+              {" "}未知位号只显示在 summary，不进入 L1 review queue。
+            </p>
+            {pinTable.status === "loaded" && (
+              <p className="scope-note">
+                Accepted refdes：{pinTableAffected}；Rejected unknown refdes：{pinTableRejected}
+              </p>
+            )}
           </div>
         </section>
         {packetError && <p className="form-error">{packetError}</p>}

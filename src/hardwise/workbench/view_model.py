@@ -73,7 +73,22 @@ class PinTableSummary(BaseModel):
     accepted_findings: int = 0
     rejected_findings: int = 0
     affected_refdes: int = 0
+    accepted_refdes: list[str] = Field(default_factory=list)
+    affected_refdes_list: list[str] = Field(default_factory=list)
+    rejected_unknown_refdes: list[str] = Field(default_factory=list)
+    rejected: list["RejectedPinTableFindingView"] = Field(default_factory=list)
     checks: dict[str, int] = Field(default_factory=dict)
+
+
+class RejectedPinTableFindingView(BaseModel):
+    """One pin-table finding rejected before it can enter the L1 queue."""
+
+    rule_id: str
+    refdes: str | None = None
+    pin_number: str | None = None
+    net: str | None = None
+    message: str
+    reason: str = "unknown_refdes"
 
 
 class ReviewPackageArtifactView(BaseModel):
@@ -537,7 +552,7 @@ def build_workbench_state(
             pin_table_enabled=context.pin_table_path is not None,
             review_package_enabled=context.review_package.source_path is not None,
         ),
-        pin_table=_pin_table_summary(context),
+        pin_table=build_pin_table_summary(context),
         review_package=_review_package_summary(context.review_package),
         selected_refdes=_default_refdes(queue) or _default_task_refdes(review_tasks),
         queue=queue,
@@ -1246,18 +1261,40 @@ def _net_check_views(context: WorkbenchContext) -> list[NetCheckView]:
     ]
 
 
-def _pin_table_summary(context: WorkbenchContext) -> PinTableSummary:
+def build_pin_table_summary(context: WorkbenchContext) -> PinTableSummary:
     """Summarize Capture pin-table findings without changing validation totals."""
 
     if context.pin_table_path is None:
         return PinTableSummary(status="not_configured")
     checks = Counter(finding.rule_id for finding in context.pin_table_findings)
+    affected_refdes = sorted(
+        {finding.refdes for finding in context.pin_table_findings if finding.refdes},
+        key=sort_refdes_key,
+    )
+    rejected_unknown_refdes = sorted(
+        {item.refdes for item in context.rejected_pin_table_details if item.refdes},
+        key=sort_refdes_key,
+    )
     return PinTableSummary(
         status="loaded",
         source=str(context.pin_table_path),
         accepted_findings=len(context.pin_table_findings),
         rejected_findings=context.rejected_pin_table_findings,
-        affected_refdes=len({finding.refdes for finding in context.pin_table_findings if finding.refdes}),
+        affected_refdes=len(affected_refdes),
+        accepted_refdes=affected_refdes,
+        affected_refdes_list=affected_refdes,
+        rejected_unknown_refdes=rejected_unknown_refdes,
+        rejected=[
+            RejectedPinTableFindingView(
+                rule_id=item.rule_id,
+                refdes=item.refdes,
+                pin_number=item.pin_number,
+                net=item.net,
+                message=item.message,
+                reason=item.reason,
+            )
+            for item in context.rejected_pin_table_details
+        ],
         checks=dict(sorted(checks.items())),
     )
 

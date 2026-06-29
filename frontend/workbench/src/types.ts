@@ -28,6 +28,7 @@ export interface WorkbenchCapabilities {
   document_index_enabled: boolean;
   risk_hints_enabled: boolean;
   pin_table_enabled: boolean;
+  review_package_enabled: boolean;
 }
 
 export interface PinTableSummary {
@@ -36,7 +37,42 @@ export interface PinTableSummary {
   accepted_findings: number;
   rejected_findings: number;
   affected_refdes: number;
+  accepted_refdes: string[];
+  affected_refdes_list: string[];
+  rejected_unknown_refdes: string[];
+  rejected: RejectedPinTableFinding[];
   checks: Record<string, number>;
+}
+
+export interface RejectedPinTableFinding {
+  rule_id: string;
+  refdes?: string | null;
+  pin_number?: string | null;
+  net?: string | null;
+  message: string;
+  reason: string;
+}
+
+export interface ReviewPackageArtifact {
+  kind: string;
+  status: string;
+  required: boolean;
+  name: string;
+  path: string;
+  sha256?: string | null;
+  expected_sha256?: string | null;
+  note?: string | null;
+}
+
+export interface ReviewPackageSummary {
+  status: "loaded" | "not_configured";
+  source?: string | null;
+  total: number;
+  present: number;
+  missing_required: number;
+  missing_optional: number;
+  hash_mismatch: number;
+  artifacts: ReviewPackageArtifact[];
 }
 
 export interface EvidenceView {
@@ -237,6 +273,7 @@ export interface WorkbenchState {
   summary: WorkbenchSummary;
   capabilities: WorkbenchCapabilities;
   pin_table: PinTableSummary;
+  review_package: ReviewPackageSummary;
   selected_refdes?: string | null;
   queue: ReviewQueueItem[];
   review_tasks: ReviewTask[];
@@ -251,6 +288,7 @@ export interface ImportResponse {
   project: WorkbenchProject;
   summary: WorkbenchSummary;
   pin_table: PinTableSummary;
+  review_package?: ReviewPackageSummary;
   selected_refdes?: string | null;
   task_counts: ReviewTaskCounts;
 }

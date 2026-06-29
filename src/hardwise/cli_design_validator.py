@@ -95,6 +95,7 @@ def register_design_validator_commands(app: typer.Typer) -> None:
         from hardwise.report.workbench_spa_snapshot import render_spa_snapshot
         from hardwise.validation import ProfileCandidateError
         from hardwise.workbench.context import build_workbench_context
+        from hardwise.workbench.view_model import build_pin_table_summary
 
         if manual_limit < 0:
             typer.echo("error: --manual-limit must be >= 0", err=True)
@@ -127,6 +128,7 @@ def register_design_validator_commands(app: typer.Typer) -> None:
         if ai_snapshot:
             html = render_spa_snapshot(context, datasheet_search_enabled=False)
         else:
+            pin_table_summary = build_pin_table_summary(context)
             html = render_project_workbench(
                 context.design,
                 context.index,
@@ -135,6 +137,9 @@ def register_design_validator_commands(app: typer.Typer) -> None:
                 bom_report=context.bom_report,
                 generated_at=context.index.generated_at,
                 risk_hints=context.risk_hints if context.risk_hints.source_path else None,
+                pin_table=(
+                    pin_table_summary if pin_table_summary.status == "loaded" else None
+                ),
                 review_package=(
                     context.review_package if context.review_package.source_path else None
                 ),
@@ -176,10 +181,14 @@ def register_design_validator_commands(app: typer.Typer) -> None:
                 f"hash_mismatch={pkg_counts['hash_mismatch']})"
             )
         if context.pin_table_path is not None:
+            pin_table_summary = build_pin_table_summary(context)
+            affected = ",".join(pin_table_summary.affected_refdes_list) or "-"
+            rejected = ",".join(pin_table_summary.rejected_unknown_refdes) or "-"
             typer.echo(
                 f"pin-table: {display_path(context.pin_table_path)} "
-                f"(findings={len(context.pin_table_findings)}, "
-                f"rejected_unknown_refdes={context.rejected_pin_table_findings})"
+                f"(accepted={pin_table_summary.accepted_findings}, "
+                f"affected_refdes={pin_table_summary.affected_refdes} [{affected}], "
+                f"rejected_unknown_refdes={pin_table_summary.rejected_findings} [{rejected}])"
             )
         if context.resolved_bom.auto_selected:
             parseable_count = sum(

@@ -90,6 +90,9 @@ describe("ImportView", () => {
             accepted_findings: 3,
             rejected_findings: 1,
             affected_refdes: 2,
+            affected_refdes_list: ["U3", "U8"],
+            accepted_refdes: ["U3", "U8"],
+            rejected_unknown_refdes: ["U999"],
             checks: { R008: 1, R009: 1, R010: 1 }
           })
         })}
@@ -125,12 +128,16 @@ describe("ParseView", () => {
           pin_table: makePinTable({
             status: "loaded",
             accepted_findings: 3,
-            rejected_findings: 1
+            rejected_findings: 1,
+            affected_refdes: 2,
+            affected_refdes_list: ["U3", "U8"],
+            rejected_unknown_refdes: ["U999"]
           })
         }}
       />
     );
-    expect(html).toContain("3 条引脚表任务，1 条被拒绝");
+    expect(html).toContain("3 条进入 L1，1 条未知位号被拒绝");
+    expect(html).toContain("影响 2 个 refdes（U3, U8），拒绝未知位号 U999");
   });
 });
 
@@ -253,7 +260,30 @@ describe("ExportView", () => {
       expect(html).toContain(`>${fmt}</button>`);
     }
     expect(html).toContain("项目评审准备包");
+    expect(html).toContain("Capture 引脚表证据摘要");
+    expect(html).toContain("未加载 Capture 引脚表 CSV");
     expect(html).toContain("选择格式后生成预览。");
+  });
+
+  it("renders pin-table evidence summary before export", () => {
+    const html = renderToStaticMarkup(
+      <ExportView
+        state={makeState({
+          pin_table: makePinTable({
+            status: "loaded",
+            accepted_findings: 3,
+            rejected_findings: 1,
+            affected_refdes: 2,
+            affected_refdes_list: ["U3", "U8"],
+            rejected_unknown_refdes: ["U999"]
+          })
+        })}
+      />
+    );
+    expect(html).toContain("accepted 3，rejected unknown 1，affected 2");
+    expect(html).toContain("Accepted refdes：U3, U8");
+    expect(html).toContain("Rejected unknown refdes：U999");
+    expect(html).toContain("不进入 L1 review queue");
   });
 });
 

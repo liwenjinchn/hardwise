@@ -33,6 +33,7 @@ from hardwise.validation.project_index import (
     profile_gap_groups,
 )
 from hardwise.validation.risk_hints import RiskHintReport
+from hardwise.workbench.view_model import PinTableSummary
 
 GAP_ROW_LIMIT = 50
 
@@ -47,6 +48,7 @@ def render_project_workbench(
     generated_at: str = "",
     copilot_html: str = "",
     risk_hints: RiskHintReport | None = None,
+    pin_table: PinTableSummary | None = None,
     review_package: ReviewPackageReport | None = None,
 ) -> str:
     """Return a static project workbench for validated and no-profile rows."""
@@ -120,7 +122,7 @@ def render_project_workbench(
           </aside>
         </div>
         <section class="detail" aria-label="验证报告">
-          {_detail_area(design, ordered, active_refdes, generated_at, index, risk_hints, review_package)}
+          {_detail_area(design, ordered, active_refdes, generated_at, index, risk_hints, pin_table, review_package)}
         </section>
       </section>
     </section>
@@ -276,17 +278,59 @@ def _detail_area(
     generated_at: str,
     index: ProjectValidationIndex,
     risk_hints: RiskHintReport | None,
+    pin_table: PinTableSummary | None,
     review_package: ReviewPackageReport | None,
 ) -> str:
     if results:
         detail = _detail_panels(design, results, active_refdes, generated_at)
     else:
         detail = _coverage_detail(index, generated_at)
+    if pin_table is not None and pin_table.status == "loaded":
+        detail += _pin_table_detail(pin_table)
     if review_package is not None and review_package.source_path is not None:
         detail += _review_package_detail(review_package)
     if risk_hints is not None:
         detail += render_project_risk_hints(risk_hints, design)
     return detail
+
+
+def _pin_table_detail(summary: PinTableSummary) -> str:
+    checks = ", ".join(f"{rule}={count}" for rule, count in summary.checks.items()) or "-"
+    accepted = ", ".join(summary.affected_refdes_list) or "-"
+    rejected = ", ".join(summary.rejected_unknown_refdes) or "-"
+    rows = []
+    for item in summary.rejected:
+        rows.append(
+            "<tr>"
+            f"<td>{escape(item.rule_id)}</td>"
+            f"<td>{escape(item.refdes or '-')}</td>"
+            f"<td>{escape(item.pin_number or '-')}</td>"
+            f"<td>{escape(item.reason)}</td>"
+            "</tr>"
+        )
+    rejected_table = ""
+    if rows:
+        rejected_table = (
+            "<table><thead><tr><th>规则</th><th>未知位号</th><th>引脚</th><th>原因</th></tr></thead>"
+            f"<tbody>{''.join(rows)}</tbody></table>"
+        )
+    return (
+        '<section class="section table-section">'
+        '<div class="section-head"><h3>Pin Table Evidence</h3></div>'
+        '<p class="scope">Capture 引脚表只作为导出证据覆盖；未知位号行被 registry guard 拒绝，'
+        "不会进入 L1 review queue，也不会改变 PASS/WARN/ERROR 总账。</p>"
+        '<div class="coverage-grid">'
+        f"{_coverage_card('accepted', summary.accepted_findings)}"
+        f"{_coverage_card('rejected_unknown_refdes', summary.rejected_findings)}"
+        f"{_coverage_card('affected_refdes', summary.affected_refdes)}"
+        f"{_coverage_card('rules', len(summary.checks))}"
+        "</div>"
+        "<p class=\"scope\">"
+        f"Source：{escape(summary.source or '-')}；Checks：{escape(checks)}；"
+        f"Accepted refdes：{escape(accepted)}；Rejected unknown refdes：{escape(rejected)}。"
+        "</p>"
+        f"{rejected_table}</section>"
+    )
 
 
 def _review_package_detail(report: ReviewPackageReport) -> str:

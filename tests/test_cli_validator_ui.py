@@ -616,6 +616,35 @@ def test_design_validator_ui_accepts_review_package_manifest(tmp_path: Path) -> 
     assert "does not parse these files into electrical findings" not in html
 
 
+def test_design_validator_ui_ai_snapshot_summarizes_pin_table_evidence(tmp_path: Path) -> None:
+    html_output = tmp_path / "controller-design-validator-pin-table.html"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "design-validator-ui",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--pin-table",
+            "tests/fixtures/capture/pin_table_demo.csv",
+            "--ai-snapshot",
+            "--output",
+            str(html_output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "pin-table:" in result.output
+    assert "accepted=0" in result.output
+    assert "affected_refdes=0 [-]" in result.output
+    assert "rejected_unknown_refdes=3 [U2,U10]" in result.output
+    html = html_output.read_text(encoding="utf-8")
+    assert '"pin_table"' in html
+    assert '"rejected_unknown_refdes": ["U2", "U10"]' in html
+    assert "Pin Table Evidence" in html
+    assert "未知位号只显示在 summary，不进入 L1 review queue" in html
+
+
 def test_serve_workbench_fake_ai_dry_run_does_not_require_api_key() -> None:
     result = CliRunner().invoke(
         app,
@@ -668,6 +697,23 @@ def test_serve_workbench_fake_ai_dry_run_accepts_document_index(tmp_path: Path) 
     assert "document-index=on document_index_matched=1" in result.output
     assert "no_result=14" in result.output
 
+    disabled = CliRunner().invoke(
+        app,
+        [
+            "serve-workbench",
+            "tests/fixtures/allegro/mixed_controller_power_stage.net",
+            "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+            "--document-index",
+            str(docs),
+            "--no-auto-datasheet-candidates",
+            "--fake-ai",
+            "--dry-run",
+        ],
+    )
+
+    assert disabled.exit_code == 0, disabled.output
+    assert "datasheet-candidates=off" in disabled.output
+
 
 def test_serve_workbench_dry_run_accepts_review_package_manifest(tmp_path: Path) -> None:
     schematic = tmp_path / "schematic.pdf"
@@ -702,22 +748,25 @@ def test_serve_workbench_dry_run_accepts_review_package_manifest(tmp_path: Path)
     assert "review-package=loaded present=1" in result.output
     assert "missing_required=0" in result.output
 
-    disabled = CliRunner().invoke(
+
+def test_serve_workbench_dry_run_summarizes_pin_table_evidence() -> None:
+    result = CliRunner().invoke(
         app,
         [
             "serve-workbench",
             "tests/fixtures/allegro/mixed_controller_power_stage.net",
             "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
-            "--document-index",
-            str(docs),
-            "--no-auto-datasheet-candidates",
+            "--pin-table",
+            "tests/fixtures/capture/pin_table_demo.csv",
             "--fake-ai",
             "--dry-run",
         ],
     )
 
-    assert disabled.exit_code == 0, disabled.output
-    assert "datasheet-candidates=off" in disabled.output
+    assert result.exit_code == 0, result.output
+    assert "pin-table=loaded accepted=0" in result.output
+    assert "affected_refdes=0 [-]" in result.output
+    assert "rejected_unknown_refdes=3 [U2,U10]" in result.output
 
 
 def test_serve_workbench_dry_run_prints_risk_hints_counts(tmp_path: Path) -> None:

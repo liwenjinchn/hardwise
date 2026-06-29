@@ -31,6 +31,18 @@ from hardwise.validation.risk_hints import RiskHintReport, load_risk_hint_report
 
 
 @dataclass
+class RejectedPinTableFinding:
+    """Registry-rejected pin-table finding kept for project evidence summary."""
+
+    rule_id: str
+    refdes: str | None
+    pin_number: str | None
+    net: str | None
+    message: str
+    reason: str = "unknown_refdes"
+
+
+@dataclass
 class WorkbenchContext:
     """All deterministic state needed by static HTML and live chat modes."""
 
@@ -48,6 +60,7 @@ class WorkbenchContext:
     pin_table_path: Path | None
     pin_table_findings: list[Finding]
     rejected_pin_table_findings: int
+    rejected_pin_table_details: list[RejectedPinTableFinding]
     validation_targets: dict[str, DatasheetProfile]
     project_name: str
     netlist_source: Path
@@ -161,7 +174,7 @@ def build_workbench_context(
         document_report=document_report,
         design=design,
     )
-    pin_table_findings, rejected_pin_table_findings = _pin_table_findings(
+    pin_table_findings, rejected_pin_table_details = _pin_table_findings(
         pin_table,
         design_refdes=design.refdes_set,
     )
@@ -196,7 +209,8 @@ def build_workbench_context(
         review_package=review_package,
         pin_table_path=pin_table,
         pin_table_findings=pin_table_findings,
-        rejected_pin_table_findings=rejected_pin_table_findings,
+        rejected_pin_table_findings=len(rejected_pin_table_details),
+        rejected_pin_table_details=rejected_pin_table_details,
         validation_targets=validation_targets,
         project_name=project_name,
         netlist_source=source,
@@ -216,11 +230,11 @@ def _pin_table_findings(
     pin_table: Path | None,
     *,
     design_refdes: set[str],
-) -> tuple[list[Finding], int]:
+) -> tuple[list[Finding], list[RejectedPinTableFinding]]:
     """Run Capture pin-table checks and keep only registry-backed findings."""
 
     if pin_table is None:
-        return [], 0
+        return [], []
     from hardwise.adapters.capture_pin_table import parse_pin_table
     from hardwise.checklist.checks.r008_floating_input import check as r008_check
     from hardwise.checklist.checks.r009_power_pin_unconnected import check as r009_check
@@ -229,7 +243,18 @@ def _pin_table_findings(
     records = parse_pin_table(pin_table)
     findings = r008_check(records) + r009_check(records) + r010_check(records)
     accepted = [item for item in findings if item.refdes in design_refdes]
-    return accepted, len(findings) - len(accepted)
+    rejected = [
+        RejectedPinTableFinding(
+            rule_id=item.rule_id,
+            refdes=item.refdes,
+            pin_number=item.pin_number,
+            net=item.net,
+            message=item.message,
+        )
+        for item in findings
+        if item.refdes not in design_refdes
+    ]
+    return accepted, rejected
 
 
 def validation_row_by_refdes(context: WorkbenchContext) -> dict[str, Any]:

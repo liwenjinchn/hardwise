@@ -208,11 +208,14 @@ def test_workbench_state_exposes_risk_hints_summary(tmp_path: Path) -> None:
         """,
         encoding="utf-8",
     )
+    pin_table = tmp_path / "pin_table.csv"
+    _write_pin_table(pin_table)
     context = build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
         bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
         profiles=Path("data/datasheet_profiles"),
         risk_hints_json=risk_hints,
+        pin_table=pin_table,
         generated_at="2026-05-30T00:00:00+00:00",
     )
 
@@ -242,11 +245,14 @@ def test_workbench_state_exposes_spa_queue_and_risk_hint_details(tmp_path: Path)
         """,
         encoding="utf-8",
     )
+    pin_table = tmp_path / "pin_table.csv"
+    _write_pin_table(pin_table)
     context = build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
         bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
         profiles=Path("data/datasheet_profiles"),
         risk_hints_json=risk_hints,
+        pin_table=pin_table,
         generated_at="2026-05-30T00:00:00+00:00",
     )
 
@@ -334,6 +340,7 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
     try:
         assert len(context.pin_table_findings) == 3
         assert context.rejected_pin_table_findings == 1
+        assert [item.refdes for item in context.rejected_pin_table_details] == ["U999"]
 
         client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
         payload = client.get("/api/workbench/state").json()
@@ -348,6 +355,12 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
             "error_count": 4,
         }
         assert payload["capabilities"]["pin_table_enabled"] is True
+        assert payload["pin_table"]["accepted_findings"] == 3
+        assert payload["pin_table"]["rejected_findings"] == 1
+        assert payload["pin_table"]["affected_refdes_list"] == ["U3", "U8"]
+        assert payload["pin_table"]["accepted_refdes"] == ["U3", "U8"]
+        assert payload["pin_table"]["rejected_unknown_refdes"] == ["U999"]
+        assert payload["pin_table"]["rejected"][0]["reason"] == "unknown_refdes"
         pin_tasks = [
             task for task in payload["review_tasks"] if task["kind"] == "pin_table_check"
         ]
@@ -592,11 +605,14 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
         """,
         encoding="utf-8",
     )
+    pin_table = tmp_path / "pin_table.csv"
+    _write_pin_table(pin_table)
     context = build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
         bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
         profiles=Path("data/datasheet_profiles"),
         risk_hints_json=risk_hints,
+        pin_table=pin_table,
         generated_at="2026-05-30T00:00:00+00:00",
     )
 
@@ -650,6 +666,9 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
         assert "PASS / WARN / ERROR" in markdown_response.text
         assert "Draft Module / Power Summaries" in markdown_response.text
         assert "Manual Gap Promotion Queue" in markdown_response.text
+        assert "Pin Table Evidence" in markdown_response.text
+        assert "Rejected unknown refdes" in markdown_response.text
+        assert "`U999`（未进入 L1 review queue）" in markdown_response.text
         assert packet["priority_tasks"][0]["stable_key"] in markdown_response.text
         assert "Rejected secret" not in markdown_response.text
         assert "Rejected body must not leak" not in markdown_response.text
@@ -1035,6 +1054,8 @@ def test_workbench_import_accepts_uploaded_pin_table(tmp_path: Path) -> None:
 
         assert response.status_code == 200, response.text
         assert response.json()["task_counts"]["error"] >= 5
+        assert response.json()["pin_table"]["affected_refdes_list"] == ["U3", "U8"]
+        assert response.json()["pin_table"]["rejected_unknown_refdes"] == ["U999"]
         state = client.get("/api/workbench/state").json()
         assert state["capabilities"]["pin_table_enabled"] is True
         assert {(task["refdes"], task["check"]) for task in state["review_tasks"]} >= {
@@ -1161,10 +1182,12 @@ def test_workbench_import_failure_keeps_previous_state(tmp_path: Path) -> None:
 
 
 def test_workbench_export_endpoints_return_safe_downloads() -> None:
+    pin_table = Path("tests/fixtures/capture/pin_table_demo.csv")
     context = build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
         bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
         profiles=Path("data/datasheet_profiles"),
+        pin_table=pin_table,
         generated_at="2026-05-30T00:00:00+00:00",
     )
     app = create_workbench_app(context, DummyChatService())  # type: ignore[arg-type]
@@ -1177,6 +1200,9 @@ def test_workbench_export_endpoints_return_safe_downloads() -> None:
 
         assert json_response.status_code == 200
         assert json_response.json()["review_tasks"][0]["id"] == "F-001"
+        assert json_response.json()["pin_table"]["rejected_unknown_refdes"] == ["U2", "U10"]
+        assert "U10" not in csv_response.text
+        assert "U2" not in annotations_response.text
         assert "F-001" in csv_response.text
         assert "recommended_action" in csv_response.text
         assert "Hardwise EDA annotation export" in annotations_response.text

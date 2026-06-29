@@ -98,6 +98,7 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
         from hardwise.workbench.chat import WorkbenchChatService
         from hardwise.workbench.context import build_workbench_context
         from hardwise.workbench.server import create_workbench_app
+        from hardwise.workbench.view_model import build_pin_table_summary
 
         if tier not in ("fast", "normal", "deep"):
             typer.echo(f"error: tier must be fast|normal|deep, got {tier!r}", err=True)
@@ -149,9 +150,13 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
             )
         pin_table_state = "not_configured"
         if context.pin_table_path is not None:
+            pin_table_summary = build_pin_table_summary(context)
+            affected = ",".join(pin_table_summary.affected_refdes_list) or "-"
+            rejected = ",".join(pin_table_summary.rejected_unknown_refdes) or "-"
             pin_table_state = (
-                f"loaded findings={len(context.pin_table_findings)}, "
-                f"rejected_unknown_refdes={context.rejected_pin_table_findings}"
+                f"loaded accepted={pin_table_summary.accepted_findings}, "
+                f"affected_refdes={pin_table_summary.affected_refdes} [{affected}], "
+                f"rejected_unknown_refdes={pin_table_summary.rejected_findings} [{rejected}]"
             )
         review_package_state = "not_configured"
         if context.review_package.source_path is not None:
