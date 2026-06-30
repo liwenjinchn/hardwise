@@ -188,18 +188,18 @@ pre-layout review trust, not layout automation.
 
 ## Next Implementation Order
 
-The next development round should start with pin-table evidence summary, because
-the parser, registry guard, deterministic R008/R009/R010 findings, CLI report,
-and workbench task path already exist. The missing product value is project-level
-visibility: whether pin-table evidence was loaded, which findings were accepted
-against the Allegro/PST registry, which refdes were rejected as unknown, and
-which review rows were affected.
+Pin-table evidence summary is now shipped: workbench JSON, import summaries,
+project prep packets, static snapshots, and CLI output show loaded/missing state,
+accepted findings, rejected unknown refdes, and affected refdes without allowing
+rejected rows into the L1 queue. The next development round should move to
+review-package manifest polish, then a combined evidence package completeness
+dashboard.
 
 Recommended sequence:
 
 | Priority | Slice | Done when |
 |---|---|---|
-| P0 | Pin-table evidence project summary/export | Import summaries, prep packets, static snapshots, and workbench JSON show loaded/missing state, accepted findings, rejected unknown refdes, and affected refdes without allowing rejected rows into the L1 queue. |
+| Done | Pin-table evidence project summary/export | Import summaries, prep packets, static snapshots, and workbench JSON show loaded/missing state, accepted findings, rejected unknown refdes, and affected refdes without allowing rejected rows into the L1 queue. |
 | P1 | Review-package manifest polish | Manifest status remains shallow and provenance-only; missing required artifacts create manual-gap/package-status warnings, not electrical findings. |
 | P2 | Evidence package completeness dashboard | Workbench shows netlist/PST, BOM, pin table, document index/profile, and review-package coverage together with trust-tier wording. |
 
