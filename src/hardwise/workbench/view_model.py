@@ -109,11 +109,22 @@ class ReviewPackageSummary(BaseModel):
 
     status: Literal["loaded", "not_configured"]
     source: str | None = None
+    package_status: Literal[
+        "not_configured",
+        "complete",
+        "optional_gap",
+        "missing_required",
+        "hash_mismatch",
+    ] = "not_configured"
+    status_group: StatusGroup = "manual"
+    status_label: str = "not configured"
     total: int = 0
     present: int = 0
     missing_required: int = 0
     missing_optional: int = 0
     hash_mismatch: int = 0
+    manual_gap_count: int = 0
+    recommended_action: str = "Provide a review-package manifest if this review requires handoff evidence."
     artifacts: list[ReviewPackageArtifactView] = Field(default_factory=list)
 
 
@@ -1308,13 +1319,38 @@ def _review_package_summary(report: ReviewPackageReport) -> ReviewPackageSummary
     return ReviewPackageSummary(
         status="loaded",
         source=report.source_path,
+        package_status=report.package_status,
+        status_group=report.status_group,
+        status_label=_review_package_status_label(report.package_status),
         total=counts["total"],
         present=counts["present"],
         missing_required=counts["missing_required"],
         missing_optional=counts["missing_optional"],
         hash_mismatch=counts["hash_mismatch"],
+        manual_gap_count=counts["manual_gaps"],
+        recommended_action=_review_package_recommended_action(report.package_status),
         artifacts=[_review_package_artifact_view(item) for item in report.artifacts],
     )
+
+
+def _review_package_status_label(status: str) -> str:
+    return {
+        "not_configured": "not configured",
+        "complete": "complete",
+        "optional_gap": "optional artifact missing",
+        "missing_required": "required artifact missing",
+        "hash_mismatch": "hash mismatch",
+    }.get(status, status)
+
+
+def _review_package_recommended_action(status: str) -> str:
+    return {
+        "not_configured": "Upload a review-package manifest when handoff evidence is needed.",
+        "complete": "Keep artifact hashes with the review packet for audit.",
+        "optional_gap": "Decide whether optional artifacts are needed before review handoff.",
+        "missing_required": "Attach the required review artifact or mark it optional in the manifest.",
+        "hash_mismatch": "Regenerate the artifact hash or replace the mismatched file before handoff.",
+    }.get(status, "Review package manifest status manually.")
 
 
 def _review_package_artifact_view(

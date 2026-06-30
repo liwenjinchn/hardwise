@@ -12,6 +12,7 @@ export function ExportView({ state }: { state: WorkbenchState }) {
   const [error, setError] = useState("");
   const [packetError, setPacketError] = useState("");
   const pinTable = state.pin_table;
+  const reviewPackage = state.review_package;
   const pinTableAffected = pinTable.affected_refdes_list.join(", ") || "-";
   const pinTableRejected = pinTable.rejected_unknown_refdes.join(", ") || "-";
 
@@ -109,6 +110,23 @@ export function ExportView({ state }: { state: WorkbenchState }) {
             {pinTable.status === "loaded" && (
               <p className="scope-note">
                 Accepted refdes：{pinTableAffected}；Rejected unknown refdes：{pinTableRejected}
+              </p>
+            )}
+          </div>
+        </section>
+        <section className="project-prep-card" aria-label="Review-package evidence summary">
+          <div>
+            <span className="eyebrow">Review Package Evidence</span>
+            <strong>评审证据包状态</strong>
+            <p>
+              {reviewPackage.status === "loaded"
+                ? `package_status ${reviewPackage.package_status}，manual gaps ${reviewPackage.manual_gap_count}，present ${reviewPackage.present}/${reviewPackage.total}。`
+                : "未加载 review-package manifest。"}
+              {" "}Package status 只说明交付证据是否齐备，不生成电气 finding。
+            </p>
+            {reviewPackage.status === "loaded" && (
+              <p className="scope-note">
+                Missing required：{reviewPackage.missing_required}；Hash mismatch：{reviewPackage.hash_mismatch}；{reviewPackage.recommended_action}
               </p>
             )}
           </div>

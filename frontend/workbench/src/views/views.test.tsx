@@ -15,6 +15,7 @@ import {
   makeEvidence,
   makePinTable,
   makeQueueItem,
+  makeReviewPackage,
   makeRiskHints,
   makeState,
   makeTask,
@@ -71,9 +72,11 @@ describe("ImportView", () => {
     expect(html).toContain("netlist / PST");
     expect(html).toContain("BOM CSV");
     expect(html).toContain("Capture 引脚表 CSV");
+    expect(html).toContain("review-package manifest");
     expect(html).toContain("risk hints JSON");
     expect(html).toContain("25 components");
     expect(html).toContain("引脚表 未加载");
+    expect(html).toContain("Review package 未加载");
     expect(html).toContain("scripts/capture_pin_table_export.tcl");
     expect(html).toContain("导入并解析");
     expect(html).toContain("拖入文件或点击选择");
@@ -101,6 +104,30 @@ describe("ImportView", () => {
     );
     expect(html).toContain("引脚表 3 条任务");
     expect(html).toContain("3 条任务 · R008 1 / R009 1 / R010 1");
+  });
+
+  it("renders review-package intake status as package evidence", () => {
+    const html = renderToStaticMarkup(
+      <ImportView
+        state={makeState({
+          capabilities: { ...makeState().capabilities, review_package_enabled: true },
+          review_package: makeReviewPackage({
+            status: "loaded",
+            package_status: "missing_required",
+            status_group: "manual",
+            status_label: "required artifact missing",
+            total: 3,
+            present: 1,
+            missing_required: 1,
+            manual_gap_count: 1
+          })
+        })}
+        onImported={() => {}}
+      />
+    );
+    expect(html).toContain("review-package manifest");
+    expect(html).toContain("missing_required · manual gaps 1");
+    expect(html).toContain("Review package missing_required");
   });
 });
 
@@ -132,12 +159,20 @@ describe("ParseView", () => {
             affected_refdes: 2,
             affected_refdes_list: ["U3", "U8"],
             rejected_unknown_refdes: ["U999"]
+          }),
+          review_package: makeReviewPackage({
+            status: "loaded",
+            package_status: "missing_required",
+            status_group: "manual",
+            status_label: "required artifact missing",
+            manual_gap_count: 1
           })
         }}
       />
     );
     expect(html).toContain("3 条进入 L1，1 条未知位号被拒绝");
     expect(html).toContain("影响 2 个 refdes（U3, U8），拒绝未知位号 U999");
+    expect(html).toContain("missing_required，manual gaps 1");
   });
 });
 
@@ -261,7 +296,9 @@ describe("ExportView", () => {
     }
     expect(html).toContain("项目评审准备包");
     expect(html).toContain("Capture 引脚表证据摘要");
+    expect(html).toContain("评审证据包状态");
     expect(html).toContain("未加载 Capture 引脚表 CSV");
+    expect(html).toContain("未加载 review-package manifest");
     expect(html).toContain("选择格式后生成预览。");
   });
 
@@ -284,6 +321,30 @@ describe("ExportView", () => {
     expect(html).toContain("Accepted refdes：U3, U8");
     expect(html).toContain("Rejected unknown refdes：U999");
     expect(html).toContain("不进入 L1 review queue");
+  });
+
+  it("renders review-package manual-gap summary before export", () => {
+    const html = renderToStaticMarkup(
+      <ExportView
+        state={makeState({
+          review_package: makeReviewPackage({
+            status: "loaded",
+            package_status: "missing_required",
+            status_group: "manual",
+            status_label: "required artifact missing",
+            total: 3,
+            present: 1,
+            missing_required: 1,
+            hash_mismatch: 0,
+            manual_gap_count: 1,
+            recommended_action: "Attach the required review artifact."
+          })
+        })}
+      />
+    );
+    expect(html).toContain("package_status missing_required，manual gaps 1，present 1/3");
+    expect(html).toContain("Package status 只说明交付证据是否齐备，不生成电气 finding");
+    expect(html).toContain("Missing required：1；Hash mismatch：0；Attach the required review artifact.");
   });
 });
 

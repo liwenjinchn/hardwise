@@ -205,11 +205,16 @@ export function makeReviewPackage(
   return {
     status: "not_configured",
     source: null,
+    package_status: "not_configured",
+    status_group: "manual",
+    status_label: "not configured",
     total: 0,
     present: 0,
     missing_required: 0,
     missing_optional: 0,
     hash_mismatch: 0,
+    manual_gap_count: 0,
+    recommended_action: "Provide a review-package manifest if this review requires handoff evidence.",
     artifacts: [],
     ...overrides
   };

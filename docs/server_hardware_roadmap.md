@@ -191,16 +191,17 @@ pre-layout review trust, not layout automation.
 Pin-table evidence summary is now shipped: workbench JSON, import summaries,
 project prep packets, static snapshots, and CLI output show loaded/missing state,
 accepted findings, rejected unknown refdes, and affected refdes without allowing
-rejected rows into the L1 queue. The next development round should move to
-review-package manifest polish, then a combined evidence package completeness
-dashboard.
+rejected rows into the L1 queue. Review-package manifest polish is now shipped:
+missing required artifacts and hash mismatches surface as package-status manual
+gaps without creating electrical findings. The next development round should
+move to a combined evidence package completeness dashboard.
 
 Recommended sequence:
 
 | Priority | Slice | Done when |
 |---|---|---|
 | Done | Pin-table evidence project summary/export | Import summaries, prep packets, static snapshots, and workbench JSON show loaded/missing state, accepted findings, rejected unknown refdes, and affected refdes without allowing rejected rows into the L1 queue. |
-| P1 | Review-package manifest polish | Manifest status remains shallow and provenance-only; missing required artifacts create manual-gap/package-status warnings, not electrical findings. |
+| Done | Review-package manifest polish | Manifest status remains shallow and provenance-only; missing required artifacts create manual-gap/package-status warnings, not electrical findings. |
 | P2 | Evidence package completeness dashboard | Workbench shows netlist/PST, BOM, pin table, document index/profile, and review-package coverage together with trust-tier wording. |
 
 Keep these as explicit non-goals for the next round:

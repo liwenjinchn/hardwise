@@ -127,6 +127,7 @@ export function importWorkbench(files: {
   netlist: File;
   bom?: File | null;
   pinTable?: File | null;
+  reviewPackage?: File | null;
   riskHints?: File | null;
 }): Promise<ImportResponse> {
   if (offlineSnapshot()) {
@@ -136,6 +137,7 @@ export function importWorkbench(files: {
   body.append("netlist", files.netlist);
   if (files.bom) body.append("bom", files.bom);
   if (files.pinTable) body.append("pin_table_csv", files.pinTable);
+  if (files.reviewPackage) body.append("review_package", files.reviewPackage);
   if (files.riskHints) body.append("risk_hints_json", files.riskHints);
   return requestJson<ImportResponse>("/api/workbench/import", {
     method: "POST",

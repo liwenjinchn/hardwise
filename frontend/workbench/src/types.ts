@@ -67,11 +67,16 @@ export interface ReviewPackageArtifact {
 export interface ReviewPackageSummary {
   status: "loaded" | "not_configured";
   source?: string | null;
+  package_status: "not_configured" | "complete" | "optional_gap" | "missing_required" | "hash_mismatch";
+  status_group: StatusGroup;
+  status_label: string;
   total: number;
   present: number;
   missing_required: number;
   missing_optional: number;
   hash_mismatch: number;
+  manual_gap_count: number;
+  recommended_action: string;
   artifacts: ReviewPackageArtifact[];
 }
 
@@ -435,6 +440,8 @@ export interface ProjectReviewPrepPacket {
   profile_promotion_candidates: ProfilePromotionCandidate[];
   open_questions: ProjectPrepOpenQuestion[];
   risk_hints: RiskHintsView;
+  pin_table: PinTableSummary;
+  review_package: ReviewPackageSummary;
   evidence: EvidenceView[];
   guardrails: string[];
 }

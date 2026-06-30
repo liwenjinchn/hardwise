@@ -51,7 +51,10 @@ def test_load_review_package_yaml_computes_and_validates_sha256(tmp_path: Path) 
         "missing_required": 0,
         "missing_optional": 1,
         "hash_mismatch": 0,
+        "manual_gaps": 0,
     }
+    assert report.package_status == "optional_gap"
+    assert report.status_group == "warn"
     schematic_row = report.artifacts[0]
     assert schematic_row.status == "present"
     assert schematic_row.sha256 == _sha256("public schematic pdf placeholder")
@@ -94,7 +97,11 @@ def test_load_review_package_json_reports_required_missing_and_hash_mismatch(
         "missing_required": 1,
         "missing_optional": 0,
         "hash_mismatch": 1,
+        "manual_gaps": 2,
     }
+    assert report.package_status == "hash_mismatch"
+    assert report.status_group == "manual"
+    assert report.manual_gap_count == 2
     assert report.artifacts[0].status == "hash_mismatch"
     assert report.artifacts[0].expected_sha256 == "0" * 64
     assert report.artifacts[1].status == "missing"
@@ -124,8 +131,11 @@ def test_render_review_package_markdown_states_scope(tmp_path: Path) -> None:
 
     assert "# Review Package Evidence Manifest" in md
     assert "| schematic_pdf | present | True |" in md
+    assert "- package status: complete (pass)" in md
+    assert "- package manual gaps: 0" in md
     assert "does not parse these files into electrical findings" in md
     assert "does not replace formal hardware signoff" in md
+    assert "do not create PASS/WARN/ERROR findings" in md
 
 
 def test_report_review_package_cli_writes_markdown(tmp_path: Path) -> None:
@@ -149,6 +159,9 @@ def test_report_review_package_cli_writes_markdown(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0, result.output
+    assert "package_status=complete" in result.output
+    assert "status_group=pass" in result.output
+    assert "manual_gaps=0" in result.output
     assert "present=1" in result.output
     assert "missing_required=0" in result.output
     assert output.read_text(encoding="utf-8").startswith(

@@ -162,7 +162,10 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
         if context.review_package.source_path is not None:
             pkg_counts = context.review_package.counts
             review_package_state = (
-                f"loaded present={pkg_counts['present']}, "
+                f"loaded package_status={context.review_package.package_status}, "
+                f"status_group={context.review_package.status_group}, "
+                f"manual_gaps={context.review_package.manual_gap_count}, "
+                f"present={pkg_counts['present']}, "
                 f"missing_required={pkg_counts['missing_required']}, "
                 f"missing_optional={pkg_counts['missing_optional']}, "
                 f"hash_mismatch={pkg_counts['hash_mismatch']}"
