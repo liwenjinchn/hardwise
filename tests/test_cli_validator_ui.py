@@ -3,12 +3,56 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
 from pathlib import Path
 
 from typer.testing import CliRunner
 
 from hardwise.cli import app
 from tests.xlsx_fixture import write_minimal_xlsx
+
+
+def test_macos_launcher_selects_a_free_port_before_opening(tmp_path: Path) -> None:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    log = tmp_path / "uv.log"
+    (fake_bin / "lsof").write_text(
+        '#!/usr/bin/env bash\n[[ "$*" == *"-iTCP:8765"* ]]\n', encoding="utf-8"
+    )
+    (fake_bin / "uv").write_text(f'#!/usr/bin/env bash\necho "$*" >> "{log}"\n', encoding="utf-8")
+    (fake_bin / "curl").write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    (fake_bin / "open").write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    for executable in fake_bin.iterdir():
+        executable.chmod(0o755)
+
+    launcher = Path(__file__).parents[1] / "scripts/start_hardwise_workbench.command"
+    result = subprocess.run(
+        ["bash", str(launcher)],
+        cwd=Path(__file__).parents[1],
+        env={"PATH": f"{fake_bin}:/usr/bin:/bin"},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "Port 8765 is already in use; using port 8766 instead." in result.stdout
+    assert "--port 8766" in log.read_text(encoding="utf-8")
+
+
+def test_launchers_support_explicit_port_and_do_not_hardcode_server_port() -> None:
+    scripts = Path(__file__).parents[1] / "scripts"
+    macos = (scripts / "start_hardwise_workbench.command").read_text(encoding="utf-8")
+    windows = (scripts / "start_hardwise_workbench.cmd").read_text(encoding="utf-8")
+
+    assert 'PORT="$HARDWISE_PORT"' in macos
+    assert '--port "$PORT"' in macos
+    assert 'curl --fail --silent --show-error "$URL"' in macos
+    assert "if defined HARDWISE_PORT" in windows
+    assert "--port %PORT%" in windows
+    assert "Invoke-WebRequest" in windows
+    assert "--port 8765" not in macos
+    assert "--port 8765" not in windows
 
 
 def test_report_validator_ui_writes_html(tmp_path: Path) -> None:
