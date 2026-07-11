@@ -4857,18 +4857,23 @@ the deprecated Node.js 20 action runtime.
 
 The workflow predated the generated backend/frontend contract boundary and the
 Node.js frontend build. Its action pins and job surface were never advanced when
-those repository responsibilities became release-critical.
+those repository responsibilities became release-critical. The first upgrade
+also assumed every action published a moving major-version tag; setup-uv had a
+verified `v8.3.2` release but no resolvable `v8` ref, so all jobs stopped while
+GitHub prepared actions and never reached repository checkout.
 
 **Fix**
 
-Moved checkout, Python, uv, and Node setup to their current Node.js 24 action
-lines. Added lockfile validation to the Python matrix and a bounded Ubuntu
-frontend job that installs the locked backend/frontend dependencies, checks
-generated contracts and TypeScript, runs unit tests, and builds the production
-bundle.
+Pinned checkout, Python, uv, and Node setup to verified full release tags on
+their Node.js 24 action lines. Added lockfile validation to the Python matrix
+and a bounded Ubuntu frontend job that installs the locked backend/frontend
+dependencies, checks generated contracts and TypeScript, runs unit tests, and
+builds the production bundle.
 
 **Takeaway**
 
 CI should mirror the repository's trust boundaries, not its historical stack.
 When a generated artifact joins Python and TypeScript, freshness and both sides
-of the contract belong in the required remote gate.
+of the contract belong in the required remote gate. Verify the exact action ref
+through GitHub before publishing a workflow; a release family does not imply a
+floating major tag exists.
