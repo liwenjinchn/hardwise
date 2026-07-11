@@ -250,7 +250,8 @@ describe("CopilotPanel", () => {
           ],
           wrapped_count: 0,
           suggestions: [],
-          datasheet_search_enabled: false
+          datasheet_search_enabled: false,
+          unsupported_evidence_tokens: []
         }}
       />
     );
@@ -519,6 +520,7 @@ describe("DetailColumn", () => {
                   mpn: "SS8050",
                   manufacturer: "Fixture Semi",
                   title: "SS8050 public datasheet",
+                  description: null,
                   datasheet_url: "https://static.example.test/ss8050.pdf",
                   product_url: "https://www.datasheets.com/example/ss8050",
                   lifecycle_status: null,

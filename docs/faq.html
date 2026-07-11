@@ -67,6 +67,8 @@
       <p><b>输入（全部公开数据）：</b></p>
       <ul>
         <li>Cadence/Allegro 导出的原理图网表（Telesis 单文件或 PST 三件套）+ 导出 BOM（CSV/TSV/Cadence <code>.BOM</code>/窄列 <code>.xlsx</code>）——工作台主路径</li>
+        <li>可选 Capture pin-table CSV——补充 pin electrical type、NC marker 和页面位置；未知位号行只进入拒绝审计摘要，不进入 L1 队列</li>
+        <li>可选 review-package manifest——记录 schematic PDF、ERC/DRC、checklist、review notes 的路径、hash 和缺失状态；只证明资料包完整性，不生成电气结论</li>
         <li>KiCad 工程目录（<code>.kicad_sch</code> + <code>.kicad_pcb</code>）——规则评审与回归基线路径</li>
         <li>公开规格书 PDF/HTML + 人工审核过的结构化器件档案（<code>DatasheetProfile</code>）</li>
         <li>检查清单规则（<code>data/checklists/sch_review.yaml</code>）</li>
@@ -77,7 +79,8 @@
         <li>Markdown/HTML 评审报告与可导出的评审反馈清单</li>
         <li>SQLite/PostgreSQL 结构化存储与运行轨迹台账</li>
       </ul>
-      <p class="callout">公开演示数字：mixed controller 样例 25 个器件 / BOM 全配 / 22 行确定性验证 / 通过-警告-错误 = 5-13-4 / 3 行人工缺口；KiCad <code>pic_programmer</code> 121 个器件 / 77 个 NC 引脚 / 19 个显式 schematic-side 命名网络 / 29 条带证据评审发现。pin-table 检查进入工作台队列，但不改写这组 PASS/WARN/ERROR 总账。<code>document-candidate-smoke</code> 在同一个 mixed controller 样例上生成 8 行资料候选；无直接 URL 的候选不会伪装成 document-index row，工作台资料候选队列为 0，且 PASS/WARN/ERROR 仍保持 5/13/4。</p>
+      <p class="callout">公开演示数字：mixed controller 样例 25 个器件 / BOM 全配 / 22 行确定性验证 / 通过-警告-错误 = 5-13-4 / 3 行人工缺口；KiCad <code>pic_programmer</code> 121 个器件 / 77 个 NC 引脚 / 19 个显式 schematic-side 命名网络 / 29 条带证据评审发现。pin-table summary 会显示 accepted、rejected unknown-refdes 和 affected-refdes，但不改写 PASS/WARN/ERROR；review-package gap 只进入 package-status manual lane。<code>document-candidate-smoke</code> 生成 8 行资料候选；无直接 URL 的候选不会伪装成 document-index row，队列为 0，PASS/WARN/ERROR 仍保持 5/13/4。</p>
+      <p class="callout">工作台导入切换使用请求级 context lease：旧项目的读取请求结束后才关闭旧 SQL session，服务退出会回收当前 session 和导入临时目录。器件队列、资料组、风险提示和 review task 投影只在一个项目 context 内建立一次；代表 fixture 的 50 次重复 task 读取从约 0.086 秒降到 0.0016 秒，state/detail/prep JSON 保持等价。并发 AI 问答也不会共用同一 ORM Session 或交错 fake-client 回合。这些改进不改变任何电气结论。</p>
 
       <h2>Q3. 哪些数据进向量库，哪些进关系库？为什么这样分？</h2>
       <ul>

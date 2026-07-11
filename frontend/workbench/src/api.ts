@@ -110,7 +110,8 @@ export function askCopilot(
       trace: [],
       wrapped_count: 0,
       suggestions: [],
-      datasheet_search_enabled: false
+      datasheet_search_enabled: false,
+      unsupported_evidence_tokens: []
     });
   }
   return requestJson<ChatResponse>("/api/workbench/chat", {

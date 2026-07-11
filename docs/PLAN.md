@@ -317,6 +317,49 @@ than packaging, evaluation, or UI polish.
 
 ---
 
+### DR-015 — Context-owned projections and lease-managed Workbench state
+**Date**: 2026-07-11
+**Context**: The live Workbench allowed an import request to replace the active
+`WorkbenchContext` and immediately close the previous SQL session. A concurrent
+state/detail/chat/export request could still be reading that previous context.
+The same read paths also rebuilt the full review-task list and repeatedly scanned
+project rows and document groups for every component-detail request.
+
+**Decision**:
+
+1. `WorkbenchContextManager` owns the active context. Every HTTP request receives
+   a stable lease; import performs an atomic swap; a retired context closes only
+   after its final lease exits; FastAPI shutdown closes the active context and
+   removes owned import directories. Closed retired contexts are released rather
+   than retained in an append-only history.
+2. Each `WorkbenchContext` owns one immutable projection index for rows,
+   component/document groups, risk hints, sorted components, summary counts, and
+   a lazily built thread-safe review-task/refdes index. No process-global cache is
+   allowed.
+3. Core JSON endpoints publish named Pydantic response models. The frontend keeps
+   its handwritten ergonomic types, but generated TypeScript contracts plus
+   compile-time assignability checks make schema drift a build failure.
+4. Structural splits retain compatibility facades (`cli.py`, `chat.py`,
+   `view_model.py`, `ui_terms.py`, and `styles.css`) so internal ownership can
+   change without breaking public imports or CLI/browser behavior.
+5. A complete agent turn is serialized by both the shared service/client lock and
+   the context lock. This protects the stateful fake client across imports and the
+   context-owned SQLAlchemy Session across independently constructed services.
+
+**Why**: Context leases fix a correctness problem; context-owned projections fix
+repeated work without weakening deterministic truth. Keeping caches inside the
+context makes invalidation identical to project import and prevents one board's
+facts from leaking into another. Generated contracts make the Python/React
+boundary auditable without forcing frontend code to import backend internals.
+
+**When to revisit**: If Workbench contexts become durable multi-user records,
+replace the in-process lease manager with a request-scoped repository/unit-of-work
+boundary. Do not add cross-context cache sharing until a measured workload proves
+that context-local projection is insufficient and an explicit invalidation key is
+defined.
+
+---
+
 ## Post-migration roadmap (toward Gate B submission)
 
 The validator-family work is late-stage closure, not early build. This roadmap sequences the remaining work by leverage on the DJI submission narrative (DR-011). Each phase keeps the slice-acceptance template: one CLI/demo artifact, green `pytest` + `ruff`, an `interview_qa.md` touch, and a `learning_log.md` entry.

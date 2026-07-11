@@ -1,0 +1,2310 @@
+{
+  "$defs": {
+    "BomView": {
+      "description": "BOM identity shown in detail and prep packet views.",
+      "properties": {
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "item_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Item Number"
+        },
+        "manufacturer": {
+          "default": "",
+          "title": "Manufacturer",
+          "type": "string"
+        },
+        "part_number": {
+          "default": "",
+          "title": "Part Number",
+          "type": "string"
+        },
+        "source": {
+          "default": "",
+          "title": "Source",
+          "type": "string"
+        },
+        "source_line": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Line"
+        },
+        "value": {
+          "default": "",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "description",
+        "item_number",
+        "manufacturer",
+        "part_number",
+        "source",
+        "source_line",
+        "value"
+      ],
+      "title": "BomView",
+      "type": "object"
+    },
+    "ChatMessage": {
+      "description": "One browser-held chat message sent back for short context.",
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "user",
+            "assistant"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "content",
+        "role"
+      ],
+      "title": "ChatMessage",
+      "type": "object"
+    },
+    "ChatRequest": {
+      "description": "User question sent from the Copilot panel.",
+      "properties": {
+        "history": {
+          "items": {
+            "$ref": "#/$defs/ChatMessage"
+          },
+          "title": "History",
+          "type": "array"
+        },
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "selected_refdes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected Refdes"
+        }
+      },
+      "required": [
+        "question"
+      ],
+      "title": "ChatRequest",
+      "type": "object"
+    },
+    "ChatResponse": {
+      "description": "Answer returned to the Copilot panel.",
+      "properties": {
+        "answer": {
+          "title": "Answer",
+          "type": "string"
+        },
+        "datasheet_search_enabled": {
+          "default": false,
+          "title": "Datasheet Search Enabled",
+          "type": "boolean"
+        },
+        "mode": {
+          "enum": [
+            "fake",
+            "real",
+            "snapshot"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "selected_refdes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected Refdes"
+        },
+        "suggestions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Suggestions",
+          "type": "array"
+        },
+        "trace": {
+          "items": {
+            "$ref": "#/$defs/EvidenceTrace"
+          },
+          "title": "Trace",
+          "type": "array"
+        },
+        "unsupported_evidence_tokens": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Unsupported Evidence Tokens",
+          "type": "array"
+        },
+        "wrapped_count": {
+          "default": 0,
+          "title": "Wrapped Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "answer",
+        "datasheet_search_enabled",
+        "mode",
+        "selected_refdes",
+        "suggestions",
+        "trace",
+        "unsupported_evidence_tokens",
+        "wrapped_count"
+      ],
+      "title": "ChatResponse",
+      "type": "object"
+    },
+    "CheckView": {
+      "description": "Validation check detail shown in the component panel.",
+      "properties": {
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceView"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "status_group": {
+          "enum": [
+            "error",
+            "warn",
+            "pass",
+            "manual"
+          ],
+          "title": "Status Group",
+          "type": "string"
+        },
+        "status_label": {
+          "title": "Status Label",
+          "type": "string"
+        },
+        "subject": {
+          "title": "Subject",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence",
+        "status",
+        "status_group",
+        "status_label",
+        "subject",
+        "summary"
+      ],
+      "title": "CheckView",
+      "type": "object"
+    },
+    "ComponentDetail": {
+      "description": "Full component detail consumed by the SPA.",
+      "properties": {
+        "bom": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BomView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/CheckView"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "document": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DocumentCoverageView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence_chain": {
+          "items": {
+            "$ref": "#/$defs/EvidenceChainItem"
+          },
+          "title": "Evidence Chain",
+          "type": "array"
+        },
+        "manufacturer": {
+          "default": "",
+          "title": "Manufacturer",
+          "type": "string"
+        },
+        "match_reason": {
+          "default": "",
+          "title": "Match Reason",
+          "type": "string"
+        },
+        "match_status": {
+          "default": "",
+          "title": "Match Status",
+          "type": "string"
+        },
+        "package": {
+          "default": "",
+          "title": "Package",
+          "type": "string"
+        },
+        "part_number": {
+          "default": "",
+          "title": "Part Number",
+          "type": "string"
+        },
+        "pins": {
+          "items": {
+            "$ref": "#/$defs/PinView"
+          },
+          "title": "Pins",
+          "type": "array"
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProfileView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "profile_part_number": {
+          "default": "",
+          "title": "Profile Part Number",
+          "type": "string"
+        },
+        "refdes": {
+          "title": "Refdes",
+          "type": "string"
+        },
+        "risk_hints": {
+          "items": {
+            "$ref": "#/$defs/RiskHintView"
+          },
+          "title": "Risk Hints",
+          "type": "array"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "status_group": {
+          "enum": [
+            "error",
+            "warn",
+            "pass",
+            "manual"
+          ],
+          "title": "Status Group",
+          "type": "string"
+        },
+        "status_label": {
+          "title": "Status Label",
+          "type": "string"
+        },
+        "task_counts": {
+          "$ref": "#/$defs/ComponentTaskCounts"
+        },
+        "tasks": {
+          "items": {
+            "$ref": "#/$defs/ReviewTask"
+          },
+          "title": "Tasks",
+          "type": "array"
+        },
+        "trust_tier": {
+          "enum": [
+            "l1",
+            "l2",
+            "l3"
+          ],
+          "title": "Trust Tier",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "bom",
+        "checks",
+        "document",
+        "evidence_chain",
+        "manufacturer",
+        "match_reason",
+        "match_status",
+        "package",
+        "part_number",
+        "pins",
+        "profile",
+        "profile_part_number",
+        "refdes",
+        "risk_hints",
+        "status",
+        "status_group",
+        "status_label",
+        "task_counts",
+        "tasks",
+        "trust_tier",
+        "value"
+      ],
+      "title": "ComponentDetail",
+      "type": "object"
+    },
+    "ComponentTaskCounts": {
+      "description": "Task counts scoped to one component.",
+      "properties": {
+        "error": {
+          "default": 0,
+          "title": "Error",
+          "type": "integer"
+        },
+        "manual": {
+          "default": 0,
+          "title": "Manual",
+          "type": "integer"
+        },
+        "pass_count": {
+          "default": 0,
+          "title": "Pass Count",
+          "type": "integer"
+        },
+        "total": {
+          "default": 0,
+          "title": "Total",
+          "type": "integer"
+        },
+        "warn": {
+          "default": 0,
+          "title": "Warn",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "error",
+        "manual",
+        "pass_count",
+        "total",
+        "warn"
+      ],
+      "title": "ComponentTaskCounts",
+      "type": "object"
+    },
+    "DatasheetCandidateSearchView": {
+      "description": "Provider lookup status embedded in component detail.",
+      "properties": {
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/DatasheetCandidateView"
+          },
+          "title": "Candidates",
+          "type": "array"
+        },
+        "count": {
+          "default": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "direct_datasheet_count": {
+          "default": 0,
+          "title": "Direct Datasheet Count",
+          "type": "integer"
+        },
+        "next_actions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Next Actions",
+          "type": "array"
+        },
+        "provider": {
+          "default": "datasheets.com",
+          "title": "Provider",
+          "type": "string"
+        },
+        "query": {
+          "default": "",
+          "title": "Query",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "remaining_month": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Remaining Month"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidates",
+        "count",
+        "direct_datasheet_count",
+        "next_actions",
+        "provider",
+        "query",
+        "reason",
+        "remaining_month",
+        "status"
+      ],
+      "title": "DatasheetCandidateSearchView",
+      "type": "object"
+    },
+    "DatasheetCandidateView": {
+      "description": "One provider candidate shown as reviewer-only data.",
+      "properties": {
+        "datasheet_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datasheet Url"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "lifecycle_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lifecycle Status"
+        },
+        "manufacturer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Manufacturer"
+        },
+        "mpn": {
+          "title": "Mpn",
+          "type": "string"
+        },
+        "package_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Package Type"
+        },
+        "product_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Product Url"
+        },
+        "review_status": {
+          "default": "candidate",
+          "title": "Review Status",
+          "type": "string"
+        },
+        "source": {
+          "default": "datasheets.com_api",
+          "title": "Source",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        }
+      },
+      "required": [
+        "datasheet_url",
+        "description",
+        "lifecycle_status",
+        "manufacturer",
+        "mpn",
+        "package_type",
+        "product_url",
+        "review_status",
+        "source",
+        "title"
+      ],
+      "title": "DatasheetCandidateView",
+      "type": "object"
+    },
+    "DocumentCoverageView": {
+      "description": "Document-index coverage for one component's BOM identity.",
+      "properties": {
+        "candidate_search": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DatasheetCandidateSearchView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "candidates": {
+          "default": 0,
+          "title": "Candidates",
+          "type": "integer"
+        },
+        "group_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Group Id"
+        },
+        "identity": {
+          "default": "",
+          "title": "Identity",
+          "type": "string"
+        },
+        "identity_kind": {
+          "default": "",
+          "title": "Identity Kind",
+          "type": "string"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "status": {
+          "default": "not_configured",
+          "title": "Status",
+          "type": "string"
+        },
+        "suggested_family": {
+          "default": "",
+          "title": "Suggested Family",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "candidate_search",
+        "candidates",
+        "group_id",
+        "identity",
+        "identity_kind",
+        "reason",
+        "source",
+        "status",
+        "suggested_family",
+        "title",
+        "url"
+      ],
+      "title": "DocumentCoverageView",
+      "type": "object"
+    },
+    "EvidenceChainItem": {
+      "description": "A reader-facing chain-of-custody card.",
+      "properties": {
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceView"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "status_group": {
+          "enum": [
+            "error",
+            "warn",
+            "pass",
+            "manual"
+          ],
+          "title": "Status Group",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "trust_tier": {
+          "enum": [
+            "l1",
+            "l2",
+            "l3"
+          ],
+          "title": "Trust Tier",
+          "type": "string"
+        }
+      },
+      "required": [
+        "body",
+        "evidence",
+        "kind",
+        "status",
+        "status_group",
+        "title",
+        "trust_tier"
+      ],
+      "title": "EvidenceChainItem",
+      "type": "object"
+    },
+    "EvidenceClassification": {
+      "description": "One evidence token's source class plus filesystem audit state.",
+      "properties": {
+        "audit_status": {
+          "default": "ok",
+          "enum": [
+            "ok",
+            "missing_local_source"
+          ],
+          "title": "Audit Status",
+          "type": "string"
+        },
+        "local_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Local Source"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_class": {
+          "enum": [
+            "live_retrieved",
+            "reviewed_profile",
+            "document_index",
+            "design_source",
+            "unknown"
+          ],
+          "title": "Source Class",
+          "type": "string"
+        },
+        "token": {
+          "title": "Token",
+          "type": "string"
+        }
+      },
+      "required": [
+        "audit_status",
+        "local_source",
+        "reason",
+        "source_class",
+        "token"
+      ],
+      "title": "EvidenceClassification",
+      "type": "object"
+    },
+    "EvidenceTrace": {
+      "description": "UI-friendly trace row derived from one Runner tool call.",
+      "properties": {
+        "evidence": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "evidence_classification": {
+          "items": {
+            "$ref": "#/$defs/EvidenceClassification"
+          },
+          "title": "Evidence Classification",
+          "type": "array"
+        },
+        "input": {
+          "additionalProperties": true,
+          "title": "Input",
+          "type": "object"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        },
+        "trust_label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trust Label"
+        },
+        "trust_tier": {
+          "anyOf": [
+            {
+              "enum": [
+                "l1",
+                "l2",
+                "l3"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trust Tier"
+        },
+        "wrapped": {
+          "default": 0,
+          "title": "Wrapped",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "evidence",
+        "evidence_classification",
+        "input",
+        "status",
+        "summary",
+        "tool",
+        "trust_label",
+        "trust_tier",
+        "wrapped"
+      ],
+      "title": "EvidenceTrace",
+      "type": "object"
+    },
+    "EvidenceView": {
+      "description": "One visible evidence token plus its provenance classification.",
+      "properties": {
+        "audit_status": {
+          "title": "Audit Status",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "local_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Local Source"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_class": {
+          "title": "Source Class",
+          "type": "string"
+        },
+        "token": {
+          "title": "Token",
+          "type": "string"
+        },
+        "trust_tier": {
+          "enum": [
+            "l1",
+            "l2",
+            "l3"
+          ],
+          "title": "Trust Tier",
+          "type": "string"
+        }
+      },
+      "required": [
+        "audit_status",
+        "label",
+        "local_source",
+        "reason",
+        "source_class",
+        "token",
+        "trust_tier"
+      ],
+      "title": "EvidenceView",
+      "type": "object"
+    },
+    "ImportResponse": {
+      "description": "Summary returned after an uploaded project becomes the active context.",
+      "properties": {
+        "ok": {
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "pin_table": {
+          "$ref": "#/$defs/PinTableSummary"
+        },
+        "project": {
+          "$ref": "#/$defs/WorkbenchProject"
+        },
+        "review_package": {
+          "$ref": "#/$defs/ReviewPackageSummary"
+        },
+        "selected_refdes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected Refdes"
+        },
+        "summary": {
+          "$ref": "#/$defs/WorkbenchSummary"
+        },
+        "task_counts": {
+          "$ref": "#/$defs/ReviewTaskCounts"
+        }
+      },
+      "required": [
+        "ok",
+        "pin_table",
+        "project",
+        "review_package",
+        "selected_refdes",
+        "summary",
+        "task_counts"
+      ],
+      "title": "ImportResponse",
+      "type": "object"
+    },
+    "NetCheckView": {
+      "description": "Design-level net check shown in the project summary area.",
+      "properties": {
+        "check": {
+          "title": "Check",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceView"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "net_name": {
+          "title": "Net Name",
+          "type": "string"
+        },
+        "nodes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Nodes",
+          "type": "array"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "status_group": {
+          "enum": [
+            "error",
+            "warn",
+            "pass",
+            "manual"
+          ],
+          "title": "Status Group",
+          "type": "string"
+        },
+        "status_label": {
+          "title": "Status Label",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check",
+        "evidence",
+        "net_name",
+        "nodes",
+        "status",
+        "status_group",
+        "status_label",
+        "summary"
+      ],
+      "title": "NetCheckView",
+      "type": "object"
+    },
+    "PinTableSummary": {
+      "description": "Capture pin-table intake status shown beside first-class imports.",
+      "properties": {
+        "accepted_findings": {
+          "default": 0,
+          "title": "Accepted Findings",
+          "type": "integer"
+        },
+        "accepted_refdes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Accepted Refdes",
+          "type": "array"
+        },
+        "affected_refdes": {
+          "default": 0,
+          "title": "Affected Refdes",
+          "type": "integer"
+        },
+        "affected_refdes_list": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Affected Refdes List",
+          "type": "array"
+        },
+        "checks": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Checks",
+          "type": "object"
+        },
+        "rejected": {
+          "items": {
+            "$ref": "#/$defs/RejectedPinTableFindingView"
+          },
+          "title": "Rejected",
+          "type": "array"
+        },
+        "rejected_findings": {
+          "default": 0,
+          "title": "Rejected Findings",
+          "type": "integer"
+        },
+        "rejected_unknown_refdes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Rejected Unknown Refdes",
+          "type": "array"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "status": {
+          "enum": [
+            "loaded",
+            "not_configured"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "accepted_findings",
+        "accepted_refdes",
+        "affected_refdes",
+        "affected_refdes_list",
+        "checks",
+        "rejected",
+        "rejected_findings",
+        "rejected_unknown_refdes",
+        "source",
+        "status"
+      ],
+      "title": "PinTableSummary",
+      "type": "object"
+    },
+    "PinView": {
+      "description": "Pin/net detail shown in the component panel.",
+      "properties": {
+        "electrical_type": {
+          "title": "Electrical Type",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceView"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "is_nc": {
+          "default": false,
+          "title": "Is Nc",
+          "type": "boolean"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "net": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Net"
+        },
+        "number": {
+          "title": "Number",
+          "type": "string"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
+        "summary": {
+          "default": "",
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "electrical_type",
+        "evidence",
+        "is_nc",
+        "name",
+        "net",
+        "number",
+        "status",
+        "summary"
+      ],
+      "title": "PinView",
+      "type": "object"
+    },
+    "ProfileView": {
+      "description": "Profile match metadata for one component.",
+      "properties": {
+        "part_number": {
+          "default": "",
+          "title": "Part Number",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        },
+        "status": {
+          "default": "",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "part_number",
+        "path",
+        "reason",
+        "status"
+      ],
+      "title": "ProfileView",
+      "type": "object"
+    },
+    "RejectedPinTableFindingView": {
+      "description": "One pin-table finding rejected before it can enter the L1 queue.",
+      "properties": {
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "net": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Net"
+        },
+        "pin_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pin Number"
+        },
+        "reason": {
+          "default": "unknown_refdes",
+          "title": "Reason",
+          "type": "string"
+        },
+        "refdes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Refdes"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message",
+        "net",
+        "pin_number",
+        "reason",
+        "refdes",
+        "rule_id"
+      ],
+      "title": "RejectedPinTableFindingView",
+      "type": "object"
+    },
+    "RejectedRiskHintSummary": {
+      "description": "Safe rejected-hint summary without rejected free text.",
+      "properties": {
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "count",
+        "reason"
+      ],
+      "title": "RejectedRiskHintSummary",
+      "type": "object"
+    },
+    "ReviewPackageArtifactView": {
+      "description": "One exported review-package artifact shown as evidence coverage.",
+      "properties": {
+        "expected_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Sha256"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "expected_sha256",
+        "kind",
+        "name",
+        "note",
+        "path",
+        "required",
+        "sha256",
+        "status"
+      ],
+      "title": "ReviewPackageArtifactView",
+      "type": "object"
+    },
+    "ReviewPackageSummary": {
+      "description": "Review-package manifest status; not an electrical conclusion.",
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/ReviewPackageArtifactView"
+          },
+          "title": "Artifacts",
+          "type": "array"
+        },
+        "hash_mismatch": {
+          "default": 0,
+          "title": "Hash Mismatch",
+          "type": "integer"
+        },
+        "manual_gap_count": {
+          "default": 0,
+          "title": "Manual Gap Count",
+          "type": "integer"
+        },
+        "missing_optional": {
+          "default": 0,
+          "title": "Missing Optional",
+          "type": "integer"
+        },
+        "missing_required": {
+          "default": 0,
+          "title": "Missing Required",
+          "type": "integer"
+        },
+        "package_status": {
+          "default": "not_configured",
+          "enum": [
+            "not_configured",
+            "complete",
+            "optional_gap",
+            "missing_required",
+            "hash_mismatch"
+          ],
+          "title": "Package Status",
+          "type": "string"
+        },
+        "present": {
+          "default": 0,
+          "title": "Present",
+          "type": "integer"
+        },
+        "recommended_action": {
+          "default": "Provide a review-package manifest if this review requires handoff evidence.",
+          "title": "Recommended Action",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "status": {
+          "enum": [
+            "loaded",
+            "not_configured"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "status_group": {
+          "default": "manual",
+          "enum": [
+            "error",
+            "warn",
+            "pass",
+            "manual"
+          ],
+          "title": "Status Group",
+          "type": "string"
+        },
+        "status_label": {
+          "default": "not configured",
+          "title": "Status Label",
+          "type": "string"
+        },
+        "total": {
+          "default": 0,
+          "title": "Total",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "artifacts",
+        "hash_mismatch",
+        "manual_gap_count",
+        "missing_optional",
+        "missing_required",
+        "package_status",
+        "present",
+        "recommended_action",
+        "source",
+        "status",
+        "status_group",
+        "status_label",
+        "total"
+      ],
+      "title": "ReviewPackageSummary",
+      "type": "object"
+    },
+    "ReviewQueueItem": {
+      "description": "One row in the SPA review queue.",
+      "properties": {
+        "deterministic_status": {
+          "title": "Deterministic Status",
+          "type": "string"
+        },
+        "deterministic_status_group": {
+          "enum": [
+            "error",
+            "warn",
+            "pass",
+            "manual"
+          ],
+          "title": "Deterministic Status Group",
+          "type": "string"
+        },
+        "deterministic_status_label": {
+          "title": "Deterministic Status Label",
+          "type": "string"
+        },
+        "document_status": {
+          "default": "not_configured",
+          "title": "Document Status",
+          "type": "string"
+        },
+        "evidence_count": {
+          "title": "Evidence Count",
+          "type": "integer"
+        },
+        "issue_count": {
+          "title": "Issue Count",
+          "type": "integer"
+        },
+        "manufacturer": {
+          "default": "",
+          "title": "Manufacturer",
+          "type": "string"
+        },
+        "package": {
+          "default": "",
+          "title": "Package",
+          "type": "string"
+        },
+        "part_number": {
+          "default": "",
+          "title": "Part Number",
+          "type": "string"
+        },
+        "pin_table_task_count": {
+          "default": 0,
+          "title": "Pin Table Task Count",
+          "type": "integer"
+        },
+        "profile_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile Path"
+        },
+        "profile_status": {
+          "default": "",
+          "title": "Profile Status",
+          "type": "string"
+        },
+        "refdes": {
+          "title": "Refdes",
+          "type": "string"
+        },
+        "risk_hint_count": {
+          "default": 0,
+          "title": "Risk Hint Count",
+          "type": "integer"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "status_group": {
+          "enum": [
+            "error",
+            "warn",
+            "pass",
+            "manual"
+          ],
+          "title": "Status Group",
+          "type": "string"
+        },
+        "status_label": {
+          "title": "Status Label",
+          "type": "string"
+        },
+        "subtitle": {
+          "title": "Subtitle",
+          "type": "string"
+        },
+        "task_count": {
+          "default": 0,
+          "title": "Task Count",
+          "type": "integer"
+        },
+        "task_counts": {
+          "$ref": "#/$defs/ComponentTaskCounts"
+        },
+        "task_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Task Ids",
+          "type": "array"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "top_task_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Task Id"
+        },
+        "trust_tier": {
+          "enum": [
+            "l1",
+            "l2",
+            "l3"
+          ],
+          "title": "Trust Tier",
+          "type": "string"
+        },
+        "value": {
+          "default": "",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "deterministic_status",
+        "deterministic_status_group",
+        "deterministic_status_label",
+        "document_status",
+        "evidence_count",
+        "issue_count",
+        "manufacturer",
+        "package",
+        "part_number",
+        "pin_table_task_count",
+        "profile_path",
+        "profile_status",
+        "refdes",
+        "risk_hint_count",
+        "status",
+        "status_group",
+        "status_label",
+        "subtitle",
+        "task_count",
+        "task_counts",
+        "task_ids",
+        "title",
+        "top_task_id",
+        "trust_tier",
+        "value"
+      ],
+      "title": "ReviewQueueItem",
+      "type": "object"
+    },
+    "ReviewTask": {
+      "description": "One finding-first review task in the SPA workflow.",
+      "properties": {
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "check": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Check"
+        },
+        "evidence_chain": {
+          "items": {
+            "$ref": "#/$defs/EvidenceChainItem"
+          },
+          "title": "Evidence Chain",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "pin_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pin Number"
+        },
+        "recommended_action": {
+          "title": "Recommended Action",
+          "type": "string"
+        },
+        "refdes": {
+          "title": "Refdes",
+          "type": "string"
+        },
+        "source_classes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Classes",
+          "type": "array"
+        },
+        "stable_key": {
+          "title": "Stable Key",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "status_group": {
+          "enum": [
+            "error",
+            "warn",
+            "pass",
+            "manual"
+          ],
+          "title": "Status Group",
+          "type": "string"
+        },
+        "status_label": {
+          "title": "Status Label",
+          "type": "string"
+        },
+        "subject": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "trust_tier": {
+          "enum": [
+            "l1",
+            "l2",
+            "l3"
+          ],
+          "title": "Trust Tier",
+          "type": "string"
+        }
+      },
+      "required": [
+        "body",
+        "check",
+        "evidence_chain",
+        "id",
+        "kind",
+        "pin_number",
+        "recommended_action",
+        "refdes",
+        "source_classes",
+        "stable_key",
+        "status",
+        "status_group",
+        "status_label",
+        "subject",
+        "title",
+        "trust_tier"
+      ],
+      "title": "ReviewTask",
+      "type": "object"
+    },
+    "ReviewTaskCounts": {
+      "description": "Stable task counts for filter chips and export summaries.",
+      "properties": {
+        "error": {
+          "title": "Error",
+          "type": "integer"
+        },
+        "manual": {
+          "title": "Manual",
+          "type": "integer"
+        },
+        "pass_count": {
+          "title": "Pass Count",
+          "type": "integer"
+        },
+        "total": {
+          "title": "Total",
+          "type": "integer"
+        },
+        "warn": {
+          "title": "Warn",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "error",
+        "manual",
+        "pass_count",
+        "total",
+        "warn"
+      ],
+      "title": "ReviewTaskCounts",
+      "type": "object"
+    },
+    "RiskHintView": {
+      "description": "Registry-verified external hint for read-only display.",
+      "properties": {
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "refdes": {
+          "title": "Refdes",
+          "type": "string"
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Severity"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "wrapped_refdes_count": {
+          "default": 0,
+          "title": "Wrapped Refdes Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "body",
+        "refdes",
+        "severity",
+        "source",
+        "title",
+        "wrapped_refdes_count"
+      ],
+      "title": "RiskHintView",
+      "type": "object"
+    },
+    "RiskHintsSummary": {
+      "description": "Backward-compatible compact risk-hints summary.",
+      "properties": {
+        "accepted_external_count": {
+          "title": "Accepted External Count",
+          "type": "integer"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "external_status": {
+          "title": "External Status",
+          "type": "string"
+        },
+        "rejected_external_count": {
+          "title": "Rejected External Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "accepted_external_count",
+        "count",
+        "external_status",
+        "rejected_external_count"
+      ],
+      "title": "RiskHintsSummary",
+      "type": "object"
+    },
+    "RiskHintsView": {
+      "description": "Risk-hints state for the SPA.",
+      "properties": {
+        "accepted": {
+          "items": {
+            "$ref": "#/$defs/RiskHintView"
+          },
+          "title": "Accepted",
+          "type": "array"
+        },
+        "accepted_external_count": {
+          "title": "Accepted External Count",
+          "type": "integer"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "external_status": {
+          "title": "External Status",
+          "type": "string"
+        },
+        "rejected": {
+          "items": {
+            "$ref": "#/$defs/RejectedRiskHintSummary"
+          },
+          "title": "Rejected",
+          "type": "array"
+        },
+        "rejected_external_count": {
+          "title": "Rejected External Count",
+          "type": "integer"
+        },
+        "wrapped_refdes_count": {
+          "title": "Wrapped Refdes Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "accepted",
+        "accepted_external_count",
+        "count",
+        "external_status",
+        "rejected",
+        "rejected_external_count",
+        "wrapped_refdes_count"
+      ],
+      "title": "RiskHintsView",
+      "type": "object"
+    },
+    "WorkbenchCapabilities": {
+      "description": "Feature flags surfaced to the SPA.",
+      "properties": {
+        "chat": {
+          "default": true,
+          "title": "Chat",
+          "type": "boolean"
+        },
+        "datasheet_candidate_lookup_enabled": {
+          "default": false,
+          "title": "Datasheet Candidate Lookup Enabled",
+          "type": "boolean"
+        },
+        "datasheet_search_enabled": {
+          "title": "Datasheet Search Enabled",
+          "type": "boolean"
+        },
+        "document_index_enabled": {
+          "title": "Document Index Enabled",
+          "type": "boolean"
+        },
+        "pin_table_enabled": {
+          "default": false,
+          "title": "Pin Table Enabled",
+          "type": "boolean"
+        },
+        "review_package_enabled": {
+          "default": false,
+          "title": "Review Package Enabled",
+          "type": "boolean"
+        },
+        "risk_hints_enabled": {
+          "title": "Risk Hints Enabled",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "chat",
+        "datasheet_candidate_lookup_enabled",
+        "datasheet_search_enabled",
+        "document_index_enabled",
+        "pin_table_enabled",
+        "review_package_enabled",
+        "risk_hints_enabled"
+      ],
+      "title": "WorkbenchCapabilities",
+      "type": "object"
+    },
+    "WorkbenchProject": {
+      "description": "Project metadata shown in the SPA header.",
+      "properties": {
+        "bom_source": {
+          "title": "Bom Source",
+          "type": "string"
+        },
+        "generated_at": {
+          "title": "Generated At",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "netlist_source": {
+          "title": "Netlist Source",
+          "type": "string"
+        },
+        "netlist_type": {
+          "title": "Netlist Type",
+          "type": "string"
+        },
+        "profiles_dir": {
+          "title": "Profiles Dir",
+          "type": "string"
+        },
+        "scope": {
+          "default": "schematic_review_only",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "bom_source",
+        "generated_at",
+        "name",
+        "netlist_source",
+        "netlist_type",
+        "profiles_dir",
+        "scope"
+      ],
+      "title": "WorkbenchProject",
+      "type": "object"
+    },
+    "WorkbenchState": {
+      "description": "Top-level SPA state returned by ``/api/workbench/state``.",
+      "properties": {
+        "capabilities": {
+          "$ref": "#/$defs/WorkbenchCapabilities"
+        },
+        "net_checks": {
+          "items": {
+            "$ref": "#/$defs/NetCheckView"
+          },
+          "title": "Net Checks",
+          "type": "array"
+        },
+        "pin_table": {
+          "$ref": "#/$defs/PinTableSummary"
+        },
+        "project": {
+          "$ref": "#/$defs/WorkbenchProject"
+        },
+        "queue": {
+          "items": {
+            "$ref": "#/$defs/ReviewQueueItem"
+          },
+          "title": "Queue",
+          "type": "array"
+        },
+        "review_package": {
+          "$ref": "#/$defs/ReviewPackageSummary"
+        },
+        "review_tasks": {
+          "items": {
+            "$ref": "#/$defs/ReviewTask"
+          },
+          "title": "Review Tasks",
+          "type": "array"
+        },
+        "risk_hint_details": {
+          "$ref": "#/$defs/RiskHintsView"
+        },
+        "risk_hints": {
+          "$ref": "#/$defs/RiskHintsSummary"
+        },
+        "selected_refdes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Selected Refdes"
+        },
+        "summary": {
+          "$ref": "#/$defs/WorkbenchSummary"
+        },
+        "task_counts": {
+          "$ref": "#/$defs/ReviewTaskCounts"
+        }
+      },
+      "required": [
+        "capabilities",
+        "net_checks",
+        "pin_table",
+        "project",
+        "queue",
+        "review_package",
+        "review_tasks",
+        "risk_hint_details",
+        "risk_hints",
+        "selected_refdes",
+        "summary",
+        "task_counts"
+      ],
+      "title": "WorkbenchState",
+      "type": "object"
+    },
+    "WorkbenchSummary": {
+      "description": "Count summary for the current workbench run.",
+      "properties": {
+        "bom_matched": {
+          "title": "Bom Matched",
+          "type": "integer"
+        },
+        "components": {
+          "title": "Components",
+          "type": "integer"
+        },
+        "error_count": {
+          "title": "Error Count",
+          "type": "integer"
+        },
+        "manual": {
+          "title": "Manual",
+          "type": "integer"
+        },
+        "pass_count": {
+          "title": "Pass Count",
+          "type": "integer"
+        },
+        "validated": {
+          "title": "Validated",
+          "type": "integer"
+        },
+        "warn_count": {
+          "title": "Warn Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "bom_matched",
+        "components",
+        "error_count",
+        "manual",
+        "pass_count",
+        "validated",
+        "warn_count"
+      ],
+      "title": "WorkbenchSummary",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "chat_request": {
+      "$ref": "#/$defs/ChatRequest"
+    },
+    "chat_response": {
+      "$ref": "#/$defs/ChatResponse"
+    },
+    "component_detail": {
+      "$ref": "#/$defs/ComponentDetail"
+    },
+    "import_response": {
+      "$ref": "#/$defs/ImportResponse"
+    },
+    "workbench_state": {
+      "$ref": "#/$defs/WorkbenchState"
+    }
+  },
+  "required": [
+    "workbench_state",
+    "component_detail",
+    "import_response",
+    "chat_request",
+    "chat_response"
+  ],
+  "title": "WorkbenchContracts",
+  "type": "object"
+}

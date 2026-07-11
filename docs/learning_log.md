@@ -4775,3 +4775,70 @@ create ReviewTask rows and do not alter PASS/WARN/ERROR totals.
 Evidence-package readiness needs its own status lane. Keep it visible beside
 pin-table and document/profile coverage, but do not promote missing paperwork
 into an electrical conclusion.
+
+## 2026-07-11 — A mutable Workbench needs request leases and context-local projections
+
+**Symptom**
+
+Importing a new project replaced the shared Workbench context and immediately
+closed the previous SQL session. A request already using the previous context
+could therefore lose its backing session. Component-detail and state requests
+also rebuilt review tasks and rescanned project/document rows even though those
+inputs do not change during one context lifetime.
+
+**Root cause**
+
+The FastAPI app treated the active context as a mutable dictionary instead of a
+resource with readers and a shutdown lifecycle. View projection was implemented
+as request-local comprehensions, so import was the only implicit invalidation
+boundary but the code did not model that boundary explicitly.
+
+**Fix**
+
+Added a lease-aware `WorkbenchContextManager`: requests hold a stable snapshot,
+import atomically swaps contexts, retired contexts close after their final
+reader, closed retired references are discarded, and FastAPI shutdown closes
+owned sessions/directories without bypassing active leases. Context construction
+and failed import activation close their newly created session before returning
+an error. Each context now
+owns immutable row/document/risk/component indexes plus one locked lazy
+review-task projection. Agent turns use a service/client lock plus a context lock,
+preventing fake-client cross-talk across imports and concurrent ORM Session use.
+A representative fixture reduced 50 repeated task reads
+from about 0.086 seconds to 0.0016 seconds while canonical state/detail/prep JSON
+remained byte-for-byte equivalent. Named Pydantic response models and generated
+TypeScript compatibility checks now guard the backend/frontend boundary.
+
+**Takeaway**
+
+Make resource lifetime and cache invalidation the same explicit boundary. For a
+single-project local server, the Workbench context is that boundary: lease it for
+correctness, cache only deterministic projections inside it, and discard both
+together on import.
+
+## 2026-07-11 — Test clients and frontend build tools need explicit dependency gates
+
+**Symptom**
+
+Every FastAPI TestClient import emitted a Starlette deprecation warning, and the
+frontend audit reported a low-severity Windows dev-server file-read advisory in
+the transitive esbuild version.
+
+**Root cause**
+
+Starlette 1.2 prefers the separate `httpx2` package for its test client while the
+project only installed runtime `httpx`. The locked Vite 7.3.5 dependency range
+kept esbuild below the advisory's fixed 0.28.1 release.
+
+**Fix**
+
+Added `httpx2` to the Python dev extra without replacing runtime `httpx`, then
+locked Vite 7.3.6 with esbuild 0.28.1. TestClient runs without the warning,
+`npm audit` reports zero vulnerabilities, and the frontend typecheck, unit,
+build, and browser suites remain green.
+
+**Takeaway**
+
+Keep test-only protocol transitions separate from runtime clients, and treat a
+clean dependency audit as a verified lockfile property rather than assuming a
+top-level semver range selected a fixed transitive version.

@@ -26,6 +26,7 @@ dependencies = [
 # Added Day 2-3 (EDA parsing): "kiutils>=1.4.0"
 # Added Day 4-5 (vector + SQL): "chromadb>=0.5.0", "sqlalchemy>=2.0.0", "sentence-transformers>=3.0.0", "pdfplumber>=0.11.0"
 dev = [
+    "httpx2>=2.5.0",
     "pytest>=8.0.0",
     "ruff>=0.6.0",
 ]
