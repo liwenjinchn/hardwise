@@ -62,6 +62,13 @@ PASS/WARN/ERROR，也不替代评审签核。
 无直接 URL 的候选不会伪装成 document-index row，工作台资料候选队列为 0，
 且 PASS/WARN/ERROR 仍保持 5/13/4。
 
+工作台导入切换使用请求级 context lease：正在读取旧项目的请求结束后才关闭旧
+SQL session，服务退出也会回收当前 session 和导入临时目录。器件队列、资料组、
+风险提示和 review task 投影只在一个项目 context 内建立一次；代表 fixture 的
+50 次重复 task 读取从约 0.086 秒降到 0.0016 秒，state/detail/prep JSON 保持等价。
+并发 AI 问答也不会共用同一 ORM Session 或交错 fake-client 回合。这些是服务
+正确性和响应开销改进，不改变任何电气 PASS/WARN/ERROR 结论。
+
 ## Q3. 哪些数据进向量库，哪些进关系库？为什么这样分？
 
 - **关系库（SQLAlchemy，SQLite 与 PostgreSQL 同套表结构）**：位号、引脚、
