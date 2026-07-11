@@ -72,3 +72,10 @@ def test_classifies_netlist_token_as_design_source() -> None:
 
     assert classified.source_class == "design_source"
     assert classified.audit_status == "ok"
+
+
+def test_classifies_review_package_summary_as_design_source() -> None:
+    classified = classify_evidence_token("review_package:review_package.yaml#summary")
+
+    assert classified.source_class == "design_source"
+    assert classified.audit_status == "ok"
