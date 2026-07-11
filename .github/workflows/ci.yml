@@ -12,6 +12,7 @@ jobs:
   test:
     name: ${{ matrix.os }} / Python 3.11
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -21,15 +22,18 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.0
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v8.3.2
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: "3.11"
+
+      - name: Check lockfile
+        run: uv lock --check
 
       - name: Install dependencies
         run: uv sync --extra dev
@@ -39,3 +43,46 @@ jobs:
 
       - name: Test
         run: uv run pytest -q
+
+  frontend:
+    name: Frontend contracts / Node 24
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.3.2
+
+      - name: Set up Python
+        uses: actions/setup-python@v6.3.0
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/workbench/package-lock.json
+
+      - name: Install backend dependencies
+        run: uv sync --locked
+
+      - name: Install frontend dependencies
+        working-directory: frontend/workbench
+        run: npm ci
+
+      - name: Check backend/frontend contracts and types
+        working-directory: frontend/workbench
+        run: npm run typecheck
+
+      - name: Run frontend unit tests
+        working-directory: frontend/workbench
+        run: npm run test:unit
+
+      - name: Build frontend
+        working-directory: frontend/workbench
+        run: npm run build
