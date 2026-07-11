@@ -56,16 +56,23 @@ test("import page can reload the built-in demo files", async ({ page }) => {
   await openReview(page);
   await page.getByRole("button", { name: "导入" }).click();
   await expect(page.locator(".upload-slot").first()).toContainText("拖入文件或点击选择");
+  await expect(page.locator(".evidence-lane-card")).toHaveCount(6);
   await page
     .locator('input[accept=".net,.dat,.txt,.pst"]')
     .setInputFiles(path.resolve("../../tests/fixtures/allegro/mixed_controller_power_stage.net"));
   await page
-    .locator('input[accept=".csv,.tsv,.txt"]')
+    .getByLabel("选择 BOM CSV")
     .setInputFiles(
       path.resolve("../../tests/fixtures/allegro/mixed_controller_power_stage_bom.csv")
     );
+  await page
+    .getByLabel("选择 public document index CSV")
+    .setInputFiles(path.resolve("../../tests/fixtures/allegro/document_match/docs.csv"));
   await page.getByRole("button", { name: "导入并解析" }).click();
   await expect(page.locator(".parse-step").first()).toBeVisible();
+  await expect(page.locator(".evidence-lane-card")).toHaveCount(6);
+  await expect(page.locator(".evidence-lane-card").filter({ hasText: "Public document index" }))
+    .toContainText("doc:docs.csv#summary");
   await expect(page.locator(".queue-list .queue-row").first()).toBeVisible({ timeout: 30_000 });
 });
 
@@ -76,13 +83,18 @@ for (const viewport of [
   test(`no horizontal overflow at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await openReview(page);
-    const overflow = await page.evaluate(() => {
-      const root = document.documentElement;
-      return {
-        scrollWidth: Math.max(root.scrollWidth, document.body.scrollWidth),
-        clientWidth: root.clientWidth
-      };
-    });
-    expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth);
+    for (const view of ["审查", "导入", "导出"]) {
+      await page.getByRole("button", { name: view }).click();
+      const overflow = await page.evaluate(() => {
+        const root = document.documentElement;
+        return {
+          scrollWidth: Math.max(root.scrollWidth, document.body.scrollWidth),
+          clientWidth: root.clientWidth
+        };
+      });
+      expect(overflow.scrollWidth, `${view} view overflow`).toBeLessThanOrEqual(
+        overflow.clientWidth
+      );
+    }
   });
 }

@@ -6,6 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from hardwise.workbench.evidence_package import EvidencePackageSummary
+
 StatusGroup = Literal["error", "warn", "pass", "manual"]
 TrustTier = Literal["l1", "l2", "l3"]
 
@@ -395,6 +397,7 @@ class WorkbenchState(BaseModel):
     project: WorkbenchProject
     summary: WorkbenchSummary
     capabilities: WorkbenchCapabilities
+    evidence_package: EvidencePackageSummary
     pin_table: PinTableSummary
     review_package: ReviewPackageSummary
     selected_refdes: str | None

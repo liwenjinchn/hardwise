@@ -345,6 +345,8 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
 
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
+    assert "evidence-package: netlist=present,bom=present" in result.output
+    assert "electrical_verdict=not_applicable" in result.output
     assert "validated=18" in result.output
     assert "PASS/WARN/ERROR=5/10/3" in result.output
     assert "manual=0" in result.output

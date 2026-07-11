@@ -1,5 +1,37 @@
 export type StatusGroup = "error" | "warn" | "pass" | "manual";
 export type TrustTier = "l1" | "l2" | "l3";
+export type EvidenceLaneStatus = "present" | "partial" | "gap" | "not_configured";
+export type EvidenceLaneStatusGroup = "pass" | "warn" | "manual";
+
+export interface EvidencePackageMetric {
+  key: string;
+  label: string;
+  value: number;
+  total: number | null;
+  unit: string;
+}
+
+export interface EvidencePackageLane {
+  id: "netlist" | "bom" | "validation" | "documents" | "pin_table" | "review_package";
+  label: string;
+  status: EvidenceLaneStatus;
+  status_group: EvidenceLaneStatusGroup;
+  status_label: string;
+  source: string | null;
+  source_token: string | null;
+  summary: string;
+  recommended_action: string;
+  trust_boundary: string;
+  metrics: EvidencePackageMetric[];
+}
+
+export interface EvidencePackageSummary {
+  schema_version: string;
+  scope: string;
+  electrical_verdict: "not_applicable";
+  lanes: EvidencePackageLane[];
+  guardrails: string[];
+}
 
 export interface WorkbenchProject {
   name: string;
@@ -277,6 +309,7 @@ export interface WorkbenchState {
   project: WorkbenchProject;
   summary: WorkbenchSummary;
   capabilities: WorkbenchCapabilities;
+  evidence_package: EvidencePackageSummary;
   pin_table: PinTableSummary;
   review_package: ReviewPackageSummary;
   selected_refdes: string | null;
@@ -292,6 +325,7 @@ export interface ImportResponse {
   ok: boolean;
   project: WorkbenchProject;
   summary: WorkbenchSummary;
+  evidence_package: EvidencePackageSummary;
   pin_table: PinTableSummary;
   review_package: ReviewPackageSummary;
   selected_refdes: string | null;
@@ -440,6 +474,7 @@ export interface ProjectReviewPrepPacket {
   profile_promotion_candidates: ProfilePromotionCandidate[];
   open_questions: ProjectPrepOpenQuestion[];
   risk_hints: RiskHintsView;
+  evidence_package: EvidencePackageSummary;
   pin_table: PinTableSummary;
   review_package: ReviewPackageSummary;
   evidence: EvidenceView[];

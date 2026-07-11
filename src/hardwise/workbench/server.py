@@ -309,6 +309,7 @@ def create_workbench_app(
     def import_workbench(
         netlist: UploadFile = File(...),
         bom: UploadFile | None = File(None),
+        document_index_csv: UploadFile | None = File(None),
         pin_table_csv: UploadFile | None = File(None),
         risk_hints_json: UploadFile | None = File(None),
         review_package: UploadFile | None = File(None),
@@ -322,6 +323,15 @@ def create_workbench_app(
             hints_path = (
                 _save_upload(risk_hints_json, import_dir, fallback_name="risk_hints.json")
                 if risk_hints_json
+                else None
+            )
+            document_index_path = (
+                _save_upload(
+                    document_index_csv,
+                    import_dir,
+                    fallback_name="document_index.csv",
+                )
+                if document_index_csv
                 else None
             )
             pin_table_path = (
@@ -338,7 +348,7 @@ def create_workbench_app(
                 netlist_path=netlist_path,
                 bom_path=bom_path,
                 profiles=profiles,
-                document_index=document_index,
+                document_index=document_index_path,
                 risk_hints_json=hints_path,
                 review_package_manifest=review_package_path,
                 pin_table=pin_table_path,
@@ -366,6 +376,7 @@ def create_workbench_app(
             ok=True,
             project=state.project,
             summary=state.summary,
+            evidence_package=state.evidence_package,
             pin_table=state.pin_table,
             review_package=state.review_package,
             selected_refdes=state.selected_refdes,

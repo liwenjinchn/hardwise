@@ -18,6 +18,7 @@ from hardwise.workbench.component_projection import (
     _project_view,
     _risk_hint_view,
 )
+from hardwise.workbench.evidence_package import build_evidence_package_summary
 from hardwise.workbench.projection_common import (
     _component_task_counts,
     _dedupe,
@@ -92,6 +93,7 @@ def build_workbench_state(
             pin_table_enabled=context.pin_table_path is not None,
             review_package_enabled=context.review_package.source_path is not None,
         ),
+        evidence_package=build_evidence_package_summary(context),
         pin_table=build_pin_table_summary(context),
         review_package=_review_package_summary(context.review_package),
         selected_refdes=_default_refdes(queue) or _default_task_refdes(review_tasks),

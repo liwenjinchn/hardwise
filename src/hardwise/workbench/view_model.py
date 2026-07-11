@@ -9,6 +9,12 @@ from hardwise.workbench.component_projection import (
     build_review_prep_packet,
     render_review_prep_packet_markdown,
 )
+from hardwise.workbench.evidence_package import (
+    EvidencePackageLane,
+    EvidencePackageMetric,
+    EvidencePackageSummary,
+    build_evidence_package_summary,
+)
 from hardwise.workbench.state_projection import (
     build_pin_table_summary,
     build_risk_hints_summary,
@@ -63,6 +69,9 @@ __all__ = [
     "DatasheetCandidateView",
     "DocumentCoverageView",
     "EvidenceChainItem",
+    "EvidencePackageLane",
+    "EvidencePackageMetric",
+    "EvidencePackageSummary",
     "EvidenceView",
     "NetCheckView",
     "PinTableSummary",
@@ -86,6 +95,7 @@ __all__ = [
     "WorkbenchState",
     "WorkbenchSummary",
     "build_component_detail",
+    "build_evidence_package_summary",
     "build_pin_table_summary",
     "build_review_prep_packet",
     "build_review_tasks",

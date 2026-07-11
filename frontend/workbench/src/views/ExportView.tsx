@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download, FileSearch, Loader2, PackageCheck } from "lucide-react";
 import { exportWorkbench, fetchProjectPrepPacketMarkdown } from "../api";
+import { EvidencePackageDashboard } from "../components/EvidencePackageDashboard";
 import type { WorkbenchState } from "../types";
 
 export function ExportView({ state }: { state: WorkbenchState }) {
@@ -97,6 +98,7 @@ export function ExportView({ state }: { state: WorkbenchState }) {
             </button>
           </div>
         </section>
+        <EvidencePackageDashboard summary={state.evidence_package} />
         <section className="project-prep-card" aria-label="Pin-table evidence summary">
           <div>
             <span className="eyebrow">Pin Table Evidence</span>

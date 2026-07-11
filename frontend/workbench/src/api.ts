@@ -127,6 +127,7 @@ export function askCopilot(
 export function importWorkbench(files: {
   netlist: File;
   bom?: File | null;
+  documentIndex?: File | null;
   pinTable?: File | null;
   reviewPackage?: File | null;
   riskHints?: File | null;
@@ -137,6 +138,7 @@ export function importWorkbench(files: {
   const body = new FormData();
   body.append("netlist", files.netlist);
   if (files.bom) body.append("bom", files.bom);
+  if (files.documentIndex) body.append("document_index_csv", files.documentIndex);
   if (files.pinTable) body.append("pin_table_csv", files.pinTable);
   if (files.reviewPackage) body.append("review_package", files.reviewPackage);
   if (files.riskHints) body.append("risk_hints_json", files.riskHints);

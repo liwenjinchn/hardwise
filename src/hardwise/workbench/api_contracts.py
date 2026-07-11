@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from hardwise.workbench.evidence_package import EvidencePackageSummary
+
 from hardwise.workbench.view_model import (
     PinTableSummary,
     ReviewPackageSummary,
@@ -19,6 +21,7 @@ class ImportResponse(BaseModel):
     ok: bool
     project: WorkbenchProject
     summary: WorkbenchSummary
+    evidence_package: EvidencePackageSummary
     pin_table: PinTableSummary
     review_package: ReviewPackageSummary
     selected_refdes: str | None = None

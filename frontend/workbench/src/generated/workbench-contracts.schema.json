@@ -866,6 +866,194 @@
       "title": "EvidenceClassification",
       "type": "object"
     },
+    "EvidencePackageLane": {
+      "description": "One independent evidence input or deterministic coverage lane.",
+      "properties": {
+        "id": {
+          "enum": [
+            "netlist",
+            "bom",
+            "validation",
+            "documents",
+            "pin_table",
+            "review_package"
+          ],
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/EvidencePackageMetric"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "recommended_action": {
+          "title": "Recommended Action",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "source_token": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Token"
+        },
+        "status": {
+          "enum": [
+            "present",
+            "partial",
+            "gap",
+            "not_configured"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "status_group": {
+          "enum": [
+            "pass",
+            "warn",
+            "manual"
+          ],
+          "title": "Status Group",
+          "type": "string"
+        },
+        "status_label": {
+          "title": "Status Label",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "trust_boundary": {
+          "title": "Trust Boundary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "metrics",
+        "recommended_action",
+        "source",
+        "source_token",
+        "status",
+        "status_group",
+        "status_label",
+        "summary",
+        "trust_boundary"
+      ],
+      "title": "EvidencePackageLane",
+      "type": "object"
+    },
+    "EvidencePackageMetric": {
+      "description": "One count or ratio whose unit stays explicit.",
+      "properties": {
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "total": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "total",
+        "unit",
+        "value"
+      ],
+      "title": "EvidencePackageMetric",
+      "type": "object"
+    },
+    "EvidencePackageSummary": {
+      "description": "Six evidence lanes that are intentionally not collapsed into one score.",
+      "properties": {
+        "electrical_verdict": {
+          "const": "not_applicable",
+          "default": "not_applicable",
+          "title": "Electrical Verdict",
+          "type": "string"
+        },
+        "guardrails": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Guardrails",
+          "type": "array"
+        },
+        "lanes": {
+          "items": {
+            "$ref": "#/$defs/EvidencePackageLane"
+          },
+          "title": "Lanes",
+          "type": "array"
+        },
+        "schema_version": {
+          "default": "hardwise.evidence_package.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "default": "input_evidence_completeness",
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "electrical_verdict",
+        "guardrails",
+        "lanes",
+        "schema_version",
+        "scope"
+      ],
+      "title": "EvidencePackageSummary",
+      "type": "object"
+    },
     "EvidenceTrace": {
       "description": "UI-friendly trace row derived from one Runner tool call.",
       "properties": {
@@ -1018,6 +1206,9 @@
     "ImportResponse": {
       "description": "Summary returned after an uploaded project becomes the active context.",
       "properties": {
+        "evidence_package": {
+          "$ref": "#/$defs/EvidencePackageSummary"
+        },
         "ok": {
           "title": "Ok",
           "type": "boolean"
@@ -1051,6 +1242,7 @@
         }
       },
       "required": [
+        "evidence_package",
         "ok",
         "pin_table",
         "project",
@@ -2165,6 +2357,9 @@
         "capabilities": {
           "$ref": "#/$defs/WorkbenchCapabilities"
         },
+        "evidence_package": {
+          "$ref": "#/$defs/EvidencePackageSummary"
+        },
         "net_checks": {
           "items": {
             "$ref": "#/$defs/NetCheckView"
@@ -2221,6 +2416,7 @@
       },
       "required": [
         "capabilities",
+        "evidence_package",
         "net_checks",
         "pin_table",
         "project",

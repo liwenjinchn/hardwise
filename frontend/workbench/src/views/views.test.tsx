@@ -12,6 +12,7 @@ import { TaskQueueColumn } from "./review/TaskQueueColumn";
 import {
   makeDetail,
   makeDocument,
+  makeEvidencePackage,
   makeEvidence,
   makePinTable,
   makeQueueItem,
@@ -72,11 +73,14 @@ describe("ImportView", () => {
     expect(html).toContain("netlist / PST");
     expect(html).toContain("BOM CSV");
     expect(html).toContain("Capture 引脚表 CSV");
+    expect(html).toContain("public document index CSV");
     expect(html).toContain("review-package manifest");
     expect(html).toContain("risk hints JSON");
     expect(html).toContain("25 components");
     expect(html).toContain("引脚表 未加载");
     expect(html).toContain("Review package 未加载");
+    expect(html).toContain("Document index 未加载");
+    expect(html).toContain("证据包完整性");
     expect(html).toContain("scripts/capture_pin_table_export.tcl");
     expect(html).toContain("导入并解析");
     expect(html).toContain("拖入文件或点击选择");
@@ -150,6 +154,7 @@ describe("ParseView", () => {
           ok: true,
           project: makeState().project,
           summary: makeState().summary,
+          evidence_package: makeEvidencePackage(),
           selected_refdes: "U8",
           task_counts: makeTaskCounts({ total: 4, warn: 4 }),
           pin_table: makePinTable({
@@ -173,6 +178,7 @@ describe("ParseView", () => {
     expect(html).toContain("3 条进入 L1，1 条未知位号被拒绝");
     expect(html).toContain("影响 2 个 refdes（U3, U8），拒绝未知位号 U999");
     expect(html).toContain("missing_required，manual gaps 1");
+    expect(html).toContain("证据包完整性");
   });
 });
 
@@ -298,6 +304,7 @@ describe("ExportView", () => {
     expect(html).toContain("项目评审准备包");
     expect(html).toContain("Capture 引脚表证据摘要");
     expect(html).toContain("评审证据包状态");
+    expect(html).toContain("证据包完整性");
     expect(html).toContain("未加载 Capture 引脚表 CSV");
     expect(html).toContain("未加载 review-package manifest");
     expect(html).toContain("选择格式后生成预览。");

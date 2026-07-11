@@ -137,6 +137,27 @@ export type TrustTier3 = "l1" | "l2" | "l3";
 export type Tasks = ReviewTask[];
 export type TrustTier4 = "l1" | "l2" | "l3";
 export type Value1 = string;
+export type ElectricalVerdict = "not_applicable";
+export type Guardrails = string[];
+export type Id1 = "netlist" | "bom" | "validation" | "documents" | "pin_table" | "review_package";
+export type Label1 = string;
+export type Key = string;
+export type Label2 = string;
+export type Total1 = number | null;
+export type Unit = string;
+export type Value2 = number;
+export type Metrics = EvidencePackageMetric[];
+export type RecommendedAction1 = string;
+export type Source3 = string | null;
+export type SourceToken = string | null;
+export type Status9 = "present" | "partial" | "gap" | "not_configured";
+export type StatusGroup4 = "pass" | "warn" | "manual";
+export type StatusLabel3 = string;
+export type Summary3 = string;
+export type TrustBoundary = string;
+export type Lanes = EvidencePackageLane[];
+export type SchemaVersion = string;
+export type Scope = string;
 export type Ok = boolean;
 export type AcceptedFindings = number;
 export type AcceptedRefdes = string[];
@@ -151,15 +172,15 @@ export type RuleId = string;
 export type Rejected = RejectedPinTableFindingView[];
 export type RejectedFindings = number;
 export type RejectedUnknownRefdes = string[];
-export type Source3 = string | null;
-export type Status9 = "loaded" | "not_configured";
+export type Source4 = string | null;
+export type Status10 = "loaded" | "not_configured";
 export type BomSource = string;
 export type GeneratedAt = string;
 export type Name1 = string;
 export type NetlistSource = string;
 export type NetlistType = string;
 export type ProfilesDir = string;
-export type Scope = string;
+export type Scope1 = string;
 export type ExpectedSha256 = string | null;
 export type Kind2 = string;
 export type Name2 = string;
@@ -167,7 +188,7 @@ export type Note = string | null;
 export type Path1 = string;
 export type Required = boolean;
 export type Sha256 = string | null;
-export type Status10 = string;
+export type Status11 = string;
 export type Artifacts = ReviewPackageArtifactView[];
 export type HashMismatch = number;
 export type ManualGapCount = number;
@@ -175,12 +196,12 @@ export type MissingOptional = number;
 export type MissingRequired = number;
 export type PackageStatus = "not_configured" | "complete" | "optional_gap" | "missing_required" | "hash_mismatch";
 export type Present = number;
-export type RecommendedAction1 = string;
-export type Source4 = string | null;
-export type Status11 = "loaded" | "not_configured";
-export type StatusGroup4 = "error" | "warn" | "pass" | "manual";
-export type StatusLabel3 = string;
-export type Total1 = number;
+export type RecommendedAction2 = string;
+export type Source5 = string | null;
+export type Status12 = "loaded" | "not_configured";
+export type StatusGroup5 = "error" | "warn" | "pass" | "manual";
+export type StatusLabel4 = string;
+export type Total2 = number;
 export type SelectedRefdes2 = string | null;
 export type BomMatched = number;
 export type Components = number;
@@ -192,7 +213,7 @@ export type WarnCount = number;
 export type Error1 = number;
 export type Manual2 = number;
 export type PassCount2 = number;
-export type Total2 = number;
+export type Total3 = number;
 export type Warn1 = number;
 export type Chat = boolean;
 export type DatasheetCandidateLookupEnabled = boolean;
@@ -205,10 +226,10 @@ export type Check1 = string;
 export type Evidence4 = EvidenceView[];
 export type NetName = string;
 export type Nodes = string[];
-export type Status12 = string;
-export type StatusGroup5 = "error" | "warn" | "pass" | "manual";
-export type StatusLabel4 = string;
-export type Summary3 = string;
+export type Status13 = string;
+export type StatusGroup6 = "error" | "warn" | "pass" | "manual";
+export type StatusLabel5 = string;
+export type Summary4 = string;
 export type NetChecks = NetCheckView[];
 export type DeterministicStatus = string;
 export type DeterministicStatusGroup = "error" | "warn" | "pass" | "manual";
@@ -224,16 +245,16 @@ export type ProfilePath = string | null;
 export type ProfileStatus = string;
 export type Refdes4 = string;
 export type RiskHintCount = number;
-export type Status13 = string;
-export type StatusGroup6 = "error" | "warn" | "pass" | "manual";
-export type StatusLabel5 = string;
+export type Status14 = string;
+export type StatusGroup7 = "error" | "warn" | "pass" | "manual";
+export type StatusLabel6 = string;
 export type Subtitle = string;
 export type TaskCount = number;
 export type TaskIds = string[];
 export type Title5 = string;
 export type TopTaskId = string | null;
 export type TrustTier5 = "l1" | "l2" | "l3";
-export type Value2 = string;
+export type Value3 = string;
 export type Queue = ReviewQueueItem[];
 export type ReviewTasks = ReviewTask[];
 export type Accepted = RiskHintView[];
@@ -499,6 +520,7 @@ export interface ReviewTask {
  * Summary returned after an uploaded project becomes the active context.
  */
 export interface ImportResponse {
+  evidence_package: EvidencePackageSummary;
   ok: Ok;
   pin_table: PinTableSummary;
   project: WorkbenchProject;
@@ -506,6 +528,42 @@ export interface ImportResponse {
   selected_refdes: SelectedRefdes2;
   summary: WorkbenchSummary;
   task_counts: ReviewTaskCounts;
+}
+/**
+ * Six evidence lanes that are intentionally not collapsed into one score.
+ */
+export interface EvidencePackageSummary {
+  electrical_verdict: ElectricalVerdict;
+  guardrails: Guardrails;
+  lanes: Lanes;
+  schema_version: SchemaVersion;
+  scope: Scope;
+}
+/**
+ * One independent evidence input or deterministic coverage lane.
+ */
+export interface EvidencePackageLane {
+  id: Id1;
+  label: Label1;
+  metrics: Metrics;
+  recommended_action: RecommendedAction1;
+  source: Source3;
+  source_token: SourceToken;
+  status: Status9;
+  status_group: StatusGroup4;
+  status_label: StatusLabel3;
+  summary: Summary3;
+  trust_boundary: TrustBoundary;
+}
+/**
+ * One count or ratio whose unit stays explicit.
+ */
+export interface EvidencePackageMetric {
+  key: Key;
+  label: Label2;
+  total: Total1;
+  unit: Unit;
+  value: Value2;
 }
 /**
  * Capture pin-table intake status shown beside first-class imports.
@@ -519,8 +577,8 @@ export interface PinTableSummary {
   rejected: Rejected;
   rejected_findings: RejectedFindings;
   rejected_unknown_refdes: RejectedUnknownRefdes;
-  source: Source3;
-  status: Status9;
+  source: Source4;
+  status: Status10;
 }
 export interface Checks1 {
   [k: string]: number;
@@ -546,7 +604,7 @@ export interface WorkbenchProject {
   netlist_source: NetlistSource;
   netlist_type: NetlistType;
   profiles_dir: ProfilesDir;
-  scope: Scope;
+  scope: Scope1;
 }
 /**
  * Review-package manifest status; not an electrical conclusion.
@@ -559,12 +617,12 @@ export interface ReviewPackageSummary {
   missing_required: MissingRequired;
   package_status: PackageStatus;
   present: Present;
-  recommended_action: RecommendedAction1;
-  source: Source4;
-  status: Status11;
-  status_group: StatusGroup4;
-  status_label: StatusLabel3;
-  total: Total1;
+  recommended_action: RecommendedAction2;
+  source: Source5;
+  status: Status12;
+  status_group: StatusGroup5;
+  status_label: StatusLabel4;
+  total: Total2;
 }
 /**
  * One exported review-package artifact shown as evidence coverage.
@@ -577,7 +635,7 @@ export interface ReviewPackageArtifactView {
   path: Path1;
   required: Required;
   sha256: Sha256;
-  status: Status10;
+  status: Status11;
 }
 /**
  * Count summary for the current workbench run.
@@ -598,7 +656,7 @@ export interface ReviewTaskCounts {
   error: Error1;
   manual: Manual2;
   pass_count: PassCount2;
-  total: Total2;
+  total: Total3;
   warn: Warn1;
 }
 /**
@@ -606,6 +664,7 @@ export interface ReviewTaskCounts {
  */
 export interface WorkbenchState {
   capabilities: WorkbenchCapabilities;
+  evidence_package: EvidencePackageSummary;
   net_checks: NetChecks;
   pin_table: PinTableSummary;
   project: WorkbenchProject;
@@ -638,10 +697,10 @@ export interface NetCheckView {
   evidence: Evidence4;
   net_name: NetName;
   nodes: Nodes;
-  status: Status12;
-  status_group: StatusGroup5;
-  status_label: StatusLabel4;
-  summary: Summary3;
+  status: Status13;
+  status_group: StatusGroup6;
+  status_label: StatusLabel5;
+  summary: Summary4;
 }
 /**
  * One row in the SPA review queue.
@@ -661,9 +720,9 @@ export interface ReviewQueueItem {
   profile_status: ProfileStatus;
   refdes: Refdes4;
   risk_hint_count: RiskHintCount;
-  status: Status13;
-  status_group: StatusGroup6;
-  status_label: StatusLabel5;
+  status: Status14;
+  status_group: StatusGroup7;
+  status_label: StatusLabel6;
   subtitle: Subtitle;
   task_count: TaskCount;
   task_counts: ComponentTaskCounts;
@@ -671,7 +730,7 @@ export interface ReviewQueueItem {
   title: Title5;
   top_task_id: TopTaskId;
   trust_tier: TrustTier5;
-  value: Value2;
+  value: Value3;
 }
 /**
  * Risk-hints state for the SPA.

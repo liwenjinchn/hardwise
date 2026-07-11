@@ -1,4 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
+import { EvidencePackageDashboard } from "../components/EvidencePackageDashboard";
 import type { ImportResponse, WorkbenchState } from "../types";
 
 export function ParseView({
@@ -11,6 +12,7 @@ export function ParseView({
   const summary = parseResult?.summary ?? state.summary;
   const pinTable = parseResult?.pin_table ?? state.pin_table;
   const reviewPackage = parseResult?.review_package ?? state.review_package;
+  const evidencePackage = parseResult?.evidence_package ?? state.evidence_package;
   const affected = pinTable.affected_refdes_list.join(", ") || "-";
   const rejected = pinTable.rejected_unknown_refdes.join(", ") || "-";
   const steps = [
@@ -53,6 +55,7 @@ export function ParseView({
           </article>
         ))}
       </div>
+      <EvidencePackageDashboard summary={evidencePackage} className="flow-evidence-dashboard" />
     </section>
   );
 }

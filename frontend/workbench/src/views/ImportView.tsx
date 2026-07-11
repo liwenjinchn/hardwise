@@ -1,6 +1,15 @@
 import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
-import { FileArchive, FileJson, FileSpreadsheet, Loader2, Play, UploadCloud } from "lucide-react";
+import {
+  BookOpenCheck,
+  FileArchive,
+  FileJson,
+  FileSpreadsheet,
+  Loader2,
+  Play,
+  UploadCloud
+} from "lucide-react";
 import { importWorkbench } from "../api";
+import { EvidencePackageDashboard } from "../components/EvidencePackageDashboard";
 import type { ImportResponse, WorkbenchState } from "../types";
 
 export function ImportView({
@@ -12,6 +21,7 @@ export function ImportView({
 }) {
   const [netlist, setNetlist] = useState<File | null>(null);
   const [bom, setBom] = useState<File | null>(null);
+  const [documentIndex, setDocumentIndex] = useState<File | null>(null);
   const [pinTable, setPinTable] = useState<File | null>(null);
   const [reviewPackage, setReviewPackage] = useState<File | null>(null);
   const [riskHints, setRiskHints] = useState<File | null>(null);
@@ -27,7 +37,14 @@ export function ImportView({
     setBusy(true);
     setError("");
     try {
-      const result = await importWorkbench({ netlist, bom, pinTable, reviewPackage, riskHints });
+      const result = await importWorkbench({
+        netlist,
+        bom,
+        documentIndex,
+        pinTable,
+        reviewPackage,
+        riskHints
+      });
       onImported(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "导入失败");
@@ -81,6 +98,15 @@ export function ImportView({
           onPick={setPinTable}
         />
         <UploadSlot
+          icon={<BookOpenCheck size={20} />}
+          label="public document index CSV"
+          detail={documentIndexDetail(state)}
+          status={state.capabilities.document_index_enabled ? "loaded" : "optional"}
+          file={documentIndex}
+          accept=".csv,.tsv,.txt"
+          onPick={setDocumentIndex}
+        />
+        <UploadSlot
           icon={<FileJson size={20} />}
           label="review-package manifest"
           detail={reviewPackageDetail(state)}
@@ -102,7 +128,7 @@ export function ImportView({
           accept=".json"
           onPick={setRiskHints}
         />
-        {error && <p className="form-error">{error}</p>}
+        {error && <p className="form-error" role="alert">{error}</p>}
         <button className="primary-action" type="submit" disabled={busy}>
           {busy ? <Loader2 className="spin" size={16} /> : <Play size={16} />}
           {busy ? "正在导入" : "导入并解析"}
@@ -120,9 +146,11 @@ export function ImportView({
           <span>Netlist</span>
           <span>BOM {state.summary.bom_matched > 0 ? "loaded" : "pending"}</span>
           <span>引脚表 {state.pin_table.status === "loaded" ? `${state.pin_table.accepted_findings} 条任务` : "未加载"}</span>
+          <span>Document index {state.capabilities.document_index_enabled ? "loaded" : "未加载"}</span>
           <span>Review package {state.review_package.status === "loaded" ? state.review_package.package_status : "未加载"}</span>
         </div>
       </div>
+      <EvidencePackageDashboard summary={state.evidence_package} className="flow-evidence-dashboard" />
     </section>
   );
 }
@@ -167,6 +195,7 @@ function UploadSlot(props: {
       <input
         type="file"
         accept={props.accept}
+        aria-label={`选择 ${props.label}`}
         onChange={(event) => props.onPick(event.target.files?.[0] ?? null)}
       />
     </label>
@@ -184,4 +213,10 @@ function pinTableDetail(state: WorkbenchState): string {
 function reviewPackageDetail(state: WorkbenchState): string {
   if (state.review_package.status !== "loaded") return "optional evidence manifest";
   return `${state.review_package.package_status} · manual gaps ${state.review_package.manual_gap_count}`;
+}
+
+function documentIndexDetail(state: WorkbenchState): string {
+  const lane = state.evidence_package.lanes.find((item) => item.id === "documents");
+  if (!lane || lane.status === "not_configured") return "optional reviewed public index";
+  return `${lane.status_label} · ${lane.summary}`;
 }
