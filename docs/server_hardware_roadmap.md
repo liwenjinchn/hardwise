@@ -7,14 +7,21 @@ datasheet/profile facts.
 
 ## External Landscape
 
+The public landscape was rechecked on 2026-07-11 with Grok Search, then
+cross-checked against current vendor documentation. The important correction is
+that deterministic review rules alone are not a moat: Cadence and AI-native
+tools already expose overlapping checks. Hardwise has to differentiate on the
+export-first audit trail, cross-artifact completeness, and reproducible
+calibration around Cadence/Allegro evidence.
+
 Current AI hardware tools cluster around four product shapes:
 
 | Reference | Public positioning | What Hardwise should not copy | Useful lesson |
 |---|---|---|---|
-| Cadence Allegro X AI | AI-assisted feasibility, placement, routing, power plane generation, and layout optimization inside the Cadence ecosystem. Sources: [Cadence press release](https://www.cadence.com/en_US/home/company/newsroom/press-releases/pr/2023/cadence-introduces-allegro-x-ai-accelerating-pcb-design-with.html), [Allegro X AI overview](https://resources.pcb.cadence.com/product-overviews/allegro-x-ai-product-overview). | Do not compete on placement/routing automation or native enterprise EDA breadth. | The natural user environment is still Cadence/Allegro; Hardwise should consume its exports cleanly. |
-| Flux | Browser-native ECAD with AI assistance for hardware design, component context, schematic generation, BOM help, and datasheet-aware project assistance. Sources: [Flux AI-assisted design](https://docs.flux.ai/tutorials/ai-for-hardware-design), [Flux copilot use cases](https://docs.flux.ai/tutorials/copilot-use-cases). | Do not become a browser ECAD editor or schematic generator. | AI help is acceptable when scoped as a junior engineer that must be reviewed. |
-| Quilter | Physics-driven PCB placement/routing automation that works with existing Altium, Cadence, Siemens, and KiCad workflows. Source: [Quilter product page](https://www.quilter.ai/). | Do not promise schematic-to-fabrication automation or layout ownership. | The market values transparent constraint coverage and explicit "done vs needs review" status. |
-| JITX | Software-defined electronics: requirements, constraints, stackups, and rules as code, with HFSS in the loop for high-speed optimization. Source: [JITX product page](https://www.jitx.com/). | Do not turn Hardwise into a code-defined hardware compiler or SI optimization loop. | Server/high-speed teams care about requirements, stackup, SI targets, and evidence loops; these can inform review checks without making Hardwise a simulator. |
+| Cadence Allegro X | Native schematic integrity checks, ERC, EOS/MTBF analysis, and in-design analysis coexist with Allegro X AI placement/routing automation. Sources: [Allegro X platform datasheet](https://www.cadence.com/en_US/home/resources/datasheets/allegro-x-design-platform-ds.html), [Allegro X AI release](https://www.cadence.com/en_US/home/company/newsroom/press-releases/pr/2023/cadence-introduces-allegro-x-ai-accelerating-pcb-design-with.html). | Do not compete on native ERC/reliability breadth, placement/routing, or enterprise EDA integration. | Consume exported Cadence evidence cleanly and make the external audit boundary explicit. |
+| Flux | Browser-native ECAD with an AI Design Review panel covering resistor power, pull state, capacitor voltage, availability, and layout checks; Flux says it blends deterministic algorithms with AI. Sources: [AI Design Review guide](https://www.flux.ai/docs/tutorials/copilot-use-cases/ai-design-reviews), [launch note](https://www.flux.ai/p/blog/introducing-the-ai-design-review-tab). | Do not claim that these check families are unique, or become a browser ECAD editor. | Trust must come from reproducible source tokens, stable registry joins, and explicit downgrade paths rather than model fluency. |
+| Quilter | Automated PCB layout plus per-candidate Physics Rule Checks for user-defined constraints. Sources: [Quilter overview](https://docs.quilter.ai/), [PRC overview](https://docs.quilter.ai/physics-rule-checks-prcs/overview). | Do not promise schematic-to-fabrication automation, layout ownership, or physics validation. | Keep unlike coverage dimensions separate and show exactly what was or was not checked. |
+| JITX | Local software-defined electronics: requirements and manufacturing rules become inspectable code, with generated designs, checks, and HFSS loops. Sources: [JITX product page](https://www.jitx.com/), [design constraints](https://docs.jitx.com/en/latest/essentials/physical_design/design-constraints.html). | Do not turn Hardwise into a code-defined hardware compiler or SI optimization loop. | Local, inspectable rules and measured feedback are stronger trust primitives than unconstrained AI prose. |
 
 Across public design-review material, the repeated review axes are pin-by-pin
 datasheet checks, PI, SI, EMI, DFM/DFA, thermal, BOM/document readiness, and
@@ -33,8 +40,9 @@ Hardwise should be described as:
 > it turns exported netlist/PST + BOM + pin-table + public datasheet/profile
 > evidence into registry-verified review queues and auditable Copilot answers.
 
-The moat is not "the model can review hardware." The moat is that the model is
-boxed inside a verifiable evidence path:
+The product wedge is not "the model can review hardware." It is that exported
+project evidence is boxed inside a verifiable path that remains useful outside
+the native authoring tool:
 
 - Refdes and net references come from parsed EDA registries.
 - BOM identity is joined to schematic topology by refdes.
@@ -47,6 +55,13 @@ boxed inside a verifiable evidence path:
 - The UI separates deterministic findings, evidence-backed answers, and manual
   gaps instead of flattening everything into one model-written verdict.
 
+This wedge remains a hypothesis, not a proven market moat. The strongest
+countercase is Cadence's own schematic audit/reliability surface plus Flux-style
+AI reviews. A public engineer calibration or pilot that finds no incremental
+value in cross-artifact completeness should stop further rule expansion. A
+native Cadence export-review module with the same deterministic evidence trail
+would trigger the same re-evaluation.
+
 ## Current Baseline
 
 Already shipped locally:
@@ -55,6 +70,12 @@ Already shipped locally:
 - Workbench UI for project import, validation queues, evidence panel, and
   Copilot traces.
 - Deterministic validators and seeded-defect smoke coverage.
+- Six-lane evidence-package completeness shared by state/import/export, prep
+  packets, the React workbench, and static snapshots; unlike units remain
+  separate and the combined object has no electrical verdict.
+- A versioned public/synthetic seeded-family matrix: 7 injected defects across
+  capacitor, resistor, MOSFET, diode, I2C mux, and DCDC buck families, with
+  recall 7/7 and zero unexplained new issues on the committed fixtures.
 - Refdes Guard, Evidence Ledger, and L1/L2/L3 trust tiers.
 - `design-validator-ui --ai-snapshot` offline demo and `serve-workbench
   --fake-ai` local server path.
@@ -69,11 +90,22 @@ path rather than add more KiCad parser surface.
 | Tier | Meaning | Acceptable sources |
 |---|---|---|
 | L1 deterministic | Hard finding, warning, pass, or checklist task produced by code from parsed EDA/BOM/pin/profile data. | Netlist/PST, BOM, Capture pin table, reviewed profile JSON, validator rule. |
-| L2 evidence-backed | Copilot or report text cites a source token but does not create a deterministic verdict. | Public datasheet chunks, document index rows, reviewed profile evidence. |
-| L3 manual gap | The system has a real object but lacks enough source evidence or ready validator coverage. | Registry object + missing/not-configured reason. |
+| L2 evidence-backed | Copilot or report text cites retrieved or reviewed source evidence but does not create a deterministic verdict. | Public datasheet chunks with page tokens, reviewed profile evidence. |
+| L3 manual gap | The system has a real object but lacks page-level source evidence or ready validator coverage. | Registry object, document-index candidate/coverage row, missing/not-configured reason. |
 
 Roadmap work should move high-value L3 rows into L1/L2 one evidence family at a
 time. It should not relabel weak evidence as a hard verdict.
+
+## Roadmap Contract
+
+Sections 1-5 are durable capability directions and product boundaries, not an
+infinite active backlog. The finite release contract is the implementation-order
+table at the end of this document. Conditional work such as a live Cadence
+plugin, KiCad topology expansion, public/synthetic human calibration, or new
+rule families does not count as unfinished until fresh public/user evidence
+creates a new goal. Company-internal data remains prohibited. This prevents
+"finish the roadmap" from silently expanding beyond the two-week
+schematic-review MVP.
 
 ## Roadmap
 
@@ -120,6 +152,12 @@ Defer:
 Done when: each family has a deterministic validator, fixture-backed tests,
 evidence tokens, UI queue mapping, and a manual-gap path for unsupported cases.
 
+MVP closure applies this gate to the shipped families represented by the
+versioned six-family calibration matrix. Reserved/mode-strap expansion,
+general clock/reset/enable policy, and any new server-specific family remain
+evidence-triggered follow-ons; they are not assumed correct from net names or
+scheduled without a public/synthetic fixture.
+
 ### 3. Evidence Workbench
 
 Goal: turn "why did it say this?" into a first-class review interaction.
@@ -147,6 +185,10 @@ Goal: prove trust behavior before broadening claims.
 Done when: the README can state family-by-family smoke results without implying
 expert-level accuracy on private designs.
 
+Current MVP state meets this gate with 7/7 seeded recall and zero unexplained
+new issues across six families. These are clean-fixture mutation deltas, not a
+population false-positive rate or human gold-standard accuracy claim.
+
 ### 5. Integration Boundary
 
 Goal: stay useful to enterprise EDA users without becoming a plugin project too
@@ -160,6 +202,10 @@ early.
 Done when: a user can run the workbench against exported files on a normal
 machine, keep API keys local, and reproduce the report without opening Cadence.
 
+The exported-file path is covered on macOS and Windows CI, with generated
+Python/TypeScript contract checks and a local browser E2E suite. Live plugin
+work remains post-MVP by design.
+
 ## Non-Goals
 
 - Auto-placement, auto-routing, or schematic-to-fabrication automation.
@@ -169,42 +215,35 @@ machine, keep API keys local, and reproduce the report without opening Cadence.
 - Native Cadence plugin as the default proof path.
 - Using company-internal hardware data, even sanitized.
 
-## Next Concrete Slice
+## Evidence-Readiness Release
 
-The next highest-leverage slice is Capture pin-table and server-review coverage:
+The finite active roadmap is closed. The release combines two reviewer
+questions that must remain separate:
 
-1. Normalize Capture pin-table import as a named evidence source.
-2. Add a review-package manifest for schematic PDF, ERC/DRC, checklist, and
-   notes artifacts so the workbench can say which required evidence is present
-   or missing.
-3. Map pin-table facts into L1 review tasks for NC/reserved/mode pins.
-4. Add one server-style fixture family where pin evidence changes the review
-   queue.
-5. Update workbench/export text so the reviewer can see exactly which row came
-   from netlist, BOM, pin table, profile, or datasheet evidence.
+1. **Is the input evidence package complete enough to review?** Six independent
+   lanes cover netlist/PST registry, BOM identity, ready-profile plus
+   deterministic-validation coverage, approved public documents, Capture pin
+   evidence, and review-package artifacts. Every lane exposes source, metric
+   units, next action, and trust boundary; there is no overall readiness score.
+2. **Do the shipped deterministic families catch their intended mutations?** A
+   versioned public/synthetic matrix reports per-family clean-baseline deltas.
+   The release result is 7/7 seeded recall and zero unexplained new issues over
+   six families, without presenting that result as expert accuracy.
 
-This keeps Hardwise pointed at the gap competitors leave open: auditable
-pre-layout review trust, not layout automation.
-
-## Next Implementation Order
-
-Pin-table evidence summary is now shipped: workbench JSON, import summaries,
-project prep packets, static snapshots, and CLI output show loaded/missing state,
-accepted findings, rejected unknown refdes, and affected refdes without allowing
-rejected rows into the L1 queue. Review-package manifest polish is now shipped:
-missing required artifacts and hash mismatches surface as package-status manual
-gaps without creating electrical findings. The next development round should
-move to a combined evidence package completeness dashboard.
-
-Recommended sequence:
+Implementation order and closure evidence:
 
 | Priority | Slice | Done when |
 |---|---|---|
 | Done | Pin-table evidence project summary/export | Import summaries, prep packets, static snapshots, and workbench JSON show loaded/missing state, accepted findings, rejected unknown refdes, and affected refdes without allowing rejected rows into the L1 queue. |
 | Done | Review-package manifest polish | Manifest status remains shallow and provenance-only; missing required artifacts create manual-gap/package-status warnings, not electrical findings. |
-| P2 | Evidence package completeness dashboard | Workbench shows netlist/PST, BOM, pin table, document index/profile, and review-package coverage together with trust-tier wording. |
+| Done | P2 evidence-package completeness | State/import/export/prep/static/React surfaces share one six-lane contract; document upload is project-local, rejected rows cannot become green coverage, canonical tokens classify in the Evidence Ledger, and unlike units never mix. |
+| Done | Family calibration matrix | Versioned matrix covers capacitor, resistor, MOSFET, diode, I2C mux, and DCDC buck; CLI/JSON expose per-family recall and unexplained deltas while preserving legacy headline fields. |
 
-Keep these as explicit non-goals for the next round:
+No active implementation item remains in this release. A new roadmap should be
+opened only when public engineer calibration, a real exported-project pilot,
+current Cadence capability changes, or a public regression fixture demonstrates
+a concrete missing job. Keep these as explicit non-goals unless such evidence
+changes the decision:
 
 - Do not add more KiCad parser surface unless a public regression fixture needs
   it.

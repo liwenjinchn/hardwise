@@ -4877,3 +4877,83 @@ When a generated artifact joins Python and TypeScript, freshness and both sides
 of the contract belong in the required remote gate. Verify the exact action ref
 through GitHub before publishing a workflow; a release family does not imply a
 floating major tag exists.
+
+## 2026-07-11 — Search synthesis must preserve the hardware workflow stage
+
+**Symptom**
+
+An initial broad Grok query described IPC-D-356/IPC-2581 manufacturing data as
+if it were the main pre-layout schematic-review handoff and inferred an empty
+market from the absence of an exact product label.
+
+**Root cause**
+
+The query mixed pre-layout schematic evidence, post-layout verification, and
+manufacturing handoff. Vendor marketing pages also describe overlapping checks
+with different names, so a synthesized absence is not proof of a product moat.
+
+**Fix**
+
+Repeated the query with an explicit PST/netlist versus IPC-D-356 boundary,
+retrieved the returned source lists, and cross-checked current Cadence, Flux,
+Quilter, and JITX documentation. The roadmap now treats export-first audit and
+calibration as a hypothesis with a countercase and tripwire, not a proven moat.
+
+**Takeaway**
+
+Use search synthesis to generate hypotheses. Bind every hardware claim to its
+workflow stage and verify strategic conclusions against primary sources.
+
+## 2026-07-11 — Evidence completeness cannot be one score
+
+**Symptom**
+
+A combined intake dashboard risked mixing components, refdes, BOM groups,
+findings, rejected rows, and artifacts into one readiness percentage. Identity-
+matched document rows could also appear green even when their review status was
+`rejected`.
+
+**Root cause**
+
+The existing summaries were correct in isolation but had different denominators
+and trust meanings. Aggregating only their headline counts erased those
+boundaries.
+
+**Fix**
+
+Added six independent evidence-package lanes with explicit units, canonical
+Evidence Ledger tokens, next actions, and trust boundaries. Approved document
+coverage is counted separately from review-pending, rejected, and missing
+groups. Omitted uploads clear prior project evidence. The combined contract sets
+`electrical_verdict=not_applicable` and never creates tasks or changes
+PASS/WARN/ERROR.
+
+**Takeaway**
+
+Combine navigation, not truth semantics. A completeness dashboard is trustworthy
+only when every lane keeps its own denominator and downgrade path.
+
+## 2026-07-11 — Family calibration needs one clean baseline per fixture
+
+**Symptom**
+
+The original seeded benchmark had three passive cases on one PST fixture, so its
+headline could not support a family-by-family statement.
+
+**Root cause**
+
+Mutation deltas are meaningful only relative to the clean issues of the same
+fixture. Expanding to unrelated device families without fixture-local baselines
+would misclassify pre-existing findings as false positives.
+
+**Fix**
+
+Moved case definitions into a versioned manifest and materialized an isolated
+clean and mutated workspace for each fixture family. The benchmark now reports
+7/7 seeded recall and zero unexplained new issues across six families, with
+per-family metrics and the original headline fields retained.
+
+**Takeaway**
+
+Seeded recall is reproducible calibration evidence, not statistical accuracy.
+Keep fixture-local baselines and label unexplained deltas honestly.

@@ -455,14 +455,15 @@ Current MVP status:
 | 3 — R003 + Dual Store + Router | Done | NC-pin parser, SQLite/Chroma, datasheet ingest, tiered routing |
 | 4 — Agent Loop + Prompt Caching | Done | `hardwise ask`, structured tools, live prompt-cache read hit |
 | 5 — Submission Closeout | Done | Canonical workbench demo narrative, README/demo/docs closeout, final artifacts |
-| Workbench — Allegro Copilot | Done | `serve-workbench` live agent loop + `design-validator-ui --ai-snapshot` offline; reuses the 5-core + 7-context runtime tool surface and Refdes Guard |
+| Workbench — Allegro Copilot | Done | Live/offline agent loop, six-lane evidence-package completeness, generated frontend contracts, and the shared Refdes Guard |
 
-The MVP intentionally stops here. R004/R005-style net-aware checks, a
-schematic-side net parser, a human-labeled calibration set, Windows CI result
-follow-up, and live Cadence/Allegro plugin integration are explicitly post-MVP.
-The current submission story is not "more rules"; it is a constrained
-design-validation workbench with registry-verified objects and evidence-gated
-findings.
+The MVP intentionally stops before a human-labeled expert-accuracy benchmark,
+full KiCad schematic-topology recovery, hosted state, and live
+Cadence/Allegro plugin integration. Windows and macOS CI, generated
+backend/frontend contract checks, and public/synthetic seeded family smoke are
+part of the reproducible exported-file path. The product story is not "more
+rules"; it is a constrained design-validation workbench with registry-verified
+objects, separate evidence-coverage lanes, and evidence-gated findings.
 
 ## FAQ
 
