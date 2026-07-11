@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit",
-    "build": "tsc --noEmit && vite build",
+    "generate:contracts": "node scripts/workbench-contracts.mjs generate",
+    "check:contracts": "node scripts/workbench-contracts.mjs check",
+    "typecheck": "npm run check:contracts && tsc --noEmit",
+    "lint": "npm run typecheck",
+    "build": "npm run typecheck && vite build",
     "test:unit": "vitest run",
     "test:e2e": "npm run build && playwright test",
     "test:e2e:only": "playwright test"
@@ -23,6 +25,7 @@
     "@playwright/test": "^1.60.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "json-schema-to-typescript": "^15.0.4",
     "typescript": "^5.7.0",
     "vitest": "^4.1.8"
   }

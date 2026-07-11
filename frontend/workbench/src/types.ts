@@ -33,7 +33,7 @@ export interface WorkbenchCapabilities {
 
 export interface PinTableSummary {
   status: "loaded" | "not_configured";
-  source?: string | null;
+  source: string | null;
   accepted_findings: number;
   rejected_findings: number;
   affected_refdes: number;
@@ -46,9 +46,9 @@ export interface PinTableSummary {
 
 export interface RejectedPinTableFinding {
   rule_id: string;
-  refdes?: string | null;
-  pin_number?: string | null;
-  net?: string | null;
+  refdes: string | null;
+  pin_number: string | null;
+  net: string | null;
   message: string;
   reason: string;
 }
@@ -59,14 +59,14 @@ export interface ReviewPackageArtifact {
   required: boolean;
   name: string;
   path: string;
-  sha256?: string | null;
-  expected_sha256?: string | null;
-  note?: string | null;
+  sha256: string | null;
+  expected_sha256: string | null;
+  note: string | null;
 }
 
 export interface ReviewPackageSummary {
   status: "loaded" | "not_configured";
-  source?: string | null;
+  source: string | null;
   package_status: "not_configured" | "complete" | "optional_gap" | "missing_required" | "hash_mismatch";
   status_group: StatusGroup;
   status_label: string;
@@ -84,7 +84,7 @@ export interface EvidenceView {
   token: string;
   source_class: string;
   audit_status: string;
-  local_source?: string | null;
+  local_source: string | null;
   reason: string;
   trust_tier: TrustTier;
   label: string;
@@ -112,9 +112,9 @@ export interface ReviewQueueItem {
   task_count: number;
   task_counts: ReviewTaskCounts;
   task_ids: string[];
-  top_task_id?: string | null;
+  top_task_id: string | null;
   profile_status: string;
-  profile_path?: string | null;
+  profile_path: string | null;
   document_status: string;
 }
 
@@ -123,9 +123,9 @@ export interface ReviewTask {
   stable_key: string;
   refdes: string;
   kind: string;
-  check?: string | null;
-  pin_number?: string | null;
-  subject?: string | null;
+  check: string | null;
+  pin_number: string | null;
+  subject: string | null;
   status: string;
   status_label: string;
   status_group: StatusGroup;
@@ -149,9 +149,9 @@ export interface PinView {
   number: string;
   name: string;
   electrical_type: string;
-  net?: string | null;
+  net: string | null;
   is_nc: boolean;
-  status?: string | null;
+  status: string | null;
   summary: string;
   evidence: EvidenceView[];
 }
@@ -190,8 +190,8 @@ export interface RiskHintView {
   refdes: string;
   title: string;
   body: string;
-  severity?: string | null;
-  source?: EvidenceView | null;
+  severity: string | null;
+  source: EvidenceView | null;
   wrapped_refdes_count: number;
 }
 
@@ -223,40 +223,40 @@ export interface BomView {
   manufacturer: string;
   description: string;
   source: string;
-  item_number?: string | null;
-  source_line?: number | null;
+  item_number: string | null;
+  source_line: number | null;
 }
 
 export interface ProfileView {
   status: string;
   reason: string;
-  path?: string | null;
+  path: string | null;
   part_number: string;
 }
 
 export interface DocumentCoverageView {
   status: string;
-  group_id?: string | null;
+  group_id: string | null;
   identity: string;
   identity_kind: string;
   suggested_family: string;
-  title?: string | null;
-  url?: string | null;
-  source?: string | null;
+  title: string | null;
+  url: string | null;
+  source: string | null;
   candidates: number;
   reason: string;
-  candidate_search?: DatasheetCandidateSearchView | null;
+  candidate_search: DatasheetCandidateSearchView | null;
 }
 
 export interface DatasheetCandidateView {
   mpn: string;
-  manufacturer?: string | null;
-  title?: string | null;
-  description?: string | null;
-  datasheet_url?: string | null;
-  product_url?: string | null;
-  lifecycle_status?: string | null;
-  package_type?: string | null;
+  manufacturer: string | null;
+  title: string | null;
+  description: string | null;
+  datasheet_url: string | null;
+  product_url: string | null;
+  lifecycle_status: string | null;
+  package_type: string | null;
   review_status: string;
   source: string;
 }
@@ -264,11 +264,11 @@ export interface DatasheetCandidateView {
 export interface DatasheetCandidateSearchView {
   provider: string;
   status: string;
-  reason?: string | null;
+  reason: string | null;
   query: string;
   count: number;
   direct_datasheet_count: number;
-  remaining_month?: number | null;
+  remaining_month: number | null;
   candidates: DatasheetCandidateView[];
   next_actions: string[];
 }
@@ -279,7 +279,7 @@ export interface WorkbenchState {
   capabilities: WorkbenchCapabilities;
   pin_table: PinTableSummary;
   review_package: ReviewPackageSummary;
-  selected_refdes?: string | null;
+  selected_refdes: string | null;
   queue: ReviewQueueItem[];
   review_tasks: ReviewTask[];
   task_counts: ReviewTaskCounts;
@@ -293,8 +293,8 @@ export interface ImportResponse {
   project: WorkbenchProject;
   summary: WorkbenchSummary;
   pin_table: PinTableSummary;
-  review_package?: ReviewPackageSummary;
-  selected_refdes?: string | null;
+  review_package: ReviewPackageSummary;
+  selected_refdes: string | null;
   task_counts: ReviewTaskCounts;
 }
 
@@ -317,9 +317,9 @@ export interface ComponentDetail {
   risk_hints: RiskHintView[];
   tasks: ReviewTask[];
   task_counts: ReviewTaskCounts;
-  bom?: BomView | null;
-  profile?: ProfileView | null;
-  document?: DocumentCoverageView | null;
+  bom: BomView | null;
+  profile: ProfileView | null;
+  document: DocumentCoverageView | null;
 }
 
 export interface ReviewPrepPacket {
@@ -448,9 +448,14 @@ export interface ProjectReviewPrepPacket {
 
 export interface EvidenceClassification {
   token: string;
-  source_class: string;
-  audit_status: string;
-  local_source?: string | null;
+  source_class:
+    | "live_retrieved"
+    | "reviewed_profile"
+    | "document_index"
+    | "design_source"
+    | "unknown";
+  audit_status: "ok" | "missing_local_source";
+  local_source: string | null;
   reason: string;
 }
 
@@ -458,12 +463,12 @@ export interface EvidenceTrace {
   tool: string;
   input: Record<string, unknown>;
   summary: string;
-  status?: string | null;
+  status: string | null;
   evidence: string[];
   evidence_classification: EvidenceClassification[];
   wrapped: number;
-  trust_tier?: TrustTier | null;
-  trust_label?: string | null;
+  trust_tier: TrustTier | null;
+  trust_label: string | null;
 }
 
 export interface ChatMessage {
@@ -471,15 +476,21 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface ChatRequest {
+  question: string;
+  selected_refdes?: string | null;
+  history?: ChatMessage[];
+}
+
 export interface ChatResponse {
   answer: string;
   mode: "fake" | "real" | "snapshot";
-  selected_refdes?: string | null;
+  selected_refdes: string | null;
   trace: EvidenceTrace[];
   wrapped_count: number;
   suggestions: string[];
   datasheet_search_enabled: boolean;
-  unsupported_evidence_tokens?: string[];
+  unsupported_evidence_tokens: string[];
 }
 
 export interface WorkbenchOfflineSnapshot {
