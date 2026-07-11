@@ -4957,3 +4957,80 @@ per-family metrics and the original headline fields retained.
 
 Seeded recall is reproducible calibration evidence, not statistical accuracy.
 Keep fixture-local baselines and label unexplained deltas honestly.
+
+## 2026-07-12 — Electrical verdict and reviewer workflow need separate axes
+
+**Symptom**
+
+The live queue could title `U1` as deterministically passed while coloring the
+same component as manual because a document-confirmation task was also present.
+The findings page stored "resolved" only in React state, so reload and export
+lost the reviewer action.
+
+**Root cause**
+
+One attention status was carrying three different meanings: validator truth,
+evidence coverage, and human workflow. The UI also treated browser-local state
+as if it were a review record.
+
+**Fix**
+
+Kept deterministic status as the electrical axis, displayed evidence readiness
+separately, and added backend decisions keyed by stable finding key. Accept,
+waive, resolve, and reopen require a reason for non-open states, survive browser
+reload, reconcile after a real deterministic re-run, and enter every export
+without modifying validator output.
+
+**Takeaway**
+
+Electrical truth, evidence reproducibility, and review progress are independent
+state machines. Never compress them into one badge or one mutable status.
+
+## 2026-07-12 — Raw findings are audit data, not the reviewer workload
+
+**Symptom**
+
+The 25-component public fixture produced 45 task rows. Nine identical 100 nF
+capacitors each produced a parse warning plus a dependent margin warning; D1
+and D5 also appeared as weaker uncertainty beside a stronger topology error.
+
+**Root cause**
+
+The workbench rendered one row per validator emission. That representation is
+correct for audit export but poor for reviewer attention allocation.
+
+**Fix**
+
+Preserved all 45 raw tasks and added deterministic grouping by BOM identity and
+check. Dependent checks link to a root task instead of becoming peer workload.
+The same fixture now presents 20 review groups while JSON/CSV/annotations retain
+every raw task and the derived-task link.
+
+**Takeaway**
+
+Consolidate navigation, not evidence. The review queue may group and link facts,
+but the raw validator ledger must remain lossless.
+
+## 2026-07-12 — A source token is not automatically a reproducible source
+
+**Symptom**
+
+L1 tasks cited datasheet page tokens even though the corresponding local PDF
+was absent. The label was technically honest, but the export package could not
+be independently reproduced.
+
+**Root cause**
+
+Evidence classification described provenance quality but did not enforce a
+handoff-readiness decision.
+
+**Fix**
+
+Added a sign-off evidence gate that counts affected L1 tasks and unique missing
+local sources. It blocks package readiness only; PASS/WARN/ERROR stays unchanged.
+The current public fixture measures 16 affected L1 tasks and 11 missing sources.
+
+**Takeaway**
+
+Traceability and reproducibility are different claims. A token can be valid
+provenance while still being insufficient for an offline sign-off package.

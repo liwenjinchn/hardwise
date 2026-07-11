@@ -251,3 +251,29 @@ changes the decision:
   signoff flows.
 - Do not parse schematic PDFs or ERC/DRC reports into electrical conclusions in
   manifest v1.
+
+## Reviewer-Closure Release
+
+A public mixed-controller project was re-imported through the live React
+workbench and exercised as a hardware reviewer would use it: import, parse,
+triage, component evidence, Copilot, findings, and export. The deterministic
+core held, but the pilot exposed a product-level gap: Hardwise can identify and
+explain review work, yet it does not fully close the reviewer decision loop.
+
+This release is the finite roadmap opened by that pilot. It strengthens the
+exported Cadence/Allegro trust boundary; it does not add a new EDA node or a new
+validator family.
+
+| Status | Order | Slice | Acceptance evidence |
+|---|---:|---|---|
+| Done | 1 | Sign-off evidence readiness | Every L1 task reports whether its cited local source is reproducible. Missing local datasheet sources block package sign-off readiness without changing PASS/WARN/ERROR. State, UI, prep packet, JSON/CSV export, and tests agree. |
+| Done | 2 | Electrical/evidence dual axis | Queue and detail surfaces show deterministic electrical status separately from profile/document/package readiness. Filters and counts name their unit (`components` or `tasks`); a deterministic PASS never appears to become an electrical manual verdict because of a document task. |
+| Done | 3 | Review-noise consolidation | Repeated tasks with the same BOM identity and check become one visible group with affected refdes. A root-cause deterministic ERROR suppresses or links weaker derived uncertainty for the same subject instead of presenting contradictory peers. Raw tasks remain exportable for audit. |
+| Done | 4 | Reviewer decision lifecycle | Accept, waive, resolve, and reopen are backend-owned decisions keyed by stable finding key. Non-open decisions require a reason, survive browser reload, reconcile on a real deterministic re-run, and are included in JSON/CSV/annotation/prep exports without mutating the validator verdict. |
+| Done | 5 | Handoff and launch ergonomics | JSON preview is a human-sized summary with full download retained; import controls distinguish current assets from files selected for the next run; launchers handle an occupied default port and support an explicit port override. Browser E2E covers the complete loop. |
+
+Release closure requires all five rows to be implemented, `uv run pytest -q`
+and `uv run ruff check .` to pass, frontend contracts/unit/build/E2E to pass,
+and an independent browser run to demonstrate import, triage, decision,
+re-run, Copilot guard, and export. The result report must include the commands,
+measured task/component counts, remaining risks, and commit hashes.

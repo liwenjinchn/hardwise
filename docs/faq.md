@@ -80,6 +80,16 @@ SQL session，服务退出也会回收当前 session 和导入临时目录。器
 并发 AI 问答也不会共用同一 ORM Session 或交错 fake-client 回合。这些是服务
 正确性和响应开销改进，不改变任何电气 PASS/WARN/ERROR 结论。
 
+真实浏览器回归还保留两套明确口径：mixed-controller 的 25 个组件产生 45 条
+原始审计任务，但按 BOM 身份、规则和根因合并后是 20 个 reviewer workload
+group。原始任务不删除；CSV/JSON/annotation 仍可逐条导出。评审者的 accept /
+waive / resolved / reopen 状态按 stable finding key 保存在后端，浏览器刷新和
+确定性 re-run 后继续存在，且永远不改写原始 PASS/WARN/ERROR。
+
+签核证据 readiness 是第三个独立口径：当前公开 mixed-controller 包有 11 个
+datasheet token 缺少本地来源，影响 16 条 L1 任务，因此显示 `blocked`。这表示
+交付包无法离线复核，不表示确定性电气结果被推翻。
+
 ## Q3. 哪些数据进向量库，哪些进关系库？为什么这样分？
 
 - **关系库（SQLAlchemy，SQLite 与 PostgreSQL 同套表结构）**：位号、引脚、
