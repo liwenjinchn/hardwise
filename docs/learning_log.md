@@ -4842,3 +4842,33 @@ build, and browser suites remain green.
 Keep test-only protocol transitions separate from runtime clients, and treat a
 clean dependency audit as a verified lockfile property rather than assuming a
 top-level semver range selected a fixed transitive version.
+
+## 2026-07-11 — A green backend CI does not protect generated frontend contracts
+
+**Symptom**
+
+The modernization PR passed GitHub CI even though the workflow exercised only
+Python lint and tests. Frontend contract freshness, TypeScript compatibility,
+unit tests, and the production build were verified locally but had no remote
+regression gate. The same run warned that older action releases still declared
+the deprecated Node.js 20 action runtime.
+
+**Root cause**
+
+The workflow predated the generated backend/frontend contract boundary and the
+Node.js frontend build. Its action pins and job surface were never advanced when
+those repository responsibilities became release-critical.
+
+**Fix**
+
+Moved checkout, Python, uv, and Node setup to their current Node.js 24 action
+lines. Added lockfile validation to the Python matrix and a bounded Ubuntu
+frontend job that installs the locked backend/frontend dependencies, checks
+generated contracts and TypeScript, runs unit tests, and builds the production
+bundle.
+
+**Takeaway**
+
+CI should mirror the repository's trust boundaries, not its historical stack.
+When a generated artifact joins Python and TypeScript, freshness and both sides
+of the contract belong in the required remote gate.
