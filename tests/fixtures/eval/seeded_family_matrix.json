@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "capacitor_low_voltage",
+      "description": "Lower C1 rated-voltage token below the inferred 3.3 V rail.",
+      "family": "capacitor",
+      "fixture_name": "passive_pst",
+      "netlist": "$fixture",
+      "mutation_target": "bom",
+      "mutation_old": "0.1uF 25V",
+      "mutation_new": "0.1uF 1V",
+      "expected": {
+        "refdes": "C1",
+        "kind": "component",
+        "check": "capacitor_voltage_margin",
+        "status": "ERROR"
+      }
+    },
+    {
+      "name": "capacitor_unparseable_value",
+      "description": "Replace C1 capacitance text with an unparseable token.",
+      "family": "capacitor",
+      "fixture_name": "passive_pst",
+      "netlist": "$fixture",
+      "mutation_target": "bom",
+      "mutation_old": "0.1uF 25V",
+      "mutation_new": "TBD 25V",
+      "expected": {
+        "refdes": "C1",
+        "kind": "component",
+        "check": "capacitor_value_parse",
+        "status": "WARN"
+      }
+    },
+    {
+      "name": "resistor_package_conflict",
+      "description": "Change R1's schematic package from resistor-like to capacitor-like.",
+      "family": "resistor",
+      "fixture_name": "passive_pst",
+      "netlist": "$fixture",
+      "mutation_target": "pstchip.dat",
+      "mutation_old": "JEDEC_TYPE='R0402';",
+      "mutation_new": "JEDEC_TYPE='C0402';",
+      "expected": {
+        "refdes": "R1",
+        "kind": "component",
+        "check": "resistor_package_presence",
+        "status": "WARN"
+      }
+    },
+    {
+      "name": "mosfet_vgs_over_abs_max",
+      "description": "Raise Q1 gate rail from 10 V to 25 V above its ±20 V Vgs limit.",
+      "family": "mosfet",
+      "fixture_name": "mosfet",
+      "netlist": "irf540n_mosfet.net",
+      "bom": "irf540n_mosfet_bom.csv",
+      "mutation_target": "netlist",
+      "mutation_old": "'+10V' ; Q1.1",
+      "mutation_new": "'+25V' ; Q1.1",
+      "expected": {
+        "refdes": "Q1",
+        "kind": "component",
+        "check": "mosfet_vgs_rating",
+        "status": "ERROR"
+      }
+    },
+    {
+      "name": "diode_reverse_over_abs_max",
+      "description": "Raise D1 cathode rail from 12 V to 48 V above its 40 V limit.",
+      "family": "diode",
+      "fixture_name": "diode",
+      "netlist": "ss34_diode.net",
+      "bom": "ss34_diode_bom.csv",
+      "mutation_target": "netlist",
+      "mutation_old": "'+12V' ; D1.1, R_LOAD.1",
+      "mutation_new": "'+48V' ; D1.1, R_LOAD.1",
+      "expected": {
+        "refdes": "D1",
+        "kind": "component",
+        "check": "diode_reverse_voltage",
+        "status": "ERROR"
+      }
+    },
+    {
+      "name": "i2c_mux_half_connected_channel",
+      "description": "Move only channel-0 SCL to NC while channel-0 SDA remains connected.",
+      "family": "i2c_mux",
+      "fixture_name": "i2c_mux",
+      "netlist": "pca9548a_i2c_mux.net",
+      "bom": "pca9548a_i2c_mux_bom.csv",
+      "mutation_target": "netlist",
+      "mutation_old": "'I2C_CH0_SCL' ; U8.5",
+      "mutation_new": "'NC' ; U8.5",
+      "expected": {
+        "refdes": "U8",
+        "kind": "component",
+        "check": "i2c_mux_channel_pairs",
+        "status": "ERROR"
+      }
+    },
+    {
+      "name": "buck_inductor_output_grounded",
+      "description": "Move PL1's output terminal from P1V8 to a ground-like net.",
+      "family": "dcdc_buck",
+      "fixture_name": "dcdc_buck",
+      "netlist": "mpq8626_sync_buck.net",
+      "bom": "mpq8626_sync_buck_bom.csv",
+      "mutation_target": "netlist",
+      "mutation_old": "'P1V8' ; PL1.2",
+      "mutation_new": "'GND_OUT' ; PL1.2",
+      "expected": {
+        "refdes": "PL1",
+        "kind": "component",
+        "check": "buck_inductor",
+        "status": "ERROR"
+      }
+    }
+  ]
+}
