@@ -256,6 +256,33 @@
   color: var(--blue-ink);
 }
 
+.signoff-readiness {
+  display: grid;
+  grid-template-columns: minmax(180px, .6fr) minmax(280px, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 13px 15px;
+  border: 1px solid var(--pass-line);
+  border-radius: var(--r);
+  background: var(--pass-wash);
+}
+
+.signoff-readiness.blocked {
+  border-color: var(--error-line);
+  background: var(--error-wash);
+}
+
+.signoff-readiness strong,
+.signoff-readiness span {
+  display: block;
+}
+
+.signoff-readiness p,
+.signoff-readiness > span {
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
 .evidence-package-guardrail svg {
   flex: 0 0 auto;
 }

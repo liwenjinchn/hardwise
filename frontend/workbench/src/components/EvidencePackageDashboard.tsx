@@ -62,11 +62,32 @@ export function EvidencePackageDashboard({
         ))}
       </div>
 
+      <section
+        className={`signoff-readiness ${summary.signoff_readiness.status}`}
+        aria-label="签核证据就绪状态"
+      >
+        <div>
+          <span className="eyebrow">Sign-off evidence readiness</span>
+          <strong>
+            {summary.signoff_readiness.signoff_ready
+              ? "交付证据可复核"
+              : "交付签核被证据缺口阻塞"}
+          </strong>
+        </div>
+        <p>{summary.signoff_readiness.reason}</p>
+        {!summary.signoff_readiness.signoff_ready && (
+          <span>
+            影响 {summary.signoff_readiness.affected_tasks} 条 L1 任务；缺少 {summary.signoff_readiness.missing_local_sources} 个本地来源
+          </span>
+        )}
+      </section>
+
       <footer className="evidence-package-guardrail">
         <ShieldCheck size={17} aria-hidden="true" />
         <p>
           <strong>Trust boundary</strong>
-          Lane status 只描述输入证据覆盖；PASS/WARN/ERROR 仍只来自确定性验证。
+          Lane status 只描述输入证据覆盖；PASS/WARN/ERROR 仍只来自确定性验证。签核 gate
+          只判断交付包能否复核，不重写电气结论。
         </p>
       </footer>
     </section>

@@ -12,7 +12,7 @@ from fastapi.responses import Response
 
 from hardwise.csv_safety import csv_safe_cell
 from hardwise.workbench.context import WorkbenchContext
-from hardwise.workbench.view_model import build_review_tasks
+from hardwise.workbench.view_model import ReviewTask, build_review_tasks
 
 
 def _save_upload(upload: UploadFile, directory: Path, *, fallback_name: str) -> Path:
@@ -24,7 +24,11 @@ def _save_upload(upload: UploadFile, directory: Path, *, fallback_name: str) -> 
     return target
 
 
-def _task_csv_response(context: WorkbenchContext) -> Response:
+def _task_csv_response(
+    context: WorkbenchContext,
+    *,
+    tasks: list[ReviewTask] | None = None,
+) -> Response:
     buffer = io.StringIO()
     writer = csv.DictWriter(
         buffer,
@@ -36,10 +40,18 @@ def _task_csv_response(context: WorkbenchContext) -> Response:
             "title",
             "recommended_action",
             "source_classes",
+            "review_status",
+            "review_reason",
+            "review_updated_at",
+            "derived_from_task_id",
+            "signoff_evidence_ready",
+            "missing_local_sources",
         ],
     )
     writer.writeheader()
-    for task in build_review_tasks(context):
+    for task in tasks if tasks is not None else build_review_tasks(context):
+        decision = task.review_decision
+        missing_sources = _missing_local_sources(task)
         writer.writerow(
             {
                 "id": csv_safe_cell(task.id),
@@ -49,6 +61,12 @@ def _task_csv_response(context: WorkbenchContext) -> Response:
                 "title": csv_safe_cell(task.title),
                 "recommended_action": csv_safe_cell(task.recommended_action),
                 "source_classes": csv_safe_cell(";".join(task.source_classes)),
+                "review_status": csv_safe_cell(decision.status if decision else "open"),
+                "review_reason": csv_safe_cell(decision.reason if decision else ""),
+                "review_updated_at": csv_safe_cell(decision.updated_at if decision else ""),
+                "derived_from_task_id": csv_safe_cell(task.derived_from_task_id or ""),
+                "signoff_evidence_ready": csv_safe_cell(str(not missing_sources).lower()),
+                "missing_local_sources": csv_safe_cell(";".join(missing_sources)),
             }
         )
     return Response(
@@ -58,12 +76,18 @@ def _task_csv_response(context: WorkbenchContext) -> Response:
     )
 
 
-def _annotations_response(context: WorkbenchContext) -> Response:
+def _annotations_response(
+    context: WorkbenchContext,
+    *,
+    tasks: list[ReviewTask] | None = None,
+) -> Response:
     lines = [
         "# Hardwise EDA annotation export",
-        "# format: refdes,status_group,task_id,title,recommended_action",
+        "# format: refdes,status_group,task_id,title,recommended_action,review_status,review_reason,signoff_evidence_ready,missing_local_sources",
     ]
-    for task in build_review_tasks(context):
+    for task in tasks if tasks is not None else build_review_tasks(context):
+        decision = task.review_decision
+        missing_sources = _missing_local_sources(task)
         lines.append(
             ",".join(
                 [
@@ -72,6 +96,10 @@ def _annotations_response(context: WorkbenchContext) -> Response:
                     _annotation_cell(task.id),
                     _annotation_cell(task.title),
                     _annotation_cell(task.recommended_action),
+                    _annotation_cell(decision.status if decision else "open"),
+                    _annotation_cell(decision.reason if decision else ""),
+                    _annotation_cell(str(not missing_sources).lower()),
+                    _annotation_cell(";".join(missing_sources)),
                 ]
             )
         )
@@ -84,3 +112,14 @@ def _annotations_response(context: WorkbenchContext) -> Response:
 
 def _annotation_cell(value: object) -> str:
     return csv_safe_cell(str(value).replace("\n", " ").replace(",", "；"))
+
+
+def _missing_local_sources(task: ReviewTask) -> list[str]:
+    return sorted(
+        {
+            evidence.token
+            for chain in task.evidence_chain
+            for evidence in chain.evidence
+            if evidence.audit_status == "missing_local_source"
+        }
+    )

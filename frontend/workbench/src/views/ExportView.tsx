@@ -7,6 +7,7 @@ import type { WorkbenchState } from "../types";
 export function ExportView({ state }: { state: WorkbenchState }) {
   const [format, setFormat] = useState<"json" | "csv" | "annotations">("json");
   const [preview, setPreview] = useState("");
+  const [downloadBody, setDownloadBody] = useState("");
   const [projectPacketPreview, setProjectPacketPreview] = useState("");
   const [busy, setBusy] = useState(false);
   const [packetBusy, setPacketBusy] = useState(false);
@@ -22,7 +23,21 @@ export function ExportView({ state }: { state: WorkbenchState }) {
     setError("");
     try {
       const body = await exportWorkbench(format);
-      setPreview(format === "json" ? JSON.stringify(JSON.parse(body), null, 2) : body);
+      setDownloadBody(body);
+      if (format === "json") {
+        const payload = JSON.parse(body) as WorkbenchState;
+        setPreview(JSON.stringify({
+          project: payload.project.name,
+          component_counts: payload.summary,
+          raw_task_counts: payload.task_counts,
+          grouped_review_workload: payload.review_groups.length,
+          review_decisions: payload.review_decisions,
+          signoff_readiness: payload.evidence_package.signoff_readiness,
+          note: "预览仅显示交接摘要；下载保留完整 JSON、原始任务和 evidence chain。"
+        }, null, 2));
+      } else {
+        setPreview(body);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "导出失败");
     } finally {
@@ -31,9 +46,9 @@ export function ExportView({ state }: { state: WorkbenchState }) {
   };
 
   const download = () => {
-    if (!preview) return;
+    if (!downloadBody) return;
     const extension = format === "json" ? "json" : format === "csv" ? "csv" : "txt";
-    const blob = new Blob([preview], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([downloadBody], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -72,8 +87,9 @@ export function ExportView({ state }: { state: WorkbenchState }) {
         <span className="eyebrow">Export</span>
         <h2>导出当前审查状态</h2>
         <p>
-          输出来自真实后端接口：{state.task_counts.total} 个任务，
-          其中 ERROR/WARN {state.task_counts.error + state.task_counts.warn} 个。
+          输出来自真实后端接口：{state.review_groups.length} 个审查组、
+          {state.task_counts.total} 条原始任务，其中 ERROR/WARN 原始任务
+          {state.task_counts.error + state.task_counts.warn} 条。
           不包含 API key 或浏览器聊天密钥。
         </p>
       </div>
@@ -144,6 +160,7 @@ export function ExportView({ state }: { state: WorkbenchState }) {
               onClick={() => {
                 setFormat(item);
                 setPreview("");
+                setDownloadBody("");
               }}
             >
               {item}
@@ -153,13 +170,13 @@ export function ExportView({ state }: { state: WorkbenchState }) {
             {busy ? <Loader2 className="spin" size={16} /> : <PackageCheck size={16} />}
             生成预览
           </button>
-          <button type="button" onClick={download} disabled={!preview}>
+          <button type="button" onClick={download} disabled={!downloadBody}>
             <Download size={15} />
             下载
           </button>
         </div>
         {error && <p className="form-error">{error}</p>}
-        <pre className="export-preview">{preview || "选择格式后生成预览。"}</pre>
+        <pre className="export-preview">{preview || "选择格式后生成摘要预览；下载文件保留完整内容。"}</pre>
       </div>
     </section>
   );

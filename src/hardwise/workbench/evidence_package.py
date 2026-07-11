@@ -11,6 +11,7 @@ from hardwise.documents.cache import APPROVED_REVIEW_STATUSES
 
 if TYPE_CHECKING:
     from hardwise.workbench.context import WorkbenchContext
+    from hardwise.workbench.view_contracts import ReviewTask
 
 EvidenceLaneStatus = Literal["present", "partial", "gap", "not_configured"]
 EvidenceLaneStatusGroup = Literal["pass", "warn", "manual"]
@@ -42,6 +43,17 @@ class EvidencePackageLane(BaseModel):
     metrics: list[EvidencePackageMetric] = Field(default_factory=list)
 
 
+class SignoffReadiness(BaseModel):
+    """Whether L1 evidence can be reproduced from the exported local package."""
+
+    status: Literal["ready", "blocked"]
+    signoff_ready: bool
+    affected_tasks: int = 0
+    missing_local_sources: int = 0
+    missing_tokens: list[str] = Field(default_factory=list)
+    reason: str
+
+
 class EvidencePackageSummary(BaseModel):
     """Six evidence lanes that are intentionally not collapsed into one score."""
 
@@ -49,6 +61,13 @@ class EvidencePackageSummary(BaseModel):
     scope: str = "input_evidence_completeness"
     electrical_verdict: Literal["not_applicable"] = "not_applicable"
     lanes: list[EvidencePackageLane]
+    signoff_readiness: SignoffReadiness = Field(
+        default_factory=lambda: SignoffReadiness(
+            status="ready",
+            signoff_ready=True,
+            reason="No L1 task cites a missing local source.",
+        )
+    )
     guardrails: list[str] = Field(
         default_factory=lambda: [
             "Lane statuses describe input evidence coverage, not electrical correctness.",
@@ -76,6 +95,43 @@ def build_evidence_package_summary(context: WorkbenchContext) -> EvidencePackage
             build_pin_table_lane(context),
             build_review_package_lane(context),
         ]
+    )
+
+
+def build_signoff_readiness(tasks: list[ReviewTask]) -> SignoffReadiness:
+    """Gate handoff reproducibility without changing electrical verdicts."""
+
+    affected: set[str] = set()
+    tokens: set[str] = set()
+    for task in tasks:
+        if task.trust_tier != "l1":
+            continue
+        missing = {
+            evidence.token
+            for chain in task.evidence_chain
+            for evidence in chain.evidence
+            if evidence.audit_status == "missing_local_source"
+        }
+        if missing:
+            affected.add(task.stable_key)
+            tokens.update(missing)
+    ordered = sorted(tokens)
+    if ordered:
+        return SignoffReadiness(
+            status="blocked",
+            signoff_ready=False,
+            affected_tasks=len(affected),
+            missing_local_sources=len(ordered),
+            missing_tokens=ordered,
+            reason=(
+                "L1 findings cite datasheet/profile tokens whose local source is absent; "
+                "electrical verdicts remain unchanged, but the handoff package is not reproducible."
+            ),
+        )
+    return SignoffReadiness(
+        status="ready",
+        signoff_ready=True,
+        reason="Every L1 evidence token is reproducible from an available local or design source.",
     )
 
 

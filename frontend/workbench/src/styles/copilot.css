@@ -303,7 +303,7 @@
 
 .finding-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+  grid-template-columns: minmax(280px, 1fr) auto minmax(220px, .55fr) minmax(300px, auto);
   gap: 9px;
   align-items: center;
   padding: 11px 14px;
@@ -311,6 +311,39 @@
   border-bottom: 0;
   background: var(--panel);
   transition: background var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+
+.findings-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.finding-copy small {
+  color: var(--ink-3);
+  font-size: 11px;
+}
+
+.finding-status-stack,
+.finding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.finding-status-stack {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.finding-row > input {
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--panel-raise);
 }
 
 .finding-row:hover {

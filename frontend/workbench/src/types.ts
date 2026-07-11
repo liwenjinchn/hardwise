@@ -30,7 +30,17 @@ export interface EvidencePackageSummary {
   scope: string;
   electrical_verdict: "not_applicable";
   lanes: EvidencePackageLane[];
+  signoff_readiness: SignoffReadiness;
   guardrails: string[];
+}
+
+export interface SignoffReadiness {
+  status: "ready" | "blocked";
+  signoff_ready: boolean;
+  affected_tasks: number;
+  missing_local_sources: number;
+  missing_tokens: string[];
+  reason: string;
 }
 
 export interface WorkbenchProject {
@@ -167,6 +177,43 @@ export interface ReviewTask {
   recommended_action: string;
   source_classes: string[];
   evidence_chain: EvidenceChainItem[];
+  derived_from_task_id: string | null;
+  review_decision: ReviewDecision | null;
+}
+
+export type ReviewDecisionStatus = "open" | "accepted" | "waived" | "resolved";
+
+export interface ReviewDecision {
+  stable_key: string;
+  status: ReviewDecisionStatus;
+  reason: string;
+  updated_at: string;
+}
+
+export interface ReviewDecisionSummary {
+  total_tasks: number;
+  open: number;
+  accepted: number;
+  waived: number;
+  resolved: number;
+  stale_removed_on_rerun: number;
+}
+
+export interface ReviewTaskGroup {
+  id: string;
+  stable_key: string;
+  title: string;
+  status_group: StatusGroup;
+  trust_tier: TrustTier;
+  axis: "electrical" | "evidence";
+  identity: string;
+  check: string | null;
+  affected_refdes: string[];
+  task_ids: string[];
+  stable_keys: string[];
+  raw_task_count: number;
+  derived_task_count: number;
+  recommended_action: string;
 }
 
 export interface ReviewTaskCounts {
@@ -315,7 +362,9 @@ export interface WorkbenchState {
   selected_refdes: string | null;
   queue: ReviewQueueItem[];
   review_tasks: ReviewTask[];
+  review_groups: ReviewTaskGroup[];
   task_counts: ReviewTaskCounts;
+  review_decisions: ReviewDecisionSummary | null;
   net_checks: NetCheckView[];
   risk_hints: RiskHintsSummary;
   risk_hint_details: RiskHintsView;
@@ -341,6 +390,9 @@ export interface ComponentDetail {
   status: string;
   status_label: string;
   status_group: StatusGroup;
+  deterministic_status: string;
+  deterministic_status_label: string;
+  deterministic_status_group: StatusGroup;
   trust_tier: TrustTier;
   profile_part_number: string;
   match_status: string;
@@ -466,6 +518,7 @@ export interface ProjectReviewPrepPacket {
   scope: string;
   summary: WorkbenchSummary;
   task_counts: ReviewTaskCounts;
+  review_decisions: ReviewDecisionSummary | null;
   queue: ReviewQueueItem[];
   priority_tasks: ReviewTask[];
   key_component_groups: ProjectPrepComponentGroup[];

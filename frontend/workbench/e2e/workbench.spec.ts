@@ -52,14 +52,49 @@ test("prep packet preview opens for Q12", async ({ page }) => {
   await expect(preview).toContainText("Q12");
 });
 
+test("review decision survives reload and deterministic rerun, then reopens", async ({ page }) => {
+  await openReview(page);
+  await page.getByRole("button", { name: "问题清单" }).click();
+  const firstGroup = page.locator(".finding-row").first();
+  await expect(firstGroup).toBeVisible();
+  await firstGroup.locator("input").fill("Public regression fixture intentionally retains this fault.");
+  await firstGroup.getByRole("button", { name: "豁免" }).click();
+  await expect(firstGroup).toContainText("评审 waived");
+
+  await page.reload();
+  await page.getByRole("button", { name: "问题清单" }).click();
+  await expect(page.locator(".finding-row").first()).toContainText("评审 waived");
+  await page.getByRole("button", { name: "重新运行确定性检查" }).click();
+  await expect(page.locator(".finding-row").first()).toContainText("评审 waived");
+
+  await page.locator(".finding-row").first().getByRole("button", { name: "重新打开" }).click();
+  await expect(page.locator(".finding-row").first()).toContainText("评审 open");
+});
+
+test("export JSON preview is a compact handoff summary", async ({ page }) => {
+  await openReview(page);
+  await page.getByRole("button", { name: "导出" }).click();
+  await page.getByRole("button", { name: "生成预览" }).click();
+  const preview = page.locator(".export-preview");
+  await expect(preview).toContainText("grouped_review_workload");
+  await expect(preview).toContainText("预览仅显示交接摘要");
+  const text = await preview.textContent();
+  expect(text?.length ?? 0).toBeLessThan(10_000);
+});
+
 test("import page can reload the built-in demo files", async ({ page }) => {
   await openReview(page);
   await page.getByRole("button", { name: "导入" }).click();
-  await expect(page.locator(".upload-slot").first()).toContainText("拖入文件或点击选择");
+  await expect(page.locator(".upload-slot").first()).toContainText("本次必选");
+  await expect(page.getByLabel("选择 BOM CSV").locator("..")).toContainText("本次可选");
   await expect(page.locator(".evidence-lane-card")).toHaveCount(6);
   await page
     .locator('input[accept=".net,.dat,.txt,.pst"]')
     .setInputFiles(path.resolve("../../tests/fixtures/allegro/mixed_controller_power_stage.net"));
+  await expect(page.locator(".upload-slot").first()).toContainText("本次已选择");
+  await expect(page.locator(".upload-slot").first()).toContainText(
+    "本次文件：mixed_controller_power_stage.net"
+  );
   await page
     .getByLabel("选择 BOM CSV")
     .setInputFiles(

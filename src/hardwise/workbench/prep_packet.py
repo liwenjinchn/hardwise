@@ -17,6 +17,7 @@ from hardwise.workbench.profile_promotion import (
     ProfilePromotionCandidate,
     build_profile_promotion_candidates,
 )
+from hardwise.workbench.review_decisions import ReviewDecisionSummary
 from hardwise.workbench.view_model import (
     EvidencePackageMetric,
     EvidencePackageSummary,
@@ -84,6 +85,7 @@ class ProjectReviewPrepPacket(BaseModel):
     summary: WorkbenchSummary
     evidence_package: EvidencePackageSummary
     task_counts: ReviewTaskCounts
+    review_decisions: ReviewDecisionSummary | None = None
     queue: list[ReviewQueueItem] = Field(default_factory=list)
     priority_tasks: list[ReviewTask] = Field(default_factory=list)
     key_component_groups: list[ProjectPrepComponentGroup] = Field(default_factory=list)
@@ -162,6 +164,15 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
         f"| Manual | {summary.manual} |",
         f"| PASS / WARN / ERROR | {summary.pass_count} / {summary.warn_count} / {summary.error_count} |",
         f"| Review tasks | {packet.task_counts.total} |",
+        *(
+            [
+                f"| Review decisions open / accepted / waived / resolved | "
+                f"{packet.review_decisions.open} / {packet.review_decisions.accepted} / "
+                f"{packet.review_decisions.waived} / {packet.review_decisions.resolved} |"
+            ]
+            if packet.review_decisions is not None
+            else []
+        ),
         "",
         "## Evidence Package Completeness",
         "",
@@ -175,6 +186,13 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
         ],
         "",
         "> Lane status describes source coverage only; it is not an electrical signoff.",
+        "",
+        "## Sign-off Evidence Readiness",
+        "",
+        f"- Status：{packet.evidence_package.signoff_readiness.status}",
+        f"- Affected L1 tasks：{packet.evidence_package.signoff_readiness.affected_tasks}",
+        f"- Missing local sources：{packet.evidence_package.signoff_readiness.missing_local_sources}",
+        f"- Reason：{packet.evidence_package.signoff_readiness.reason}",
         "",
         "## Review Focus Areas",
         "",
@@ -257,6 +275,14 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
                     f"- **{task.id}** `{task.refdes}` {task.status_label}：{task.title}",
                     f"  - 建议动作：{task.recommended_action}",
                     f"  - 稳定键：`{task.stable_key}`",
+                    *(
+                        [
+                            f"  - 评审决策：{task.review_decision.status}；"
+                            f"理由：{task.review_decision.reason}"
+                        ]
+                        if task.review_decision is not None
+                        else ["  - 评审决策：open"]
+                    ),
                 ]
             )
     else:

@@ -263,6 +263,24 @@
           "title": "Checks",
           "type": "array"
         },
+        "deterministic_status": {
+          "title": "Deterministic Status",
+          "type": "string"
+        },
+        "deterministic_status_group": {
+          "enum": [
+            "error",
+            "warn",
+            "pass",
+            "manual"
+          ],
+          "title": "Deterministic Status Group",
+          "type": "string"
+        },
+        "deterministic_status_label": {
+          "title": "Deterministic Status Label",
+          "type": "string"
+        },
         "document": {
           "anyOf": [
             {
@@ -385,6 +403,9 @@
       "required": [
         "bom",
         "checks",
+        "deterministic_status",
+        "deterministic_status_group",
+        "deterministic_status_label",
         "document",
         "evidence_chain",
         "manufacturer",
@@ -1042,6 +1063,9 @@
           "default": "input_evidence_completeness",
           "title": "Scope",
           "type": "string"
+        },
+        "signoff_readiness": {
+          "$ref": "#/$defs/SignoffReadiness"
         }
       },
       "required": [
@@ -1049,7 +1073,8 @@
         "guardrails",
         "lanes",
         "schema_version",
-        "scope"
+        "scope",
+        "signoff_readiness"
       ],
       "title": "EvidencePackageSummary",
       "type": "object"
@@ -1597,6 +1622,81 @@
       "title": "RejectedRiskHintSummary",
       "type": "object"
     },
+    "ReviewDecisionSummary": {
+      "description": "Workflow counts kept separate from electrical task counts.",
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "integer"
+        },
+        "open": {
+          "title": "Open",
+          "type": "integer"
+        },
+        "resolved": {
+          "title": "Resolved",
+          "type": "integer"
+        },
+        "stale_removed_on_rerun": {
+          "default": 0,
+          "title": "Stale Removed On Rerun",
+          "type": "integer"
+        },
+        "total_tasks": {
+          "title": "Total Tasks",
+          "type": "integer"
+        },
+        "waived": {
+          "title": "Waived",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "accepted",
+        "open",
+        "resolved",
+        "stale_removed_on_rerun",
+        "total_tasks",
+        "waived"
+      ],
+      "title": "ReviewDecisionSummary",
+      "type": "object"
+    },
+    "ReviewDecisionView": {
+      "description": "One human workflow decision keyed by a stable finding key.",
+      "properties": {
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "stable_key": {
+          "title": "Stable Key",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "accepted",
+            "waived",
+            "resolved"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reason",
+        "stable_key",
+        "status",
+        "updated_at"
+      ],
+      "title": "ReviewDecisionView",
+      "type": "object"
+    },
     "ReviewPackageArtifactView": {
       "description": "One exported review-package artifact shown as evidence coverage.",
       "properties": {
@@ -1979,6 +2079,18 @@
           "default": null,
           "title": "Check"
         },
+        "derived_from_task_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Derived From Task Id"
+        },
         "evidence_chain": {
           "items": {
             "$ref": "#/$defs/EvidenceChainItem"
@@ -2013,6 +2125,17 @@
         "refdes": {
           "title": "Refdes",
           "type": "string"
+        },
+        "review_decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReviewDecisionView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "source_classes": {
           "items": {
@@ -2072,12 +2195,14 @@
       "required": [
         "body",
         "check",
+        "derived_from_task_id",
         "evidence_chain",
         "id",
         "kind",
         "pin_number",
         "recommended_action",
         "refdes",
+        "review_decision",
         "source_classes",
         "stable_key",
         "status",
@@ -2122,6 +2247,118 @@
         "warn"
       ],
       "title": "ReviewTaskCounts",
+      "type": "object"
+    },
+    "ReviewTaskGroup": {
+      "description": "One reviewer-facing group while preserving every raw task for audit.",
+      "properties": {
+        "affected_refdes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Affected Refdes",
+          "type": "array"
+        },
+        "axis": {
+          "enum": [
+            "electrical",
+            "evidence"
+          ],
+          "title": "Axis",
+          "type": "string"
+        },
+        "check": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Check"
+        },
+        "derived_task_count": {
+          "default": 0,
+          "title": "Derived Task Count",
+          "type": "integer"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "identity": {
+          "title": "Identity",
+          "type": "string"
+        },
+        "raw_task_count": {
+          "title": "Raw Task Count",
+          "type": "integer"
+        },
+        "recommended_action": {
+          "title": "Recommended Action",
+          "type": "string"
+        },
+        "stable_key": {
+          "title": "Stable Key",
+          "type": "string"
+        },
+        "stable_keys": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Stable Keys",
+          "type": "array"
+        },
+        "status_group": {
+          "enum": [
+            "error",
+            "warn",
+            "pass",
+            "manual"
+          ],
+          "title": "Status Group",
+          "type": "string"
+        },
+        "task_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Task Ids",
+          "type": "array"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "trust_tier": {
+          "enum": [
+            "l1",
+            "l2",
+            "l3"
+          ],
+          "title": "Trust Tier",
+          "type": "string"
+        }
+      },
+      "required": [
+        "affected_refdes",
+        "axis",
+        "check",
+        "derived_task_count",
+        "id",
+        "identity",
+        "raw_task_count",
+        "recommended_action",
+        "stable_key",
+        "stable_keys",
+        "status_group",
+        "task_ids",
+        "title",
+        "trust_tier"
+      ],
+      "title": "ReviewTaskGroup",
       "type": "object"
     },
     "RiskHintView": {
@@ -2258,6 +2495,54 @@
       "title": "RiskHintsView",
       "type": "object"
     },
+    "SignoffReadiness": {
+      "description": "Whether L1 evidence can be reproduced from the exported local package.",
+      "properties": {
+        "affected_tasks": {
+          "default": 0,
+          "title": "Affected Tasks",
+          "type": "integer"
+        },
+        "missing_local_sources": {
+          "default": 0,
+          "title": "Missing Local Sources",
+          "type": "integer"
+        },
+        "missing_tokens": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Tokens",
+          "type": "array"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "signoff_ready": {
+          "title": "Signoff Ready",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "ready",
+            "blocked"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "affected_tasks",
+        "missing_local_sources",
+        "missing_tokens",
+        "reason",
+        "signoff_ready",
+        "status"
+      ],
+      "title": "SignoffReadiness",
+      "type": "object"
+    },
     "WorkbenchCapabilities": {
       "description": "Feature flags surfaced to the SPA.",
       "properties": {
@@ -2380,6 +2665,24 @@
           "title": "Queue",
           "type": "array"
         },
+        "review_decisions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReviewDecisionSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "review_groups": {
+          "items": {
+            "$ref": "#/$defs/ReviewTaskGroup"
+          },
+          "title": "Review Groups",
+          "type": "array"
+        },
         "review_package": {
           "$ref": "#/$defs/ReviewPackageSummary"
         },
@@ -2421,6 +2724,8 @@
         "pin_table",
         "project",
         "queue",
+        "review_decisions",
+        "review_groups",
         "review_package",
         "review_tasks",
         "risk_hint_details",

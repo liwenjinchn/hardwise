@@ -83,7 +83,7 @@ export function ImportView({
           icon={<FileArchive size={20} />}
           label="BOM CSV"
           detail={`${state.summary.bom_matched} matched refdes`}
-          status={state.summary.bom_matched > 0 ? "loaded" : "optional"}
+          status="optional"
           file={bom}
           accept=".csv,.tsv,.txt"
           onPick={setBom}
@@ -92,7 +92,7 @@ export function ImportView({
           icon={<FileSpreadsheet size={20} />}
           label="Capture 引脚表 CSV"
           detail={pinTableDetail(state)}
-          status={state.pin_table.status === "loaded" ? "loaded" : "optional"}
+          status="optional"
           file={pinTable}
           accept=".csv,.txt"
           onPick={setPinTable}
@@ -101,7 +101,7 @@ export function ImportView({
           icon={<BookOpenCheck size={20} />}
           label="public document index CSV"
           detail={documentIndexDetail(state)}
-          status={state.capabilities.document_index_enabled ? "loaded" : "optional"}
+          status="optional"
           file={documentIndex}
           accept=".csv,.tsv,.txt"
           onPick={setDocumentIndex}
@@ -110,7 +110,7 @@ export function ImportView({
           icon={<FileJson size={20} />}
           label="review-package manifest"
           detail={reviewPackageDetail(state)}
-          status={state.review_package.status === "loaded" ? "loaded" : "optional"}
+          status="optional"
           file={reviewPackage}
           accept=".yaml,.yml,.json,.txt"
           onPick={setReviewPackage}
@@ -123,7 +123,7 @@ export function ImportView({
               ? `${state.risk_hints.accepted_external_count} accepted hints`
               : "optional external hints"
           }
-          status={state.capabilities.risk_hints_enabled ? "loaded" : "optional"}
+          status="optional"
           file={riskHints}
           accept=".json"
           onPick={setRiskHints}
@@ -159,7 +159,7 @@ function UploadSlot(props: {
   icon: ReactNode;
   label: string;
   detail: string;
-  status: "required" | "loaded" | "optional";
+  status: "required" | "optional";
   required?: boolean;
   file: File | null;
   accept: string;
@@ -181,17 +181,23 @@ function UploadSlot(props: {
 
   return (
     <label
-      className={`upload-slot ${props.status}${dragging ? " dragging" : ""}`}
+      className={`upload-slot ${props.file ? "loaded" : props.status}${
+        dragging ? " dragging" : ""
+      }`}
       onDragEnter={() => setDragging(true)}
       onDragLeave={() => setDragging(false)}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
       <span className="upload-icon">{props.icon}</span>
-      <span className="upload-status">{props.status === "required" ? "required" : props.status}</span>
+      <span className="upload-status">
+        {props.file ? "本次已选择" : props.status === "required" ? "本次必选" : "本次可选"}
+      </span>
       <strong>{props.label}{props.required ? " *" : ""}</strong>
-      <em>{props.detail}</em>
-      <small>{props.file?.name ?? "拖入文件或点击选择"}</small>
+      <em>当前工作台：{props.detail}</em>
+      <small>
+        {props.file ? `本次文件：${props.file.name}` : "本次未选择 · 拖入文件或点击选择"}
+      </small>
       <input
         type="file"
         accept={props.accept}

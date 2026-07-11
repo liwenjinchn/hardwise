@@ -13,7 +13,9 @@ export function Header({
   onNavigate: (view: ViewId) => void;
 }) {
   const { summary } = state;
-  const reviewComponentCount = state.queue.filter((item) => item.status_group !== "pass").length || state.queue.length;
+  const reviewComponentCount = state.queue.filter(
+    (item) => item.deterministic_status_group !== "pass"
+  ).length || state.queue.length;
   const blockingTaskCount = state.task_counts.error + state.task_counts.warn;
   const capabilityText = [
     state.capabilities.chat ? "Copilot 可用" : "Copilot 关闭",
@@ -43,13 +45,13 @@ export function Header({
               item.id === "review"
                 ? "非 PASS 器件数"
                 : item.id === "findings"
-                  ? `全量任务 ${state.task_counts.total}；ERROR/WARN ${blockingTaskCount}`
+                  ? `${state.review_groups.length} 个审查组；${state.task_counts.total} 条原始任务；ERROR/WARN ${blockingTaskCount}`
                   : item.label
             }
           >
             {item.label}
             {item.id === "review" && <span className="pip">{reviewComponentCount}</span>}
-            {item.id === "findings" && <span className="pip">{state.task_counts.total}</span>}
+            {item.id === "findings" && <span className="pip">{state.review_groups.length}</span>}
           </button>
         ))}
       </nav>
@@ -62,8 +64,8 @@ export function Header({
         <div className="mini-stats" aria-label="当前审查摘要">
           <Metric label="器件" value={summary.components} />
           <Metric label="已验证" value={summary.validated} />
-          <Metric label="ERROR" value={summary.error_count} tone="error" />
-          <Metric label="WARN" value={summary.warn_count} tone="warn" />
+          <Metric label="ERROR 器件" value={summary.error_count} tone="error" />
+          <Metric label="WARN 器件" value={summary.warn_count} tone="warn" />
         </div>
         <div className="capability-strip" aria-label="工作台能力">
           {capabilityText.slice(0, 3).map((item) => (

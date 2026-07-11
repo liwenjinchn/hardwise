@@ -47,6 +47,9 @@ export type StatusLabel = string;
 export type Subject = string;
 export type Summary1 = string;
 export type Checks = CheckView[];
+export type DeterministicStatus = string;
+export type DeterministicStatusGroup = "error" | "warn" | "pass" | "manual";
+export type DeterministicStatusLabel = string;
 export type DatasheetUrl = string | null;
 export type Description1 = string | null;
 export type LifecycleStatus = string | null;
@@ -120,15 +123,20 @@ export type Total = number;
 export type Warn = number;
 export type Body2 = string;
 export type Check = string | null;
+export type DerivedFromTaskId = string | null;
 export type EvidenceChain1 = EvidenceChainItem[];
 export type Id = string;
 export type Kind1 = string;
 export type PinNumber = string | null;
 export type RecommendedAction = string;
 export type Refdes2 = string;
-export type SourceClasses = string[];
+export type Reason5 = string;
 export type StableKey = string;
-export type Status8 = string;
+export type Status8 = "open" | "accepted" | "waived" | "resolved";
+export type UpdatedAt = string;
+export type SourceClasses = string[];
+export type StableKey1 = string;
+export type Status9 = string;
 export type StatusGroup3 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel2 = string;
 export type Subject1 = string | null;
@@ -150,7 +158,7 @@ export type Metrics = EvidencePackageMetric[];
 export type RecommendedAction1 = string;
 export type Source3 = string | null;
 export type SourceToken = string | null;
-export type Status9 = "present" | "partial" | "gap" | "not_configured";
+export type Status10 = "present" | "partial" | "gap" | "not_configured";
 export type StatusGroup4 = "pass" | "warn" | "manual";
 export type StatusLabel3 = string;
 export type Summary3 = string;
@@ -158,6 +166,12 @@ export type TrustBoundary = string;
 export type Lanes = EvidencePackageLane[];
 export type SchemaVersion = string;
 export type Scope = string;
+export type AffectedTasks = number;
+export type MissingLocalSources = number;
+export type MissingTokens = string[];
+export type Reason6 = string;
+export type SignoffReady = boolean;
+export type Status11 = "ready" | "blocked";
 export type Ok = boolean;
 export type AcceptedFindings = number;
 export type AcceptedRefdes = string[];
@@ -166,14 +180,14 @@ export type AffectedRefdesList = string[];
 export type Message = string;
 export type Net1 = string | null;
 export type PinNumber1 = string | null;
-export type Reason5 = string;
+export type Reason7 = string;
 export type Refdes3 = string | null;
 export type RuleId = string;
 export type Rejected = RejectedPinTableFindingView[];
 export type RejectedFindings = number;
 export type RejectedUnknownRefdes = string[];
 export type Source4 = string | null;
-export type Status10 = "loaded" | "not_configured";
+export type Status12 = "loaded" | "not_configured";
 export type BomSource = string;
 export type GeneratedAt = string;
 export type Name1 = string;
@@ -188,7 +202,7 @@ export type Note = string | null;
 export type Path1 = string;
 export type Required = boolean;
 export type Sha256 = string | null;
-export type Status11 = string;
+export type Status13 = string;
 export type Artifacts = ReviewPackageArtifactView[];
 export type HashMismatch = number;
 export type ManualGapCount = number;
@@ -198,7 +212,7 @@ export type PackageStatus = "not_configured" | "complete" | "optional_gap" | "mi
 export type Present = number;
 export type RecommendedAction2 = string;
 export type Source5 = string | null;
-export type Status12 = "loaded" | "not_configured";
+export type Status14 = "loaded" | "not_configured";
 export type StatusGroup5 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel4 = string;
 export type Total2 = number;
@@ -226,14 +240,14 @@ export type Check1 = string;
 export type Evidence4 = EvidenceView[];
 export type NetName = string;
 export type Nodes = string[];
-export type Status13 = string;
+export type Status15 = string;
 export type StatusGroup6 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel5 = string;
 export type Summary4 = string;
 export type NetChecks = NetCheckView[];
-export type DeterministicStatus = string;
-export type DeterministicStatusGroup = "error" | "warn" | "pass" | "manual";
-export type DeterministicStatusLabel = string;
+export type DeterministicStatus1 = string;
+export type DeterministicStatusGroup1 = "error" | "warn" | "pass" | "manual";
+export type DeterministicStatusLabel1 = string;
 export type DocumentStatus = string;
 export type EvidenceCount = number;
 export type IssueCount = number;
@@ -245,7 +259,7 @@ export type ProfilePath = string | null;
 export type ProfileStatus = string;
 export type Refdes4 = string;
 export type RiskHintCount = number;
-export type Status14 = string;
+export type Status16 = string;
 export type StatusGroup7 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel6 = string;
 export type Subtitle = string;
@@ -256,13 +270,34 @@ export type TopTaskId = string | null;
 export type TrustTier5 = "l1" | "l2" | "l3";
 export type Value3 = string;
 export type Queue = ReviewQueueItem[];
+export type Accepted = number;
+export type Open = number;
+export type Resolved = number;
+export type StaleRemovedOnRerun = number;
+export type TotalTasks = number;
+export type Waived = number;
+export type AffectedRefdes1 = string[];
+export type Axis = "electrical" | "evidence";
+export type Check2 = string | null;
+export type DerivedTaskCount = number;
+export type Id2 = string;
+export type Identity1 = string;
+export type RawTaskCount = number;
+export type RecommendedAction3 = string;
+export type StableKey2 = string;
+export type StableKeys = string[];
+export type StatusGroup8 = "error" | "warn" | "pass" | "manual";
+export type TaskIds1 = string[];
+export type Title6 = string;
+export type TrustTier6 = "l1" | "l2" | "l3";
+export type ReviewGroups = ReviewTaskGroup[];
 export type ReviewTasks = ReviewTask[];
-export type Accepted = RiskHintView[];
+export type Accepted1 = RiskHintView[];
 export type AcceptedExternalCount = number;
 export type Count1 = number;
 export type ExternalStatus = string;
 export type Count2 = number;
-export type Reason6 = string;
+export type Reason8 = string;
 export type Rejected1 = RejectedRiskHintSummary[];
 export type RejectedExternalCount = number;
 export type WrappedRefdesCount1 = number;
@@ -340,6 +375,9 @@ export interface Input {
 export interface ComponentDetail {
   bom: BomView | null;
   checks: Checks;
+  deterministic_status: DeterministicStatus;
+  deterministic_status_group: DeterministicStatusGroup;
+  deterministic_status_label: DeterministicStatusLabel;
   document: DocumentCoverageView | null;
   evidence_chain: EvidenceChain;
   manufacturer: Manufacturer2;
@@ -501,20 +539,31 @@ export interface ComponentTaskCounts {
 export interface ReviewTask {
   body: Body2;
   check: Check;
+  derived_from_task_id: DerivedFromTaskId;
   evidence_chain: EvidenceChain1;
   id: Id;
   kind: Kind1;
   pin_number: PinNumber;
   recommended_action: RecommendedAction;
   refdes: Refdes2;
+  review_decision: ReviewDecisionView | null;
   source_classes: SourceClasses;
-  stable_key: StableKey;
-  status: Status8;
+  stable_key: StableKey1;
+  status: Status9;
   status_group: StatusGroup3;
   status_label: StatusLabel2;
   subject: Subject1;
   title: Title4;
   trust_tier: TrustTier3;
+}
+/**
+ * One human workflow decision keyed by a stable finding key.
+ */
+export interface ReviewDecisionView {
+  reason: Reason5;
+  stable_key: StableKey;
+  status: Status8;
+  updated_at: UpdatedAt;
 }
 /**
  * Summary returned after an uploaded project becomes the active context.
@@ -538,6 +587,7 @@ export interface EvidencePackageSummary {
   lanes: Lanes;
   schema_version: SchemaVersion;
   scope: Scope;
+  signoff_readiness: SignoffReadiness;
 }
 /**
  * One independent evidence input or deterministic coverage lane.
@@ -549,7 +599,7 @@ export interface EvidencePackageLane {
   recommended_action: RecommendedAction1;
   source: Source3;
   source_token: SourceToken;
-  status: Status9;
+  status: Status10;
   status_group: StatusGroup4;
   status_label: StatusLabel3;
   summary: Summary3;
@@ -566,6 +616,17 @@ export interface EvidencePackageMetric {
   value: Value2;
 }
 /**
+ * Whether L1 evidence can be reproduced from the exported local package.
+ */
+export interface SignoffReadiness {
+  affected_tasks: AffectedTasks;
+  missing_local_sources: MissingLocalSources;
+  missing_tokens: MissingTokens;
+  reason: Reason6;
+  signoff_ready: SignoffReady;
+  status: Status11;
+}
+/**
  * Capture pin-table intake status shown beside first-class imports.
  */
 export interface PinTableSummary {
@@ -578,7 +639,7 @@ export interface PinTableSummary {
   rejected_findings: RejectedFindings;
   rejected_unknown_refdes: RejectedUnknownRefdes;
   source: Source4;
-  status: Status10;
+  status: Status12;
 }
 export interface Checks1 {
   [k: string]: number;
@@ -590,7 +651,7 @@ export interface RejectedPinTableFindingView {
   message: Message;
   net: Net1;
   pin_number: PinNumber1;
-  reason: Reason5;
+  reason: Reason7;
   refdes: Refdes3;
   rule_id: RuleId;
 }
@@ -619,7 +680,7 @@ export interface ReviewPackageSummary {
   present: Present;
   recommended_action: RecommendedAction2;
   source: Source5;
-  status: Status12;
+  status: Status14;
   status_group: StatusGroup5;
   status_label: StatusLabel4;
   total: Total2;
@@ -635,7 +696,7 @@ export interface ReviewPackageArtifactView {
   path: Path1;
   required: Required;
   sha256: Sha256;
-  status: Status11;
+  status: Status13;
 }
 /**
  * Count summary for the current workbench run.
@@ -669,6 +730,8 @@ export interface WorkbenchState {
   pin_table: PinTableSummary;
   project: WorkbenchProject;
   queue: Queue;
+  review_decisions: ReviewDecisionSummary | null;
+  review_groups: ReviewGroups;
   review_package: ReviewPackageSummary;
   review_tasks: ReviewTasks;
   risk_hint_details: RiskHintsView;
@@ -697,7 +760,7 @@ export interface NetCheckView {
   evidence: Evidence4;
   net_name: NetName;
   nodes: Nodes;
-  status: Status13;
+  status: Status15;
   status_group: StatusGroup6;
   status_label: StatusLabel5;
   summary: Summary4;
@@ -706,9 +769,9 @@ export interface NetCheckView {
  * One row in the SPA review queue.
  */
 export interface ReviewQueueItem {
-  deterministic_status: DeterministicStatus;
-  deterministic_status_group: DeterministicStatusGroup;
-  deterministic_status_label: DeterministicStatusLabel;
+  deterministic_status: DeterministicStatus1;
+  deterministic_status_group: DeterministicStatusGroup1;
+  deterministic_status_label: DeterministicStatusLabel1;
   document_status: DocumentStatus;
   evidence_count: EvidenceCount;
   issue_count: IssueCount;
@@ -720,7 +783,7 @@ export interface ReviewQueueItem {
   profile_status: ProfileStatus;
   refdes: Refdes4;
   risk_hint_count: RiskHintCount;
-  status: Status14;
+  status: Status16;
   status_group: StatusGroup7;
   status_label: StatusLabel6;
   subtitle: Subtitle;
@@ -733,10 +796,40 @@ export interface ReviewQueueItem {
   value: Value3;
 }
 /**
+ * Workflow counts kept separate from electrical task counts.
+ */
+export interface ReviewDecisionSummary {
+  accepted: Accepted;
+  open: Open;
+  resolved: Resolved;
+  stale_removed_on_rerun: StaleRemovedOnRerun;
+  total_tasks: TotalTasks;
+  waived: Waived;
+}
+/**
+ * One reviewer-facing group while preserving every raw task for audit.
+ */
+export interface ReviewTaskGroup {
+  affected_refdes: AffectedRefdes1;
+  axis: Axis;
+  check: Check2;
+  derived_task_count: DerivedTaskCount;
+  id: Id2;
+  identity: Identity1;
+  raw_task_count: RawTaskCount;
+  recommended_action: RecommendedAction3;
+  stable_key: StableKey2;
+  stable_keys: StableKeys;
+  status_group: StatusGroup8;
+  task_ids: TaskIds1;
+  title: Title6;
+  trust_tier: TrustTier6;
+}
+/**
  * Risk-hints state for the SPA.
  */
 export interface RiskHintsView {
-  accepted: Accepted;
+  accepted: Accepted1;
   accepted_external_count: AcceptedExternalCount;
   count: Count1;
   external_status: ExternalStatus;
@@ -749,7 +842,7 @@ export interface RiskHintsView {
  */
 export interface RejectedRiskHintSummary {
   count: Count2;
-  reason: Reason6;
+  reason: Reason8;
 }
 /**
  * Backward-compatible compact risk-hints summary.

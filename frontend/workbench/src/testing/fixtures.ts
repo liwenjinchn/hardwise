@@ -101,6 +101,8 @@ export function makeTask(overrides: Partial<ReviewTask> = {}): ReviewTask {
     recommended_action: "review the net",
     source_classes: ["design_source"],
     evidence_chain: [makeChainItem()],
+    derived_from_task_id: null,
+    review_decision: null,
     ...overrides
   };
 }
@@ -347,6 +349,14 @@ export function makeEvidencePackage(
         metrics: []
       })
     ],
+    signoff_readiness: {
+      status: "ready",
+      signoff_ready: true,
+      affected_tasks: 0,
+      missing_local_sources: 0,
+      missing_tokens: [],
+      reason: "Every L1 evidence token is reproducible."
+    },
     guardrails: [
       "Lane statuses describe input evidence coverage, not electrical correctness.",
       "Counts with different units are never combined into one percentage or score.",
@@ -368,7 +378,33 @@ export function makeState(overrides: Partial<WorkbenchState> = {}): WorkbenchSta
     selected_refdes: "U8",
     queue: [makeQueueItem()],
     review_tasks: [makeTask()],
+    review_groups: [
+      {
+        id: "G-001",
+        stable_key: "group|st|stm32|component_check",
+        title: "MCU power pins",
+        status_group: "warn",
+        trust_tier: "l1",
+        axis: "electrical",
+        identity: "st|stm32f103c8t6",
+        check: "component_check",
+        affected_refdes: ["U8"],
+        task_ids: ["T1"],
+        stable_keys: ["T1-key"],
+        raw_task_count: 1,
+        derived_task_count: 0,
+        recommended_action: "review the net"
+      }
+    ],
     task_counts: makeTaskCounts(),
+    review_decisions: {
+      total_tasks: 1,
+      open: 1,
+      accepted: 0,
+      waived: 0,
+      resolved: 0,
+      stale_removed_on_rerun: 0
+    },
     net_checks: [],
     risk_hints: {
       external_status: "not_configured",
@@ -408,6 +444,9 @@ export function makeDetail(overrides: Partial<ComponentDetail> = {}): ComponentD
     status: "WARN",
     status_label: "看证据",
     status_group: "warn",
+    deterministic_status: "WARN",
+    deterministic_status_label: "看证据",
+    deterministic_status_group: "warn",
     trust_tier: "l1",
     profile_part_number: "STM32F103C8T6",
     match_status: "ok",

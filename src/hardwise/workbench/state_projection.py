@@ -18,7 +18,10 @@ from hardwise.workbench.component_projection import (
     _project_view,
     _risk_hint_view,
 )
-from hardwise.workbench.evidence_package import build_evidence_package_summary
+from hardwise.workbench.evidence_package import (
+    build_evidence_package_summary,
+    build_signoff_readiness,
+)
 from hardwise.workbench.projection_common import (
     _component_task_counts,
     _dedupe,
@@ -30,6 +33,7 @@ from hardwise.workbench.projection_common import (
     _validation_evidence,
 )
 from hardwise.workbench.task_projection import _review_task_projection
+from hardwise.workbench.task_grouping import build_review_task_groups
 from hardwise.workbench.view_contracts import (
     NetCheckView,
     PinTableSummary,
@@ -73,6 +77,8 @@ def build_workbench_state(
         for component in projection.components
     ]
     queue.sort(key=lambda item: (_status_rank(item.status_group), sort_refdes_key(item.refdes)))
+    evidence_package = build_evidence_package_summary(context)
+    evidence_package.signoff_readiness = build_signoff_readiness(list(review_tasks))
 
     return WorkbenchState(
         project=_project_view(context),
@@ -93,12 +99,13 @@ def build_workbench_state(
             pin_table_enabled=context.pin_table_path is not None,
             review_package_enabled=context.review_package.source_path is not None,
         ),
-        evidence_package=build_evidence_package_summary(context),
+        evidence_package=evidence_package,
         pin_table=build_pin_table_summary(context),
         review_package=_review_package_summary(context.review_package),
         selected_refdes=_default_refdes(queue) or _default_task_refdes(review_tasks),
         queue=queue,
         review_tasks=list(review_tasks),
+        review_groups=build_review_task_groups(context, list(review_tasks)),
         task_counts=_review_task_counts(review_tasks),
         net_checks=_net_check_views(context),
         risk_hints=build_risk_hints_summary(context.risk_hints),
