@@ -607,11 +607,16 @@ def test_design_validator_ui_accepts_review_package_manifest(tmp_path: Path) -> 
 
     assert result.exit_code == 0, result.output
     assert "review-package:" in result.output
+    assert "package_status=missing_required" in result.output
+    assert "status_group=manual" in result.output
+    assert "manual_gaps=1" in result.output
     assert "present=1" in result.output
     assert "missing_required=1" in result.output
     html = html_output.read_text(encoding="utf-8")
     assert '"review_package"' in html
     assert '"kind": "schematic_pdf"' in html
+    assert '"package_status": "missing_required"' in html
+    assert '"manual_gap_count": 1' in html
     assert "Review Package Evidence" in html
     assert "does not parse these files into electrical findings" not in html
 
@@ -745,7 +750,10 @@ def test_serve_workbench_dry_run_accepts_review_package_manifest(tmp_path: Path)
     )
 
     assert result.exit_code == 0, result.output
-    assert "review-package=loaded present=1" in result.output
+    assert "review-package=loaded package_status=complete" in result.output
+    assert "status_group=pass" in result.output
+    assert "manual_gaps=0" in result.output
+    assert "present=1" in result.output
     assert "missing_required=0" in result.output
 
 

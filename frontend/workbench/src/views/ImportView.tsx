@@ -13,6 +13,7 @@ export function ImportView({
   const [netlist, setNetlist] = useState<File | null>(null);
   const [bom, setBom] = useState<File | null>(null);
   const [pinTable, setPinTable] = useState<File | null>(null);
+  const [reviewPackage, setReviewPackage] = useState<File | null>(null);
   const [riskHints, setRiskHints] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -26,7 +27,7 @@ export function ImportView({
     setBusy(true);
     setError("");
     try {
-      const result = await importWorkbench({ netlist, bom, pinTable, riskHints });
+      const result = await importWorkbench({ netlist, bom, pinTable, reviewPackage, riskHints });
       onImported(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "导入失败");
@@ -81,6 +82,15 @@ export function ImportView({
         />
         <UploadSlot
           icon={<FileJson size={20} />}
+          label="review-package manifest"
+          detail={reviewPackageDetail(state)}
+          status={state.review_package.status === "loaded" ? "loaded" : "optional"}
+          file={reviewPackage}
+          accept=".yaml,.yml,.json,.txt"
+          onPick={setReviewPackage}
+        />
+        <UploadSlot
+          icon={<FileJson size={20} />}
           label="risk hints JSON"
           detail={
             state.capabilities.risk_hints_enabled
@@ -110,6 +120,7 @@ export function ImportView({
           <span>Netlist</span>
           <span>BOM {state.summary.bom_matched > 0 ? "loaded" : "pending"}</span>
           <span>引脚表 {state.pin_table.status === "loaded" ? `${state.pin_table.accepted_findings} 条任务` : "未加载"}</span>
+          <span>Review package {state.review_package.status === "loaded" ? state.review_package.package_status : "未加载"}</span>
         </div>
       </div>
     </section>
@@ -168,4 +179,9 @@ function pinTableDetail(state: WorkbenchState): string {
     .map(([rule, count]) => `${rule} ${count}`)
     .join(" / ");
   return `${state.pin_table.accepted_findings} 条任务 · ${checks || "引脚检查"}`;
+}
+
+function reviewPackageDetail(state: WorkbenchState): string {
+  if (state.review_package.status !== "loaded") return "optional evidence manifest";
+  return `${state.review_package.package_status} · manual gaps ${state.review_package.manual_gap_count}`;
 }

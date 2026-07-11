@@ -1073,7 +1073,9 @@ def report_review_package(
     counts = report.counts
     typer.echo(
         f"review-package: {output} "
-        f"(present={counts['present']}, missing_required={counts['missing_required']}, "
+        f"(package_status={report.package_status}, status_group={report.status_group}, "
+        f"manual_gaps={report.manual_gap_count}, "
+        f"present={counts['present']}, missing_required={counts['missing_required']}, "
         f"missing_optional={counts['missing_optional']}, hash_mismatch={counts['hash_mismatch']})"
     )
 

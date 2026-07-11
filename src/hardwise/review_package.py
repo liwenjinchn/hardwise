@@ -18,6 +18,14 @@ ReviewArtifactKind = Literal[
     "other",
 ]
 ReviewArtifactStatus = Literal["present", "missing", "hash_mismatch"]
+ReviewPackageStatus = Literal[
+    "not_configured",
+    "complete",
+    "optional_gap",
+    "missing_required",
+    "hash_mismatch",
+]
+ReviewPackageStatusGroup = Literal["pass", "warn", "manual"]
 
 ALLOWED_KINDS = {
     "schematic_pdf",
@@ -132,6 +140,36 @@ class ReviewPackageReport(BaseModel):
         return sum(1 for artifact in self.artifacts if artifact.status == "hash_mismatch")
 
     @property
+    def manual_gap_count(self) -> int:
+        """Number of package artifacts that require reviewer action."""
+
+        return self.missing_required_count + self.hash_mismatch_count
+
+    @property
+    def package_status(self) -> ReviewPackageStatus:
+        """Package-level evidence status; never an electrical verdict."""
+
+        if self.source_path is None:
+            return "not_configured"
+        if self.hash_mismatch_count:
+            return "hash_mismatch"
+        if self.missing_required_count:
+            return "missing_required"
+        if self.missing_optional_count:
+            return "optional_gap"
+        return "complete"
+
+    @property
+    def status_group(self) -> ReviewPackageStatusGroup:
+        """Display severity for package completeness only."""
+
+        if self.package_status == "complete":
+            return "pass"
+        if self.package_status == "optional_gap":
+            return "warn"
+        return "manual"
+
+    @property
     def counts(self) -> dict[str, int]:
         """Stable count summary for CLI and workbench."""
 
@@ -141,6 +179,7 @@ class ReviewPackageReport(BaseModel):
             "missing_required": self.missing_required_count,
             "missing_optional": self.missing_optional_count,
             "hash_mismatch": self.hash_mismatch_count,
+            "manual_gaps": self.manual_gap_count,
         }
 
 
@@ -175,6 +214,8 @@ def render_review_package_markdown(report: ReviewPackageReport) -> str:
         f"- missing required: {counts['missing_required']}",
         f"- missing optional: {counts['missing_optional']}",
         f"- hash mismatches: {counts['hash_mismatch']}",
+        f"- package status: {report.package_status} ({report.status_group})",
+        f"- package manual gaps: {report.manual_gap_count}",
         "",
         "| kind | status | required | name | sha256 | note |",
         "|---|---|---:|---|---|---|",
@@ -198,6 +239,8 @@ def render_review_package_markdown(report: ReviewPackageReport) -> str:
             "Hardwise stores presence, source path, sha256, and missing-artifact status; "
             "it does not parse these files into electrical findings and does not replace "
             "formal hardware signoff.",
+            "Missing required artifacts and hash mismatches are package-status manual "
+            "gaps only; they do not create PASS/WARN/ERROR findings.",
             "",
         ]
     )

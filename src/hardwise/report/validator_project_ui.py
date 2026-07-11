@@ -335,6 +335,7 @@ def _pin_table_detail(summary: PinTableSummary) -> str:
 
 def _review_package_detail(report: ReviewPackageReport) -> str:
     counts = report.counts
+    status_group = report.status_group
     rows = []
     for artifact in report.artifacts:
         rows.append(
@@ -349,16 +350,28 @@ def _review_package_detail(report: ReviewPackageReport) -> str:
     return (
         '<section class="section table-section">'
         '<div class="section-head"><h3>Review Package Evidence</h3></div>'
-        '<p class="scope">导出评审证据包只记录文件齐备性、路径和 hash；不会解析成电气结论，也不替代正式签核。</p>'
+        '<p class="scope">导出评审证据包只记录文件齐备性、路径和 hash；missing required 或 hash mismatch '
+        "是 package-status manual gap，不会解析成电气结论，也不替代正式签核。</p>"
         '<div class="coverage-grid">'
-        f"{_coverage_card('present', counts['present'])}"
-        f"{_coverage_card('missing_required', counts['missing_required'])}"
-        f"{_coverage_card('missing_optional', counts['missing_optional'])}"
-        f"{_coverage_card('hash_mismatch', counts['hash_mismatch'])}"
+        f"{_package_status_card('package_status', report.package_status)}"
+        f"{_package_status_card('manual_gaps', report.manual_gap_count)}"
+        f"{_package_status_card('present', counts['present'])}"
+        f"{_package_status_card('missing_required', counts['missing_required'])}"
+        f"{_package_status_card('missing_optional', counts['missing_optional'])}"
+        f"{_package_status_card('hash_mismatch', counts['hash_mismatch'])}"
         "</div>"
+        f'<p class="scope">Status group：{escape(status_group)}；'
+        "这些状态只影响证据包完整性提示，不改变 PASS/WARN/ERROR。</p>"
         "<table><thead><tr><th>类型</th><th>状态</th><th>要求</th><th>文件</th><th>备注</th></tr></thead><tbody>"
         f"{''.join(rows)}"
         "</tbody></table></section>"
+    )
+
+
+def _package_status_card(label: str, value: object) -> str:
+    return (
+        f'<div class="gap-card"><strong>{escape(label)}</strong>{trust_label_html("l3")}'
+        f"<p>{escape(str(value))}</p></div>"
     )
 
 

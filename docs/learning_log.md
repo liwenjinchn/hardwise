@@ -4746,3 +4746,32 @@ rejected rows from the L1 queue.
 Pin-table evidence is a first-class coverage signal, but it is not a parallel
 electrical verdict. Accepted registry-backed rows can become L1 review tasks;
 unknown-refdes rows remain audit-only evidence that the guard did its job.
+
+## 2026-06-30 — Review-package gaps are package-status warnings, not findings
+
+**Symptom**
+
+The review-package manifest showed present/missing/hash counts, but missing
+required artifacts were only raw counts. A reviewer could see that something was
+missing, yet the workbench had no package-level status to distinguish complete
+handoff evidence from a manual package gap.
+
+**Root cause**
+
+Review-package artifacts are provenance and handoff evidence, not electrical
+inputs. Reusing component finding machinery would overclaim, while count-only
+summaries were too weak for design-review readiness.
+
+**Fix**
+
+Added package-level status: complete, optional_gap, missing_required,
+hash_mismatch, and not_configured. Missing required artifacts and hash
+mismatches surface as package-status manual gaps in workbench JSON, prep
+packets, static HTML, React export/import views, and CLI summaries. They do not
+create ReviewTask rows and do not alter PASS/WARN/ERROR totals.
+
+**Takeaway**
+
+Evidence-package readiness needs its own status lane. Keep it visible beside
+pin-table and document/profile coverage, but do not promote missing paperwork
+into an electrical conclusion.

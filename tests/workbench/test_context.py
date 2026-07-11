@@ -142,13 +142,19 @@ def test_build_workbench_context_loads_review_package_manifest(tmp_path: Path) -
             "missing_required": 1,
             "missing_optional": 1,
             "hash_mismatch": 0,
+            "manual_gaps": 1,
         }
+        assert context.review_package.package_status == "missing_required"
+        assert context.review_package.status_group == "manual"
         payload = build_workbench_state(
             context,
             datasheet_search_enabled=False,
         ).model_dump(mode="json")
         assert payload["capabilities"]["review_package_enabled"] is True
         assert payload["review_package"]["status"] == "loaded"
+        assert payload["review_package"]["package_status"] == "missing_required"
+        assert payload["review_package"]["status_group"] == "manual"
+        assert payload["review_package"]["manual_gap_count"] == 1
         assert payload["review_package"]["missing_required"] == 1
         assert payload["review_package"]["artifacts"][0]["kind"] == "schematic_pdf"
     finally:
@@ -607,12 +613,15 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
     )
     pin_table = tmp_path / "pin_table.csv"
     _write_pin_table(pin_table)
+    review_package = tmp_path / "review_package.yaml"
+    _write_review_package(review_package)
     context = build_workbench_context(
         netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
         bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
         profiles=Path("data/datasheet_profiles"),
         risk_hints_json=risk_hints,
         pin_table=pin_table,
+        review_package_manifest=review_package,
         generated_at="2026-05-30T00:00:00+00:00",
     )
 
@@ -656,6 +665,8 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
         assert packet["open_questions"]
         assert packet["risk_hints"]["accepted"][0]["title"] == "Review SWD header"
         assert packet["risk_hints"]["rejected"] == [{"reason": "unknown_refdes", "count": 1}]
+        assert packet["review_package"]["package_status"] == "missing_required"
+        assert packet["review_package"]["manual_gap_count"] == 1
         assert "Rejected secret" not in json_response.text
         assert "Rejected body must not leak" not in json_response.text
         assert "ANTHROPIC_API_KEY" not in json_response.text
@@ -669,6 +680,9 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
         assert "Pin Table Evidence" in markdown_response.text
         assert "Rejected unknown refdes" in markdown_response.text
         assert "`U999`（未进入 L1 review queue）" in markdown_response.text
+        assert "Review Package Evidence" in markdown_response.text
+        assert "package_status missing_required / manual" in markdown_response.text
+        assert "Package status manual gap" in markdown_response.text
         assert packet["priority_tasks"][0]["stable_key"] in markdown_response.text
         assert "Rejected secret" not in markdown_response.text
         assert "Rejected body must not leak" not in markdown_response.text
@@ -1099,8 +1113,11 @@ def test_workbench_import_accepts_uploaded_review_package(tmp_path: Path) -> Non
 
         assert response.status_code == 200, response.text
         assert response.json()["review_package"]["present"] == 1
+        assert response.json()["review_package"]["package_status"] == "complete"
+        assert response.json()["review_package"]["manual_gap_count"] == 0
         state = client.get("/api/workbench/state").json()
         assert state["capabilities"]["review_package_enabled"] is True
+        assert state["review_package"]["package_status"] == "complete"
         assert state["review_package"]["missing_required"] == 0
         assert "checklist" in {
             artifact["kind"] for artifact in state["review_package"]["artifacts"]

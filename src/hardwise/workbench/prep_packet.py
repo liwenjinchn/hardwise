@@ -302,11 +302,19 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
     lines.append(
         "- "
         f"状态：{review_package.status}；"
+        f"package_status {review_package.package_status} / {review_package.status_group}；"
         f"present {review_package.present}/{review_package.total}；"
         f"missing_required {review_package.missing_required}；"
         f"missing_optional {review_package.missing_optional}；"
-        f"hash_mismatch {review_package.hash_mismatch}。"
+        f"hash_mismatch {review_package.hash_mismatch}；"
+        f"manual_gaps {review_package.manual_gap_count}。"
     )
+    lines.append(f"- 建议动作：{review_package.recommended_action}")
+    if review_package.manual_gap_count:
+        lines.append(
+            "- Package status manual gap：missing required artifacts or hash mismatches "
+            "need reviewer action, but do not create electrical findings."
+        )
     if review_package.artifacts:
         for artifact in review_package.artifacts:
             required = "required" if artifact.required else "optional"
