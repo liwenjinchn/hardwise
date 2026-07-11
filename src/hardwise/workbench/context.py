@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from threading import RLock
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -28,6 +29,7 @@ from hardwise.validation.project_index import (
     validation_targets_from_candidates,
 )
 from hardwise.validation.risk_hints import RiskHintReport, load_risk_hint_report
+from hardwise.workbench.projection import WorkbenchProjectionIndex
 
 
 @dataclass
@@ -67,6 +69,13 @@ class WorkbenchContext:
     netlist_type: str
     generated_at: str
     property_count: int
+    projection: WorkbenchProjectionIndex = field(init=False, repr=False, compare=False)
+    agent_lock: Any = field(default_factory=RLock, init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        """Bind stable projection indexes to this context's lifetime."""
+
+        self.projection = WorkbenchProjectionIndex.from_context(self)
 
 
 def load_allegro_design(netlist_path: Path) -> tuple[Design, Path, str, int]:
@@ -194,30 +203,34 @@ def build_workbench_context(
     validation_targets = validation_targets_from_candidates(candidate_report)
     registry = board_registry_from_design(design)
     session = create_store(":memory:")
-    populate_from_registry(session, registry)
-    return WorkbenchContext(
-        design=design,
-        registry=registry,
-        session=session,
-        index=index,
-        bom=bom,
-        bom_report=bom_report,
-        resolved_bom=resolved_bom,
-        candidate_report=candidate_report,
-        document_report=document_report,
-        risk_hints=risk_hints,
-        review_package=review_package,
-        pin_table_path=pin_table,
-        pin_table_findings=pin_table_findings,
-        rejected_pin_table_findings=len(rejected_pin_table_details),
-        rejected_pin_table_details=rejected_pin_table_details,
-        validation_targets=validation_targets,
-        project_name=project_name,
-        netlist_source=source,
-        netlist_type=input_type,
-        generated_at=timestamp,
-        property_count=property_count,
-    )
+    try:
+        populate_from_registry(session, registry)
+        return WorkbenchContext(
+            design=design,
+            registry=registry,
+            session=session,
+            index=index,
+            bom=bom,
+            bom_report=bom_report,
+            resolved_bom=resolved_bom,
+            candidate_report=candidate_report,
+            document_report=document_report,
+            risk_hints=risk_hints,
+            review_package=review_package,
+            pin_table_path=pin_table,
+            pin_table_findings=pin_table_findings,
+            rejected_pin_table_findings=len(rejected_pin_table_details),
+            rejected_pin_table_details=rejected_pin_table_details,
+            validation_targets=validation_targets,
+            project_name=project_name,
+            netlist_source=source,
+            netlist_type=input_type,
+            generated_at=timestamp,
+            property_count=property_count,
+        )
+    except Exception:
+        session.close()
+        raise
 
 
 def close_workbench_context(context: WorkbenchContext) -> None:

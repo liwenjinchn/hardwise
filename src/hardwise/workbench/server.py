@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import csv
-import io
-import os
+import copy
 import shutil
 import tempfile
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
@@ -18,17 +17,27 @@ from hardwise.agent.evidence_locator import (
     LocateComponentEvidenceInput,
     locate_component_evidence,
 )
-from hardwise.csv_safety import csv_safe_cell
 from hardwise.report.copilot_panel import render_copilot_panel
 from hardwise.report.validator_project_ui import render_project_workbench
 from hardwise.workbench.chat import ChatRequest, ChatResponse, WorkbenchChatService, default_refdes
+from hardwise.workbench.api_contracts import ImportResponse
 from hardwise.workbench.context import (
     WorkbenchContext,
     build_workbench_context,
     close_workbench_context,
 )
+from hardwise.workbench.context_manager import WorkbenchContextManager
+from hardwise.workbench.server_datasheet_candidates import (
+    _attach_auto_datasheet_candidates,
+    _datasheets_api_key,
+)
+from hardwise.workbench.server_io import (
+    _annotation_cell,
+    _annotations_response,
+    _save_upload,
+    _task_csv_response,
+)
 from hardwise.workbench.datasheet_candidates import (
-    DatasheetCandidateSearchPacket,
     DatasheetCandidateSearchMiss,
     build_datasheet_candidate_search_packet,
     render_datasheet_candidate_search_markdown,
@@ -36,16 +45,15 @@ from hardwise.workbench.datasheet_candidates import (
 from hardwise.workbench.view_model import (
     ComponentMiss,
     ComponentDetail,
-    DatasheetCandidateSearchView,
-    DatasheetCandidateView,
-    DocumentCoverageView,
+    WorkbenchState,
     build_review_prep_packet,
     build_component_detail,
-    build_review_tasks,
     build_risk_hints_summary,
     build_workbench_state,
     render_review_prep_packet_markdown,
 )
+
+__all__ = ["_annotation_cell", "create_workbench_app", "risk_hints_state"]
 from hardwise.workbench.prep_packet import (
     build_project_review_prep_packet,
     render_project_review_prep_packet_markdown,
@@ -77,10 +85,22 @@ def create_workbench_app(
 ) -> FastAPI:
     """Create the local live workbench app."""
 
-    app = FastAPI(title="Hardwise Workbench", docs_url=None, redoc_url=None)
-    current_context = {"value": context}
-    import_dirs: list[Path] = []
-    app.state.workbench_context = current_context
+    context_manager = WorkbenchContextManager(context)
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        yield
+        context_manager.shutdown()
+
+    app = FastAPI(title="Hardwise Workbench", docs_url=None, redoc_url=None, lifespan=lifespan)
+    app.state.workbench_context = context_manager
+    current_context = context_manager
+
+    @app.middleware("http")
+    async def lease_workbench_context(request, call_next):
+        with context_manager.lease():
+            return await call_next(request)
+
     static_index = STATIC_DIR / "index.html"
     assets_dir = STATIC_DIR / "assets"
     if assets_dir.is_dir():
@@ -92,12 +112,14 @@ def create_workbench_app(
 
     @app.get("/", response_class=HTMLResponse)
     def index():
-        context = current_context["value"]
-        if static_index.is_file():
-            return FileResponse(static_index)
+        with context_manager.lease() as context:
+            if static_index.is_file():
+                return FileResponse(static_index)
 
-        selected = default_refdes(context)
-        suggestions = chat_service.fallback_response("", selected).suggestions
+            selected = default_refdes(context)
+            snapshot_service = copy.copy(chat_service)
+            snapshot_service.context = context
+            suggestions = snapshot_service.fallback_response("", selected).suggestions
         copilot_html = render_copilot_panel(
             mode="live",
             selected_refdes=selected,
@@ -116,24 +138,24 @@ def create_workbench_app(
             risk_hints=context.risk_hints if context.risk_hints.source_path else None,
         )
 
-    @app.get("/api/workbench/state")
-    def state() -> dict[str, object]:
-        context = current_context["value"]
-        return build_workbench_state(
-            context,
-            datasheet_search_enabled=chat_service.datasheet_search_enabled,
-            datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
-        ).model_dump()
+    @app.get("/api/workbench/state", response_model=WorkbenchState)
+    def state() -> WorkbenchState:
+        with context_manager.lease() as context:
+            return build_workbench_state(
+                context,
+                datasheet_search_enabled=chat_service.datasheet_search_enabled,
+                datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
+            )
 
-    @app.get("/api/workbench/components/{refdes}")
-    def component_detail(refdes: str):
-        context = current_context["value"]
-        detail = build_component_detail(context, refdes)
-        if isinstance(detail, ComponentMiss):
-            return JSONResponse(status_code=404, content=detail.model_dump())
-        if auto_datasheet_candidates:
-            detail = _attach_auto_datasheet_candidates(context, detail)
-        return detail.model_dump()
+    @app.get("/api/workbench/components/{refdes}", response_model=ComponentDetail)
+    def component_detail(refdes: str) -> ComponentDetail | JSONResponse:
+        with context_manager.lease() as context:
+            detail = build_component_detail(context, refdes)
+            if isinstance(detail, ComponentMiss):
+                return JSONResponse(status_code=404, content=detail.model_dump())
+            if auto_datasheet_candidates:
+                detail = _attach_auto_datasheet_candidates(context, detail)
+            return detail
 
     @app.get("/api/workbench/components/{refdes}/prep-packet")
     def component_prep_packet(
@@ -283,14 +305,14 @@ def create_workbench_app(
             },
         )
 
-    @app.post("/api/workbench/import")
+    @app.post("/api/workbench/import", response_model=ImportResponse)
     def import_workbench(
         netlist: UploadFile = File(...),
         bom: UploadFile | None = File(None),
         pin_table_csv: UploadFile | None = File(None),
         risk_hints_json: UploadFile | None = File(None),
         review_package: UploadFile | None = File(None),
-    ) -> dict[str, object]:
+    ) -> ImportResponse:
         import_dir = Path(tempfile.mkdtemp(prefix="hardwise-workbench-import-"))
         try:
             netlist_path = _save_upload(netlist, import_dir, fallback_name="uploaded.net")
@@ -325,184 +347,57 @@ def create_workbench_app(
             shutil.rmtree(import_dir, ignore_errors=True)
             raise HTTPException(status_code=400, detail=f"import failed: {exc}") from exc
 
-        previous = current_context["value"]
-        current_context["value"] = next_context
+        try:
+            state = build_workbench_state(
+                next_context,
+                datasheet_search_enabled=chat_service.datasheet_search_enabled,
+                datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
+            )
+            context_manager.swap(next_context, import_dir=import_dir)
+        except Exception as exc:
+            try:
+                close_workbench_context(next_context)
+            finally:
+                shutil.rmtree(import_dir, ignore_errors=True)
+            raise HTTPException(status_code=503, detail=f"import activation failed: {exc}") from exc
         if hasattr(chat_service, "context"):
             chat_service.context = next_context
-        close_workbench_context(previous)
-        # Drop temp dirs from superseded imports; only the live context's upload
-        # dir must survive. Without this, repeated imports leak temp dirs on disk
-        # for the whole server lifetime.
-        for stale_dir in import_dirs:
-            shutil.rmtree(stale_dir, ignore_errors=True)
-        import_dirs.clear()
-        import_dirs.append(import_dir)
-        state = build_workbench_state(
-            next_context,
-            datasheet_search_enabled=chat_service.datasheet_search_enabled,
-            datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
+        return ImportResponse(
+            ok=True,
+            project=state.project,
+            summary=state.summary,
+            pin_table=state.pin_table,
+            review_package=state.review_package,
+            selected_refdes=state.selected_refdes,
+            task_counts=state.task_counts,
         )
-        return {
-            "ok": True,
-            "project": state.project.model_dump(),
-            "summary": state.summary.model_dump(),
-            "pin_table": state.pin_table.model_dump(),
-            "review_package": state.review_package.model_dump(),
-            "selected_refdes": state.selected_refdes,
-            "task_counts": state.task_counts.model_dump(),
-        }
 
     @app.get("/api/workbench/export")
     def export_workbench(
         format: Literal["json", "csv", "annotations"] = Query("json"),
     ) -> Response:
-        context = current_context["value"]
-        if format == "json":
-            state_payload = build_workbench_state(
-                context,
-                datasheet_search_enabled=chat_service.datasheet_search_enabled,
-                datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
-            ).model_dump(mode="json")
-            return JSONResponse(
-                content=state_payload,
-                headers={"Content-Disposition": 'attachment; filename="hardwise-workbench.json"'},
-            )
-        if format == "csv":
-            return _task_csv_response(context)
-        return _annotations_response(context)
+        with context_manager.lease() as context:
+            if format == "json":
+                state_payload = build_workbench_state(
+                    context,
+                    datasheet_search_enabled=chat_service.datasheet_search_enabled,
+                    datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
+                ).model_dump(mode="json")
+                return JSONResponse(
+                    content=state_payload,
+                    headers={
+                        "Content-Disposition": 'attachment; filename="hardwise-workbench.json"'
+                    },
+                )
+            if format == "csv":
+                return _task_csv_response(context)
+            return _annotations_response(context)
 
     @app.post("/api/workbench/chat", response_model=ChatResponse)
     def chat(request: ChatRequest) -> ChatResponse:
-        return chat_service.ask(request)
+        with context_manager.lease() as context:
+            snapshot_service = copy.copy(chat_service)
+            snapshot_service.context = context
+            return snapshot_service.ask(request)
 
     return app
-
-
-def _attach_auto_datasheet_candidates(
-    context: WorkbenchContext,
-    detail: ComponentDetail,
-) -> ComponentDetail:
-    """Attach one low-volume provider lookup for an MPN-like missing document group."""
-
-    document = detail.document
-    if document is None or not _should_auto_lookup(document):
-        return detail
-    packet = build_datasheet_candidate_search_packet(
-        context,
-        document.group_id or "",
-        api_key=_datasheets_api_key(),
-        limit=3,
-        timeout_seconds=10,
-    )
-    if isinstance(packet, DatasheetCandidateSearchMiss):
-        return detail
-    return detail.model_copy(
-        update={
-            "document": document.model_copy(
-                update={"candidate_search": _candidate_search_view(packet)}
-            )
-        }
-    )
-
-
-def _should_auto_lookup(document: DocumentCoverageView) -> bool:
-    if document.status not in {"no_result", "ambiguous", "manual_needed"}:
-        return False
-    if not document.group_id:
-        return False
-    return document.identity_kind in {"mpn", "value_mpn"}
-
-
-def _candidate_search_view(packet: DatasheetCandidateSearchPacket) -> DatasheetCandidateSearchView:
-    return DatasheetCandidateSearchView(
-        provider=packet.provider,
-        status=packet.status,
-        reason=packet.reason,
-        query=packet.query,
-        count=packet.count,
-        direct_datasheet_count=packet.direct_datasheet_count,
-        remaining_month=packet.remaining_month,
-        candidates=[
-            DatasheetCandidateView.model_validate(candidate.model_dump(mode="json"))
-            for candidate in packet.candidates
-        ],
-        next_actions=packet.next_actions,
-    )
-
-
-def _datasheets_api_key() -> str | None:
-    key = os.environ.get("DATASHEETS_API_KEY") or os.environ.get("DATASHEETS_COM_API_KEY")
-    if key is None or key.strip() == "" or key.strip() == "replace_me":
-        return None
-    return key
-
-
-def _save_upload(upload: UploadFile, directory: Path, *, fallback_name: str) -> Path:
-    safe_name = Path(upload.filename or fallback_name).name or fallback_name
-    target = directory / safe_name
-    upload.file.seek(0)
-    with target.open("wb") as handle:
-        shutil.copyfileobj(upload.file, handle)
-    return target
-
-
-def _task_csv_response(context: WorkbenchContext) -> Response:
-    buffer = io.StringIO()
-    writer = csv.DictWriter(
-        buffer,
-        fieldnames=[
-            "id",
-            "refdes",
-            "status_group",
-            "trust_tier",
-            "title",
-            "recommended_action",
-            "source_classes",
-        ],
-    )
-    writer.writeheader()
-    for task in build_review_tasks(context):
-        writer.writerow(
-            {
-                "id": csv_safe_cell(task.id),
-                "refdes": csv_safe_cell(task.refdes),
-                "status_group": csv_safe_cell(task.status_group),
-                "trust_tier": csv_safe_cell(task.trust_tier),
-                "title": csv_safe_cell(task.title),
-                "recommended_action": csv_safe_cell(task.recommended_action),
-                "source_classes": csv_safe_cell(";".join(task.source_classes)),
-            }
-        )
-    return Response(
-        content=buffer.getvalue(),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="hardwise-findings.csv"'},
-    )
-
-
-def _annotations_response(context: WorkbenchContext) -> Response:
-    lines = [
-        "# Hardwise EDA annotation export",
-        "# format: refdes,status_group,task_id,title,recommended_action",
-    ]
-    for task in build_review_tasks(context):
-        lines.append(
-            ",".join(
-                [
-                    _annotation_cell(task.refdes),
-                    _annotation_cell(task.status_group),
-                    _annotation_cell(task.id),
-                    _annotation_cell(task.title),
-                    _annotation_cell(task.recommended_action),
-                ]
-            )
-        )
-    return Response(
-        content="\n".join(lines) + "\n",
-        media_type="text/plain; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="hardwise-annotations.txt"'},
-    )
-
-
-def _annotation_cell(value: object) -> str:
-    return csv_safe_cell(str(value).replace("\n", " ").replace(",", "；"))

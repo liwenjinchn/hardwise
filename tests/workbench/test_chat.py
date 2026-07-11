@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import copy
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Event, Lock
 
-from hardwise.agent.runner import RunResult, ToolCallTrace
+import pytest
+
+from hardwise.agent.runner import RunResult, Runner, ToolCallTrace
 from hardwise.workbench.chat import (
     C5_L2_SNAPSHOT_QUESTION,
     ChatMessage,
@@ -95,6 +101,63 @@ def test_fake_chat_drives_real_runner_validation_tool() -> None:
         assert len(service.client.messages.calls) == 2
     finally:
         context.session.close()
+
+
+def test_shallow_chat_snapshots_serialize_shared_client_across_contexts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = _context()
+    second_context = _context()
+    service = WorkbenchChatService(context, mode="fake")
+    second_service = copy.copy(service)
+    second_service.context = second_context
+    first_entered = Event()
+    second_started = Event()
+    release_first = Event()
+    guard = Lock()
+    entered = 0
+    active = 0
+    max_active = 0
+
+    def fake_run(_runner: Runner, _prompt: str) -> RunResult:
+        nonlocal active, entered, max_active
+        with guard:
+            entered += 1
+            active += 1
+            max_active = max(max_active, active)
+            current = entered
+        if current == 1:
+            first_entered.set()
+            assert release_first.wait(timeout=2)
+        with guard:
+            active -= 1
+        return RunResult(text="serialized", tool_calls=[])
+
+    monkeypatch.setattr(Runner, "run", fake_run)
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            first = executor.submit(service.ask, ChatRequest(question="first"))
+            assert first_entered.wait(timeout=2)
+
+            def ask_second() -> object:
+                second_started.set()
+                return second_service.ask(ChatRequest(question="second"))
+
+            second = executor.submit(ask_second)
+            assert second_started.wait(timeout=2)
+            time.sleep(0.05)
+            assert entered == 1
+            release_first.set()
+            first.result(timeout=2)
+            second.result(timeout=2)
+
+        assert entered == 2
+        assert max_active == 1
+    finally:
+        release_first.set()
+        context.session.close()
+        second_context.session.close()
 
 
 def test_fake_chat_wraps_unknown_refdes_through_runner_guard() -> None:
