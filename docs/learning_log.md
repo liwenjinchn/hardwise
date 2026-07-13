@@ -5034,3 +5034,28 @@ The current public fixture measures 16 affected L1 tasks and 11 missing sources.
 
 Traceability and reproducibility are different claims. A token can be valid
 provenance while still being insufficient for an offline sign-off package.
+
+## 2026-07-13 — Platform-specific launcher tests need platform gates
+
+**Symptom**
+
+PR CI passed on macOS and in the frontend job but failed on Windows while
+running `test_macos_launcher_selects_a_free_port_before_opening`.
+
+**Root cause**
+
+The macOS launcher test builds a POSIX fake `PATH` and invokes Bash scripts.
+Running that harness under the Windows Python process bypassed the fake `uv`
+and exercised an unsupported environment instead of the Windows launcher.
+
+**Fix**
+
+Marked the macOS behavior test as skipped on `win32`. The separate cross-
+platform launcher contract test still checks the Windows `.cmd` port override,
+readiness polling, and absence of a hard-coded server port.
+
+**Takeaway**
+
+CI matrix breadth does not make every platform harness portable. Gate behavior
+tests to the platform they model and retain platform-neutral contract checks
+for the other runners.

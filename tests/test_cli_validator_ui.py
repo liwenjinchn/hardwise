@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from hardwise.cli import app
 from tests.xlsx_fixture import write_minimal_xlsx
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="macOS launcher behavior test")
 def test_macos_launcher_selects_a_free_port_before_opening(tmp_path: Path) -> None:
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
