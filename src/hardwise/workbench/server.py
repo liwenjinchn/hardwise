@@ -63,6 +63,11 @@ from hardwise.workbench.profile_promotion import (
     build_profile_promotion_packet,
     render_profile_promotion_packet_markdown,
 )
+from hardwise.workbench.review_decisions import (
+    ReviewDecisionRequest,
+    ReviewDecisionStore,
+)
+from hardwise.workbench.task_projection import build_review_tasks
 
 STATIC_DIR = Path(__file__).with_name("static")
 
@@ -86,6 +91,19 @@ def create_workbench_app(
     """Create the local live workbench app."""
 
     context_manager = WorkbenchContextManager(context)
+    review_decisions = ReviewDecisionStore()
+
+    def state_with_decisions(active_context: WorkbenchContext) -> WorkbenchState:
+        state = build_workbench_state(
+            active_context,
+            datasheet_search_enabled=chat_service.datasheet_search_enabled,
+            datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
+        )
+        state.review_tasks = review_decisions.apply(state.review_tasks)
+        state.review_decisions = review_decisions.summary(
+            [task.stable_key for task in state.review_tasks]
+        )
+        return state
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -141,11 +159,7 @@ def create_workbench_app(
     @app.get("/api/workbench/state", response_model=WorkbenchState)
     def state() -> WorkbenchState:
         with context_manager.lease() as context:
-            return build_workbench_state(
-                context,
-                datasheet_search_enabled=chat_service.datasheet_search_enabled,
-                datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
-            )
+            return state_with_decisions(context)
 
     @app.get("/api/workbench/components/{refdes}", response_model=ComponentDetail)
     def component_detail(refdes: str) -> ComponentDetail | JSONResponse:
@@ -155,6 +169,7 @@ def create_workbench_app(
                 return JSONResponse(status_code=404, content=detail.model_dump())
             if auto_datasheet_candidates:
                 detail = _attach_auto_datasheet_candidates(context, detail)
+            detail.tasks = review_decisions.apply(detail.tasks)
             return detail
 
     @app.get("/api/workbench/components/{refdes}/prep-packet")
@@ -166,6 +181,8 @@ def create_workbench_app(
         packet = build_review_prep_packet(context, refdes)
         if isinstance(packet, ComponentMiss):
             return JSONResponse(status_code=404, content=packet.model_dump())
+        packet.tasks = review_decisions.apply(packet.tasks)
+        packet.component.tasks = list(packet.tasks)
         filename_refdes = refdes.upper()
         if format == "markdown":
             return Response(
@@ -216,6 +233,10 @@ def create_workbench_app(
     ) -> Response:
         context = current_context["value"]
         packet = build_project_review_prep_packet(context)
+        packet.priority_tasks = review_decisions.apply(packet.priority_tasks)
+        packet.review_decisions = review_decisions.summary(
+            [task.stable_key for task in build_review_tasks(context)]
+        )
         if format == "markdown":
             return Response(
                 content=render_project_review_prep_packet_markdown(packet),
@@ -309,6 +330,7 @@ def create_workbench_app(
     def import_workbench(
         netlist: UploadFile = File(...),
         bom: UploadFile | None = File(None),
+        document_index_csv: UploadFile | None = File(None),
         pin_table_csv: UploadFile | None = File(None),
         risk_hints_json: UploadFile | None = File(None),
         review_package: UploadFile | None = File(None),
@@ -322,6 +344,15 @@ def create_workbench_app(
             hints_path = (
                 _save_upload(risk_hints_json, import_dir, fallback_name="risk_hints.json")
                 if risk_hints_json
+                else None
+            )
+            document_index_path = (
+                _save_upload(
+                    document_index_csv,
+                    import_dir,
+                    fallback_name="document_index.csv",
+                )
+                if document_index_csv
                 else None
             )
             pin_table_path = (
@@ -338,7 +369,7 @@ def create_workbench_app(
                 netlist_path=netlist_path,
                 bom_path=bom_path,
                 profiles=profiles,
-                document_index=document_index,
+                document_index=document_index_path,
                 risk_hints_json=hints_path,
                 review_package_manifest=review_package_path,
                 pin_table=pin_table_path,
@@ -362,10 +393,12 @@ def create_workbench_app(
             raise HTTPException(status_code=503, detail=f"import activation failed: {exc}") from exc
         if hasattr(chat_service, "context"):
             chat_service.context = next_context
+        review_decisions.reset()
         return ImportResponse(
             ok=True,
             project=state.project,
             summary=state.summary,
+            evidence_package=state.evidence_package,
             pin_table=state.pin_table,
             review_package=state.review_package,
             selected_refdes=state.selected_refdes,
@@ -378,11 +411,7 @@ def create_workbench_app(
     ) -> Response:
         with context_manager.lease() as context:
             if format == "json":
-                state_payload = build_workbench_state(
-                    context,
-                    datasheet_search_enabled=chat_service.datasheet_search_enabled,
-                    datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
-                ).model_dump(mode="json")
+                state_payload = state_with_decisions(context).model_dump(mode="json")
                 return JSONResponse(
                     content=state_payload,
                     headers={
@@ -390,8 +419,68 @@ def create_workbench_app(
                     },
                 )
             if format == "csv":
-                return _task_csv_response(context)
-            return _annotations_response(context)
+                return _task_csv_response(
+                    context,
+                    tasks=review_decisions.apply(build_review_tasks(context)),
+                )
+            return _annotations_response(
+                context,
+                tasks=review_decisions.apply(build_review_tasks(context)),
+            )
+
+    @app.put("/api/workbench/review-decisions")
+    def update_review_decisions(request: ReviewDecisionRequest) -> WorkbenchState:
+        with context_manager.lease() as context:
+            tasks = build_review_tasks(context)
+            try:
+                review_decisions.update(
+                    known_keys=[task.stable_key for task in tasks],
+                    request=request,
+                )
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            except KeyError as exc:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"unknown stable finding key: {exc.args[0]}",
+                ) from exc
+            return state_with_decisions(context)
+
+    @app.post("/api/workbench/rerun")
+    def rerun_workbench() -> WorkbenchState:
+        """Rebuild deterministic truth and reconcile decisions by stable key."""
+
+        with context_manager.lease() as context:
+            try:
+                next_context = build_workbench_context(
+                    netlist_path=context.netlist_source,
+                    bom_path=context.bom.source_file,
+                    profiles=Path(context.candidate_report.profiles_dir),
+                    document_index=(
+                        context.document_report.document_index_file
+                        if context.document_report is not None
+                        else None
+                    ),
+                    risk_hints_json=(
+                        Path(context.risk_hints.source_path)
+                        if context.risk_hints.source_path
+                        else None
+                    ),
+                    review_package_manifest=(
+                        Path(context.review_package.source_path)
+                        if context.review_package.source_path
+                        else None
+                    ),
+                    pin_table=context.pin_table_path,
+                )
+            except Exception as exc:
+                raise HTTPException(status_code=422, detail=f"rerun failed: {exc}") from exc
+        next_tasks = build_review_tasks(next_context)
+        review_decisions.reconcile(task.stable_key for task in next_tasks)
+        context_manager.refresh(next_context)
+        if hasattr(chat_service, "context"):
+            chat_service.context = next_context
+        return state_with_decisions(next_context)
 
     @app.post("/api/workbench/chat", response_model=ChatResponse)
     def chat(request: ChatRequest) -> ChatResponse:

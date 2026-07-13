@@ -12,6 +12,7 @@ import { TaskQueueColumn } from "./review/TaskQueueColumn";
 import {
   makeDetail,
   makeDocument,
+  makeEvidencePackage,
   makeEvidence,
   makePinTable,
   makeQueueItem,
@@ -43,9 +44,9 @@ describe("Header", () => {
   it("counts non-pass components in the review pip", () => {
     const state = makeState({
       queue: [
-        makeQueueItem({ refdes: "U1", status_group: "warn" }),
-        makeQueueItem({ refdes: "U2", status_group: "pass" }),
-        makeQueueItem({ refdes: "U3", status_group: "error" })
+        makeQueueItem({ refdes: "U1", deterministic_status_group: "warn" }),
+        makeQueueItem({ refdes: "U2", deterministic_status_group: "pass" }),
+        makeQueueItem({ refdes: "U3", deterministic_status_group: "error" })
       ]
     });
     const html = renderToStaticMarkup(
@@ -61,8 +62,8 @@ describe("Header", () => {
     const html = renderToStaticMarkup(
       <Header state={state} currentView="review" onNavigate={() => {}} />
     );
-    expect(html).toContain('title="全量任务 9；ERROR/WARN 5"');
-    expect(html).toContain('<span class="pip">9</span>');
+    expect(html).toContain('title="1 个审查组；9 条原始任务；ERROR/WARN 5"');
+    expect(html).toContain('<span class="pip">1</span>');
   });
 });
 
@@ -72,14 +73,21 @@ describe("ImportView", () => {
     expect(html).toContain("netlist / PST");
     expect(html).toContain("BOM CSV");
     expect(html).toContain("Capture 引脚表 CSV");
+    expect(html).toContain("public document index CSV");
     expect(html).toContain("review-package manifest");
     expect(html).toContain("risk hints JSON");
     expect(html).toContain("25 components");
     expect(html).toContain("引脚表 未加载");
     expect(html).toContain("Review package 未加载");
+    expect(html).toContain("Document index 未加载");
+    expect(html).toContain("证据包完整性");
     expect(html).toContain("scripts/capture_pin_table_export.tcl");
     expect(html).toContain("导入并解析");
-    expect(html).toContain("拖入文件或点击选择");
+    expect(html).toContain("本次必选");
+    expect(html).toContain("本次可选");
+    expect(html).toContain("本次未选择 · 拖入文件或点击选择");
+    expect(html).toContain("当前工作台：");
+    expect(html).not.toContain('<span class="upload-status">loaded</span>');
   });
 
   it("renders pin-table intake as a loaded first-class asset", () => {
@@ -150,6 +158,7 @@ describe("ParseView", () => {
           ok: true,
           project: makeState().project,
           summary: makeState().summary,
+          evidence_package: makeEvidencePackage(),
           selected_refdes: "U8",
           task_counts: makeTaskCounts({ total: 4, warn: 4 }),
           pin_table: makePinTable({
@@ -173,6 +182,7 @@ describe("ParseView", () => {
     expect(html).toContain("3 条进入 L1，1 条未知位号被拒绝");
     expect(html).toContain("影响 2 个 refdes（U3, U8），拒绝未知位号 U999");
     expect(html).toContain("missing_required，manual gaps 1");
+    expect(html).toContain("证据包完整性");
   });
 });
 
@@ -262,21 +272,24 @@ describe("CopilotPanel", () => {
 });
 
 describe("FindingsView", () => {
-  it("renders open and locally-resolved rows differently", () => {
-    const tasks = [makeTask(), makeTask({ id: "T2", title: "second", status_group: "error" })];
+  it("renders grouped raw tasks and backend decision actions", () => {
+    const state = makeState();
     const html = renderToStaticMarkup(
       <FindingsView
-        tasks={tasks}
-        resolvedTaskIds={new Set(["T2"])}
-        onToggleResolved={() => {}}
+        groups={state.review_groups}
+        tasks={state.review_tasks}
+        onDecision={async () => {}}
+        onRerun={async () => {}}
         onOpenTask={() => {}}
       />
     );
-    expect(html).toContain("全部任务登记册");
-    expect(html).toContain("标记处理");
-    expect(html).toContain("本地已处理");
+    expect(html).toContain("问题清单与评审决策");
+    expect(html).toContain("1 个审查组");
+    expect(html).toContain("1 条原始任务");
+    expect(html).toContain("接受");
+    expect(html).toContain("豁免");
+    expect(html).toContain("已解决");
     expect(html).toContain("重新打开");
-    expect(html).toContain("finding-row error resolved");
   });
 });
 
@@ -290,17 +303,19 @@ describe("ExportView", () => {
       />
     );
     expect(html).toContain("导出当前审查状态");
-    expect(html).toContain("7 个任务");
-    expect(html).toContain("其中 ERROR/WARN 5 个");
+    expect(html).toContain("1 个审查组");
+    expect(html).toContain("7 条原始任务");
+    expect(html).toContain("ERROR/WARN 原始任务5 条");
     for (const fmt of ["json", "csv", "annotations"]) {
       expect(html).toContain(`>${fmt}</button>`);
     }
     expect(html).toContain("项目评审准备包");
     expect(html).toContain("Capture 引脚表证据摘要");
     expect(html).toContain("评审证据包状态");
+    expect(html).toContain("证据包完整性");
     expect(html).toContain("未加载 Capture 引脚表 CSV");
     expect(html).toContain("未加载 review-package manifest");
-    expect(html).toContain("选择格式后生成预览。");
+    expect(html).toContain("选择格式后生成摘要预览；下载文件保留完整内容。");
   });
 
   it("renders pin-table evidence summary before export", () => {
@@ -375,7 +390,7 @@ describe("TaskQueueColumn", () => {
     );
     expect(html).toContain("组件审查队列");
     expect(html).toContain("2/2");
-    expect(html).toContain("全部待看");
+    expect(html).toContain("全部器件");
     expect(html).toContain("queue-row warn selected");
     expect(html).toContain("Q12");
     expect(html).toContain("1 项");

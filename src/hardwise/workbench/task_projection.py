@@ -68,10 +68,37 @@ def _build_review_tasks_uncached(context: WorkbenchContext) -> list[ReviewTask]:
     tasks.sort(
         key=lambda item: (_status_rank(item.status_group), sort_refdes_key(item.refdes), item.title)
     )
-    return [
+    numbered = [
         item.model_copy(update={"id": f"F-{index:03d}"})
         for index, item in enumerate(tasks, start=1)
     ]
+    return _link_derived_tasks(numbered)
+
+
+def _link_derived_tasks(tasks: list[ReviewTask]) -> list[ReviewTask]:
+    """Link weaker follow-on uncertainty to its deterministic root cause."""
+
+    by_refdes_check = {(task.refdes, task.check): task for task in tasks}
+    error_by_subject = {
+        task.subject: task for task in tasks if task.status_group == "error" and task.subject
+    }
+    derived_to_root = {
+        "capacitor_voltage_margin": "capacitor_rated_voltage_parse",
+        "bjt_vceo_rating": "bjt_emitter_connectivity",
+        "bjt_vebo_rating": "bjt_emitter_connectivity",
+    }
+    linked: list[ReviewTask] = []
+    for task in tasks:
+        root = None
+        root_check = derived_to_root.get(task.check or "")
+        if root_check:
+            root = by_refdes_check.get((task.refdes, root_check))
+        elif task.check == "diode_reverse_voltage":
+            candidate = error_by_subject.get(task.refdes)
+            if candidate is not None and candidate.id != task.id:
+                root = candidate
+        linked.append(task.model_copy(update={"derived_from_task_id": root.id}) if root else task)
+    return linked
 
 
 def _component_check_tasks(

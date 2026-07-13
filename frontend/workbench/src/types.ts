@@ -1,5 +1,47 @@
 export type StatusGroup = "error" | "warn" | "pass" | "manual";
 export type TrustTier = "l1" | "l2" | "l3";
+export type EvidenceLaneStatus = "present" | "partial" | "gap" | "not_configured";
+export type EvidenceLaneStatusGroup = "pass" | "warn" | "manual";
+
+export interface EvidencePackageMetric {
+  key: string;
+  label: string;
+  value: number;
+  total: number | null;
+  unit: string;
+}
+
+export interface EvidencePackageLane {
+  id: "netlist" | "bom" | "validation" | "documents" | "pin_table" | "review_package";
+  label: string;
+  status: EvidenceLaneStatus;
+  status_group: EvidenceLaneStatusGroup;
+  status_label: string;
+  source: string | null;
+  source_token: string | null;
+  summary: string;
+  recommended_action: string;
+  trust_boundary: string;
+  metrics: EvidencePackageMetric[];
+}
+
+export interface EvidencePackageSummary {
+  schema_version: string;
+  scope: string;
+  electrical_verdict: "not_applicable";
+  lanes: EvidencePackageLane[];
+  signoff_readiness: SignoffReadiness;
+  guardrails: string[];
+}
+
+export interface SignoffReadiness {
+  status: "ready" | "blocked";
+  signoff_ready: boolean;
+  affected_tasks: number;
+  missing_local_sources: number;
+  missing_tokens: string[];
+  reason: string;
+}
 
 export interface WorkbenchProject {
   name: string;
@@ -135,6 +177,43 @@ export interface ReviewTask {
   recommended_action: string;
   source_classes: string[];
   evidence_chain: EvidenceChainItem[];
+  derived_from_task_id: string | null;
+  review_decision: ReviewDecision | null;
+}
+
+export type ReviewDecisionStatus = "open" | "accepted" | "waived" | "resolved";
+
+export interface ReviewDecision {
+  stable_key: string;
+  status: ReviewDecisionStatus;
+  reason: string;
+  updated_at: string;
+}
+
+export interface ReviewDecisionSummary {
+  total_tasks: number;
+  open: number;
+  accepted: number;
+  waived: number;
+  resolved: number;
+  stale_removed_on_rerun: number;
+}
+
+export interface ReviewTaskGroup {
+  id: string;
+  stable_key: string;
+  title: string;
+  status_group: StatusGroup;
+  trust_tier: TrustTier;
+  axis: "electrical" | "evidence";
+  identity: string;
+  check: string | null;
+  affected_refdes: string[];
+  task_ids: string[];
+  stable_keys: string[];
+  raw_task_count: number;
+  derived_task_count: number;
+  recommended_action: string;
 }
 
 export interface ReviewTaskCounts {
@@ -277,12 +356,15 @@ export interface WorkbenchState {
   project: WorkbenchProject;
   summary: WorkbenchSummary;
   capabilities: WorkbenchCapabilities;
+  evidence_package: EvidencePackageSummary;
   pin_table: PinTableSummary;
   review_package: ReviewPackageSummary;
   selected_refdes: string | null;
   queue: ReviewQueueItem[];
   review_tasks: ReviewTask[];
+  review_groups: ReviewTaskGroup[];
   task_counts: ReviewTaskCounts;
+  review_decisions: ReviewDecisionSummary | null;
   net_checks: NetCheckView[];
   risk_hints: RiskHintsSummary;
   risk_hint_details: RiskHintsView;
@@ -292,6 +374,7 @@ export interface ImportResponse {
   ok: boolean;
   project: WorkbenchProject;
   summary: WorkbenchSummary;
+  evidence_package: EvidencePackageSummary;
   pin_table: PinTableSummary;
   review_package: ReviewPackageSummary;
   selected_refdes: string | null;
@@ -307,6 +390,9 @@ export interface ComponentDetail {
   status: string;
   status_label: string;
   status_group: StatusGroup;
+  deterministic_status: string;
+  deterministic_status_label: string;
+  deterministic_status_group: StatusGroup;
   trust_tier: TrustTier;
   profile_part_number: string;
   match_status: string;
@@ -432,6 +518,7 @@ export interface ProjectReviewPrepPacket {
   scope: string;
   summary: WorkbenchSummary;
   task_counts: ReviewTaskCounts;
+  review_decisions: ReviewDecisionSummary | null;
   queue: ReviewQueueItem[];
   priority_tasks: ReviewTask[];
   key_component_groups: ProjectPrepComponentGroup[];
@@ -440,6 +527,7 @@ export interface ProjectReviewPrepPacket {
   profile_promotion_candidates: ProfilePromotionCandidate[];
   open_questions: ProjectPrepOpenQuestion[];
   risk_hints: RiskHintsView;
+  evidence_package: EvidencePackageSummary;
   pin_table: PinTableSummary;
   review_package: ReviewPackageSummary;
   evidence: EvidenceView[];

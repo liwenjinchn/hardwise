@@ -367,9 +367,7 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
         assert payload["pin_table"]["accepted_refdes"] == ["U3", "U8"]
         assert payload["pin_table"]["rejected_unknown_refdes"] == ["U999"]
         assert payload["pin_table"]["rejected"][0]["reason"] == "unknown_refdes"
-        pin_tasks = [
-            task for task in payload["review_tasks"] if task["kind"] == "pin_table_check"
-        ]
+        pin_tasks = [task for task in payload["review_tasks"] if task["kind"] == "pin_table_check"]
         assert {(task["refdes"], task["check"]) for task in pin_tasks} == {
             ("U8", "R008"),
             ("U8", "R010"),
@@ -453,12 +451,8 @@ def test_workbench_state_surfaces_document_candidate_confirmation_tasks(
         assert {task["status"] for task in doc_tasks} == {"manual_needed"}
         assert {task["status_group"] for task in doc_tasks} == {"manual"}
         assert {task["trust_tier"] for task in doc_tasks} == {"l3"}
-        assert {task["check"] for task in doc_tasks} == {
-            "document_candidate_confirmation"
-        }
-        assert {tuple(task["source_classes"]) for task in doc_tasks} == {
-            ("document_index",)
-        }
+        assert {task["check"] for task in doc_tasks} == {"document_candidate_confirmation"}
+        assert {tuple(task["source_classes"]) for task in doc_tasks} == {("document_index",)}
         assert all(
             {item["kind"] for item in task["evidence_chain"]}
             == {"document_index_row", "document_coverage"}
@@ -471,8 +465,7 @@ def test_workbench_state_surfaces_document_candidate_confirmation_tasks(
             for task in doc_tasks
         )
         by_status = {
-            task["body"].split("ReviewStatus=", 1)[1].split("。", 1)[0]: task
-            for task in doc_tasks
+            task["body"].split("ReviewStatus=", 1)[1].split("。", 1)[0]: task for task in doc_tasks
         }
         assert set(by_status) == {"approved", "needs_review", "rejected"}
         assert "coverage evidence" in by_status["approved"]["recommended_action"]
@@ -1015,12 +1008,16 @@ def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
         with (
             Path("tests/fixtures/allegro/mixed_controller_power_stage.net").open("rb") as netlist,
             Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv").open("rb") as bom,
+            Path("data/document_indexes/mixed_controller_power_stage_docs.csv").open(
+                "rb"
+            ) as documents,
         ):
             response = client.post(
                 "/api/workbench/import",
                 files={
                     "netlist": ("mixed_controller_power_stage.net", netlist, "text/plain"),
                     "bom": ("mixed_controller_power_stage_bom.csv", bom, "text/csv"),
+                    "document_index_csv": ("documents.csv", documents, "text/csv"),
                 },
             )
 
@@ -1034,7 +1031,21 @@ def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
             "warn_count": 13,
             "error_count": 4,
         }
-        assert client.get("/api/workbench/state").json()["summary"]["components"] == 25
+        imported = response.json()
+        document_lane = next(
+            lane for lane in imported["evidence_package"]["lanes"] if lane["id"] == "documents"
+        )
+        assert document_lane["status"] == "partial"
+        assert document_lane["metrics"][0] == {
+            "key": "approved_groups",
+            "label": "Approved groups",
+            "value": 4,
+            "total": 15,
+            "unit": "BOM groups",
+        }
+        state = client.get("/api/workbench/state").json()
+        assert state["summary"]["components"] == 25
+        assert state["capabilities"]["document_index_enabled"] is True
     finally:
         app.state.workbench_context["value"].session.close()
 
@@ -1161,6 +1172,46 @@ def test_workbench_import_without_pin_table_clears_startup_pin_table(tmp_path: P
         state = client.get("/api/workbench/state").json()
         assert state["capabilities"]["pin_table_enabled"] is False
         assert state["pin_table"]["status"] == "not_configured"
+    finally:
+        app.state.workbench_context["value"].session.close()
+
+
+def test_workbench_import_without_document_index_clears_startup_documents() -> None:
+    context = build_workbench_context(
+        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
+        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+        document_index=Path("data/document_indexes/mixed_controller_power_stage_docs.csv"),
+        generated_at="2026-05-30T00:00:00+00:00",
+    )
+    app = create_workbench_app(context, DummyChatService())  # type: ignore[arg-type]
+    client = TestClient(app)
+
+    try:
+        assert client.get("/api/workbench/state").json()["capabilities"]["document_index_enabled"]
+        with (
+            Path("tests/fixtures/allegro/l78_regulator.net").open("rb") as netlist,
+            Path("tests/fixtures/allegro/l78_regulator_bom.csv").open("rb") as bom,
+        ):
+            response = client.post(
+                "/api/workbench/import",
+                files={
+                    "netlist": ("l78_regulator.net", netlist, "text/plain"),
+                    "bom": ("l78_regulator_bom.csv", bom, "text/csv"),
+                },
+            )
+
+        assert response.status_code == 200, response.text
+        document_lane = next(
+            lane
+            for lane in response.json()["evidence_package"]["lanes"]
+            if lane["id"] == "documents"
+        )
+        assert document_lane["status"] == "not_configured"
+        assert (
+            client.get("/api/workbench/state").json()["capabilities"]["document_index_enabled"]
+            is False
+        )
     finally:
         app.state.workbench_context["value"].session.close()
 

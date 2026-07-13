@@ -3,42 +3,23 @@
 from __future__ import annotations
 
 import json
-import shutil
 import tempfile
-from collections.abc import Callable
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from hardwise.validation.types import PinValidationStatus
+from hardwise.eval_seeded_matrix import (
+    SeededFindingSignature,
+    load_seeded_cases,
+    materialize_seeded_fixture,
+)
 from hardwise.workbench.context import build_workbench_context, close_workbench_context
 
 DEFAULT_FIXTURE = Path("tests/fixtures/allegro/pst")
+DEFAULT_FIXTURES_ROOT = Path("tests/fixtures/allegro")
+DEFAULT_MATRIX = Path("tests/fixtures/eval/seeded_family_matrix.json")
 DEFAULT_PROFILES = Path("data/datasheet_profiles")
-
-_BASE_BOM = """Reference,Quantity,Value,Manufacturer,MPN
-C1,1,0.1uF 25V,Fixture,CAP-100N
-R1,1,10K,Fixture,RES-10K
-U1,1,TBD210419,Fixture,TBD210419
-"""
-
-FindingKind = Literal["pin", "component"]
-
-
-class SeededFindingSignature(BaseModel):
-    """One expected or observed validation issue signature."""
-
-    refdes: str
-    kind: FindingKind
-    check: str
-    status: PinValidationStatus
-
-    @property
-    def key(self) -> tuple[str, str, str, str]:
-        return (self.refdes, self.kind, self.check, self.status)
 
 
 class SeededDefectCaseResult(BaseModel):
@@ -46,10 +27,21 @@ class SeededDefectCaseResult(BaseModel):
 
     name: str
     description: str
+    family: str = "unclassified"
+    fixture: str = ""
     detected: bool
     expected: SeededFindingSignature
     new_issues: list[SeededFindingSignature] = Field(default_factory=list)
     false_positives: list[SeededFindingSignature] = Field(default_factory=list)
+
+
+class SeededDefectFamilySummary(BaseModel):
+    """Recall and unexplained-delta counts for one validator family."""
+
+    family: str
+    seeded_defects: int
+    recall: int
+    false_positives: int
 
 
 class SeededDefectSummary(BaseModel):
@@ -58,10 +50,13 @@ class SeededDefectSummary(BaseModel):
     generated_at: str
     fixture: str
     profiles: str
+    matrix: str = ""
     seeded_defects: int
     recall: int
     false_positives: int
     cases: list[SeededDefectCaseResult]
+    fixture_sources: list[str] = Field(default_factory=list)
+    family_metrics: list[SeededDefectFamilySummary] = Field(default_factory=list)
 
     @property
     def headline(self) -> str:
@@ -73,34 +68,34 @@ class SeededDefectSummary(BaseModel):
         )
 
 
-@dataclass(frozen=True)
-class SeededDefectCase:
-    name: str
-    description: str
-    mutate: Callable[[Path], None]
-    expected: SeededFindingSignature
-
-
 def run_seeded_defect_benchmark(
     *,
     fixture: Path = DEFAULT_FIXTURE,
+    fixtures_root: Path = DEFAULT_FIXTURES_ROOT,
+    matrix: Path = DEFAULT_MATRIX,
     profiles: Path = DEFAULT_PROFILES,
 ) -> SeededDefectSummary:
-    """Run Allegro PST seeded mutations through the existing validation index."""
+    """Run a family-spanning Allegro mutation matrix through deterministic validation."""
 
-    cases = _default_cases()
+    cases = load_seeded_cases(fixture=fixture, fixtures_root=fixtures_root, matrix=matrix)
     with tempfile.TemporaryDirectory(prefix="hardwise-seeded-defects-") as tmp:
         tmp_root = Path(tmp)
-        clean_project = _copy_fixture(fixture, tmp_root / "clean")
-        clean_bom = _write_base_bom(clean_project)
-        baseline = _issue_keys(_run_validation(clean_project, clean_bom, profiles))
-
+        baselines: dict[tuple[Path, Path | None], set[tuple[str, str, str, str]]] = {}
         results: list[SeededDefectCaseResult] = []
         for case in cases:
-            project = _copy_fixture(fixture, tmp_root / case.name)
-            bom = _write_base_bom(project)
-            case.mutate(project)
-            issues = _run_validation(project, bom, profiles)
+            baseline_key = (case.fixture.netlist, case.fixture.bom)
+            baseline = baselines.get(baseline_key)
+            if baseline is None:
+                clean = materialize_seeded_fixture(
+                    case.fixture,
+                    tmp_root / f"clean-{len(baselines)}-{case.fixture.name}",
+                )
+                baseline = _issue_keys(_run_validation(clean.netlist, clean.bom, profiles))
+                baselines[baseline_key] = baseline
+
+            workspace = materialize_seeded_fixture(case.fixture, tmp_root / case.name)
+            case.mutate(workspace)
+            issues = _run_validation(workspace.netlist, workspace.bom, profiles)
             new_issues = [issue for issue in issues if issue.key not in baseline]
             detected = case.expected.key in {issue.key for issue in new_issues}
             false_positives = [issue for issue in new_issues if issue.key != case.expected.key]
@@ -108,6 +103,8 @@ def run_seeded_defect_benchmark(
                 SeededDefectCaseResult(
                     name=case.name,
                     description=case.description,
+                    family=case.family,
+                    fixture=str(case.fixture.netlist),
                     detected=detected,
                     expected=case.expected,
                     new_issues=new_issues,
@@ -119,10 +116,13 @@ def run_seeded_defect_benchmark(
         generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
         fixture=str(fixture),
         profiles=str(profiles),
+        matrix=str(matrix),
         seeded_defects=len(results),
         recall=sum(1 for result in results if result.detected),
         false_positives=sum(len(result.false_positives) for result in results),
         cases=results,
+        fixture_sources=list(dict.fromkeys(result.fixture for result in results)),
+        family_metrics=_summarize_families(results),
     )
 
 
@@ -134,70 +134,6 @@ def write_seeded_defect_summary(summary: SeededDefectSummary, output: Path) -> N
         json.dumps(summary.model_dump(mode="json"), ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-
-
-def _default_cases() -> list[SeededDefectCase]:
-    return [
-        SeededDefectCase(
-            name="capacitor_low_voltage",
-            description="Lower C1 rated-voltage token below the inferred 3.3 V rail.",
-            mutate=lambda project: _replace_in_bom(project, "0.1uF 25V", "0.1uF 1V"),
-            expected=SeededFindingSignature(
-                refdes="C1",
-                kind="component",
-                check="capacitor_voltage_margin",
-                status="ERROR",
-            ),
-        ),
-        SeededDefectCase(
-            name="capacitor_unparseable_value",
-            description="Replace C1 capacitance text with an unparseable token.",
-            mutate=lambda project: _replace_in_bom(project, "0.1uF 25V", "TBD 25V"),
-            expected=SeededFindingSignature(
-                refdes="C1",
-                kind="component",
-                check="capacitor_value_parse",
-                status="WARN",
-            ),
-        ),
-        SeededDefectCase(
-            name="resistor_package_conflict",
-            description="Change R1's schematic package from resistor-like to capacitor-like.",
-            mutate=lambda project: _replace_in_file(
-                project / "pstchip.dat",
-                "JEDEC_TYPE='R0402';",
-                "JEDEC_TYPE='C0402';",
-            ),
-            expected=SeededFindingSignature(
-                refdes="R1",
-                kind="component",
-                check="resistor_package_presence",
-                status="WARN",
-            ),
-        ),
-    ]
-
-
-def _copy_fixture(source: Path, target: Path) -> Path:
-    shutil.copytree(source, target)
-    return target
-
-
-def _write_base_bom(project: Path) -> Path:
-    bom = project / "bom.csv"
-    bom.write_text(_BASE_BOM, encoding="utf-8")
-    return bom
-
-
-def _replace_in_bom(project: Path, old: str, new: str) -> None:
-    _replace_in_file(project / "bom.csv", old, new)
-
-
-def _replace_in_file(path: Path, old: str, new: str) -> None:
-    text = path.read_text(encoding="utf-8")
-    if old not in text:
-        raise ValueError(f"{path}: expected mutation text not found: {old!r}")
-    path.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 
 def _run_validation(project: Path, bom: Path, profiles: Path) -> list[SeededFindingSignature]:
@@ -239,3 +175,20 @@ def _run_validation(project: Path, bom: Path, profiles: Path) -> list[SeededFind
 
 def _issue_keys(issues: list[SeededFindingSignature]) -> set[tuple[str, str, str, str]]:
     return {issue.key for issue in issues}
+
+
+def _summarize_families(
+    results: list[SeededDefectCaseResult],
+) -> list[SeededDefectFamilySummary]:
+    grouped: dict[str, list[SeededDefectCaseResult]] = {}
+    for result in results:
+        grouped.setdefault(result.family, []).append(result)
+    return [
+        SeededDefectFamilySummary(
+            family=family,
+            seeded_defects=len(family_results),
+            recall=sum(1 for result in family_results if result.detected),
+            false_positives=sum(len(result.false_positives) for result in family_results),
+        )
+        for family, family_results in grouped.items()
+    ]

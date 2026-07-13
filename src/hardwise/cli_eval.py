@@ -113,7 +113,17 @@ def register_eval_commands(app: typer.Typer) -> None:
         fixture: Path = typer.Option(
             Path("tests/fixtures/allegro/pst"),
             "--fixture",
-            help="Clean Allegro PST fixture directory to mutate.",
+            help="Clean Allegro PST passive fixture directory to mutate.",
+        ),
+        fixtures_root: Path = typer.Option(
+            Path("tests/fixtures/allegro"),
+            "--fixtures-root",
+            help="Directory containing clean public/synthetic family fixtures.",
+        ),
+        matrix: Path = typer.Option(
+            Path("tests/fixtures/eval/seeded_family_matrix.json"),
+            "--matrix",
+            help="Versioned seeded family-matrix JSON.",
         ),
         profiles: Path = typer.Option(
             Path("data/datasheet_profiles"),
@@ -126,14 +136,19 @@ def register_eval_commands(app: typer.Typer) -> None:
             help="Optional JSON output path for seeded benchmark details.",
         ),
     ) -> None:
-        """Run the minimal Allegro seeded-defect benchmark."""
+        """Run the Allegro seeded-defect family calibration matrix."""
         from hardwise.eval_seeded import (
             run_seeded_defect_benchmark,
             write_seeded_defect_summary,
         )
 
         try:
-            summary = run_seeded_defect_benchmark(fixture=fixture, profiles=profiles)
+            summary = run_seeded_defect_benchmark(
+                fixture=fixture,
+                fixtures_root=fixtures_root,
+                matrix=matrix,
+                profiles=profiles,
+            )
             if output is not None:
                 write_seeded_defect_summary(summary, output)
         except Exception as e:
@@ -141,10 +156,16 @@ def register_eval_commands(app: typer.Typer) -> None:
             raise typer.Exit(1) from e
 
         typer.echo(f"eval seeded-defects: {summary.headline}")
+        for family in summary.family_metrics:
+            typer.echo(
+                f"  family {family.family}: recall "
+                f"{family.recall}/{family.seeded_defects}, "
+                f"{family.false_positives} false positives"
+            )
         for case in summary.cases:
             status = "detected" if case.detected else "missed"
             typer.echo(
-                f"  {case.name}: {status} "
+                f"  {case.name} [{case.family}]: {status} "
                 f"({len(case.false_positives)} false positives)"
             )
         if output is not None:

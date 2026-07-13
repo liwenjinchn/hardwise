@@ -10,11 +10,11 @@ import {
 import type { ReviewQueueItem, StatusGroup } from "../../types";
 
 const FILTERS: Array<{ id: "all" | StatusGroup; label: string; hint: string }> = [
-  { id: "all", label: "全部待看", hint: "所有被标记的器件" },
-  { id: "error", label: "必须修", hint: "会阻塞签核的问题" },
-  { id: "warn", label: "看证据", hint: "有引用的建议项" },
-  { id: "manual", label: "人工判断", hint: "数据无法自动确认" },
-  { id: "pass", label: "已通过", hint: "检查已满足" }
+  { id: "all", label: "全部器件", hint: "组件口径" },
+  { id: "error", label: "电气错误", hint: "ERROR 组件" },
+  { id: "warn", label: "电气警告", hint: "WARN 组件" },
+  { id: "manual", label: "未验证", hint: "人工组件" },
+  { id: "pass", label: "电气通过", hint: "PASS 组件" }
 ];
 
 export function TaskQueueColumn(props: {
@@ -65,7 +65,7 @@ export function TaskQueueColumn(props: {
           <button
             type="button"
             key={item.refdes}
-            className={`queue-row ${item.status_group} ${
+            className={`queue-row ${item.deterministic_status_group} ${
               props.selectedRefdes === item.refdes ? "selected" : ""
             }`}
             style={{ animationDelay: `${Math.min(index, 10) * 16}ms` }}
@@ -76,7 +76,13 @@ export function TaskQueueColumn(props: {
               <strong>{formatSummary(item.title)}</strong>
               <small>{queueSubtitle(item)}</small>
               <span className="row-badges">
-                <StatusBadge group={item.status_group} label={attentionLabel(item.status_group)} />
+                <StatusBadge
+                  group={item.deterministic_status_group}
+                  label={`电气 ${attentionLabel(item.deterministic_status_group)}`}
+                />
+                {item.status_group !== item.deterministic_status_group && (
+                  <StatusBadge group={item.status_group} label="证据待确认" />
+                )}
                 <TrustBadge tier={item.trust_tier} />
                 {item.pin_table_task_count > 0 && (
                   <span className="source-badge">引脚表 × {item.pin_table_task_count}</span>

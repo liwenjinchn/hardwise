@@ -90,7 +90,10 @@ export function DetailColumn({
             </div>
           </div>
           <div className="title-actions">
-            <StatusBadge group={detail.status_group} label={detail.status_label} />
+            <StatusBadge
+              group={detail.deterministic_status_group}
+              label={`电气 ${detail.deterministic_status_label}`}
+            />
             <TrustBadge tier={detail.trust_tier} />
             <button className="icon-text-btn" type="button" onClick={onAsk}>
               <Bot size={14} />
@@ -98,7 +101,7 @@ export function DetailColumn({
             </button>
           </div>
         </div>
-        <VerdictBanner group={detail.status_group} />
+        <VerdictBanner group={detail.deterministic_status_group} />
         <div className="identity-grid">
           <InfoCell label="MPN" value={detail.part_number || "-"} />
           <InfoCell label="厂商" value={detail.manufacturer || "-"} />
@@ -106,7 +109,7 @@ export function DetailColumn({
           <InfoCell label="器件档案" value={detail.profile_part_number || "待补"} />
           <InfoCell label="BOM 来源" value={detail.bom?.source || "-"} />
           <InfoCell label="档案状态" value={profileStatusLabel(detail.profile?.status || detail.match_status)} />
-          <InfoCell label="任务数" value={`${detail.task_counts.total} 项`} />
+          <InfoCell label="原始任务" value={`${detail.task_counts.total} 条`} />
         </div>
         {detail.match_reason && <p className="scope-note">{formatSummary(detail.match_reason)}</p>}
         <DocumentCoverageSection document={detail.document} />

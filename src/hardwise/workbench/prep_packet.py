@@ -17,7 +17,10 @@ from hardwise.workbench.profile_promotion import (
     ProfilePromotionCandidate,
     build_profile_promotion_candidates,
 )
+from hardwise.workbench.review_decisions import ReviewDecisionSummary
 from hardwise.workbench.view_model import (
+    EvidencePackageMetric,
+    EvidencePackageSummary,
     EvidenceView,
     PinTableSummary,
     ReviewQueueItem,
@@ -80,7 +83,9 @@ class ProjectReviewPrepPacket(BaseModel):
     project: WorkbenchProject
     scope: str = "schematic_review_prep"
     summary: WorkbenchSummary
+    evidence_package: EvidencePackageSummary
     task_counts: ReviewTaskCounts
+    review_decisions: ReviewDecisionSummary | None = None
     queue: list[ReviewQueueItem] = Field(default_factory=list)
     priority_tasks: list[ReviewTask] = Field(default_factory=list)
     key_component_groups: list[ProjectPrepComponentGroup] = Field(default_factory=list)
@@ -109,6 +114,7 @@ def build_project_review_prep_packet(context: WorkbenchContext) -> ProjectReview
     return ProjectReviewPrepPacket(
         project=state.project,
         summary=state.summary,
+        evidence_package=state.evidence_package,
         task_counts=state.task_counts,
         queue=state.queue,
         priority_tasks=priority_tasks,
@@ -158,6 +164,35 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
         f"| Manual | {summary.manual} |",
         f"| PASS / WARN / ERROR | {summary.pass_count} / {summary.warn_count} / {summary.error_count} |",
         f"| Review tasks | {packet.task_counts.total} |",
+        *(
+            [
+                f"| Review decisions open / accepted / waived / resolved | "
+                f"{packet.review_decisions.open} / {packet.review_decisions.accepted} / "
+                f"{packet.review_decisions.waived} / {packet.review_decisions.resolved} |"
+            ]
+            if packet.review_decisions is not None
+            else []
+        ),
+        "",
+        "## Evidence Package Completeness",
+        "",
+        "| Lane | Status | Metrics | Next action |",
+        "|---|---|---|---|",
+        *[
+            "| "
+            f"{lane.label} | {lane.status_label} | "
+            f"{_evidence_package_metrics(lane.metrics)} | {lane.recommended_action} |"
+            for lane in packet.evidence_package.lanes
+        ],
+        "",
+        "> Lane status describes source coverage only; it is not an electrical signoff.",
+        "",
+        "## Sign-off Evidence Readiness",
+        "",
+        f"- Status：{packet.evidence_package.signoff_readiness.status}",
+        f"- Affected L1 tasks：{packet.evidence_package.signoff_readiness.affected_tasks}",
+        f"- Missing local sources：{packet.evidence_package.signoff_readiness.missing_local_sources}",
+        f"- Reason：{packet.evidence_package.signoff_readiness.reason}",
         "",
         "## Review Focus Areas",
         "",
@@ -240,6 +275,14 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
                     f"- **{task.id}** `{task.refdes}` {task.status_label}：{task.title}",
                     f"  - 建议动作：{task.recommended_action}",
                     f"  - 稳定键：`{task.stable_key}`",
+                    *(
+                        [
+                            f"  - 评审决策：{task.review_decision.status}；"
+                            f"理由：{task.review_decision.reason}"
+                        ]
+                        if task.review_decision is not None
+                        else ["  - 评审决策：open"]
+                    ),
                 ]
             )
     else:
@@ -289,7 +332,10 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
         checks = ", ".join(f"{rule}={count}" for rule, count in pin_table.checks.items())
         lines.append(f"- Checks：{checks}")
     if pin_table.affected_refdes_list:
-        lines.append("- Accepted refdes：" + ", ".join(f"`{item}`" for item in pin_table.affected_refdes_list))
+        lines.append(
+            "- Accepted refdes："
+            + ", ".join(f"`{item}`" for item in pin_table.affected_refdes_list)
+        )
     if pin_table.rejected_unknown_refdes:
         lines.append(
             "- Rejected unknown refdes："
@@ -318,9 +364,7 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
     if review_package.artifacts:
         for artifact in review_package.artifacts:
             required = "required" if artifact.required else "optional"
-            lines.append(
-                f"- `{artifact.kind}` {artifact.status} / {required}：`{artifact.name}`"
-            )
+            lines.append(f"- `{artifact.kind}` {artifact.status} / {required}：`{artifact.name}`")
 
     lines.extend(["", "## Guardrails"])
     lines.extend(f"- {item}" for item in packet.guardrails)
@@ -586,3 +630,13 @@ def _evidence_token_text(items: list[EvidenceView]) -> str:
     if not items:
         return "-"
     return ", ".join(f"`{item.token}`" for item in items[:3])
+
+
+def _evidence_package_metrics(metrics: list[EvidencePackageMetric]) -> str:
+    """Render lane metrics without combining unlike units."""
+
+    rendered: list[str] = []
+    for metric in metrics:
+        count = f"{metric.value}/{metric.total}" if metric.total is not None else str(metric.value)
+        rendered.append(f"{metric.label}: {count} {metric.unit}")
+    return "; ".join(rendered) or "-"

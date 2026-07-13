@@ -95,7 +95,10 @@ def register_design_validator_commands(app: typer.Typer) -> None:
         from hardwise.report.workbench_spa_snapshot import render_spa_snapshot
         from hardwise.validation import ProfileCandidateError
         from hardwise.workbench.context import build_workbench_context
-        from hardwise.workbench.view_model import build_pin_table_summary
+        from hardwise.workbench.view_model import (
+            build_evidence_package_summary,
+            build_pin_table_summary,
+        )
 
         if manual_limit < 0:
             typer.echo("error: --manual-limit must be >= 0", err=True)
@@ -137,9 +140,7 @@ def register_design_validator_commands(app: typer.Typer) -> None:
                 bom_report=context.bom_report,
                 generated_at=context.index.generated_at,
                 risk_hints=context.risk_hints if context.risk_hints.source_path else None,
-                pin_table=(
-                    pin_table_summary if pin_table_summary.status == "loaded" else None
-                ),
+                pin_table=(pin_table_summary if pin_table_summary.status == "loaded" else None),
                 review_package=(
                     context.review_package if context.review_package.source_path else None
                 ),
@@ -158,6 +159,12 @@ def register_design_validator_commands(app: typer.Typer) -> None:
         totals = context.index.totals
         typer.echo(f"selected-netlist: {display_path(context.netlist_source)}")
         typer.echo(f"selected-bom: {display_path(context.bom.source_file)}")
+        evidence_package = build_evidence_package_summary(context)
+        lane_statuses = ",".join(f"{lane.id}={lane.status}" for lane in evidence_package.lanes)
+        typer.echo(
+            f"evidence-package: {lane_statuses} "
+            f"(electrical_verdict={evidence_package.electrical_verdict})"
+        )
         if context.document_report is not None:
             doc_counts = context.document_report.counts_by_status
             typer.echo(

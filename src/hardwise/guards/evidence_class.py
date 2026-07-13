@@ -79,7 +79,15 @@ def _source_class(token: str, live_retrieved_tokens: set[str]) -> EvidenceSource
         return "document_index"
     if prefix in {"datasheet", "pdf", "public_profile", "reviewer_to_confirm"}:
         return "reviewed_profile"
-    if prefix in {"sch", "bom", "drc", "rule", "netlist", "pintable"}:
+    if prefix in {
+        "sch",
+        "bom",
+        "drc",
+        "rule",
+        "netlist",
+        "pintable",
+        "review_package",
+    }:
         return "design_source"
     return "unknown"
 

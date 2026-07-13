@@ -96,6 +96,23 @@ class WorkbenchContextManager:
                 # caller close the new active context as if publication failed.
                 LOGGER.exception("retired workbench context cleanup failed after swap")
 
+    def refresh(self, context: WorkbenchContext) -> None:
+        """Replace the active context while retaining its imported source directory."""
+
+        with self._lock:
+            if self._shutdown:
+                raise RuntimeError("workbench context manager is shut down")
+            previous = self._current
+            import_dir = previous.import_dir
+            previous.import_dir = None
+            previous.retired = True
+            self._retired.append(previous)
+            self._current = _ManagedContext(context=context, import_dir=import_dir)
+            try:
+                self._close_if_ready(previous)
+            except Exception:
+                LOGGER.exception("retired workbench context cleanup failed after refresh")
+
     def shutdown(self) -> None:
         """Retire every context and close each one after its final lease exits."""
 

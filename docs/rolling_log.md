@@ -294,120 +294,37 @@ change, no PCB/PLM scope.
 
 ---
 
-## 规格书自动获取 S2/S3 — staged after workbench document coverage S1
+## 规格书候选 S2/S3 — discharged
 
-**Trigger**: S1 is shipped — the demo workbench feeds
-`--document-index data/document_indexes/mixed_controller_power_stage_docs.csv`
-and renders per-component document coverage (matched / no_result / ambiguous /
-manual_needed) in the detail panel and queue rows. S2 starts when the user
-wants coverage gaps to close themselves instead of by hand-built CSV rows.
-
-**Where it lands**: `documents/` provider + fetch pipeline tasks (S2) and
-`workbench/` review-queue tasks (S3), each as its own Trellis task. Update
-`docs/architecture.md` only when a stage ships.
-
-**What to build**:
-
-- **S2 — candidate discovery to liberal auto-approve**: candidate discovery
-  (`search-datasheets-com` / `build-document-index-candidates` shapes) feeds
-  auto-download with `needs_review` as the default state; an auto-approve rule
-  promotes a row only on normalized-MPN exact match with a single unambiguous
-  hit. Multi-candidate, fuzzy, or value-fallback hits stay in the engineer
-  confirmation queue. Calibrate against the user's real project with a batch
-  run that reports 自动放行 N / 需确认 M / 未命中 K before tuning thresholds.
-- **S3 — workbench confirmation queue**: surface the "需确认" rows as
-  workbench review tasks, reusing the pin-table L1 review-task shape (accepted
-  rows become tasks; rejections carry reasons). No new validation truth.
-- **Recorded user judgement (2026-06-12)**: the dominant risk is fetching the
-  *wrong* datasheet for a part (mismatched MPN), not untrustworthy datasheet
-  content — so auto-approve can be liberal, and engineer confirmation volume
-  must stay small.
-- **Closed-source evolution**: swap the provider behind the same interface
-  shape as `documents/datasheets_com.py` for a PLM provider — search by part
-  number, fetch the attached datasheet; the status enum
-  (matched / no_result / ambiguous / manual_needed) stays unchanged.
-
-Hard bounds: public sources only in the open repo; no PDF binaries committed;
-document coverage stays coverage evidence and never becomes an electrical
-verdict.
+Public candidate discovery, conservative exact-MPN auto-approval, the reusable
+`document-candidate-smoke` CLI, and L3 workbench confirmation tasks have shipped.
+Document-index upload and the combined evidence-package lane now expose matched,
+ambiguous, and missing BOM-group coverage without changing PASS/WARN/ERROR.
+Closed-source PLM retrieval remains outside the open MVP rather than an active
+backlog item.
 
 ---
 
-## Eval dual-track: seeded-defect benchmark + defects4KiCad mining — staged for interview prep
+## Evaluation follow-ons — Track A shipped, Track B conditional
 
-**Trigger**: interview scheduled (not a submission blocker). Motivation: the
-current eval pack reports counts (437 findings, 0 failures), not rates — there
-is no recall/precision number to answer "how accurate is it", and the eval
-corpus is KiCad while the demo mainline is Allegro netlist/PST+BOM.
+**Track A shipped**: `eval-seeded-defects` now loads a versioned
+public/synthetic matrix. Seven mutations span six Allegro/PST validator
+families: capacitor, resistor, MOSFET, diode, I2C mux, and DCDC buck. Each case
+is compared with its own clean-fixture baseline; CLI and JSON report 7/7 recall
+and zero unexplained new issues, plus per-family counts. The legacy headline
+fields remain stable.
 
-**Search conclusion (2026-06-11, grok multi-query, cross-verified)**: no public
-"schematic + human-labeled defects" dataset exists — commercial AI schematic
-review tools (galvano.ai, Netlist.io, ThomsonLint, AllSpice) publicly state
-they rely on private design data. The gap is industry-wide, which makes the
-harness design itself the story.
+**Meaning boundary**: `false_positives` means new findings not explained by the
+seeded expectation after clean-baseline subtraction. It is not a population
+false-positive rate, and one or two mutations per family are not expert
+accuracy. Public/human calibration remains the evidence needed before making a
+broader claim.
 
-**Architecture — two tracks, one number**:
-
-```
-optimization signal (infinite, free)      holdout (small, real)
-Track A: seeded-defect mutation set   →   Track B: defects4KiCad pilot
-agent scores → tune rules → re-run        verify-only, never tuned against
-```
-
-Track A answers "what's the rate"; Track B answers "but did you just overfit
-your own mutations" — the classic critique of mutation oracles. Neither track
-alone survives that question.
-
-**Track A — seeded-defect benchmark (Allegro-native, ~3-5h)**: programmatically
-inject known defects into clean fixtures (`tests/fixtures/allegro/pst/`):
-drop footprint fields, strip cap rated-voltage suffixes, alter NC pin wiring,
-break BOM line matches — 3-5 cases per shipped rule. Ground truth by
-construction; zero labeling. Output one headline number:
-"N seeded defects, recall X/N, Y new false positives". Mutation-testing
-analogy is the interview term. Each future check (e.g., Capture pin-table
-checks above) ships with its own seeded cases.
-
-**Track B — defects4KiCad mining pilot (~3-4h timebox)**: mine git history of
-the 5 repos already in `eval/manifest.yaml` for commits touching `.kicad_sch`
-with fix-like messages — the commit message is a human-written defect
-description, the pre-fix tree is a defective schematic, free real gold. Search
-confirmed no prior art (no defects4j-style schematic mining exists publicly).
-Verify 10-20 cases by hand (minutes each — verification, not labeling). Scope
-caveat: filter for defect classes current rules cover (component/field-level:
-footprint, value, NC); net-topology defects (missing pull-up) need the queued
-schematic net parser (R005+) and become its motivation, not this pilot's scope.
-
-**Why KiCad is the only minable source (and why that's fine)**: code LLMs work
-because source is text with public git history; in EDA only KiCad satisfies
-both (.kicad_sch is S-expression text, large public repo base). Cadence
-formats are binary/proprietary with no public fix history — mining there is a
-dead end, full stop. But defect patterns are EDA-agnostic; carriers are
-EDA-specific. Mined KiCad defects replay through the kicad adapter into the IR
-and validate the shared rules layer — the same layer the Allegro path uses.
-Track A runs Allegro-native, so the mainline is covered where it matters.
-
-**Supplementary sources (optional, "one more month" answers)**:
-
-- KiCad source tree `qa/tests/eeschema/erc/` — ERC regression fixtures with
-  expected violations; narrow, engine-edge-case flavored; ~1h to harvest for
-  ERC-overlap rules.
-- PCB-Bench (ICLR 2026, verified live: github.com/digailab/PCB-Bench) —
-  ~3,700 expert QA on placement/routing/design rules + 174 complete OSHWHub
-  projects (mostly LCEDA format). QA-style, not defect labels: use the 174
-  projects as corpus expansion and the QA set as a knowledge-layer sanity
-  check, not as gold.
-- TI/ADI reference designs (OrCAD/Allegro files, presumed-correct) — negative
-  control corpus for false-positive measurement on the Cadence side; no fix
-  history, so no defect gold.
-- Community review threads (r/PrintedCircuitBoard, EEVblog) — confirmed never
-  scraped into a dataset; image-heavy. Use for rule discovery (recurring
-  human-flagged issues → checklist candidates → Sleep Consolidator), never as
-  eval instances.
-
-**Scope bound**: Track A = one injection script + one scoring report; Track B
-= 10-20 verified cases, manifest repos only, no new repos. No human gold-label
-set, no monitoring dashboard, no community scraping — those are "one more
-month" interview answers, not work items.
+**Track B remains conditional**: a small defects4KiCad history-mining pilot is
+allowed only when an interview or explicit evaluation goal needs a holdout
+against mutation overfitting. It stays a KiCad appendix path, limited to the
+existing public manifest repos and rule classes the shared IR can actually
+evaluate. It is not an active Cadence/Allegro product-roadmap item.
 
 ---
 

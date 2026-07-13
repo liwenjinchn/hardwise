@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
-import { fetchComponentDetail, fetchWorkbenchState } from "./api";
+import {
+  fetchComponentDetail,
+  fetchWorkbenchState,
+  rerunWorkbench,
+  updateReviewDecision
+} from "./api";
 import type {
   ComponentDetail,
   ImportResponse,
+  ReviewDecisionStatus,
   ReviewQueueItem,
   ReviewTask,
   StatusGroup,
@@ -32,7 +38,6 @@ function App() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
   const [parseResult, setParseResult] = useState<ImportResponse | null>(null);
-  const [resolvedTaskIds, setResolvedTaskIds] = useState<Set<string>>(new Set());
   const detailRequestId = useRef(0);
 
   const applyState = (payload: WorkbenchState) => {
@@ -42,7 +47,6 @@ function App() {
     setState(payload);
     setSelectedTaskId(firstTask?.id ?? null);
     setSelectedRefdes(selected);
-    setResolvedTaskIds(new Set());
   };
 
   const loadState = async () => {
@@ -95,7 +99,7 @@ function App() {
     if (!state) return [];
     const needle = query.trim().toLowerCase();
     return state.queue.filter((item) => {
-      const filterMatch = filter === "all" || item.status_group === filter;
+      const filterMatch = filter === "all" || item.deterministic_status_group === filter;
       const queryMatch =
         !needle ||
         item.refdes.toLowerCase().includes(needle) ||
@@ -111,7 +115,7 @@ function App() {
     const counts: Record<"all" | StatusGroup, number> = { all: 0, error: 0, warn: 0, manual: 0, pass: 0 };
     if (!state) return counts;
     counts.all = state.queue.length;
-    for (const item of state.queue) counts[item.status_group] += 1;
+    for (const item of state.queue) counts[item.deterministic_status_group] += 1;
     return counts;
   }, [state]);
 
@@ -139,6 +143,20 @@ function App() {
     setView("parse");
     await loadState();
     window.setTimeout(() => setView("review"), 950);
+  };
+
+  const handleReviewDecision = async (
+    stableKeys: string[],
+    status: ReviewDecisionStatus,
+    reason: string
+  ) => {
+    const payload = await updateReviewDecision({ stableKeys, status, reason });
+    applyState(payload);
+  };
+
+  const handleRerun = async () => {
+    const payload = await rerunWorkbench();
+    applyState(payload);
   };
 
   if (loading) {
@@ -196,16 +214,10 @@ function App() {
       )}
       {view === "findings" && (
         <FindingsView
+          groups={state.review_groups}
           tasks={state.review_tasks}
-          resolvedTaskIds={resolvedTaskIds}
-          onToggleResolved={(taskId) => {
-            setResolvedTaskIds((current) => {
-              const next = new Set(current);
-              if (next.has(taskId)) next.delete(taskId);
-              else next.add(taskId);
-              return next;
-            });
-          }}
+          onDecision={handleReviewDecision}
+          onRerun={handleRerun}
           onOpenTask={openTask}
         />
       )}
@@ -215,4 +227,3 @@ function App() {
 }
 
 export default App;
-

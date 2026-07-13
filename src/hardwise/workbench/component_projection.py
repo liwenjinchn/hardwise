@@ -105,6 +105,14 @@ def render_review_prep_packet_markdown(packet: ReviewPrepPacket) -> str:
                     f"- **{task.id}** `{task.kind}` {task.status_label}：{task.title}",
                     f"  - 建议动作：{task.recommended_action}",
                     f"  - 稳定键：`{task.stable_key}`",
+                    *(
+                        [
+                            f"  - 评审决策：{task.review_decision.status}；"
+                            f"理由：{task.review_decision.reason}"
+                        ]
+                        if task.review_decision is not None
+                        else ["  - 评审决策：open"]
+                    ),
                 ]
             )
     else:
@@ -170,6 +178,9 @@ def build_component_detail(
         status=status,
         status_label=status_label(status),
         status_group=_status_group(status),
+        deterministic_status=status,
+        deterministic_status_label=status_label(status),
+        deterministic_status_group=_status_group(status),
         trust_tier=_trust_for_row(row),
         profile_part_number=validation.profile_part_number if validation else "",
         match_status=row.match_status if row else "",

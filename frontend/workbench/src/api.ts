@@ -5,6 +5,7 @@ import type {
   ImportResponse,
   ProjectReviewPrepPacket,
   ReviewPrepPacket,
+  ReviewDecisionStatus,
   WorkbenchOfflineSnapshot,
   WorkbenchState
 } from "./types";
@@ -35,6 +36,31 @@ export function fetchWorkbenchState(): Promise<WorkbenchState> {
   const snapshot = offlineSnapshot();
   if (snapshot) return Promise.resolve(snapshot.state);
   return requestJson<WorkbenchState>("/api/workbench/state");
+}
+
+export function updateReviewDecision(input: {
+  stableKeys: string[];
+  status: ReviewDecisionStatus;
+  reason: string;
+}): Promise<WorkbenchState> {
+  if (offlineSnapshot()) {
+    return Promise.reject(new Error("离线快照不能写入评审决策；请使用 serve-workbench。"));
+  }
+  return requestJson<WorkbenchState>("/api/workbench/review-decisions", {
+    method: "PUT",
+    body: JSON.stringify({
+      stable_keys: input.stableKeys,
+      status: input.status,
+      reason: input.reason
+    })
+  });
+}
+
+export function rerunWorkbench(): Promise<WorkbenchState> {
+  if (offlineSnapshot()) {
+    return Promise.reject(new Error("离线快照不能重新运行检查；请使用 serve-workbench。"));
+  }
+  return requestJson<WorkbenchState>("/api/workbench/rerun", { method: "POST" });
 }
 
 export function fetchComponentDetail(refdes: string): Promise<ComponentDetail> {
@@ -127,6 +153,7 @@ export function askCopilot(
 export function importWorkbench(files: {
   netlist: File;
   bom?: File | null;
+  documentIndex?: File | null;
   pinTable?: File | null;
   reviewPackage?: File | null;
   riskHints?: File | null;
@@ -137,6 +164,7 @@ export function importWorkbench(files: {
   const body = new FormData();
   body.append("netlist", files.netlist);
   if (files.bom) body.append("bom", files.bom);
+  if (files.documentIndex) body.append("document_index_csv", files.documentIndex);
   if (files.pinTable) body.append("pin_table_csv", files.pinTable);
   if (files.reviewPackage) body.append("review_package", files.reviewPackage);
   if (files.riskHints) body.append("risk_hints_json", files.riskHints);

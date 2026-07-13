@@ -6,6 +6,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from hardwise.workbench.evidence_package import EvidencePackageSummary
+from hardwise.workbench.review_decisions import ReviewDecisionSummary, ReviewDecisionView
+
 StatusGroup = Literal["error", "warn", "pass", "manual"]
 TrustTier = Literal["l1", "l2", "l3"]
 
@@ -182,6 +185,27 @@ class ReviewTask(BaseModel):
     recommended_action: str
     source_classes: list[str] = Field(default_factory=list)
     evidence_chain: list["EvidenceChainItem"] = Field(default_factory=list)
+    derived_from_task_id: str | None = None
+    review_decision: ReviewDecisionView | None = None
+
+
+class ReviewTaskGroup(BaseModel):
+    """One reviewer-facing group while preserving every raw task for audit."""
+
+    id: str
+    stable_key: str
+    title: str
+    status_group: StatusGroup
+    trust_tier: TrustTier
+    axis: Literal["electrical", "evidence"]
+    identity: str
+    check: str | None = None
+    affected_refdes: list[str]
+    task_ids: list[str]
+    stable_keys: list[str]
+    raw_task_count: int
+    derived_task_count: int = 0
+    recommended_action: str
 
 
 class ReviewTaskCounts(BaseModel):
@@ -359,6 +383,9 @@ class ComponentDetail(BaseModel):
     status: str
     status_label: str
     status_group: StatusGroup
+    deterministic_status: str
+    deterministic_status_label: str
+    deterministic_status_group: StatusGroup
     trust_tier: TrustTier
     profile_part_number: str = ""
     match_status: str = ""
@@ -395,12 +422,15 @@ class WorkbenchState(BaseModel):
     project: WorkbenchProject
     summary: WorkbenchSummary
     capabilities: WorkbenchCapabilities
+    evidence_package: EvidencePackageSummary
     pin_table: PinTableSummary
     review_package: ReviewPackageSummary
     selected_refdes: str | None
     queue: list[ReviewQueueItem]
     review_tasks: list[ReviewTask]
+    review_groups: list[ReviewTaskGroup] = Field(default_factory=list)
     task_counts: ReviewTaskCounts
+    review_decisions: ReviewDecisionSummary | None = None
     net_checks: list[NetCheckView]
     risk_hints: RiskHintsSummary
     risk_hint_details: RiskHintsView

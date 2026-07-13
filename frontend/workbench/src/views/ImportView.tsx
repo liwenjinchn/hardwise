@@ -1,6 +1,15 @@
 import { useState, type DragEvent, type FormEvent, type ReactNode } from "react";
-import { FileArchive, FileJson, FileSpreadsheet, Loader2, Play, UploadCloud } from "lucide-react";
+import {
+  BookOpenCheck,
+  FileArchive,
+  FileJson,
+  FileSpreadsheet,
+  Loader2,
+  Play,
+  UploadCloud
+} from "lucide-react";
 import { importWorkbench } from "../api";
+import { EvidencePackageDashboard } from "../components/EvidencePackageDashboard";
 import type { ImportResponse, WorkbenchState } from "../types";
 
 export function ImportView({
@@ -12,6 +21,7 @@ export function ImportView({
 }) {
   const [netlist, setNetlist] = useState<File | null>(null);
   const [bom, setBom] = useState<File | null>(null);
+  const [documentIndex, setDocumentIndex] = useState<File | null>(null);
   const [pinTable, setPinTable] = useState<File | null>(null);
   const [reviewPackage, setReviewPackage] = useState<File | null>(null);
   const [riskHints, setRiskHints] = useState<File | null>(null);
@@ -27,7 +37,14 @@ export function ImportView({
     setBusy(true);
     setError("");
     try {
-      const result = await importWorkbench({ netlist, bom, pinTable, reviewPackage, riskHints });
+      const result = await importWorkbench({
+        netlist,
+        bom,
+        documentIndex,
+        pinTable,
+        reviewPackage,
+        riskHints
+      });
       onImported(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "导入失败");
@@ -66,7 +83,7 @@ export function ImportView({
           icon={<FileArchive size={20} />}
           label="BOM CSV"
           detail={`${state.summary.bom_matched} matched refdes`}
-          status={state.summary.bom_matched > 0 ? "loaded" : "optional"}
+          status="optional"
           file={bom}
           accept=".csv,.tsv,.txt"
           onPick={setBom}
@@ -75,16 +92,25 @@ export function ImportView({
           icon={<FileSpreadsheet size={20} />}
           label="Capture 引脚表 CSV"
           detail={pinTableDetail(state)}
-          status={state.pin_table.status === "loaded" ? "loaded" : "optional"}
+          status="optional"
           file={pinTable}
           accept=".csv,.txt"
           onPick={setPinTable}
         />
         <UploadSlot
+          icon={<BookOpenCheck size={20} />}
+          label="public document index CSV"
+          detail={documentIndexDetail(state)}
+          status="optional"
+          file={documentIndex}
+          accept=".csv,.tsv,.txt"
+          onPick={setDocumentIndex}
+        />
+        <UploadSlot
           icon={<FileJson size={20} />}
           label="review-package manifest"
           detail={reviewPackageDetail(state)}
-          status={state.review_package.status === "loaded" ? "loaded" : "optional"}
+          status="optional"
           file={reviewPackage}
           accept=".yaml,.yml,.json,.txt"
           onPick={setReviewPackage}
@@ -97,12 +123,12 @@ export function ImportView({
               ? `${state.risk_hints.accepted_external_count} accepted hints`
               : "optional external hints"
           }
-          status={state.capabilities.risk_hints_enabled ? "loaded" : "optional"}
+          status="optional"
           file={riskHints}
           accept=".json"
           onPick={setRiskHints}
         />
-        {error && <p className="form-error">{error}</p>}
+        {error && <p className="form-error" role="alert">{error}</p>}
         <button className="primary-action" type="submit" disabled={busy}>
           {busy ? <Loader2 className="spin" size={16} /> : <Play size={16} />}
           {busy ? "正在导入" : "导入并解析"}
@@ -120,9 +146,11 @@ export function ImportView({
           <span>Netlist</span>
           <span>BOM {state.summary.bom_matched > 0 ? "loaded" : "pending"}</span>
           <span>引脚表 {state.pin_table.status === "loaded" ? `${state.pin_table.accepted_findings} 条任务` : "未加载"}</span>
+          <span>Document index {state.capabilities.document_index_enabled ? "loaded" : "未加载"}</span>
           <span>Review package {state.review_package.status === "loaded" ? state.review_package.package_status : "未加载"}</span>
         </div>
       </div>
+      <EvidencePackageDashboard summary={state.evidence_package} className="flow-evidence-dashboard" />
     </section>
   );
 }
@@ -131,7 +159,7 @@ function UploadSlot(props: {
   icon: ReactNode;
   label: string;
   detail: string;
-  status: "required" | "loaded" | "optional";
+  status: "required" | "optional";
   required?: boolean;
   file: File | null;
   accept: string;
@@ -153,20 +181,27 @@ function UploadSlot(props: {
 
   return (
     <label
-      className={`upload-slot ${props.status}${dragging ? " dragging" : ""}`}
+      className={`upload-slot ${props.file ? "loaded" : props.status}${
+        dragging ? " dragging" : ""
+      }`}
       onDragEnter={() => setDragging(true)}
       onDragLeave={() => setDragging(false)}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
       <span className="upload-icon">{props.icon}</span>
-      <span className="upload-status">{props.status === "required" ? "required" : props.status}</span>
+      <span className="upload-status">
+        {props.file ? "本次已选择" : props.status === "required" ? "本次必选" : "本次可选"}
+      </span>
       <strong>{props.label}{props.required ? " *" : ""}</strong>
-      <em>{props.detail}</em>
-      <small>{props.file?.name ?? "拖入文件或点击选择"}</small>
+      <em>当前工作台：{props.detail}</em>
+      <small>
+        {props.file ? `本次文件：${props.file.name}` : "本次未选择 · 拖入文件或点击选择"}
+      </small>
       <input
         type="file"
         accept={props.accept}
+        aria-label={`选择 ${props.label}`}
         onChange={(event) => props.onPick(event.target.files?.[0] ?? null)}
       />
     </label>
@@ -184,4 +219,10 @@ function pinTableDetail(state: WorkbenchState): string {
 function reviewPackageDetail(state: WorkbenchState): string {
   if (state.review_package.status !== "loaded") return "optional evidence manifest";
   return `${state.review_package.package_status} · manual gaps ${state.review_package.manual_gap_count}`;
+}
+
+function documentIndexDetail(state: WorkbenchState): string {
+  const lane = state.evidence_package.lanes.find((item) => item.id === "documents");
+  if (!lane || lane.status === "not_configured") return "optional reviewed public index";
+  return `${lane.status_label} · ${lane.summary}`;
 }
