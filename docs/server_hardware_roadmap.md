@@ -277,3 +277,20 @@ and `uv run ruff check .` to pass, frontend contracts/unit/build/E2E to pass,
 and an independent browser run to demonstrate import, triage, decision,
 re-run, Copilot guard, and export. The result report must include the commands,
 measured task/component counts, remaining risks, and commit hashes.
+
+## Public Evidence Pack Pilot
+
+This bounded follow-on pins three official manufacturer PDFs for XL1509-12E1,
+STM32G030C8T6, and EG2132. The PDF binaries stay in the gitignored local cache;
+the reviewed manifest commits only source URLs, document revisions, safe local
+aliases, and expected SHA256 values.
+
+| Status | Slice | Acceptance evidence |
+|---|---|---|
+| Done | Three-source public manifest | Three official HTTPS PDF URLs, revisions, local aliases, and SHA256 values are reviewable in one small CSV. |
+| Done | Fail-closed local reproduction | Real fetch reports 3 fetched / 0 skipped; changed bytes fail hash verification and unsafe local aliases cannot escape the datasheet cache boundary. |
+| Done | Readiness regression | In an isolated checkout the mixed-controller gate moves from 16 affected L1 tasks / 11 missing tokens to 11 / 7. Electrical verdicts do not change. |
+| Deferred | Power/reset/clock expansion | Whole-project readiness remains blocked, so the evidence-first gate does not authorize a new validator family yet. |
+
+The measured source table, reproduction command, and remaining gap are in
+`docs/public_evidence_pack_pilot.md`.

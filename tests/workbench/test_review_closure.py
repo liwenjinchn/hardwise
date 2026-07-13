@@ -5,6 +5,8 @@ from fastapi.testclient import TestClient
 from hardwise.workbench.context import build_workbench_context
 from hardwise.workbench.server import create_workbench_app
 
+ROOT = Path(__file__).parents[2].resolve()
+
 
 class DummyChatService:
     datasheet_search_enabled = False
@@ -12,15 +14,18 @@ class DummyChatService:
 
 def _context():
     return build_workbench_context(
-        netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
-        bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
-        profiles=Path("data/datasheet_profiles"),
-        document_index=Path("data/document_indexes/mixed_controller_power_stage_docs.csv"),
+        netlist_path=ROOT / "tests/fixtures/allegro/mixed_controller_power_stage.net",
+        bom_path=ROOT / "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+        profiles=ROOT / "data/datasheet_profiles",
+        document_index=ROOT / "data/document_indexes/mixed_controller_power_stage_docs.csv",
         generated_at="2026-07-12T00:00:00+00:00",
     )
 
 
-def test_state_exposes_signoff_gate_dual_axis_and_grouped_noise() -> None:
+def test_state_exposes_signoff_gate_dual_axis_and_grouped_noise(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
     with TestClient(create_workbench_app(_context(), DummyChatService())) as client:  # type: ignore[arg-type]
         state = client.get("/api/workbench/state").json()
 

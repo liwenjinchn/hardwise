@@ -5059,3 +5059,56 @@ readiness polling, and absence of a hard-coded server port.
 CI matrix breadth does not make every platform harness portable. Gate behavior
 tests to the platform they model and retain platform-neutral contract checks
 for the other runners.
+
+## 2026-07-13 — A verified hash cache still needs the profile's local filename
+
+**Symptom**
+
+The document fetcher correctly stored official PDFs as `<sha256>.pdf`, but the
+sign-off gate still reported profile tokens such as `datasheet:xl1509.pdf#p8`
+as missing.
+
+**Root cause**
+
+Content-addressed storage and reviewer-facing evidence tokens used different
+filenames. The parsed `LocalPath` column existed but the fetch boundary did not
+materialize it.
+
+**Fix**
+
+Kept the hash-addressed copy and added an optional reviewed local alias below
+the datasheet cache root. SHA mismatch and unsafe alias paths fail closed; a
+successful fetch refreshes both copies from the same verified bytes. The fetch
+boundary also hash-audits a pre-existing alias and removes it before retrieval
+when it does not match the reviewed manifest, so a later vendor mismatch cannot
+leave stale bytes that the readiness gate sees as present.
+
+**Takeaway**
+
+A hash proves bytes and a source token locates evidence. A reproducible handoff
+needs an explicit, safe mapping between the two rather than assuming their
+filenames coincide.
+
+## 2026-07-13 — Missing-source tests must isolate the local evidence cache
+
+**Symptom**
+
+The full suite passed before the public pilot fetch but one review-closure test
+failed after the verified PDFs were downloaded into the gitignored local cache.
+
+**Root cause**
+
+The test asserted that an XL1509 source was missing while resolving evidence
+against the developer's real working directory. Its result depended on local
+cache state.
+
+**Fix**
+
+Resolved fixture inputs from the repository root but ran the missing-source
+assertion from an isolated temporary working directory. A separate pilot test
+creates only the three intended aliases and locks the 16/11 to 11/7 delta.
+
+**Takeaway**
+
+Evidence-cache state is valid runtime input. Tests for absent evidence must
+control that input explicitly instead of assuming a clean developer machine.
