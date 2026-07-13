@@ -55,6 +55,89 @@ def test_fetch_approved_documents_caches_pdf_by_sha(tmp_path: Path) -> None:
     assert metadata["retrieved_at"] == "2026-06-03T00:00:00+00:00"
 
 
+def test_fetch_approved_documents_materializes_reviewed_local_alias(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "source.pdf"
+    pdf_path.write_bytes(PDF_BYTES)
+    sha = hashlib.sha256(PDF_BYTES).hexdigest()
+    docs_path = tmp_path / "docs.csv"
+    docs_path.write_text(
+        "MPN,Title,URL,ReviewStatus,LocalPath,SHA256\n"
+        f"EG2132,Official datasheet,{pdf_path},approved,eg2132.pdf,{sha}\n",
+        encoding="utf-8",
+    )
+    cache_dir = tmp_path / "datasheets" / "cache"
+    alias_path = tmp_path / "datasheets" / "eg2132.pdf"
+    alias_path.parent.mkdir(parents=True)
+    alias_path.write_bytes(b"stale local copy")
+
+    report = fetch_approved_documents(parse_document_index(docs_path), cache_dir)
+
+    assert len(report.fetched) == 1
+    assert report.fetched[0].local_path == str(alias_path)
+    assert alias_path.read_bytes() == PDF_BYTES
+    assert (cache_dir / f"{sha}.pdf").read_bytes() == PDF_BYTES
+
+
+def test_fetch_approved_documents_rejects_unsafe_local_alias(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "source.pdf"
+    pdf_path.write_bytes(PDF_BYTES)
+    docs_path = tmp_path / "docs.csv"
+    docs_path.write_text(
+        "MPN,Title,URL,ReviewStatus,LocalPath\n"
+        f"EG2132,Official datasheet,{pdf_path},approved,../eg2132.pdf\n",
+        encoding="utf-8",
+    )
+
+    report = fetch_approved_documents(
+        parse_document_index(docs_path), tmp_path / "datasheets" / "cache"
+    )
+
+    assert report.fetched == []
+    assert [row.reason for row in report.skipped] == ["unsafe_local_path"]
+
+
+def test_fetch_approved_documents_rejects_changed_pinned_bytes(tmp_path: Path) -> None:
+    pdf_path = tmp_path / "source.pdf"
+    pdf_path.write_bytes(PDF_BYTES)
+    docs_path = tmp_path / "docs.csv"
+    docs_path.write_text(
+        "MPN,Title,URL,ReviewStatus,LocalPath,SHA256\n"
+        f"XL1509,Official datasheet,{pdf_path},approved,xl1509.pdf,{'0' * 64}\n",
+        encoding="utf-8",
+    )
+    cache_dir = tmp_path / "datasheets" / "cache"
+    alias_path = tmp_path / "datasheets" / "xl1509.pdf"
+    alias_path.parent.mkdir(parents=True)
+    alias_path.write_bytes(b"stale unverified PDF")
+
+    report = fetch_approved_documents(parse_document_index(docs_path), cache_dir)
+
+    assert report.fetched == []
+    assert [row.reason for row in report.skipped] == ["sha256_mismatch"]
+    assert not alias_path.exists()
+    assert list(cache_dir.glob("*.pdf")) == []
+
+
+def test_high_risk_evidence_pilot_pins_three_reviewed_public_sources() -> None:
+    index = parse_document_index(Path("data/document_indexes/high_risk_evidence_pilot.csv"))
+
+    assert {entry.part_number for entry in index.entries} == {
+        "XL1509-12E1",
+        "STM32G030C8T6",
+        "EG2132",
+    }
+    assert all(entry.review_status == "approved" for entry in index.entries)
+    assert all(entry.url.startswith("https://") for entry in index.entries)
+    assert all(entry.url.lower().endswith(".pdf") for entry in index.entries)
+    assert all(
+        entry.local_path and Path(entry.local_path).suffix == ".pdf" for entry in index.entries
+    )
+    assert all(
+        entry.sha256 and len(entry.sha256) == 64 and set(entry.sha256) <= set("0123456789abcdef")
+        for entry in index.entries
+    )
+
+
 def test_fetch_approved_documents_rejects_non_pdf(tmp_path: Path) -> None:
     text_path = tmp_path / "mpq8626.txt"
     text_path.write_text("not a pdf", encoding="utf-8")

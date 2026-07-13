@@ -41,6 +41,7 @@ class CachedDocumentRecord(BaseModel):
     sha256: str
     content_type: str
     cache_path: str
+    local_path: str | None = None
     source_file: str
     source_line: int
     review_status: str
@@ -96,6 +97,8 @@ def fetch_approved_documents(
             report.skipped.append(_skip(entry, "review_status_not_approved"))
             continue
         try:
+            local_path = _local_alias_path(entry, cache_dir)
+            _remove_unverified_local_alias(local_path, entry.sha256)
             document_bytes, content_type = _read_document(entry, timeout_seconds)
         except DocumentFetchError as e:
             report.skipped.append(_skip(entry, e.reason))
@@ -111,8 +114,10 @@ def fetch_approved_documents(
             continue
 
         cache_path = cache_dir / f"{sha256}.pdf"
-        if not cache_path.exists():
-            cache_path.write_bytes(document_bytes)
+        cache_path.write_bytes(document_bytes)
+        if local_path is not None:
+            local_path.parent.mkdir(parents=True, exist_ok=True)
+            local_path.write_bytes(document_bytes)
 
         record = CachedDocumentRecord(
             document_id=sha256,
@@ -127,6 +132,7 @@ def fetch_approved_documents(
             sha256=sha256,
             content_type=content_type,
             cache_path=str(cache_path),
+            local_path=str(local_path) if local_path is not None else None,
             source_file=str(entry.source_file),
             source_line=entry.source_line,
             review_status=_review_status(entry),
@@ -180,6 +186,40 @@ def _skip(entry: DocumentIndexEntry, reason: str) -> SkippedDocumentRecord:
     )
 
 
+def _local_alias_path(entry: DocumentIndexEntry, cache_dir: Path) -> Path | None:
+    """Resolve an optional reviewed alias below the cache directory's parent."""
+
+    if entry.local_path is None:
+        return None
+    relative = Path(entry.local_path)
+    if (
+        relative.is_absolute()
+        or relative.suffix.lower() != ".pdf"
+        or ".." in relative.parts
+        or ":" in entry.local_path
+    ):
+        raise DocumentFetchError("unsafe_local_path")
+    root = cache_dir.parent.resolve()
+    candidate = (root / relative).resolve()
+    if not candidate.is_relative_to(root):
+        raise DocumentFetchError("unsafe_local_path")
+    return candidate
+
+
+def _remove_unverified_local_alias(local_path: Path | None, expected_sha256: str | None) -> None:
+    """Remove a stale alias that does not match the reviewed manifest hash."""
+
+    if local_path is None or expected_sha256 is None or not local_path.exists():
+        return
+    try:
+        actual_sha256 = hashlib.sha256(local_path.read_bytes()).hexdigest()
+        if actual_sha256 == expected_sha256.lower():
+            return
+        local_path.unlink()
+    except OSError as e:
+        raise DocumentFetchError("local_alias_unremovable") from e
+
+
 def _read_document(entry: DocumentIndexEntry, timeout_seconds: int) -> tuple[bytes, str]:
     parsed = urlparse(entry.url)
     if parsed.scheme in {"http", "https"}:
@@ -216,7 +256,9 @@ def _read_local_document(path: Path) -> tuple[bytes, str]:
         data = path.read_bytes()
     except OSError as e:
         raise DocumentFetchError("local_file_unreadable") from e
-    content_type = "application/pdf" if path.suffix.lower() == ".pdf" else "application/octet-stream"
+    content_type = (
+        "application/pdf" if path.suffix.lower() == ".pdf" else "application/octet-stream"
+    )
     return data, content_type
 
 

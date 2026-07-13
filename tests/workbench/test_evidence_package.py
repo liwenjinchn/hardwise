@@ -193,6 +193,49 @@ def test_review_package_changes_no_validation_or_task_truth(tmp_path: Path) -> N
         close_workbench_context(packaged)
 
 
+def test_three_source_pilot_reduces_but_does_not_clear_signoff_gate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = Path(__file__).parents[2].resolve()
+    monkeypatch.chdir(tmp_path)
+    context_kwargs = dict(
+        netlist_path=root / "tests/fixtures/allegro/mixed_controller_power_stage.net",
+        bom_path=root / "tests/fixtures/allegro/mixed_controller_power_stage_bom.csv",
+        profiles=root / "data/datasheet_profiles",
+        document_index=root / "data/document_indexes/mixed_controller_power_stage_docs.csv",
+    )
+    baseline_context = build_workbench_context(**context_kwargs)
+    try:
+        before = build_workbench_state(
+            baseline_context, datasheet_search_enabled=False
+        ).evidence_package.signoff_readiness
+    finally:
+        close_workbench_context(baseline_context)
+
+    local_root = tmp_path / "data/datasheets"
+    local_root.mkdir(parents=True)
+    for name in ("xl1509.pdf", "stm32g030.pdf", "eg2132.pdf"):
+        (local_root / name).write_bytes(b"%PDF-1.4\n")
+    pilot_context = build_workbench_context(**context_kwargs)
+    try:
+        after = build_workbench_state(
+            pilot_context, datasheet_search_enabled=False
+        ).evidence_package.signoff_readiness
+
+        assert (before.status, before.affected_tasks, before.missing_local_sources) == (
+            "blocked",
+            16,
+            11,
+        )
+        assert (after.status, after.affected_tasks, after.missing_local_sources) == (
+            "blocked",
+            11,
+            7,
+        )
+    finally:
+        close_workbench_context(pilot_context)
+
+
 def _metric(lane: object, key: str) -> tuple[int, int | None, str]:
     metric = next(item for item in getattr(lane, "metrics") if item.key == key)
     return metric.value, metric.total, metric.unit
