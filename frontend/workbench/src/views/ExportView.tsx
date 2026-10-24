@@ -3,6 +3,7 @@ import { Download, FileSearch, Loader2, PackageCheck } from "lucide-react";
 import { exportWorkbench, fetchProjectPrepPacketMarkdown } from "../api";
 import { EvidencePackageDashboard } from "../components/EvidencePackageDashboard";
 import type { WorkbenchState } from "../types";
+import { ProvenanceDownload } from "../components/ProvenanceDownload";
 
 export function ExportView({ state }: { state: WorkbenchState }) {
   const [format, setFormat] = useState<"json" | "csv" | "annotations">("json");
@@ -92,6 +93,8 @@ export function ExportView({ state }: { state: WorkbenchState }) {
           {state.task_counts.error + state.task_counts.warn} 条。
           不包含 API key 或浏览器聊天密钥。
         </p>
+        <ProvenanceDownload projectId={state.review_decisions?.project_id ?? null}
+          runId={state.review_decisions?.run_id ?? null} />
       </div>
       <div className="export-stack">
         <section className="project-prep-card" aria-label="项目评审准备包">

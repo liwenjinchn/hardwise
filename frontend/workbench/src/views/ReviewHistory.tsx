@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchReviewHistory } from "../api";
 import type { ReviewHistoryPage, ReviewTask } from "../types";
+import { ProvenanceDownload } from "../components/ProvenanceDownload";
 
 const statusLabels: Record<string, string> = {
   open: "待处理", accepted: "已接受", waived: "已豁免", resolved: "已解决", needs_review: "需复核"
@@ -11,6 +12,7 @@ export function ReviewHistory({ projectId, runId, historyCount, tasks }: {
 }) {
   const [open, setOpen] = useState(false);
   return <section className="review-history" aria-label="评审处理历史">
+    <ProvenanceDownload projectId={projectId} runId={runId} />
     <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
       {open ? "收起处理历史" : "查看处理历史"}
     </button>
@@ -70,6 +72,7 @@ function HistoryPages({ projectId, tasks }: { projectId: string | null; tasks: R
             <details><summary>追溯标识与输入指纹</summary>
               <p>问题标识：{event.stable_key}</p>
               <p>运行标识：{event.run_id}</p>
+              <ProvenanceDownload projectId={projectId} runId={event.run_id} historical />
               <p>原输入指纹：{decision.fingerprint ?? "旧记录未提供"}</p>
               <p>事件时输入指纹：{decision.current_fingerprint ?? "旧记录未提供"}</p>
             </details>

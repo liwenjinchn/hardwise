@@ -11,6 +11,8 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
+  // All files mutate the same local demo service and its active project.
+  workers: 1,
   retries: 0,
   reporter: [["list"]],
   use: {

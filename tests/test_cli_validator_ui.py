@@ -608,6 +608,8 @@ def test_design_validator_ui_ai_snapshot_embeds_copilot_panel(tmp_path: Path) ->
     html = html_output.read_text(encoding="utf-8")
     assert "__HARDWISE_OFFLINE_SNAPSHOT__" in html
     assert "Hardwise 离线工作台" in html
+    assert '"run_provenance": {"schema_version": "hardwise.run_provenance.v1"' in html
+    assert '"raw_inputs_archived": false' in html
     assert "组件审查队列" in html
     assert "Project Prep Packet" in html
     assert '<div class="ai-msg assistant"><p>可以询问选中器件' not in html

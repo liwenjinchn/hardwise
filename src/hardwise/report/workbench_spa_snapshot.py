@@ -13,6 +13,7 @@ from hardwise.bom.types import sort_refdes_key
 from hardwise.csv_safety import csv_safe_cell
 from hardwise.workbench.chat import ChatResponse, build_snapshot_responses
 from hardwise.workbench.context import WorkbenchContext
+from hardwise.workbench.run_provenance import build_run_provenance
 from hardwise.workbench.prep_packet import (
     build_project_review_prep_packet,
     render_project_review_prep_packet_markdown,
@@ -44,6 +45,7 @@ def render_spa_snapshot(
     snapshot = {
         "schema_version": "hardwise.workbench.offline_snapshot.v1",
         "mode": "snapshot",
+        "run_provenance": build_run_provenance(context).model_dump(mode="json"),
         "state": state.model_dump(mode="json"),
         "components": _component_details(context),
         "component_prep_markdown": _component_prep_markdown(context),

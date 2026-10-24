@@ -269,3 +269,26 @@ def test_real_project_import_cannot_read_previous_projects_run(project):
             ).status_code
             == 409
         )
+
+
+def test_offline_export_preserves_captured_inputs_without_inventing_journal_run(
+    project, monkeypatch
+):
+    from hardwise.report import workbench_spa_snapshot as snapshot
+
+    context = _context(project)
+    try:
+        original = context.input_manifest.model_dump(mode="json")
+        with (project / "l78_regulator_bom.csv").open("a") as stream:
+            stream.write("\n")
+        monkeypatch.setattr(snapshot, "_inline_spa_shell", lambda data, **kwargs: data)
+        payload = snapshot.render_spa_snapshot(context)
+        assert payload["run_provenance"]["inputs"] == original
+        assert payload["run_provenance"]["raw_inputs_archived"] is False
+        assert (
+            payload["run_provenance"]["emitted_records"]
+            == context.index.assessment_coverage.generated_checks
+        )
+        assert "run_id" not in payload["run_provenance"]
+    finally:
+        close_workbench_context(context)

@@ -1,4 +1,5 @@
 export type { ReviewHistoryPage } from "./generated/workbench-contracts";
+import type { RunProvenance } from "./generated/workbench-contracts";
 
 export type StatusGroup = "error" | "warn" | "pass" | "manual";
 export type TrustTier = "l1" | "l2" | "l3";
@@ -606,6 +607,7 @@ export interface ChatResponse {
 export interface WorkbenchOfflineSnapshot {
   schema_version: string;
   mode: "snapshot";
+  run_provenance?: RunProvenance;
   state: WorkbenchState;
   components: Record<string, ComponentDetail>;
   component_prep_markdown: Record<string, string>;

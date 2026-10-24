@@ -10,6 +10,34 @@ import type {
   WorkbenchOfflineSnapshot,
   WorkbenchState
 } from "./types";
+import type { RunProvenance, RunProvenanceResponse } from "./generated/workbench-contracts";
+
+export type ProvenanceDownload = RunProvenanceResponse | {
+  origin: "offline_export";
+  exported_at: string;
+  provenance: RunProvenance;
+};
+
+export async function fetchRunProvenance(
+  projectId: string | null, runId: string | null
+): Promise<ProvenanceDownload> {
+  const snapshot = offlineSnapshot();
+  if (snapshot) {
+    if (runId) throw new Error("离线快照未包含该历史运行清单。");
+    if (!snapshot.run_provenance) throw new Error("此旧离线快照未记录输入与版本清单，请重新导出。");
+    return { origin: "offline_export", exported_at: snapshot.state.project.generated_at,
+      provenance: snapshot.run_provenance };
+  }
+  if (!projectId || !runId) throw new Error("当前没有可下载清单的运行。");
+  const query = new URLSearchParams({ expected_project_id: projectId });
+  const result = await requestJson<RunProvenanceResponse>(
+    `/api/workbench/review-runs/${encodeURIComponent(runId)}/provenance?${query}`
+  );
+  if (result.project_id !== projectId || result.run_id !== runId) {
+    throw new Error("清单所属项目或运行已变化，请刷新后重试。");
+  }
+  return result;
+}
 
 function offlineSnapshot(): WorkbenchOfflineSnapshot | null {
   return window.__HARDWISE_OFFLINE_SNAPSHOT__ ?? null;

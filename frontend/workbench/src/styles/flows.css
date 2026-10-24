@@ -12,6 +12,7 @@
 .export-controls button,
 .finding-row button,
 .review-history button,
+.provenance-download button,
 .chat-form button {
   display: inline-flex;
   align-items: center;
@@ -33,6 +34,7 @@
 .export-controls button:hover,
 .finding-row button:hover,
 .review-history button:hover,
+.provenance-download button:hover,
 .chat-form button:hover {
   border-color: var(--line-strong);
   background: #fff;
