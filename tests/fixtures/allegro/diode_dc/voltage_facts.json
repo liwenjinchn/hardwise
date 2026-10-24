@@ -1,0 +1,69 @@
+{
+  "schema_version": "hardwise.voltage_facts.v1",
+  "active_mode": "dc",
+  "facts": [
+    {
+      "net": "HIGH",
+      "reference_net": "GND",
+      "minimum": 48.0,
+      "maximum": 48.0,
+      "source": "public synthetic DC premise; not measured; no transient or LED current acceptance",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "LOW",
+      "reference_net": "GND",
+      "minimum": 0.0,
+      "maximum": 0.0,
+      "source": "public synthetic DC premise; not measured; no transient or LED current acceptance",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "LINE_A",
+      "reference_net": "GND",
+      "minimum": 36.0,
+      "maximum": 36.0,
+      "source": "public synthetic DC premise; not measured; no transient or LED current acceptance",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "LINE_B",
+      "reference_net": "GND",
+      "minimum": 0.0,
+      "maximum": 0.0,
+      "source": "public synthetic DC premise; not measured; no transient or LED current acceptance",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "LED_K",
+      "reference_net": "GND",
+      "minimum": 1.1,
+      "maximum": 1.1,
+      "source": "public synthetic DC premise; not measured; no transient or LED current acceptance",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "LED_A",
+      "reference_net": "GND",
+      "minimum": 3.3,
+      "maximum": 3.3,
+      "source": "public synthetic DC premise; not measured; no transient or LED current acceptance",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "GND",
+      "reference_net": "GND",
+      "minimum": 0.0,
+      "maximum": 0.0,
+      "source": "public synthetic DC premise; not measured; no transient or LED current acceptance",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    }
+  ]
+}

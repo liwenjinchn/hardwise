@@ -1,0 +1,14 @@
+$PACKAGES
+  ! 'SMA' ! SS34 ; D1
+  ! 'DO214' ! SMBJ24CA ; D2
+  ! 'LED0603' ! LTST-C190KGKT ; D3
+  ! 'R0402' ! 330R ; R1
+$NETS
+  'HIGH' ; D1.1
+  'LOW' ; D1.2
+  'LINE_A' ; D2.1
+  'LINE_B' ; D2.2
+  'LED_K' ; D3.1, R1.1
+  'LED_A' ; D3.2
+  'GND' ; R1.2
+$END

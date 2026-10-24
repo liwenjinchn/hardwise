@@ -140,3 +140,54 @@ def test_transistor_facts_import_rerun_and_export(gate, expected):
         assert rerun["checks"] == detail["checks"]
         exported = client.get("/api/workbench/export?format=json").json()
         assert exported["voltage_facts"]["facts"][0]["minimum"] == gate[0]
+
+
+@pytest.mark.parametrize(
+    "cathode, expected", [((12, 12), "PASS"), ((48, 48), "ERROR"), ((39, 41), "UNKNOWN")]
+)
+def test_diode_tvs_led_import_rerun_and_export(cathode, expected):
+    root = Path("tests/fixtures/allegro/diode_dc")
+    context = build_workbench_context(
+        netlist_path=root / "input.net",
+        bom_path=root / "bom.csv",
+        profiles=Path("data/datasheet_profiles"),
+    )
+    app = create_workbench_app(context, LocalOnlyChat(), auto_datasheet_candidates=False)
+    facts = json.loads((root / "voltage_facts.json").read_text())
+    facts["facts"][0].update(minimum=cathode[0], maximum=cathode[1])
+    with TestClient(app) as client:
+        assert (
+            client.get("/api/workbench/components/D1").json()["deterministic_status"] == "UNKNOWN"
+        )
+        reply = client.post(
+            "/api/workbench/import",
+            files={
+                "netlist": ("input.net", (root / "input.net").read_bytes(), "text/plain"),
+                "bom": ("bom.csv", (root / "bom.csv").read_bytes(), "text/csv"),
+                "voltage_facts_json": ("voltage.json", json.dumps(facts), "application/json"),
+            },
+        )
+        assert reply.status_code == 200, reply.text
+        details = {
+            ref: client.get(f"/api/workbench/components/{ref}").json() for ref in ("D1", "D2", "D3")
+        }
+        reverse = next(
+            c for c in details["D1"]["checks"] if c["summary"].startswith("二极管反向电压 ")
+        )
+        assert reverse["status"] == expected
+        assert reverse["assessment"]["rule_version"] == "2"
+        standoff = next(
+            c for c in details["D2"]["checks"] if c["summary"].startswith("TVS 两端工作电压 ")
+        )
+        assert standoff["status"] == "ERROR"
+        led = next(c for c in details["D3"]["checks"] if "未核验串联关系" in c["summary"])
+        assert led["status"] == "UNKNOWN"
+        assert led["assessment"]["evidence_kind"] == "HYPOTHESIS"
+        assert client.post("/api/workbench/rerun").status_code == 200
+        for ref in details:
+            assert (
+                client.get(f"/api/workbench/components/{ref}").json()["checks"]
+                == details[ref]["checks"]
+            )
+        exported = client.get("/api/workbench/export?format=json").json()
+        assert exported["voltage_facts"]["facts"][0]["minimum"] == cathode[0]

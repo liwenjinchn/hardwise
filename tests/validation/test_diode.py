@@ -9,6 +9,7 @@ from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.validation.component import validate_component_against_profile
+from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
 @pytest.fixture
@@ -80,7 +81,9 @@ def diode_design():
     netlist = parse_allegro_netlist(Path("tests/fixtures/allegro/ss34_diode.net"))
     bom = parse_bom(Path("tests/fixtures/allegro/ss34_diode_bom.csv"))
     design = build_design_from_netlist(netlist)
-    return apply_bom_to_design(design, match_bom_to_design(bom, design))
+    design = apply_bom_to_design(design, match_bom_to_design(bom, design))
+    _confirm(design, {"+12V": 12.0, "GND": 0.0})
+    return design
 
 
 def test_ss34_nominal_all_pass(diode_profile, diode_design):
@@ -171,6 +174,7 @@ D21,1,BAS316,Nexperia,BAS316
 """,
     )
 
+    _confirm(design, {"GND": 0, "+12V": 12})
     results = validate_component_against_profile(design.components["D21"], bas316_profile, design)
 
     assert results.status == "PASS"
@@ -191,7 +195,7 @@ D21,1,BAS316,Nexperia,BAS316
     reverse = next(
         check for check in results.component_checks if check.check == "diode_reverse_voltage"
     )
-    assert "within profile maximum 100 V" in reverse.summary
+    assert "abs max 100 V" in reverse.summary
 
 
 def test_bas316_reverse_voltage_overstress_errors(bas316_profile, tmp_path):
@@ -209,6 +213,7 @@ D21,1,BAS316,Nexperia,BAS316
 """,
     )
 
+    _confirm(design, {"GND": 0, "+120V": 120})
     results = validate_component_against_profile(design.components["D21"], bas316_profile, design)
 
     reverse = next(
@@ -216,7 +221,7 @@ D21,1,BAS316,Nexperia,BAS316
     )
     assert results.status == "ERROR"
     assert reverse.status == "ERROR"
-    assert "above profile maximum 100 V" in reverse.summary
+    assert "整个范围超出" in reverse.summary
 
 
 def test_1_5smc15a_profile_matches_public_unidirectional_tvs(smc15a_profile):
@@ -246,6 +251,7 @@ D26,1,1.5SMC15A,Littelfuse,1.5SMC15A
 """,
     )
 
+    _confirm(design, {"GND": 0, "+12V": 12})
     results = validate_component_against_profile(design.components["D26"], smc15a_profile, design)
 
     assert results.status == "PASS"
@@ -253,7 +259,7 @@ D26,1,1.5SMC15A,Littelfuse,1.5SMC15A
         check for check in results.component_checks if check.check == "diode_reverse_voltage"
     )
     assert reverse.status == "PASS"
-    assert "within profile maximum 12.8 V" in reverse.summary
+    assert "工作截止电压 12.8 V" in reverse.summary
 
 
 def test_sm340af_profile_matches_public_sma_fl_pinout(sm340af_profile):
@@ -282,6 +288,7 @@ D27,1,SM340AF SMA-FL,LRC,SM340AF SMA-FL
 """,
     )
 
+    _confirm(design, {"GND": 0, "+12V": 12})
     results = validate_component_against_profile(design.components["D27"], sm340af_profile, design)
 
     assert results.status == "PASS"
@@ -289,7 +296,7 @@ D27,1,SM340AF SMA-FL,LRC,SM340AF SMA-FL
         check for check in results.component_checks if check.check == "diode_reverse_voltage"
     )
     assert reverse.status == "PASS"
-    assert "within profile maximum 40 V" in reverse.summary
+    assert "abs max 40 V" in reverse.summary
 
 
 def test_sd103aws_profile_matches_public_schottky_limits(sd103aws_profile):
@@ -318,6 +325,7 @@ D36,1,SD103AWS-7-F,Diodes Inc,SD103AWS-7-F
 """,
     )
 
+    _confirm(design, {"GND": 0, "+12V": 12})
     results = validate_component_against_profile(design.components["D36"], sd103aws_profile, design)
 
     assert results.status == "PASS"
@@ -325,7 +333,7 @@ D36,1,SD103AWS-7-F,Diodes Inc,SD103AWS-7-F
         check for check in results.component_checks if check.check == "diode_reverse_voltage"
     )
     assert reverse.status == "PASS"
-    assert "within profile maximum 40 V" in reverse.summary
+    assert "abs max 40 V" in reverse.summary
 
 
 def test_1n4007w_profile_matches_public_rectron_limits(n4007w_profile):
@@ -396,7 +404,7 @@ def test_mixed_controller_diode_profiles_warn_without_topology_claim(
         assert checks["diode_cathode_connectivity"].status == "PASS"
         assert checks["diode_anode_connectivity"].status == "PASS"
         assert checks["diode_reverse_voltage"].status == "UNKNOWN"
-        assert "cannot be inferred from cathode/anode net names" in summaries
+        assert "网名和 voltage_hint 仅为候选" in summaries
         assert "buck" not in summaries.lower()
         assert "freewheel" not in summaries.lower()
         assert "topology" not in summaries.lower()
@@ -418,6 +426,7 @@ D20,1,SMBJ24CA,Littelfuse,SMBJ24CA
 """,
     )
 
+    _confirm(design, {"GND": 0, "+24V": 24})
     results = validate_component_against_profile(design.components["D20"], tvs_profile, design)
 
     assert results.status == "PASS"
@@ -429,7 +438,7 @@ D20,1,SMBJ24CA,Littelfuse,SMBJ24CA
         "NOT_APPLICABLE": 0,
     }
     assert results.component_counts_by_status == {
-        "PASS": 3,
+        "PASS": 4,
         "WARN": 0,
         "ERROR": 0,
         "UNKNOWN": 0,
@@ -438,8 +447,9 @@ D20,1,SMBJ24CA,Littelfuse,SMBJ24CA
     standoff = next(
         check for check in results.component_checks if check.check == "tvs_working_standoff"
     )
-    assert "clamps +24V to GND" in standoff.summary
-    assert "within standoff 24 V" in standoff.summary
+    separation = next(c for c in results.component_checks if c.check == "tvs_terminal_separation")
+    assert "不证明钳位性能" in separation.summary
+    assert "工作截止电压 24 V" in standoff.summary
 
 
 def test_bidirectional_tvs_rail_above_standoff_errors(tvs_profile, tmp_path):
@@ -457,6 +467,7 @@ D20,1,SMBJ24CA,Littelfuse,SMBJ24CA
 """,
     )
 
+    _confirm(design, {"GND": 0, "+36V": 36})
     results = validate_component_against_profile(design.components["D20"], tvs_profile, design)
 
     standoff = next(
@@ -464,10 +475,10 @@ D20,1,SMBJ24CA,Littelfuse,SMBJ24CA
     )
     assert results.status == "ERROR"
     assert standoff.status == "ERROR"
-    assert "above working standoff 24 V" in standoff.summary
+    assert "整个范围超出 TVS 两端工作电压 工作截止电压 24 V" in standoff.summary
 
 
-def test_led_indicator_nominal_current_limited_path_passes(led_profile, tmp_path):
+def test_led_indicator_candidate_resistor_does_not_certify_current(led_profile, tmp_path):
     design = _design_from_text(
         tmp_path,
         """$PACKAGES
@@ -485,9 +496,10 @@ RLED,1,330,Fixture,RES-330
 """,
     )
 
+    _confirm(design, {"GND": 0, "+3V3": 3.3, "GND_LED": 1.1})
     results = validate_component_against_profile(design.components["D10"], led_profile, design)
 
-    assert results.status == "PASS"
+    assert results.status == "UNKNOWN"
     assert results.counts_by_status == {
         "PASS": 2,
         "WARN": 0,
@@ -496,20 +508,20 @@ RLED,1,330,Fixture,RES-330
         "NOT_APPLICABLE": 0,
     }
     assert results.component_counts_by_status == {
-        "PASS": 5,
+        "PASS": 4,
         "WARN": 0,
         "ERROR": 0,
-        "UNKNOWN": 0,
+        "UNKNOWN": 1,
         "NOT_APPLICABLE": 0,
     }
     checks = {check.check: check for check in results.component_checks}
     assert checks["led_indicator_polarity"].status == "PASS"
-    assert checks["led_current_limit"].status == "PASS"
-    assert "series current-limit resistor RLED" in checks["led_current_limit"].summary
-    assert "cathode branch GND_LED" in checks["led_current_limit"].summary
+    assert checks["led_current_limit"].status == "UNKNOWN"
+    assert "限流候选电阻：RLED" in checks["led_current_limit"].summary
+    assert "cathode 网络 GND_LED" in checks["led_current_limit"].summary
 
 
-def test_led_indicator_missing_current_limit_errors(led_profile, tmp_path):
+def test_led_indicator_unknown_driver_is_not_a_missing_resistor_defect(led_profile, tmp_path):
     design = _design_from_text(
         tmp_path,
         """$PACKAGES
@@ -524,15 +536,16 @@ D10,1,LTST-C190KGKT,Lite-On,LTST-C190KGKT
 """,
     )
 
+    _confirm(design, {"GND": 0, "+3V3": 3.3})
     results = validate_component_against_profile(design.components["D10"], led_profile, design)
 
-    assert results.status == "ERROR"
+    assert results.status == "UNKNOWN"
     check = next(check for check in results.component_checks if check.check == "led_current_limit")
-    assert check.status == "ERROR"
-    assert "no deterministic series current-limit resistor" in check.summary
+    assert check.status == "UNKNOWN"
+    assert "未找到可确认的限流路径" in check.summary
 
 
-def test_led_indicator_reversed_polarity_errors(led_profile, tmp_path):
+def test_led_indicator_reverse_bias_requires_operating_intent_review(led_profile, tmp_path):
     design = _design_from_text(
         tmp_path,
         """$PACKAGES
@@ -550,13 +563,14 @@ RLED,1,330,Fixture,RES-330
 """,
     )
 
+    _confirm(design, {"GND": 0, "+3V3": 3.3, "+3V3_LED": 3.3})
     results = validate_component_against_profile(design.components["D10"], led_profile, design)
 
-    assert results.status == "ERROR"
+    assert results.status == "UNKNOWN"
     checks = {check.check: check for check in results.component_checks}
-    assert checks["led_indicator_polarity"].status == "ERROR"
-    assert "expected anode above cathode" in checks["led_indicator_polarity"].summary
-    assert checks["led_current_limit"].status == "PASS"
+    assert checks["led_indicator_polarity"].status == "UNKNOWN"
+    assert "缺少预期点亮/关闭工况" in checks["led_indicator_polarity"].summary
+    assert checks["led_current_limit"].status == "UNKNOWN"
 
 
 def test_led_indicator_unrelated_rail_resistor_does_not_limit_current(led_profile, tmp_path):
@@ -577,12 +591,13 @@ RPU,1,10K,Fixture,RES-10K
 """,
     )
 
+    _confirm(design, {"GND": 0, "+3V3": 3.3})
     results = validate_component_against_profile(design.components["D10"], led_profile, design)
 
     checks = {check.check: check for check in results.component_checks}
     assert checks["led_indicator_polarity"].status == "PASS"
-    assert checks["led_current_limit"].status == "ERROR"
-    assert "no deterministic series current-limit resistor" in checks["led_current_limit"].summary
+    assert checks["led_current_limit"].status == "UNKNOWN"
+    assert "未核验串联关系" in checks["led_current_limit"].summary
 
 
 def test_led_indicator_shared_resistor_summary_is_explicit(led_profile, tmp_path):
@@ -606,8 +621,8 @@ RLED,1,330,Fixture,RES-330
     results = validate_component_against_profile(design.components["D10"], led_profile, design)
 
     check = next(check for check in results.component_checks if check.check == "led_current_limit")
-    assert check.status == "PASS"
-    assert "shared current-limit resistor RLED" in check.summary
+    assert check.status == "UNKNOWN"
+    assert "存在其他二极管共网" in check.summary
 
 
 def test_ss34_cathode_floating(diode_profile, tmp_path):

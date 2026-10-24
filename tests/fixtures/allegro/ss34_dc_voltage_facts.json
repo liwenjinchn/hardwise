@@ -1,0 +1,24 @@
+{
+  "schema_version": "hardwise.voltage_facts.v1",
+  "active_mode": "dc",
+  "facts": [
+    {
+      "net": "+12V",
+      "reference_net": "GND",
+      "minimum": 12.0,
+      "maximum": 12.0,
+      "source": "synthetic rectifier DC premise; not measured",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "GND",
+      "reference_net": "GND",
+      "minimum": 0.0,
+      "maximum": 0.0,
+      "source": "synthetic rectifier DC premise; not measured",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    }
+  ]
+}

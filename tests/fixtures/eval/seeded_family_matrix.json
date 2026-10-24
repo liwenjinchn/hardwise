@@ -72,20 +72,21 @@
     },
     {
       "name": "diode_reverse_over_abs_max",
-      "description": "Raise D1 cathode rail from 12 V to 48 V above its 40 V limit.",
+      "description": "Raise the explicitly confirmed synthetic cathode envelope from 12 V to 48 V; net labels do not establish voltage.",
       "family": "diode",
       "fixture_name": "diode",
       "netlist": "ss34_diode.net",
       "bom": "ss34_diode_bom.csv",
-      "mutation_target": "netlist",
-      "mutation_old": "'+12V' ; D1.1, R_LOAD.1",
-      "mutation_new": "'+48V' ; D1.1, R_LOAD.1",
+      "mutation_target": "voltage_facts",
+      "mutation_old": "\"minimum\": 12.0,\n      \"maximum\": 12.0",
+      "mutation_new": "\"minimum\": 48.0,\n      \"maximum\": 48.0",
       "expected": {
         "refdes": "D1",
         "kind": "component",
         "check": "diode_reverse_voltage",
         "status": "ERROR"
-      }
+      },
+      "voltage_facts": "ss34_dc_voltage_facts.json"
     },
     {
       "name": "i2c_mux_half_connected_channel",

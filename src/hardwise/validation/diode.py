@@ -5,7 +5,8 @@ from __future__ import annotations
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.diode_led_current import led_current_limit_summary
-from hardwise.validation.pins import is_ground_net, voltage_for_net
+from hardwise.validation.dc_envelope import confirmed_dc_difference
+from hardwise.validation.terminal_voltage import terminal_voltage_check
 from hardwise.validation.types import ComponentValidation
 
 
@@ -24,6 +25,7 @@ def validate_diode(
             _validate_pin_connected(
                 component, profile, "Terminal 2", "tvs_terminal_2_connectivity"
             ),
+            _validate_tvs_terminal_separation(component, profile),
             _validate_bidirectional_tvs_standoff(component, profile, design),
         ]
 
@@ -69,273 +71,146 @@ def _validate_pin_connected(
 
 
 def _validate_reverse_voltage(
-    component: Component,
-    profile: DatasheetProfile,
-    design: Design,
+    component: Component, profile: DatasheetProfile, design: Design
 ) -> ComponentValidation:
-    evidence = _profile_evidence(profile, "abs_max.reverse_voltage")
-    cathode = _pin_by_profile_name(component, profile, "Cathode")
-    anode = _pin_by_profile_name(component, profile, "Anode")
-    if cathode is None or not cathode.net:
-        return ComponentValidation(
-            check="diode_reverse_voltage",
-            result="FAIL",
-            severity="ERROR",
-            summary="Diode cathode pin is not connected; cannot check reverse voltage.",
-            evidence=evidence,
-        )
-    if anode is None or not anode.net:
-        return ComponentValidation(
-            check="diode_reverse_voltage",
-            result="FAIL",
-            severity="ERROR",
-            summary="Diode anode pin is not connected; cannot check reverse voltage.",
-            evidence=evidence,
-        )
-
-    cathode_voltage = voltage_for_net(cathode.net, design)
-    anode_voltage = voltage_for_net(anode.net, design)
-    if cathode_voltage is None or anode_voltage is None:
-        return ComponentValidation(
-            check="diode_reverse_voltage",
-            result="UNKNOWN",
-            severity="WARNING",
-            refdes=component.refdes,
-            summary="Diode reverse voltage cannot be inferred from cathode/anode net names.",
-            evidence=evidence,
-        )
-
-    reverse_voltage = cathode_voltage - anode_voltage
-    reverse_limit = _float_abs_max(profile, "reverse_voltage")
-    if reverse_limit is not None and reverse_voltage > reverse_limit:
-        return ComponentValidation(
-            check="diode_reverse_voltage",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=(
-                f"Diode reverse voltage is {reverse_voltage:g} V, "
-                f"above profile maximum {reverse_limit:g} V."
-            ),
-            evidence=evidence,
-        )
-    return ComponentValidation(
+    is_tvs = str(profile.recommended.get("diode_role", "")).lower() == "unidirectional_tvs"
+    limit = (
+        _float_recommended(profile, "working_standoff_voltage")
+        if is_tvs
+        else _float_abs_max(profile, "reverse_voltage")
+    )
+    key = "recommended.working_standoff_voltage" if is_tvs else "abs_max.reverse_voltage"
+    return terminal_voltage_check(
+        component,
+        design,
+        positive=_pin_by_profile_name(component, profile, "Cathode"),
+        negative=_pin_by_profile_name(component, profile, "Anode"),
+        limit=limit,
         check="diode_reverse_voltage",
-        result="PASS",
-        severity="INFO",
-        refdes=component.refdes,
-        summary=(
-            f"Diode reverse voltage is {reverse_voltage:g} V"
-            + (f", within profile maximum {reverse_limit:g} V." if reverse_limit else ".")
-        ),
-        evidence=evidence,
+        label="TVS 反向工作电压" if is_tvs else "二极管反向电压",
+        limit_label="工作截止电压" if is_tvs else "abs max",
+        evidence=_profile_evidence(profile, key),
+        symmetric=False,
     )
 
 
 def _validate_led_indicator_polarity(
-    component: Component,
-    profile: DatasheetProfile,
-    design: Design,
+    component: Component, profile: DatasheetProfile, design: Design
 ) -> ComponentValidation:
+    delta = confirmed_dc_difference(
+        design,
+        _pin_by_profile_name(component, profile, "Anode"),
+        _pin_by_profile_name(component, profile, "Cathode"),
+    )
+    result, reason = "UNKNOWN", delta.reason
     evidence = _profile_evidence(profile, "recommended.diode_role")
-    anode = _pin_by_profile_name(component, profile, "Anode")
-    cathode = _pin_by_profile_name(component, profile, "Cathode")
-    if anode is None or not anode.net:
-        return ComponentValidation(
-            check="led_indicator_polarity",
-            result="FAIL",
-            severity="ERROR",
-            summary="LED anode pin is not connected; cannot check indicator polarity.",
-            evidence=evidence,
-        )
-    if cathode is None or not cathode.net:
-        return ComponentValidation(
-            check="led_indicator_polarity",
-            result="FAIL",
-            severity="ERROR",
-            summary="LED cathode pin is not connected; cannot check indicator polarity.",
-            evidence=evidence,
-        )
-
-    anode_voltage = voltage_for_net(anode.net, design)
-    cathode_voltage = voltage_for_net(cathode.net, design)
-    if anode_voltage is None or cathode_voltage is None:
-        return ComponentValidation(
-            check="led_indicator_polarity",
-            result="UNKNOWN",
-            severity="WARNING",
-            refdes=component.refdes,
-            summary="LED indicator polarity cannot be inferred from anode/cathode net names.",
-            evidence=evidence,
-        )
-    if anode_voltage <= cathode_voltage:
-        return ComponentValidation(
-            check="led_indicator_polarity",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=(
-                f"LED anode is at {anode_voltage:g} V and cathode is at "
-                f"{cathode_voltage:g} V; expected anode above cathode."
-            ),
-            evidence=evidence,
-        )
+    if delta.minimum is not None and delta.maximum is not None:
+        reason = f"LED 阳极减阴极的已确认直流范围为 [{delta.minimum:g}, {delta.maximum:g}] V。"
+        if delta.minimum > 0 and evidence:
+            result = "PASS"
+            reason += "仅确认当前直流偏置方向为正；未证明点亮、限流或功能正常。"
+        elif delta.maximum <= 0:
+            reason += "当前状态未形成正向偏置；缺少预期点亮/关闭工况，不能据此判定接反。"
+        else:
+            reason += "范围跨越零点，偏置方向不能确定。"
     return ComponentValidation(
         check="led_indicator_polarity",
-        result="PASS",
-        severity="INFO",
         refdes=component.refdes,
-        summary=(f"LED anode is at {anode_voltage:g} V and cathode is at {cathode_voltage:g} V."),
-        evidence=evidence,
+        result=result,
+        severity="INFO",
+        summary=reason,
+        evidence=[*evidence, *delta.evidence],
+        rule_version="2",
     )
 
 
 def _validate_led_current_limit(
-    component: Component,
-    profile: DatasheetProfile,
-    design: Design,
+    component: Component, profile: DatasheetProfile, design: Design
 ) -> ComponentValidation:
     evidence = _profile_evidence(profile, "recommended.requires_current_limit")
-    if not _bool_recommended(profile, "requires_current_limit"):
+    requirement = profile.recommended.get("requires_current_limit")
+    if requirement is False and evidence:
         return ComponentValidation(
             check="led_current_limit",
-            result="PASS",
+            refdes=component.refdes,
+            result="NOT_APPLICABLE",
             severity="INFO",
-            refdes=component.refdes,
-            summary="LED indicator profile does not require a deterministic current-limit check.",
+            not_applicable_reason="当前档案明确声明不要求此限流检查。",
+            summary="当前档案声明此限流检查不适用；未产生限流通过结论。",
             evidence=evidence,
+            rule_version="2",
         )
-
-    anode = _pin_by_profile_name(component, profile, "Anode")
-    cathode = _pin_by_profile_name(component, profile, "Cathode")
-    if anode is None or not anode.net:
-        return ComponentValidation(
-            check="led_current_limit",
-            result="FAIL",
-            severity="ERROR",
-            summary="LED anode pin is not connected; cannot check current limiting.",
-            evidence=evidence,
-        )
-    if cathode is None or not cathode.net:
-        return ComponentValidation(
-            check="led_current_limit",
-            result="FAIL",
-            severity="ERROR",
-            summary="LED cathode pin is not connected; cannot check current limiting.",
-            evidence=evidence,
-        )
-
-    summary = led_current_limit_summary(component, design, anode.net, cathode.net)
-    if summary is None:
-        return ComponentValidation(
-            check="led_current_limit",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=(
-                "LED indicator has no deterministic series current-limit resistor "
-                "on its anode or cathode branch."
-            ),
-            evidence=evidence,
-        )
+    anode, cathode = (
+        _pin_by_profile_name(component, profile, "Anode"),
+        _pin_by_profile_name(component, profile, "Cathode"),
+    )
+    candidate = (
+        led_current_limit_summary(component, design, anode.net, cathode.net)
+        if anode and anode.net and cathode and cathode.net
+        else None
+    )
+    reason = candidate or "未找到可确认的限流路径；不能排除尚未建模的恒流驱动或缺失输入。"
+    reason += "未核验串联关系、阻值、LED 工作电流及驱动方式，限流适用性仍未知。"
     return ComponentValidation(
         check="led_current_limit",
-        result="PASS",
-        severity="INFO",
         refdes=component.refdes,
-        summary=summary,
+        result="UNKNOWN",
+        severity="INFO",
+        evidence_kind="HYPOTHESIS",
+        summary=reason,
         evidence=evidence,
+        rule_version="2",
+    )
+
+
+def _validate_tvs_terminal_separation(
+    component: Component, profile: DatasheetProfile
+) -> ComponentValidation:
+    first, second = (
+        _pin_by_profile_name(component, profile, "Terminal 1"),
+        _pin_by_profile_name(component, profile, "Terminal 2"),
+    )
+    result, severity, reason = "UNKNOWN", "INFO", "端点连接不完整，无法核对是否跨接不同网络。"
+    if first and first.net and second and second.net:
+        if first.net == second.net:
+            result, severity, reason = (
+                "FAIL",
+                "ERROR",
+                f"TVS 两端接在同一已解析网络 {first.net}，未形成跨网保护连接。",
+            )
+        else:
+            result, reason = (
+                "PASS",
+                f"TVS 两端连接不同已解析网络 {first.net} / {second.net}；这仅确认跨网连接，不证明钳位性能。",
+            )
+    return ComponentValidation(
+        check="tvs_terminal_separation",
+        refdes=component.refdes,
+        result=result,
+        severity=severity,
+        summary=reason,
+        evidence=[
+            *_profile_evidence(profile, "pin_function.1"),
+            *_profile_evidence(profile, "pin_function.2"),
+        ],
+        rule_version="2",
     )
 
 
 def _validate_bidirectional_tvs_standoff(
-    component: Component,
-    profile: DatasheetProfile,
-    design: Design,
+    component: Component, profile: DatasheetProfile, design: Design
 ) -> ComponentValidation:
-    evidence = _profile_evidence(profile, "recommended.working_standoff_voltage")
-    terminal_1 = _pin_by_profile_name(component, profile, "Terminal 1")
-    terminal_2 = _pin_by_profile_name(component, profile, "Terminal 2")
-    if terminal_1 is None or not terminal_1.net:
-        return ComponentValidation(
-            check="tvs_working_standoff",
-            result="FAIL",
-            severity="ERROR",
-            summary="TVS terminal 1 is not connected; cannot check rail clamp.",
-            evidence=evidence,
-        )
-    if terminal_2 is None or not terminal_2.net:
-        return ComponentValidation(
-            check="tvs_working_standoff",
-            result="FAIL",
-            severity="ERROR",
-            summary="TVS terminal 2 is not connected; cannot check rail clamp.",
-            evidence=evidence,
-        )
-
-    terminals = (terminal_1, terminal_2)
-    ground_terminals = [terminal for terminal in terminals if is_ground_net(terminal.net or "")]
-    if not ground_terminals:
-        return ComponentValidation(
-            check="tvs_working_standoff",
-            result="UNKNOWN",
-            severity="WARNING",
-            refdes=component.refdes,
-            summary="Bidirectional TVS has no terminal on a recognized ground net; rail clamp cannot be confirmed.",
-            evidence=evidence,
-        )
-    if len(ground_terminals) == 2:
-        return ComponentValidation(
-            check="tvs_working_standoff",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary="Bidirectional TVS terminals are both on ground-like nets; no protected rail is present.",
-            evidence=evidence,
-        )
-
-    reference = ground_terminals[0]
-    protected = terminal_2 if reference.number == terminal_1.number else terminal_1
-    reference_voltage = voltage_for_net(reference.net or "", design)
-    protected_voltage = voltage_for_net(protected.net or "", design)
-    if reference_voltage is None or protected_voltage is None:
-        return ComponentValidation(
-            check="tvs_working_standoff",
-            result="UNKNOWN",
-            severity="WARNING",
-            refdes=component.refdes,
-            summary=(
-                "Bidirectional TVS rail voltage cannot be inferred from terminal nets "
-                f"{protected.net} and {reference.net}."
-            ),
-            evidence=evidence,
-        )
-
-    working_voltage = abs(protected_voltage - reference_voltage)
-    standoff = _float_recommended(profile, "working_standoff_voltage")
-    if standoff is not None and working_voltage > standoff:
-        return ComponentValidation(
-            check="tvs_working_standoff",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=(
-                f"Bidirectional TVS sees {working_voltage:g} V from {protected.net} to "
-                f"{reference.net}, above working standoff {standoff:g} V."
-            ),
-            evidence=evidence,
-        )
-    return ComponentValidation(
+    return terminal_voltage_check(
+        component,
+        design,
+        positive=_pin_by_profile_name(component, profile, "Terminal 1"),
+        negative=_pin_by_profile_name(component, profile, "Terminal 2"),
+        limit=_float_recommended(profile, "working_standoff_voltage"),
         check="tvs_working_standoff",
-        result="PASS",
-        severity="INFO",
-        refdes=component.refdes,
-        summary=(
-            f"Bidirectional TVS clamps {protected.net} to {reference.net}; "
-            f"working voltage {working_voltage:g} V"
-            + (f" is within standoff {standoff:g} V." if standoff else ".")
-        ),
-        evidence=evidence,
+        label="TVS 两端工作电压",
+        limit_label="工作截止电压",
+        evidence=_profile_evidence(profile, "recommended.working_standoff_voltage"),
+        symmetric=True,
     )
 
 
@@ -356,14 +231,14 @@ def _pin_number(profile: DatasheetProfile, name: str) -> str | None:
 
 def _float_abs_max(profile: DatasheetProfile, key: str) -> float | None:
     value = profile.abs_max.get(key)
-    if isinstance(value, (int, float)):
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
         return float(value)
     return None
 
 
 def _float_recommended(profile: DatasheetProfile, key: str) -> float | None:
     value = profile.recommended.get(key)
-    if isinstance(value, (int, float)):
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
         return float(value)
     return None
 
@@ -374,10 +249,6 @@ def _is_bidirectional_tvs(profile: DatasheetProfile) -> bool:
 
 def _is_led_indicator(profile: DatasheetProfile) -> bool:
     return str(profile.recommended.get("diode_role", "")).lower() == "led_indicator"
-
-
-def _bool_recommended(profile: DatasheetProfile, key: str) -> bool:
-    return profile.recommended.get(key) is True
 
 
 def _profile_evidence(profile: DatasheetProfile, key: str) -> list[str]:
