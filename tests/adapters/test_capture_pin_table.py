@@ -18,6 +18,7 @@ def test_parse_fixture_row_count_and_fields() -> None:
 
     by_key = {(r.refdes, r.pin_number): r for r in records}
     en = by_key[("U2", "4")]
+    assert en.value == "XL1509-12E1"
     assert en.pin_category == "INPUT"
     assert en.pin_type_raw == "INPUT(0)"
     assert en.net == ""
@@ -85,3 +86,70 @@ def test_unparsable_pin_type_maps_to_empty_category(tmp_path: Path) -> None:
 
     assert records[0].pin_category == ""
     assert records[0].inst_x is None and records[0].inst_y is None
+
+
+@pytest.mark.parametrize(
+    ("marker", "expected"),
+    [("0", False), ("false", False), ("NO", False), ("1", True), ("TRUE", True), ("yes", True)],
+)
+def test_explicit_nc_marker_values(tmp_path: Path, marker: str, expected: bool) -> None:
+    path = tmp_path / "explicit-nc.csv"
+    path.write_text(
+        "refdes,value,footprint,pin_number,pin_name,pin_type,net,page,"
+        "inst_x,inst_y,nc_marker,off_page\n"
+        f"U1,TEST,PKG,1,IN,INPUT(0),,PAGE1,10,20,{marker},\n",
+        encoding="utf-8",
+    )
+    assert parse_pin_table(path)[0].is_nc is expected
+
+
+@pytest.mark.parametrize("marker", ["", "2", "unknown", "false-ish"])
+def test_unknown_nc_marker_is_not_assumed_absent(tmp_path: Path, marker: str) -> None:
+    path = tmp_path / "unknown-nc.csv"
+    path.write_text(
+        "refdes,value,footprint,pin_number,pin_name,pin_type,net,page,"
+        "inst_x,inst_y,nc_marker,off_page\n"
+        f"U1,TEST,PKG,1,IN,INPUT(0),,PAGE1,10,20,{marker},\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match=r":2:.*nc_marker"):
+        parse_pin_table(path)
+
+
+@pytest.mark.parametrize("field", ["refdes", "pin_number"])
+def test_missing_pin_identity_is_rejected(tmp_path: Path, field: str) -> None:
+    import csv
+    from hardwise.adapters.capture_pin_table import EXPECTED_HEADER
+
+    path = tmp_path / "identity.csv"
+    row = ["U1", "TEST", "PKG", "1", "IN", "INPUT(0)", "", "P1", "10", "20", "0", ""]
+    row[EXPECTED_HEADER.index(field)] = " "
+    with path.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.writer(stream)
+        writer.writerows([EXPECTED_HEADER, row])
+    with pytest.raises(ValueError, match=rf":2:.*{field}"):
+        parse_pin_table(path)
+
+
+def test_unclosed_quote_is_not_a_valid_last_column(tmp_path: Path) -> None:
+    path = tmp_path / "unclosed.csv"
+    path.write_text(
+        "refdes,value,footprint,pin_number,pin_name,pin_type,net,page,"
+        "inst_x,inst_y,nc_marker,off_page\n"
+        'U1,TEST,PKG,1,IN,INPUT(0),,P1,10,20,0,"unterminated',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match=r":2:.*CSV"):
+        parse_pin_table(path)
+
+
+def test_physical_line_numbers_after_multiline_and_blank_rows(tmp_path: Path) -> None:
+    path = tmp_path / "lines.csv"
+    header = "refdes,value,footprint,pin_number,pin_name,pin_type,net,page,inst_x,inst_y,nc_marker,off_page\n"
+    first = 'U1,"TEST\nvariant",PKG,1,IN,INPUT(0),,P1,10,20,0,\n'
+    path.write_text(header + first + "\nU2,TEST,PKG,1,IN,INPUT(0),,P1,10,20,0,\n", encoding="utf-8")
+    records = parse_pin_table(path)
+    assert [r.source_line for r in records] == [2, 5]
+    path.write_text(header + first + "\nU2,short\n", encoding="utf-8")
+    with pytest.raises(ValueError, match=r":5: expected 12 columns"):
+        parse_pin_table(path)

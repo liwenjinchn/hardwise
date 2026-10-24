@@ -335,3 +335,7 @@ PST 重复 primitive 定义或同一属性不同字面值会明确拒绝导入�
 ### Windows复验包是否表示Windows/Cadence已经验收？
 
 不表示。v1固定源码在4a9fabf，并附校验器、公开回归计数与人工实测空表。已在本机macOS用现有依赖验证解压目录中文/空格、849文件哈希、白色HTML及真实模式无key启动；非Windows要求与文件改动均明确失败。Windows标记保持false，没有实际Windows依赖安装或Cadence导出证据。参见[复验包说明](product/windows-validation-capsule-v1.md)。
+
+### Capture引脚表的NC列为空会被当成没有NC吗？
+
+不会。空值、未知值或损坏CSV会拒绝整份可选引脚表，并报告原文件/起始物理行号。Tcl导出脚本在NC getter失败时可能保留空值，不能据此推导“没有NC”。只接受明确的0/1、false/true、no/yes（大小写不敏感），缺refdes或pin_number也拒绝；请核对导出，或暂不附这份可选输入，不要自行填0。导入失败保留原活动评审。解析记录新增source_line，跨行字段和空行不再错算报错位置。未知引脚类型仍保留为未分类，坐标缺失不猜；独立Markdown报告列出未分类数，零提示不再声称所有输入均被驱动。这不证明多单元/层级/任意EDA版本的完整引脚兼容性。

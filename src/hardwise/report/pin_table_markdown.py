@@ -17,12 +17,11 @@ def render(
     pages = sorted({r.page for r in records})
     unconnected = sum(1 for r in records if not r.is_connected)
     nc_marked = sum(1 for r in records if r.is_nc)
+    unclassified = sum(1 for r in records if not r.pin_category)
     by_rule: dict[str, int] = {}
     for f in findings:
         by_rule[f.rule_id] = by_rule.get(f.rule_id, 0) + 1
-    rule_summary = (
-        ", ".join(f"{rid}={n}" for rid, n in sorted(by_rule.items())) or "none"
-    )
+    rule_summary = ", ".join(f"{rid}={n}" for rid, n in sorted(by_rule.items())) or "none"
 
     lines = [
         "# Pin-Table Review Report",
@@ -30,6 +29,7 @@ def render(
         f"- source: `{source_path}`",
         f"- pins: {len(records)} across {len(pages)} page(s)",
         f"- unconnected pins: {unconnected} (NC-marked: {nc_marked})",
+        f"- unclassified pin types: {unclassified} (not evaluated as INPUT/POWER)",
         f"- findings: {rule_summary}",
         "",
         "## Findings",
@@ -45,7 +45,10 @@ def render(
                 f"| {f.message} | `{evidence}` |"
             )
     else:
-        lines.append("No findings — all INPUT pins driven, all POWER pins connected.")
+        lines.append(
+            "No R008/R009/R010 findings were emitted for the parsed rows. "
+            "This does not establish that every pin was classified, driven, or electrically correct."
+        )
     lines.extend(
         [
             "",

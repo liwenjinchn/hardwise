@@ -42,3 +42,21 @@ def test_report_pin_table_rejects_bad_header(tmp_path: Path) -> None:
     result = CliRunner().invoke(app, ["report-pin-table", str(bad)])
 
     assert result.exit_code == 1
+
+
+def test_unclassified_pin_report_does_not_claim_all_inputs_driven(tmp_path: Path) -> None:
+    source = tmp_path / "unclassified.csv"
+    source.write_text(
+        "refdes,value,footprint,pin_number,pin_name,pin_type,net,page,"
+        "inst_x,inst_y,nc_marker,off_page\n"
+        "U1,TEST,PKG,1,IN,4,,P1,10,20,0,\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "unclassified.md"
+    result = CliRunner().invoke(app, ["report-pin-table", str(source), "-o", str(output)])
+    assert result.exit_code == 0, result.output
+    report = output.read_text(encoding="utf-8")
+    assert "unclassified pin types: 1" in report
+    assert "No R008/R009/R010 findings were emitted" in report
+    assert "all INPUT pins driven" not in report
+    assert "electrically correct" in report

@@ -36,6 +36,7 @@ EXPECTED_HEADER = [
 
 _PIN_TYPE_PATTERN = re.compile(r"^([A-Z_]+)\((\d+)\)$")
 _TRUTHY_NC = {"1", "true", "yes"}
+_FALSY_NC = {"0", "false", "no"}
 
 
 class PinTableRecord(BaseModel):
@@ -55,6 +56,7 @@ class PinTableRecord(BaseModel):
     is_nc: bool
     off_page: str
     source_file: Path
+    source_line: int | None = None
 
     @property
     def is_connected(self) -> bool:
@@ -89,22 +91,35 @@ def _int_or_none(raw: str) -> int | None:
         return None
 
 
+def _source_rows(reader, path: Path):
+    """Keep the starting physical line even after quoted newlines or blank rows."""
+    while True:
+        start_line = reader.line_num + 1
+        try:
+            row = next(reader)
+        except StopIteration:
+            return
+        except csv.Error as exc:
+            raise ValueError(f"{path}:{start_line}: malformed CSV: {exc}") from exc
+        yield start_line, row
+
+
 def parse_pin_table(path: Path) -> list[PinTableRecord]:
     """Parse a pin-table CSV into records.
 
-    Raises ValueError on a missing/odd header or a row with the wrong column
-    count — a malformed export should fail loudly, not produce partial truth.
+    Raises ValueError on malformed CSV, missing identity, an unknown NC marker,
+    an odd header or column count. A failed NC getter is not an absent marker.
     """
     records: list[PinTableRecord] = []
     with io.StringIO(read_input_text(path, role="pin_table", newline=""), newline="") as fh:
-        reader = csv.reader(fh)
+        reader = _source_rows(csv.reader(fh, strict=True), path)
         try:
-            header = [_clean(c) for c in next(reader)]
+            header = [_clean(c) for c in next(reader)[1]]
         except StopIteration as e:
             raise ValueError(f"{path}: empty pin-table CSV") from e
         if header != EXPECTED_HEADER:
             raise ValueError(f"{path}: unexpected header {header!r}; expected {EXPECTED_HEADER!r}")
-        for line_no, row in enumerate(reader, start=2):
+        for line_no, row in reader:
             if not row or all(_clean(c) == "" for c in row):
                 continue
             if len(row) != len(EXPECTED_HEADER):
@@ -126,6 +141,14 @@ def parse_pin_table(path: Path) -> list[PinTableRecord]:
                 nc_marker,
                 off_page,
             ) = cleaned
+            for name, identity in (("refdes", refdes), ("pin_number", pin_number)):
+                if not identity:
+                    raise ValueError(f"{path}:{line_no}: missing {name}")
+            if nc_marker.lower() not in _TRUTHY_NC | _FALSY_NC:
+                raise ValueError(
+                    f"{path}:{line_no}: unknown nc_marker {nc_marker!r}; "
+                    "expected 0/1, false/true or no/yes; re-export or omit the optional pin table"
+                )
             records.append(
                 PinTableRecord(
                     refdes=refdes,
@@ -142,6 +165,7 @@ def parse_pin_table(path: Path) -> list[PinTableRecord]:
                     is_nc=nc_marker.lower() in _TRUTHY_NC,
                     off_page=off_page,
                     source_file=path,
+                    source_line=line_no,
                 )
             )
     return records
