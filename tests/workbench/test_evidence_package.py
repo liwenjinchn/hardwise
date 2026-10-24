@@ -70,8 +70,8 @@ def test_evidence_package_keeps_six_coverage_lanes_separate(tmp_path: Path) -> N
             "bom_matched": 25,
             "validated": 22,
             "manual": 3,
-            "pass_count": 5,
-            "warn_count": 13,
+            "pass_count": 2,
+            "warn_count": 16,
             "error_count": 4,
         }
 

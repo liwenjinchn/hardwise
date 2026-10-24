@@ -5112,3 +5112,32 @@ creates only the three intended aliases and locks the 16/11 to 11/7 delta.
 
 Evidence-cache state is valid runtime input. Tests for absent evidence must
 control that input explicitly instead of assuming a clean developer machine.
+
+## 2026-10-24 — Passive ratings require two terminal potentials
+
+**Symptom**
+
+A 16 V capacitor across +12 V and -12 V passed. A 6.3 V capacitor
+across +12 V and +10 V failed, despite only 2 V DC difference. Missing
+terminal voltages and missing resistor power ratings also produced PASS.
+
+**Root cause**
+
+Capacitor checks compared the maximum absolute single-terminal voltage.
+Resistor checks deduplicated potentials before counting terminals, confusing
+equal known potentials with missing data. Skipped comparisons returned PASS.
+
+**Fix**
+
+Require exactly two terminals with inferred voltages, calculate their absolute
+difference, and retain equal known potentials for resistor calculations.
+Missing terminal data or resistor power ratings now return WARN with an explicit
+reason within the legacy wire contract. Twelve regression cases exercise these
+boundaries, including reversed terminal order and zero-ohm links.
+
+**Takeaway**
+
+A relative stress needs both endpoints. This patch fixes arithmetic and skipped
+PASS cases, not the authority of net-name voltage guesses. Confirmed reference
+domains, operating ranges and independent UNKNOWN states remain product gates;
+DC checks do not establish transient, ripple or polarity safety.

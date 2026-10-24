@@ -144,27 +144,29 @@ def _capacitor_voltage_margin(
         )
 
     voltages = _known_pin_voltages(component, design)
-    if not voltages:
+    if len(component.pins) != 2 or len(voltages) != 2:
         return ComponentValidation(
             check="capacitor_voltage_margin",
-            status="PASS",
+            status="WARN",
             refdes=component.refdes,
             summary=(
-                "No deterministic rail voltage was inferred for this capacitor; "
-                "voltage-margin comparison was skipped without guessing."
+                "Capacitor voltage margin cannot be checked without two terminal voltages; "
+                "missing terminal data is not a passing comparison."
             ),
             evidence=evidence,
         )
 
-    max_voltage = max(abs(voltage) for _, voltage in voltages)
-    if rated_voltage < max_voltage:
+    dc_stress = abs(voltages[0][1] - voltages[1][1])
+    if rated_voltage < dc_stress:
         return ComponentValidation(
             check="capacitor_voltage_margin",
             status="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Capacitor rated voltage {rated_voltage:g} V is below inferred "
-                f"maximum terminal voltage {max_voltage:g} V."
+                f"terminal-to-terminal DC voltage {dc_stress:g} V "
+                "(net-name/metadata inference; reference domains and transient stress "
+                "are not verified)."
             ),
             evidence=evidence,
         )
@@ -174,7 +176,9 @@ def _capacitor_voltage_margin(
         refdes=component.refdes,
         summary=(
             f"Capacitor rated voltage {rated_voltage:g} V is not below inferred "
-            f"maximum terminal voltage {max_voltage:g} V."
+            f"terminal-to-terminal DC voltage {dc_stress:g} V "
+            "(net-name/metadata inference; reference domains and transient stress "
+            "are not verified)."
         ),
         evidence=evidence,
     )
@@ -197,28 +201,28 @@ def _resistor_power_check(
         )
 
     voltages = _known_pin_voltages(component, design)
-    unique = sorted({voltage for _, voltage in voltages})
-    if len(unique) < 2:
+    if len(component.pins) != 2 or len(voltages) != 2:
         return ComponentValidation(
             check="resistor_power_estimate",
-            status="PASS",
+            status="WARN",
             refdes=component.refdes,
             summary=(
-                "Resistor does not have two deterministic terminal voltages; "
-                "power estimate was skipped without guessing current."
+                "Resistor power cannot be estimated without two terminal voltages; "
+                "missing terminal data is not a passing comparison."
             ),
             evidence=evidence,
         )
 
-    delta = abs(unique[-1] - unique[0])
+    terminal_voltages = sorted(voltage for _, voltage in voltages)
+    delta = abs(terminal_voltages[-1] - terminal_voltages[0])
     if resistance.ohms == 0:
         return ComponentValidation(
             check="resistor_power_estimate",
             status="WARN" if delta else "PASS",
             refdes=component.refdes,
             summary=(
-                f"Zero-ohm link bridges distinct inferred rails ({unique[0]:g} V to "
-                f"{unique[-1]:g} V); confirm this is an intended stuffing option."
+                f"Zero-ohm link bridges distinct inferred rails ({terminal_voltages[0]:g} V to "
+                f"{terminal_voltages[-1]:g} V); confirm this is an intended stuffing option."
                 if delta
                 else "Zero-ohm link connects terminals with the same inferred voltage."
             ),
@@ -241,11 +245,11 @@ def _resistor_power_check(
     rating_text = (
         f"parsed rating {power_rating:g} W"
         if power_rating is not None
-        else "no explicit power rating in the BOM value"
+        else "power margin not evaluated: no explicit power rating in the BOM value"
     )
     return ComponentValidation(
         check="resistor_power_estimate",
-        status="PASS",
+        status="PASS" if power_rating is not None else "WARN",
         refdes=component.refdes,
         summary=(
             f"Estimated resistor power {power:g} W from {delta:g} V across "

@@ -395,7 +395,7 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     assert "evidence-package: netlist=present,bom=present" in result.output
     assert "electrical_verdict=not_applicable" in result.output
     assert "validated=18" in result.output
-    assert "PASS/WARN/ERROR=5/10/3" in result.output
+    assert "PASS/WARN/ERROR=2/13/3" in result.output
     assert "manual=0" in result.output
 
     html = html_output.read_text(encoding="utf-8")
@@ -416,7 +416,7 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     index_text = index_output.read_text(encoding="utf-8")
     assert "# Hardwise Design Validator - mixed_power_stage" in index_text
     assert "| Validated components | 18 |" in index_text
-    assert "| PASS / WARN / ERROR | 5 / 10 / 3 |" in index_text
+    assert "| PASS / WARN / ERROR | 2 / 13 / 3 |" in index_text
     assert "Static schematic-side design validator" in index_text
     assert "`GENERIC_CAPACITOR`" in index_text
     assert "`GENERIC_RESISTOR`" in index_text
@@ -524,7 +524,7 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
     assert "validated=22" in result.output
-    assert "PASS/WARN/ERROR=5/13/4" in result.output
+    assert "PASS/WARN/ERROR=2/16/4" in result.output
     assert "manual=3" in result.output
 
     html = html_output.read_text(encoding="utf-8")
@@ -556,7 +556,7 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
 
     index_text = index_output.read_text(encoding="utf-8")
     assert "| Validated components | 22 |" in index_text
-    assert "| PASS / WARN / ERROR | 5 / 13 / 4 |" in index_text
+    assert "| PASS / WARN / ERROR | 2 / 16 / 4 |" in index_text
     assert "STM32G030C8T6" in index_text
     assert "JMTK3005A" in index_text
     assert "SS8050" in index_text

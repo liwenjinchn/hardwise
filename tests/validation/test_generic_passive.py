@@ -111,7 +111,7 @@ C1,1,0.1uF 6.3V,Fixture,GW_CAPACITOR
     )
     assert validation.status == "ERROR"
     assert margin.status == "ERROR"
-    assert "below inferred maximum terminal voltage 12 V" in margin.summary
+    assert "below inferred terminal-to-terminal DC voltage 12 V" in margin.summary
 
 
 def test_generic_resistor_zero_ohm_bridge_warns(tmp_path: Path) -> None:
