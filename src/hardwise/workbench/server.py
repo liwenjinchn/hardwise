@@ -154,6 +154,17 @@ def create_workbench_app(
         chat_service=chat_service,
     )
 
+    from hardwise.workbench.offline_report_routes import register_offline_report_route
+
+    register_offline_report_route(
+        app,
+        manager=context_manager,
+        lock=review_workflow_lock,
+        decisions=review_decisions,
+        state_for=state_with_decisions,
+        chat_service=chat_service,
+    )
+
     @app.middleware("http")
     async def lease_workbench_context(request, call_next):
         with context_manager.lease():

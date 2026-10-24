@@ -3,6 +3,7 @@ import { Download, FileSearch, Loader2, PackageCheck } from "lucide-react";
 import { exportWorkbench, fetchProjectPrepPacketMarkdown } from "../api";
 import { EvidencePackageDashboard } from "../components/EvidencePackageDashboard";
 import type { WorkbenchState } from "../types";
+import { OfflineReportDownload } from "../components/OfflineReportDownload";
 import { ProvenanceDownload } from "../components/ProvenanceDownload";
 
 export function ExportView({ state }: { state: WorkbenchState }) {
@@ -98,6 +99,7 @@ export function ExportView({ state }: { state: WorkbenchState }) {
           runId={state.review_decisions?.run_id ?? null} />
       </div>
       <div className="export-stack">
+        <OfflineReportDownload state={state} />
         <section className="project-prep-card" aria-label="项目评审准备包">
           <div>
             <span className="eyebrow">Project Prep Packet</span>

@@ -5567,3 +5567,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: local source availability, content verification, human approval and actual delivery were collapsed into one readiness boolean. The offline CSV/annotation implementation independently omitted newer live-export fields.
 - Fix: evidence-packagev2 separates timestamped source observations from attached-original status, includes passing-check PDF citations, reports missing originals without blocking export, and defaults unrecorded legacy axes to unknown. Source observations remain captured for the context; fresh contexts observe removal. Offline CSV/annotations now reuse the live serialization helpers. Neutral cards replace the old green score-like block.
 - Takeaway: existence tests establish availability only. Never promote local file existence or profile excerpts into content verification, human approval, original delivery, or signoff readiness.
+
+
+### 2026-10-25 — Offline history needs a consistent namespace snapshot
+
+- Symptom: standalone reports omitted journal decisions/history and rejected historical downloads; adding top-level state alone would leave component detail, CSV and preparation Markdown showing different human reasons.
+- Root cause: the CLI snapshot renderer rebuilt raw projections without the active reviewer store. Reading paginated history repeatedly could also combine different committed revisions.
+- Fix: current-project history and run records are captured together in one revision-checked SQLite read transaction under the workflow lock, then typed history and captured reviewer decisions are overlaid across all report surfaces. The current summary uses the captured history count. The page reads embedded history and historical manifests locally; offline mutation controls are disabled. Legacy/missing run evidence remains explicitly unavailable. Cross-project and cross-process conflict regressions cover namespace boundaries.
+- Takeaway: a report containing a run ID must preserve that run's evidence and original reasons; never substitute current provenance for a historical reference. Static browser caching can retain old inline code after regenerating the same URL: verify a freshly versioned URL before attributing a stale screenshot to current code.

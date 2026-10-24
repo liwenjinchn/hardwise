@@ -1729,6 +1729,51 @@
       "title": "NetCheckView",
       "type": "object"
     },
+    "OfflineReviewHistory": {
+      "properties": {
+        "captured_at": {
+          "title": "Captured At",
+          "type": "string"
+        },
+        "events": {
+          "items": {
+            "$ref": "#/$defs/ReviewHistoryEvent"
+          },
+          "title": "Events",
+          "type": "array"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "run_provenance": {
+          "additionalProperties": {
+            "$ref": "#/$defs/RunProvenanceResponse"
+          },
+          "title": "Run Provenance",
+          "type": "object"
+        },
+        "total": {
+          "minimum": 0,
+          "title": "Total",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "captured_at",
+        "events",
+        "project_id",
+        "run_id",
+        "run_provenance",
+        "total"
+      ],
+      "title": "OfflineReviewHistory",
+      "type": "object"
+    },
     "OriginalDelivery": {
       "properties": {
         "attached_tokens": {
@@ -3958,6 +4003,9 @@
     "import_response": {
       "$ref": "#/$defs/ImportResponse"
     },
+    "offline_review_history": {
+      "$ref": "#/$defs/OfflineReviewHistory"
+    },
     "project_restore": {
       "$ref": "#/$defs/ProjectRestoreReceipt"
     },
@@ -3982,6 +4030,7 @@
     "component_detail",
     "import_response",
     "review_history",
+    "offline_review_history",
     "run_provenance",
     "saved_project",
     "saved_project_catalog",

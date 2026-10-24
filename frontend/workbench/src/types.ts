@@ -626,12 +626,13 @@ export interface WorkbenchOfflineSnapshot {
   schema_version: string;
   mode: "snapshot";
   run_provenance?: RunProvenance;
+  review_history?: import("./generated/workbench-contracts").OfflineReviewHistory;
   state: WorkbenchState;
   components: Record<string, ComponentDetail>;
   component_prep_markdown: Record<string, string>;
   project_prep_markdown: string;
   chat_responses: Record<string, ChatResponse>;
-  exports: Record<"json" | "csv" | "annotations", string>;
+  exports: Record<"json" | "csv" | "annotations", string> & { review_history?: string };
 }
 
 declare global {

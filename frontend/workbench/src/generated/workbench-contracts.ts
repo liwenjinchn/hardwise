@@ -261,25 +261,15 @@ export type Manual2 = number;
 export type PassCount2 = number;
 export type Total3 = number;
 export type Warn1 = number;
-export type Journal = string;
-export type CommandPosix = string;
-export type CommandPowershell = string;
-export type SavedId = string;
-export type Launches = RestoredProjectLaunch[];
-export type RestoreId = string;
-export type SavedProjectIds = string[];
-export type SourceUnownedProjectIds = string[];
+export type CapturedAt = string;
 export type CreatedAt = string;
 export type Event = "human_decision" | "inputs_changed" | "disappeared";
 export type Id2 = number;
 export type RunId = string;
 export type StableKey2 = string;
 export type Events = ReviewHistoryEvent[];
-export type Limit = number;
-export type Offset = number;
 export type ProjectId = string;
 export type RunId1 = string;
-export type Total4 = number;
 export type CreatedAt1 = string | null;
 export type ProjectId1 = string;
 export type EmittedRecords = number;
@@ -313,9 +303,24 @@ export type SchemaVersion2 = "hardwise.run_provenance.v1";
 export type Reason10 = string;
 export type RunId2 = string;
 export type Status18 = "recorded" | "not_recorded";
+export type Total4 = number;
+export type Journal = string;
+export type CommandPosix = string;
+export type CommandPowershell = string;
+export type SavedId = string;
+export type Launches = RestoredProjectLaunch[];
+export type RestoreId = string;
+export type SavedProjectIds = string[];
+export type SourceUnownedProjectIds = string[];
+export type Events1 = ReviewHistoryEvent[];
+export type Limit = number;
+export type Offset = number;
+export type ProjectId2 = string;
+export type RunId3 = string;
+export type Total5 = number;
 export type Id3 = string;
 export type Name4 = string;
-export type ProjectId2 = string;
+export type ProjectId3 = string;
 export type Snapshot = string;
 export type Projects = SavedProjectView[];
 export type Basis = "emitted_check_records";
@@ -374,9 +379,9 @@ export type Accepted = number;
 export type HistoryCount = number;
 export type NeedsReview1 = number;
 export type Open = number;
-export type ProjectId3 = string | null;
+export type ProjectId4 = string | null;
 export type Resolved = number;
-export type RunId3 = string | null;
+export type RunId4 = string | null;
 export type StaleRemovedOnRerun = number;
 export type Storage = "memory" | "local_file";
 export type TotalTasks = number;
@@ -430,6 +435,7 @@ export interface WorkbenchContracts {
   chat_response: ChatResponse;
   component_detail: ComponentDetail;
   import_response: ImportResponse;
+  offline_review_history: OfflineReviewHistory;
   project_restore: ProjectRestoreReceipt;
   review_history: ReviewHistoryPage;
   run_provenance: RunProvenanceResponse;
@@ -887,24 +893,12 @@ export interface ReviewTaskCounts {
   total: Total3;
   warn: Warn1;
 }
-export interface ProjectRestoreReceipt {
-  journal: Journal;
-  launches: Launches;
-  restore_id: RestoreId;
-  saved_project_ids: SavedProjectIds;
-  source_unowned_project_ids: SourceUnownedProjectIds;
-}
-export interface RestoredProjectLaunch {
-  command_posix: CommandPosix;
-  command_powershell: CommandPowershell;
-  saved_id: SavedId;
-}
-export interface ReviewHistoryPage {
+export interface OfflineReviewHistory {
+  captured_at: CapturedAt;
   events: Events;
-  limit: Limit;
-  offset: Offset;
   project_id: ProjectId;
   run_id: RunId1;
+  run_provenance: RunProvenance;
   total: Total4;
 }
 export interface ReviewHistoryEvent {
@@ -915,15 +909,18 @@ export interface ReviewHistoryEvent {
   run_id: RunId;
   stable_key: StableKey2;
 }
+export interface RunProvenance {
+  [k: string]: RunProvenanceResponse;
+}
 export interface RunProvenanceResponse {
   created_at: CreatedAt1;
   project_id: ProjectId1;
-  provenance: RunProvenance | null;
+  provenance: RunProvenance1 | null;
   reason: Reason10;
   run_id: RunId2;
   status: Status18;
 }
-export interface RunProvenance {
+export interface RunProvenance1 {
   emitted_records: EmittedRecords;
   implementation_identity_assurance: ImplementationIdentityAssurance;
   input_capture_status: InputCaptureStatus;
@@ -970,10 +967,30 @@ export interface EmittedRuleVersion {
   scope: Scope2;
   version: Version;
 }
+export interface ProjectRestoreReceipt {
+  journal: Journal;
+  launches: Launches;
+  restore_id: RestoreId;
+  saved_project_ids: SavedProjectIds;
+  source_unowned_project_ids: SourceUnownedProjectIds;
+}
+export interface RestoredProjectLaunch {
+  command_posix: CommandPosix;
+  command_powershell: CommandPowershell;
+  saved_id: SavedId;
+}
+export interface ReviewHistoryPage {
+  events: Events1;
+  limit: Limit;
+  offset: Offset;
+  project_id: ProjectId2;
+  run_id: RunId3;
+  total: Total5;
+}
 export interface SavedProjectView {
   id: Id3;
   name: Name4;
-  project_id: ProjectId2;
+  project_id: ProjectId3;
   snapshot: Snapshot;
 }
 export interface SavedProjectCatalog {
@@ -1086,9 +1103,9 @@ export interface ReviewDecisionSummary {
   history_count: HistoryCount;
   needs_review: NeedsReview1;
   open: Open;
-  project_id: ProjectId3;
+  project_id: ProjectId4;
   resolved: Resolved;
-  run_id: RunId3;
+  run_id: RunId4;
   stale_removed_on_rerun: StaleRemovedOnRerun;
   storage: Storage;
   total_tasks: TotalTasks;

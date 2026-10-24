@@ -23,7 +23,14 @@ export async function fetchRunProvenance(
 ): Promise<ProvenanceDownload> {
   const snapshot = offlineSnapshot();
   if (snapshot) {
-    if (runId) throw new Error("离线快照未包含该历史运行清单。");
+    if (runId) {
+      const history = snapshot.review_history;
+      const record = history?.run_provenance[runId];
+      if (!record || history?.project_id !== projectId || record.project_id !== projectId || record.run_id !== runId) {
+        throw new Error("离线快照未包含该历史运行清单，或项目不匹配。");
+      }
+      return record;
+    }
     if (!snapshot.run_provenance) throw new Error("此旧离线快照未记录输入与版本清单，请重新导出。");
     return { origin: "offline_export", exported_at: snapshot.state.project.generated_at,
       provenance: snapshot.run_provenance };
@@ -88,8 +95,13 @@ export function updateReviewDecision(input: {
 }
 
 export function fetchReviewHistory(projectId: string, offset = 0): Promise<ReviewHistoryPage> {
-  if (offlineSnapshot()) {
-    return Promise.reject(new Error("离线快照未包含处理历史；请打开本地服务查看。"));
+  const snapshot = offlineSnapshot();
+  if (snapshot) {
+    const history = snapshot.review_history;
+    if (!history) return Promise.reject(new Error("离线快照未包含处理历史；请重新从本地服务下载离线评审包。"));
+    if (history.project_id !== projectId) return Promise.reject(new Error("离线处理历史不属于当前项目。"));
+    return Promise.resolve({ project_id: history.project_id, run_id: history.run_id,
+      total: history.total, offset, limit: 20, events: history.events.slice(offset, offset + 20) });
   }
   const query = new URLSearchParams({ limit: "20", offset: String(offset), expected_project_id: projectId });
   return requestJson<ReviewHistoryPage>(`/api/workbench/review-decisions/history?${query}`);
@@ -226,4 +238,13 @@ export async function exportWorkbench(format: "json" | "csv" | "annotations"): P
     throw new Error(body || `${response.status} ${response.statusText}`);
   }
   return response.text();
+}
+
+
+export async function downloadOfflineReport(projectId: string, runId: string): Promise<Blob> {
+  if (offlineSnapshot()) throw new Error("当前已经是只读离线评审包；请保留原 HTML 文件。");
+  const query = new URLSearchParams({ expected_project_id: projectId, expected_run_id: runId });
+  const response = await fetch(`/api/workbench/offline-report?${query}`);
+  if (!response.ok) throw new Error((await response.text()) || "离线评审包生成失败");
+  return response.blob();
 }

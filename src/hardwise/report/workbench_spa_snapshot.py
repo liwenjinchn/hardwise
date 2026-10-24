@@ -31,15 +31,17 @@ def render_spa_snapshot(
     context: WorkbenchContext,
     *,
     datasheet_search_enabled: bool = False,
+    reviewed_state=None,
+    review_history=None,
 ) -> str:
     """Return a standalone SPA HTML file backed by baked workbench data."""
 
-    state = build_workbench_state(
+    state = reviewed_state or build_workbench_state(
         context,
         datasheet_search_enabled=datasheet_search_enabled,
     )
     snapshot = {
-        "schema_version": "hardwise.workbench.offline_snapshot.v1",
+        "schema_version": "hardwise.workbench.offline_snapshot.v2",
         "mode": "snapshot",
         "run_provenance": build_run_provenance(context).model_dump(mode="json"),
         "state": state.model_dump(mode="json"),
@@ -55,6 +57,10 @@ def render_spa_snapshot(
             "annotations": _annotations(context),
         },
     }
+    if review_history is not None:
+        from hardwise.report.workbench_review_snapshot import attach_review_history
+
+        attach_review_history(snapshot, context, state, review_history)
     return _inline_spa_shell(snapshot, project_name=context.project_name)
 
 

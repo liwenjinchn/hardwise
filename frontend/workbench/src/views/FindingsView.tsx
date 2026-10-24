@@ -33,6 +33,7 @@ export function FindingsView({
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const offline = typeof window !== "undefined" && !!window.__HARDWISE_OFFLINE_SNAPSHOT__;
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
 
   const decide = async (group: ReviewTaskGroup, status: ReviewDecisionStatus) => {
@@ -70,7 +71,9 @@ export function FindingsView({
             决策由后端保存，不改变确定性 PASS/WARN/ERROR。
           </p>
             <p role="status">
-              {reviewSummary?.storage === "local_file"
+              {offline
+                ? "离线只读快照：人工理由及已封存历史可查看；不能修改决定或重新运行。"
+                : reviewSummary?.storage === "local_file"
                 ? "人工决定已保存到本地评审文件；恢复时需要保留原输入文件及路径。"
                 : "人工决定仅保存在本次服务中；服务退出后不会自动恢复。"}
               {reviewSummary?.needs_review ? ` ${reviewSummary.needs_review} 条旧决定因输入变化需要复核，原理由已保留。` : ""}
@@ -78,7 +81,7 @@ export function FindingsView({
             {error && <p className="form-error" role="alert">{error}</p>}
 
         </div>
-        <button type="button" onClick={() => void rerun()} disabled={busy !== ""}>
+        <button type="button" onClick={() => void rerun()} disabled={offline || busy !== ""}>
           {busy === "rerun" ? <Loader2 className="spin" size={15} /> : <RotateCcw size={15} />}
           重新运行确定性检查
         </button>
@@ -140,10 +143,10 @@ export function FindingsView({
               <div className="finding-actions">
                 <button type="button" onClick={() => root && onOpenTask(root)} disabled={!root}>查看</button>
                 <button type="button" onClick={() => root && onOpenTask(root, "copilot")} disabled={!root}>问 Copilot</button>
-                <button type="button" onClick={() => void decide(group, "accepted")} disabled={!reason || busy !== ""}>接受</button>
-                <button type="button" onClick={() => void decide(group, "waived")} disabled={!reason || busy !== ""}>豁免</button>
-                <button type="button" onClick={() => void decide(group, "resolved")} disabled={!reason || busy !== ""}>已解决</button>
-                <button type="button" onClick={() => void decide(group, "open")} disabled={busy !== ""}>重新打开</button>
+                <button type="button" onClick={() => void decide(group, "accepted")} disabled={offline || !reason || busy !== ""}>接受</button>
+                <button type="button" onClick={() => void decide(group, "waived")} disabled={offline || !reason || busy !== ""}>豁免</button>
+                <button type="button" onClick={() => void decide(group, "resolved")} disabled={offline || !reason || busy !== ""}>已解决</button>
+                <button type="button" onClick={() => void decide(group, "open")} disabled={offline || busy !== ""}>重新打开</button>
               </div>
             </article>
           );

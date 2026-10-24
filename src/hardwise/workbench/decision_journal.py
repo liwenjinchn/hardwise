@@ -154,3 +154,29 @@ class DecisionJournal:
             return db.execute(
                 "SELECT count(*) FROM review_events WHERE project=?", (project,)
             ).fetchone()[0]
+
+    def offline_records(self, project: str, expected_revision: int):
+        """Read all events and runs in one committed, revision-checked snapshot."""
+        with self.connect() as db:
+            db.execute("BEGIN")
+            row = db.execute(
+                "SELECT revision FROM review_heads WHERE project=?", (project,)
+            ).fetchone()
+            if (row[0] if row else 0) != expected_revision:
+                raise ReviewConflictError(
+                    "review journal changed in another process; restart before exporting"
+                )
+            events = [
+                dict(id=seq, run_id=rid, **json.loads(data))
+                for seq, rid, data in db.execute(
+                    "SELECT id,run_id,data FROM review_events WHERE project=? ORDER BY id DESC",
+                    (project,),
+                )
+            ]
+            runs = {
+                rid: dict(project=project, **json.loads(data))
+                for rid, data in db.execute(
+                    "SELECT run_id,data FROM review_runs WHERE project=?", (project,)
+                )
+            }
+            return events, runs

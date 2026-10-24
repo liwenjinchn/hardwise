@@ -276,6 +276,27 @@ class ReviewDecisionStore:
                 )
             return load_run_provenance(self._journal, self._runs, self._project, run_id)
 
+    def offline_history(self, *, expected_project_id: str, expected_run_id: str):
+        """Freeze the active project's full history without starting a new run."""
+        from copy import deepcopy
+        from hardwise.workbench.offline_history import build_offline_history
+
+        with self._lock:
+            if expected_project_id != self._project or expected_run_id != self._run_id:
+                raise ReviewConflictError("active project or run changed; reload before exporting")
+            if self._journal:
+                events, runs = self._journal.offline_records(self._project, self._revision)
+            else:
+                events = [
+                    deepcopy(e) for e in reversed(self._history) if e["project"] == self._project
+                ]
+                runs = {
+                    rid: deepcopy(r)
+                    for rid, r in self._runs.items()
+                    if r["project"] == self._project
+                }
+            return build_offline_history(self._project, self._run_id, events, runs)
+
     @staticmethod
     def _now():
         return datetime.now(timezone.utc).isoformat(timespec="microseconds")

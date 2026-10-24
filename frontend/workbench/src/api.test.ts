@@ -100,6 +100,21 @@ describe("review history API", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("pages all embedded history without network and rejects a foreign project", async () => {
+    const fetcher = vi.fn();
+    const events = Array.from({length: 25}, (_, id) => ({ id, decision: { reason: `原始理由${id}` } }));
+    vi.stubGlobal("window", { __HARDWISE_OFFLINE_SNAPSHOT__: { review_history: {
+      project_id: "one", run_id: "run", total: 25, events
+    } } });
+    vi.stubGlobal("fetch", fetcher);
+    expect((await fetchReviewHistory("one")).events).toHaveLength(20);
+    const second = await fetchReviewHistory("one", 20);
+    expect(second.events).toEqual(events.slice(20));
+    expect(second.total).toBe(25);
+    await expect(fetchReviewHistory("foreign")).rejects.toThrow("不属于当前项目");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it("preserves a read failure for the retry UI", async () => {
     vi.stubGlobal("window", {});
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("History temporarily unavailable", { status: 503 })));

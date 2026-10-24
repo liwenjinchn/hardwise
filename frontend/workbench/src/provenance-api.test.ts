@@ -31,6 +31,18 @@ describe("run provenance downloads", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
+  it("downloads captured historical manifests and refuses project/run mismatches offline", async () => {
+    const record = { project_id: "one", run_id: "old", status: "not_recorded", provenance: null };
+    vi.stubGlobal("window", { __HARDWISE_OFFLINE_SNAPSHOT__: { review_history: {
+      project_id: "one", run_provenance: { old: record }
+    } } });
+    const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+    expect(await fetchRunProvenance("one", "old")).toEqual(record);
+    await expect(fetchRunProvenance("two", "old")).rejects.toThrow("项目不匹配");
+    await expect(fetchRunProvenance("one", "absent")).rejects.toThrow("未包含");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it("reports old offline evidence as missing and preserves server failures", async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response("temporarily unavailable", { status: 503 }));
     vi.stubGlobal("window", { __HARDWISE_OFFLINE_SNAPSHOT__: {} }); vi.stubGlobal("fetch", fetcher);

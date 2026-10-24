@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CopilotPanel, RichMessageText, TraceDetails } from "./CopilotPanel";
 import { ChatBoundary } from "./ChatBoundary";
 import type { ChatResponse } from "../types";
@@ -302,6 +302,17 @@ describe("CopilotPanel", () => {
 });
 
 describe("FindingsView", () => {
+  it("keeps offline decisions and reruns read-only", () => {
+    vi.stubGlobal("window", { __HARDWISE_OFFLINE_SNAPSHOT__: {} });
+    try {
+      const state = makeState();
+      const html = renderToStaticMarkup(<FindingsView groups={state.review_groups} tasks={state.review_tasks}
+        onDecision={async () => {}} onRerun={async () => {}} onOpenTask={() => {}} />);
+      expect(html).toContain("离线只读快照");
+      expect(html).toMatch(/disabled=""[^>]*>重新打开/);
+      expect(html).toMatch(/disabled=""[^>]*>.*?重新运行确定性检查/s);
+    } finally { vi.unstubAllGlobals(); }
+  });
   it("renders grouped raw tasks and backend decision actions", () => {
     const state = makeState();
     const html = renderToStaticMarkup(
