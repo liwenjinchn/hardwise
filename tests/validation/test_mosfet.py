@@ -14,6 +14,7 @@ from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.validation.component import validate_component_against_profile
+from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
 @pytest.fixture
@@ -32,7 +33,9 @@ def _design(net_name: str, bom_name: str):
 @pytest.fixture
 def lowside_design():
     """Low-side FET: gate +10V, drain +48V, source GND."""
-    return _design("irf540n_mosfet.net", "irf540n_mosfet_bom.csv")
+    design = _design("irf540n_mosfet.net", "irf540n_mosfet_bom.csv")
+    _confirm(design, {"+10V": 10.0, "+48V": 48.0, "GND": 0.0})
+    return design
 
 
 @pytest.fixture
@@ -57,8 +60,8 @@ def test_lowside_nominal_all_pass(mosfet_profile, lowside_design):
     }
     vgs = next(c for c in results.component_checks if c.check == "mosfet_vgs_rating")
     assert vgs.status == "PASS"
-    assert "gate 10 V - source 0 V" in vgs.summary
-    assert vgs.evidence == ["datasheet:irf540n.pdf#p1"]
+    assert "[10, 10]" in vgs.summary
+    assert "datasheet:irf540n.pdf#p1" in vgs.evidence
 
 
 def test_highside_vgs_uses_source_reference(mosfet_profile, highside_design):
@@ -67,14 +70,15 @@ def test_highside_vgs_uses_source_reference(mosfet_profile, highside_design):
     The old gate-to-ground logic would read the gate as 58V and false-ERROR
     against the +-20V abs max. Measuring against the source proves Vgs = 10V.
     """
-    highside_design.nets["SW"].voltage_hint = 48.0
-    highside_design.nets["BST_GATE"].voltage_hint = 58.0
+    _confirm(highside_design, {"SW": 48.0})
+    _confirm(highside_design, {"BST_GATE": 58.0})
+    _confirm(highside_design, {"+48V": 48.0})
     component = highside_design.components["Q1"]
     results = validate_component_against_profile(component, mosfet_profile, highside_design)
 
     vgs = next(c for c in results.component_checks if c.check == "mosfet_vgs_rating")
     assert vgs.status == "PASS"
-    assert "gate 58 V - source 48 V" in vgs.summary
+    assert "[10, 10]" in vgs.summary
     # Vds = 48 (drain rail) - 48 (source switch node) = 0, well within 100V.
     vds = next(c for c in results.component_checks if c.check == "mosfet_vds_rating")
     assert vds.status == "PASS"
@@ -91,27 +95,27 @@ def test_highside_floating_source_warns_not_errors(mosfet_profile, highside_desi
 
     vgs = next(c for c in results.component_checks if c.check == "mosfet_vgs_rating")
     assert vgs.status == "UNKNOWN"
-    assert "ground" in vgs.summary.lower()
+    assert "不假定地电位" in vgs.summary
 
 
 def test_vgs_overvoltage_errors(mosfet_profile, highside_design):
     """Real Vgs violation: gate 30V over a grounded source -> 30V > 20V abs max."""
-    highside_design.nets["SW"].voltage_hint = 0.0
-    highside_design.nets["BST_GATE"].voltage_hint = 30.0
+    _confirm(highside_design, {"SW": 0.0})
+    _confirm(highside_design, {"BST_GATE": 30.0})
     component = highside_design.components["Q1"]
     results = validate_component_against_profile(component, mosfet_profile, highside_design)
 
     assert results.status == "ERROR"
     vgs = next(c for c in results.component_checks if c.check == "mosfet_vgs_rating")
     assert vgs.status == "ERROR"
-    assert "Vgs is 30 V" in vgs.summary
+    assert "[30, 30]" in vgs.summary
 
 
 def test_negative_vds_magnitude_over_abs_max_errors(mosfet_profile, highside_design):
     """A reverse static drain-source stress must still compare by magnitude."""
-    highside_design.nets["+48V"].voltage_hint = 0.0
-    highside_design.nets["SW"].voltage_hint = 150.0
-    highside_design.nets["BST_GATE"].voltage_hint = 160.0
+    _confirm(highside_design, {"+48V": 0.0})
+    _confirm(highside_design, {"SW": 150.0})
+    _confirm(highside_design, {"BST_GATE": 160.0})
     component = highside_design.components["Q1"]
     results = validate_component_against_profile(component, mosfet_profile, highside_design)
 
@@ -120,8 +124,8 @@ def test_negative_vds_magnitude_over_abs_max_errors(mosfet_profile, highside_des
     assert results.status == "ERROR"
     assert vgs.status == "PASS"
     assert vds.status == "ERROR"
-    assert "Vds is -150 V" in vds.summary
-    assert "magnitude above abs max" in vds.summary
+    assert "[-150, -150]" in vds.summary
+    assert "整个范围超出" in vds.summary
 
 
 def test_routes_by_family_without_mpn_fallback(mosfet_profile, lowside_design):
@@ -198,6 +202,7 @@ Q1,1,LN2312LT1G,LRC,LN2312LT1G
     design = build_design_from_netlist(netlist)
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
+    _confirm(design, {"P3V3": 3.3, "P12V": 12.0, "GND": 0.0})
     results = validate_component_against_profile(design.components["Q1"], profile, design)
 
     assert results.status == "PASS"
@@ -217,6 +222,7 @@ def test_ln2312lt1g_validation_resolves_schematic_pin_aliases() -> None:
         "ln2312lt1g_symbol_alias_bom.csv",
     )
 
+    _confirm(design, {"P3V3_GATE": 3.3, "P12V": 12.0, "GND": 0.0})
     results = validate_component_against_profile(design.components["Q9"], profile, design)
 
     assert results.status == "PASS"
@@ -227,8 +233,8 @@ def test_ln2312lt1g_validation_resolves_schematic_pin_aliases() -> None:
     ]
     vgs = next(check for check in results.component_checks if check.check == "mosfet_vgs_rating")
     assert vgs.status == "PASS"
-    assert "gate 3.3 V - source 0 V" in vgs.summary
-    assert vgs.evidence == ["datasheet:s-ln2312lt1g.pdf#p1"]
+    assert "[3.3, 3.3]" in vgs.summary
+    assert "datasheet:s-ln2312lt1g.pdf#p1" in vgs.evidence
 
 
 def test_l2n7002klt1g_profile_matches_public_sot23_pinout() -> None:
@@ -269,6 +275,7 @@ Q1,1,L2N7002KLT1G,LRC,L2N7002KLT1G
     design = build_design_from_netlist(netlist)
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
+    _confirm(design, {"P3V3": 3.3, "P12V": 12.0, "GND": 0.0})
     results = validate_component_against_profile(design.components["Q1"], profile, design)
 
     assert results.status == "PASS"
@@ -281,8 +288,8 @@ Q1,1,L2N7002KLT1G,LRC,L2N7002KLT1G
     }
     vgs = next(check for check in results.component_checks if check.check == "mosfet_vgs_rating")
     assert vgs.status == "PASS"
-    assert "gate 3.3 V - source 0 V" in vgs.summary
-    assert vgs.evidence == ["datasheet:l2n7002klt1g.pdf#p1"]
+    assert "[3.3, 3.3]" in vgs.summary
+    assert "datasheet:l2n7002klt1g.pdf#p1" in vgs.evidence
 
 
 def test_pe537ba_profile_matches_public_pdfn_pinout() -> None:
@@ -336,6 +343,7 @@ Q13,1,PE537BA,NIKO-SEM,PE537BA
     design = build_design_from_netlist(netlist)
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
+    _confirm(design, {"P3V3": 3.3, "P12V": 12.0})
     results = validate_component_against_profile(design.components["Q13"], profile, design)
 
     assert results.status == "UNKNOWN"
@@ -347,10 +355,10 @@ Q13,1,PE537BA,NIKO-SEM,PE537BA
     vgs = next(check for check in results.component_checks if check.check == "mosfet_vgs_rating")
     vds = next(check for check in results.component_checks if check.check == "mosfet_vds_rating")
     assert vgs.status == "PASS"
-    assert "gate 3.3 V - source 12 V" in vgs.summary
-    assert vgs.evidence == ["datasheet:pe537ba.pdf#p1"]
+    assert "[-8.7, -8.7]" in vgs.summary
+    assert "datasheet:pe537ba.pdf#p1" in vgs.evidence
     assert vds.status == "UNKNOWN"
-    assert "Not assuming ground" in vds.summary
+    assert "不假定地电位" in vds.summary
 
 
 def test_jmtk3005a_profile_matches_public_to252_pinout() -> None:
@@ -385,12 +393,16 @@ def test_jmtk3005a_controller_stage_uses_existing_mosfet_rules() -> None:
 
     assert q1_results.status == "UNKNOWN"
     assert q2_results.status == "UNKNOWN"
-    assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in q1_results.pin_results] == [
+    assert [
+        (pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in q1_results.pin_results
+    ] == [
         ("1", "Gate", "HO_GATE_Q", "PASS"),
         ("2", "Drain", "+24V", "PASS"),
         ("3", "Source", "PHASE_U", "PASS"),
     ]
-    assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in q2_results.pin_results] == [
+    assert [
+        (pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in q2_results.pin_results
+    ] == [
         ("1", "Gate", "LO_GATE_Q", "PASS"),
         ("2", "Drain", "PHASE_U", "PASS"),
         ("3", "Source", "GND", "PASS"),

@@ -281,7 +281,8 @@ def test_workbench_state_exposes_spa_queue_and_risk_hint_details(tmp_path: Path)
         assert len(queue_by_refdes) == len(payload["queue"])
         q12 = queue_by_refdes["Q12"]
         assert q12["task_count"] >= 4
-        assert q12["task_counts"]["error"] >= 4
+        assert q12["task_counts"]["error"] == 2
+        assert q12["task_counts"]["manual"] >= 2
         assert q12["task_ids"][0] == "F-001"
         assert q12["top_task_id"] == "F-001"
         assert q12["deterministic_status"] == "ERROR"

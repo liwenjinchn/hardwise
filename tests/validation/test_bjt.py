@@ -13,6 +13,7 @@ from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.validation.component import validate_component_against_profile
+from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
 @pytest.fixture
@@ -35,8 +36,8 @@ def _design(net_name: str, bom_name: str):
 @pytest.fixture
 def lowside_design():
     design = _design("2n3904_bjt.net", "2n3904_bjt_bom.csv")
-    design.nets["BASE_DRIVE"].voltage_hint = 0.7
-    design.nets["COLLECTOR_RAIL"].voltage_hint = 12.0
+    _confirm(design, {"BASE_DRIVE": 0.7, "GND": 0.0})
+    _confirm(design, {"COLLECTOR_RAIL": 12.0})
     return design
 
 
@@ -60,14 +61,14 @@ def test_lowside_nominal_all_pass(bjt_profile, lowside_design):
     }
     vebo = next(c for c in results.component_checks if c.check == "bjt_vebo_rating")
     assert vebo.status == "PASS"
-    assert "base 0.7 V - emitter 0 V" in vebo.summary
-    assert vebo.evidence == ["datasheet:2n3904-d.pdf#p1"]
+    assert "[-0.7, -0.7]" in vebo.summary
+    assert "datasheet:2n3904-d.pdf#p1" in vebo.evidence
 
 
 def test_non_ground_emitter_uses_emitter_reference(bjt_profile, emitter_reference_design):
-    emitter_reference_design.nets["BASE_NODE"].voltage_hint = 12.7
-    emitter_reference_design.nets["EMITTER_NODE"].voltage_hint = 12.0
-    emitter_reference_design.nets["COLLECTOR_NODE"].voltage_hint = 24.0
+    _confirm(emitter_reference_design, {"BASE_NODE": 12.7})
+    _confirm(emitter_reference_design, {"EMITTER_NODE": 12.0})
+    _confirm(emitter_reference_design, {"COLLECTOR_NODE": 24.0})
     component = emitter_reference_design.components["Q2"]
 
     results = validate_component_against_profile(component, bjt_profile, emitter_reference_design)
@@ -75,10 +76,10 @@ def test_non_ground_emitter_uses_emitter_reference(bjt_profile, emitter_referenc
     assert results.status == "PASS"
     vebo = next(c for c in results.component_checks if c.check == "bjt_vebo_rating")
     assert vebo.status == "PASS"
-    assert "base 12.7 V - emitter 12 V" in vebo.summary
+    assert "[-0.7, -0.7]" in vebo.summary
     vceo = next(c for c in results.component_checks if c.check == "bjt_vceo_rating")
     assert vceo.status == "PASS"
-    assert "collector 24 V - emitter 12 V" in vceo.summary
+    assert "[12, 12]" in vceo.summary
 
 
 def test_reverse_be_breakdown_errors_against_emitter_reference(
@@ -90,9 +91,9 @@ def test_reverse_be_breakdown_errors_against_emitter_reference(
     A base-to-ground check would read 0V and miss this. Emitter-referenced
     Vbe catches the reverse B-E breakdown risk.
     """
-    emitter_reference_design.nets["BASE_NODE"].voltage_hint = 0.0
-    emitter_reference_design.nets["EMITTER_NODE"].voltage_hint = 12.0
-    emitter_reference_design.nets["COLLECTOR_NODE"].voltage_hint = 24.0
+    _confirm(emitter_reference_design, {"BASE_NODE": 0.0})
+    _confirm(emitter_reference_design, {"EMITTER_NODE": 12.0})
+    _confirm(emitter_reference_design, {"COLLECTOR_NODE": 24.0})
     component = emitter_reference_design.components["Q2"]
 
     results = validate_component_against_profile(component, bjt_profile, emitter_reference_design)
@@ -100,12 +101,12 @@ def test_reverse_be_breakdown_errors_against_emitter_reference(
     assert results.status == "ERROR"
     vebo = next(c for c in results.component_checks if c.check == "bjt_vebo_rating")
     assert vebo.status == "ERROR"
-    assert "emitter 12 V - base 0 V" in vebo.summary
+    assert "[12, 12]" in vebo.summary
     assert "VEBO abs max 6 V" in vebo.summary
 
 
 def test_floating_base_or_emitter_warns_not_errors(bjt_profile, emitter_reference_design):
-    emitter_reference_design.nets["COLLECTOR_NODE"].voltage_hint = 24.0
+    _confirm(emitter_reference_design, {"COLLECTOR_NODE": 24.0})
     component = emitter_reference_design.components["Q2"]
 
     results = validate_component_against_profile(component, bjt_profile, emitter_reference_design)
@@ -113,11 +114,11 @@ def test_floating_base_or_emitter_warns_not_errors(bjt_profile, emitter_referenc
     assert results.status == "UNKNOWN"
     vebo = next(c for c in results.component_checks if c.check == "bjt_vebo_rating")
     assert vebo.status == "UNKNOWN"
-    assert "not assuming emitter is ground" in vebo.summary.lower()
+    assert "不假定地电位" in vebo.summary
 
 
 def test_vceo_overvoltage_errors(bjt_profile, lowside_design):
-    lowside_design.nets["COLLECTOR_RAIL"].voltage_hint = 50.0
+    _confirm(lowside_design, {"COLLECTOR_RAIL": 50.0})
     component = lowside_design.components["Q2"]
 
     results = validate_component_against_profile(component, bjt_profile, lowside_design)
@@ -170,8 +171,8 @@ R_BASE,1,1K,Fixture,RES-1K
 R_LOAD,1,1K,Fixture,RES-1K
 """,
     )
-    design.nets["BASE_DRIVE"].voltage_hint = 0.7
-    design.nets["COLLECTOR_RAIL"].voltage_hint = 12.0
+    _confirm(design, {"BASE_DRIVE": 0.7, "GND": 0.0})
+    _confirm(design, {"COLLECTOR_RAIL": 12.0})
 
     results = validate_component_against_profile(design.components["Q10"], mmbt3904_profile, design)
 
@@ -184,8 +185,8 @@ R_LOAD,1,1K,Fixture,RES-1K
         "NOT_APPLICABLE": 0,
     }
     checks = {c.check: c for c in results.component_checks}
-    assert checks["bjt_vebo_rating"].evidence == ["datasheet:mmbt3904lt1-d.pdf#p1"]
-    assert "base 0.7 V - emitter 0 V" in checks["bjt_vebo_rating"].summary
+    assert "datasheet:mmbt3904lt1-d.pdf#p1" in checks["bjt_vebo_rating"].evidence
+    assert "[-0.7, -0.7]" in checks["bjt_vebo_rating"].summary
 
 
 def test_ss8050_profile_matches_public_to92_pinout() -> None:

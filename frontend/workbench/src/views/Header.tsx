@@ -59,7 +59,7 @@ export function Header({
         <div className="project-pill" title={`${state.project.netlist_type} · ${state.project.netlist_source}`}>
           <span className="dot" />
           <span>{state.project.name}</span>
-          <span className="src mono">真实数据</span>
+          <span className="src mono">已导入</span>
         </div>
         <div className="mini-stats" aria-label="当前审查摘要">
           <Metric label="器件" value={summary.components} />

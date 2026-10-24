@@ -1,0 +1,33 @@
+{
+  "schema_version": "hardwise.voltage_facts.v1",
+  "active_mode": "dc",
+  "facts": [
+    {
+      "net": "+10V",
+      "reference_net": "GND",
+      "minimum": 10.0,
+      "maximum": 10.0,
+      "source": "synthetic regression operating premise; not measured",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "+48V",
+      "reference_net": "GND",
+      "minimum": 48.0,
+      "maximum": 48.0,
+      "source": "synthetic regression operating premise; not measured",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "GND",
+      "reference_net": "GND",
+      "minimum": 0.0,
+      "maximum": 0.0,
+      "source": "synthetic regression operating premise; not measured",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    }
+  ]
+}

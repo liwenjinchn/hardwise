@@ -23,13 +23,16 @@ from hardwise.agent.tools import (
 from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
+from hardwise.validation.voltage_facts import load_voltage_facts
 
 
 def _mosfet_design():
     netlist = parse_allegro_netlist(Path("tests/fixtures/allegro/irf540n_mosfet.net"))
     bom = parse_bom(Path("tests/fixtures/allegro/irf540n_mosfet_bom.csv"))
     design = build_design_from_netlist(netlist)
-    return apply_bom_to_design(design, match_bom_to_design(bom, design))
+    design = apply_bom_to_design(design, match_bom_to_design(bom, design))
+    load_voltage_facts(Path("tests/fixtures/allegro/irf540n_dc_voltage_facts.json"), design)
+    return design
 
 
 def _mosfet_profile() -> DatasheetProfile:
@@ -52,8 +55,8 @@ def test_validated_returns_structured_pass() -> None:
     # the corrected Vgs check rides through the bridge with its evidence token
     vgs = next(c for c in out.checks if c.check == "mosfet_vgs_rating")
     assert vgs.status == "PASS"
-    assert "gate 10 V - source 0 V" in vgs.summary
-    assert vgs.evidence == ["datasheet:irf540n.pdf#p1"]
+    assert "[10, 10]" in vgs.summary
+    assert "datasheet:irf540n.pdf#p1" in vgs.evidence
 
 
 def test_no_profile_for_unassigned_refdes() -> None:

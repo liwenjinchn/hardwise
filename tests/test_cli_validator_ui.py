@@ -76,7 +76,10 @@ def test_report_validator_ui_writes_html(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert "validator-ui:" in result.output
-    assert "(3 components, selected=U1, PASS, PASS/WARN/ERROR=3/0/0, UNKNOWN/NOT_APPLICABLE=0/0)" in result.output
+    assert (
+        "(3 components, selected=U1, PASS, PASS/WARN/ERROR=3/0/0, UNKNOWN/NOT_APPLICABLE=0/0)"
+        in result.output
+    )
 
     html = output.read_text(encoding="utf-8")
     assert "<title>Hardwise 原理图检验工具 - l78_regulator</title>" in html
@@ -358,13 +361,14 @@ def test_report_validator_ui_batch_writes_ln2312lt1g_alias_manifest(
     assert result.exit_code == 0, result.output
     assert "validator-ui-batch:" in result.output
     assert "validated=Q9" in result.output
-    assert "PASS/WARN/ERROR=1/0/0" in result.output
+    assert "PASS/WARN/ERROR=0/0/0" in result.output
 
     html = output.read_text(encoding="utf-8")
     assert 'data-select-ref="Q9"' in html
     assert '<article class="panel active" data-panel="Q9">' in html
     assert "LN2312LT1G" in html
-    assert "gate 3.3 V - source 0 V" in html
+    assert "voltage_hint 仅为候选" in html
+    assert "UNKNOWN/NOT_APPLICABLE=1/0" in result.output
     assert "原理图缺少引脚" not in html
 
 
@@ -1039,7 +1043,7 @@ $END
 
     assert result.exit_code == 0, result.output
     assert "validated=3" in result.output
-    assert "PASS/WARN/ERROR=2/0/0" in result.output
+    assert "PASS/WARN/ERROR=0/0/0" in result.output
 
     index_payload = index_json.read_text(encoding="utf-8")
     assert '"refdes": "PQ10"' in index_payload
@@ -1051,7 +1055,8 @@ $END
     assert '"refdes": "Q13"' in index_payload
     assert '"profile_path": "data/datasheet_profiles/pe537ba.json"' in index_payload
     assert '"profile_part_number": "PE537BA"' in index_payload
-    assert "Vds cannot be statically inferred" in index_payload
+    assert "voltage_hint 仅为候选" in index_payload
+    assert "UNKNOWN/NOT_APPLICABLE=3/0" in result.output
     assert '"document_source": "doc:docs.csv#line3"' in index_payload
     assert '"document_source": "doc:docs.csv#line4"' in index_payload
 

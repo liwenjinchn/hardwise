@@ -54,20 +54,21 @@
     },
     {
       "name": "mosfet_vgs_over_abs_max",
-      "description": "Raise Q1 gate rail from 10 V to 25 V above its \u00b120 V Vgs limit.",
+      "description": "Raise the explicitly confirmed synthetic gate DC envelope from 10 V to 25 V; do not derive it from the net label.",
       "family": "mosfet",
       "fixture_name": "mosfet",
       "netlist": "irf540n_mosfet.net",
       "bom": "irf540n_mosfet_bom.csv",
-      "mutation_target": "netlist",
-      "mutation_old": "'+10V' ; Q1.1",
-      "mutation_new": "'+25V' ; Q1.1",
+      "mutation_target": "voltage_facts",
+      "mutation_old": "\"minimum\": 10.0,\n      \"maximum\": 10.0",
+      "mutation_new": "\"minimum\": 25.0,\n      \"maximum\": 25.0",
       "expected": {
         "refdes": "Q1",
         "kind": "component",
         "check": "mosfet_vgs_rating",
         "status": "ERROR"
-      }
+      },
+      "voltage_facts": "irf540n_dc_voltage_facts.json"
     },
     {
       "name": "diode_reverse_over_abs_max",

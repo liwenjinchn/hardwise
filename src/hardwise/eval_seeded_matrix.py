@@ -28,7 +28,7 @@ SeededDefectFamily = Literal[
     "i2c_mux",
     "dcdc_buck",
 ]
-MutationTarget = Literal["bom", "netlist", "pstchip.dat"]
+MutationTarget = Literal["bom", "netlist", "pstchip.dat", "voltage_facts"]
 SUPPORTED_MATRIX_VERSION = 1
 
 
@@ -177,6 +177,10 @@ def _apply_mutation(
 ) -> None:
     if target == "bom":
         path = workspace.bom
+    elif target == "voltage_facts":
+        if workspace.voltage_facts is None:
+            raise ValueError("voltage-facts mutation requires an explicit input document")
+        path = workspace.voltage_facts
     elif target == "netlist":
         if workspace.netlist.is_dir():
             raise ValueError(f"{workspace.netlist}: expected a netlist file")

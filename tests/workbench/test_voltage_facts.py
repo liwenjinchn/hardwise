@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+import pytest
 
 from hardwise.workbench.context import build_workbench_context
 from hardwise.workbench.server import create_workbench_app
@@ -103,3 +104,39 @@ def test_invalid_foreign_facts_do_not_replace_active_project(tmp_path):
         assert state["project"] == original["project"]
         assert state["voltage_facts"] == original["voltage_facts"]
         assert _capacitor(state)["deterministic_status"] == "ERROR"
+
+
+@pytest.mark.parametrize(
+    "gate, expected", [((58, 58), "PASS"), ((78, 78), "ERROR"), ((67, 69), "UNKNOWN")]
+)
+def test_transistor_facts_import_rerun_and_export(gate, expected):
+    root = Path("tests/fixtures/allegro")
+    netlist, bom = root / "irf540n_highside.net", root / "irf540n_highside_bom.csv"
+    context = build_workbench_context(
+        netlist_path=netlist, bom_path=bom, profiles=Path("data/datasheet_profiles")
+    )
+    app = create_workbench_app(context, LocalOnlyChat(), auto_datasheet_candidates=False)
+    facts = json.loads((root / "irf540n_highside_dc_voltage_facts.json").read_text())
+    facts["facts"][0].update(minimum=gate[0], maximum=gate[1])
+    with TestClient(app) as client:
+        before = client.get("/api/workbench/components/Q1").json()
+        assert before["deterministic_status"] == "UNKNOWN"
+        response = client.post(
+            "/api/workbench/import",
+            files={
+                "netlist": (netlist.name, netlist.read_bytes(), "text/plain"),
+                "bom": (bom.name, bom.read_bytes(), "text/csv"),
+                "voltage_facts_json": ("voltage.json", json.dumps(facts), "application/json"),
+            },
+        )
+        assert response.status_code == 200, response.text
+        detail = client.get("/api/workbench/components/Q1").json()
+        check = next(c for c in detail["checks"] if c["summary"].startswith("Vgs "))
+        assert check["status"] == expected
+        assert check["assessment"]["rule_version"] == "2"
+        assert len([e for e in check["evidence"] if e["token"].startswith("voltage_fact:")]) == 2
+        assert client.post("/api/workbench/rerun").status_code == 200
+        rerun = client.get("/api/workbench/components/Q1").json()
+        assert rerun["checks"] == detail["checks"]
+        exported = client.get("/api/workbench/export?format=json").json()
+        assert exported["voltage_facts"]["facts"][0]["minimum"] == gate[0]

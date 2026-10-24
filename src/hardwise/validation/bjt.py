@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
-from hardwise.validation.pins import voltage_for_net
+from hardwise.validation.terminal_voltage import terminal_voltage_check
 from hardwise.validation.types import ComponentValidation
 
 
@@ -57,140 +57,45 @@ def _validate_pin_connected(
 
 
 def _validate_vebo(
-    component: Component,
-    profile: DatasheetProfile,
-    design: Design,
+    component: Component, profile: DatasheetProfile, design: Design
 ) -> ComponentValidation:
-    evidence = _profile_evidence(profile, "abs_max.vebo")
-    base = _pin_by_profile_name(component, profile, "Base")
-    emitter = _pin_by_profile_name(component, profile, "Emitter")
-    if base is None or not base.net:
-        return ComponentValidation(
-            check="bjt_vebo_rating",
-            result="FAIL",
-            severity="ERROR",
-            summary="BJT base pin is not connected; cannot check VEBO.",
-            evidence=evidence,
-        )
-    if emitter is None or not emitter.net:
-        return ComponentValidation(
-            check="bjt_vebo_rating",
-            result="FAIL",
-            severity="ERROR",
-            summary="BJT emitter pin is not connected; cannot check VEBO.",
-            evidence=evidence,
-        )
-
-    base_voltage = voltage_for_net(base.net, design)
-    emitter_voltage = voltage_for_net(emitter.net, design)
-    if base_voltage is None or emitter_voltage is None:
-        return ComponentValidation(
-            check="bjt_vebo_rating",
-            result="UNKNOWN",
-            severity="WARNING",
-            refdes=component.refdes,
-            summary=(
-                "BJT reverse B-E voltage cannot be statically inferred: the base or "
-                "emitter net has no known voltage. Not assuming emitter is ground."
-            ),
-            evidence=evidence,
-        )
-
-    reverse_be_voltage = emitter_voltage - base_voltage
-    vebo_limit = _float_abs_max(profile, "vebo")
-    if vebo_limit is not None and reverse_be_voltage > vebo_limit:
-        return ComponentValidation(
-            check="bjt_vebo_rating",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=(
-                f"Reverse B-E voltage is {reverse_be_voltage:g} V "
-                f"(emitter {emitter_voltage:g} V - base {base_voltage:g} V), "
-                f"above VEBO abs max {vebo_limit:g} V."
-            ),
-            evidence=evidence,
-        )
-    vbe = base_voltage - emitter_voltage
-    return ComponentValidation(
+    return terminal_voltage_check(
+        component,
+        design,
+        positive=_pin_by_profile_name(component, profile, "Emitter"),
+        negative=_pin_by_profile_name(component, profile, "Base"),
+        limit=_float_abs_max(profile, "vebo"),
         check="bjt_vebo_rating",
-        result="PASS",
-        severity="INFO",
-        refdes=component.refdes,
-        summary=(
-            f"Vbe is {vbe:g} V (base {base_voltage:g} V - emitter {emitter_voltage:g} V); "
-            f"reverse B-E voltage is {reverse_be_voltage:g} V"
-            + (f", within VEBO abs max {vebo_limit:g} V." if vebo_limit else ".")
+        label="VEBO",
+        evidence=_profile_evidence(profile, "abs_max.vebo"),
+        symmetric=False,
+        applicability_reason=(
+            None
+            if profile.recommended.get("polarity") == "npn"
+            else "当前三极管端间直流模型仅覆盖档案明确标识的 NPN；型号极性条件不足。"
         ),
-        evidence=evidence,
     )
 
 
 def _validate_vceo(
-    component: Component,
-    profile: DatasheetProfile,
-    design: Design,
+    component: Component, profile: DatasheetProfile, design: Design
 ) -> ComponentValidation:
-    evidence = _profile_evidence(profile, "abs_max.vceo")
-    collector = _pin_by_profile_name(component, profile, "Collector")
-    emitter = _pin_by_profile_name(component, profile, "Emitter")
-    if collector is None or not collector.net:
-        return ComponentValidation(
-            check="bjt_vceo_rating",
-            result="FAIL",
-            severity="ERROR",
-            summary="BJT collector pin is not connected; cannot check VCEO.",
-            evidence=evidence,
-        )
-    if emitter is None or not emitter.net:
-        return ComponentValidation(
-            check="bjt_vceo_rating",
-            result="FAIL",
-            severity="ERROR",
-            summary="BJT emitter pin is not connected; cannot check VCEO.",
-            evidence=evidence,
-        )
-
-    collector_voltage = voltage_for_net(collector.net, design)
-    emitter_voltage = voltage_for_net(emitter.net, design)
-    if collector_voltage is None or emitter_voltage is None:
-        return ComponentValidation(
-            check="bjt_vceo_rating",
-            result="UNKNOWN",
-            severity="WARNING",
-            refdes=component.refdes,
-            summary=(
-                "BJT Vce cannot be statically inferred: the collector or emitter net has "
-                "no known voltage. Not assuming emitter is ground."
-            ),
-            evidence=evidence,
-        )
-
-    vce = collector_voltage - emitter_voltage
-    vceo_limit = _float_abs_max(profile, "vceo")
-    if vceo_limit is not None and vce > vceo_limit:
-        return ComponentValidation(
-            check="bjt_vceo_rating",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=(
-                f"Vce is {vce:g} V (collector {collector_voltage:g} V - emitter "
-                f"{emitter_voltage:g} V), above VCEO abs max {vceo_limit:g} V."
-            ),
-            evidence=evidence,
-        )
-    return ComponentValidation(
+    return terminal_voltage_check(
+        component,
+        design,
+        positive=_pin_by_profile_name(component, profile, "Collector"),
+        negative=_pin_by_profile_name(component, profile, "Emitter"),
+        limit=_float_abs_max(profile, "vceo"),
         check="bjt_vceo_rating",
-        result="PASS",
-        severity="INFO",
-        refdes=component.refdes,
-        summary=(
-            f"Vce is {vce:g} V (collector {collector_voltage:g} V - emitter "
-            f"{emitter_voltage:g} V)"
-            + (f", within VCEO abs max {vceo_limit:g} V." if vceo_limit else ".")
+        label="VCEO",
+        evidence=_profile_evidence(profile, "abs_max.vceo"),
+        symmetric=False,
+        applicability_reason=(
+            None
+            if profile.recommended.get("polarity") == "npn"
+            else "当前三极管端间直流模型仅覆盖档案明确标识的 NPN；型号极性条件不足。"
         ),
-        evidence=evidence,
+        require_nonnegative=True,
     )
 
 
@@ -211,7 +116,7 @@ def _pin_number(profile: DatasheetProfile, name: str) -> str | None:
 
 def _float_abs_max(profile: DatasheetProfile, key: str) -> float | None:
     value = profile.abs_max.get(key)
-    if isinstance(value, (int, float)):
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
         return float(value)
     return None
 
