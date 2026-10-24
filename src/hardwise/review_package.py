@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
+from hardwise.input_provenance import read_input_text, hash_input_file
 from typing import Any, Literal
 
 import yaml
@@ -118,9 +118,7 @@ class ReviewPackageReport(BaseModel):
         """Number of required artifacts missing from disk."""
 
         return sum(
-            1
-            for artifact in self.artifacts
-            if artifact.required and artifact.status == "missing"
+            1 for artifact in self.artifacts if artifact.required and artifact.status == "missing"
         )
 
     @property
@@ -196,9 +194,7 @@ def load_review_package_manifest(path: Path | str) -> ReviewPackageReport:
     if not payload.artifacts:
         raise ReviewPackageParseError(f"{manifest_path}: no artifacts listed")
 
-    artifacts = [
-        _resolve_artifact(item, manifest_path.parent) for item in payload.artifacts
-    ]
+    artifacts = [_resolve_artifact(item, manifest_path.parent) for item in payload.artifacts]
     return ReviewPackageReport(source_path=str(manifest_path), artifacts=artifacts)
 
 
@@ -248,7 +244,7 @@ def render_review_package_markdown(report: ReviewPackageReport) -> str:
 
 
 def _load_payload(path: Path) -> Any:
-    text = path.read_text(encoding="utf-8")
+    text = read_input_text(path, role="review_package")
     if path.suffix.lower() == ".json":
         return json.loads(text)
     return yaml.safe_load(text)
@@ -282,8 +278,4 @@ def _resolve_artifact(
 
 
 def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    return hash_input_file(path, role="review_artifact_digest")

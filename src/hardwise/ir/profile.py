@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from hardwise.input_provenance import read_input_text
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field
@@ -47,7 +48,7 @@ class DatasheetProfile(BaseModel):
     def load(cls, path: Path) -> "DatasheetProfile":
         """Load and validate a profile JSON file."""
 
-        return cls.model_validate_json(path.read_text(encoding="utf-8"))
+        return cls.model_validate_json(read_input_text(path, role="profile"))
 
     def save(self, path: Path) -> None:
         """Write profile JSON with stable formatting."""

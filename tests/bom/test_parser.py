@@ -10,6 +10,21 @@ from hardwise.bom import BomParseError, parse_bom
 from tests.xlsx_fixture import write_minimal_xlsx
 
 
+def test_xlsx_provenance_hashes_archive_bytes_before_cell_decoding(tmp_path):
+    import hashlib
+    from hardwise.input_provenance import capture_input_reads
+
+    path = tmp_path / "public.xlsx"
+    write_minimal_xlsx(path, [["位号", "数量", "名称"], ["C1", "1", "100nF"]])
+    raw = path.read_bytes()
+    with capture_input_reads() as reads:
+        bom = parse_bom(path)
+        manifest = reads.finish()
+    assert bom.rows[0].refdes == "C1"
+    assert manifest.files[0].sha256 == hashlib.sha256(raw).hexdigest()
+    assert manifest.files[0].roles == ("bom",)
+
+
 def test_parse_cadence_report_expands_multiline_refs_and_digitless_refdes(
     tmp_path: Path,
 ) -> None:

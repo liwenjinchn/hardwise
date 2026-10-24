@@ -24,6 +24,7 @@ from hardwise.report.validator_project_ui import render_project_workbench
 from hardwise.workbench.chat import ChatRequest, ChatResponse, WorkbenchChatService, default_refdes
 from hardwise.workbench.api_contracts import ImportResponse
 from hardwise.workbench.review_history import ReviewHistoryPage
+from hardwise.workbench.run_provenance import RunProvenanceResponse, build_run_provenance
 from hardwise.workbench.context import (
     WorkbenchContext,
     build_workbench_context,
@@ -106,6 +107,7 @@ def create_workbench_app(
             review_project_key(active_context),
             review_fingerprints(active_context, tasks),
             tasks=[task.model_dump(mode="json") for task in tasks],
+            provenance=build_run_provenance(active_context).model_dump(mode="json"),
         )
 
     def decisions_for(active_context, tasks):
@@ -482,6 +484,30 @@ def create_workbench_app(
                 raise HTTPException(
                     status_code=503, detail="Review history could not be read."
                 ) from exc
+
+    @app.get("/api/workbench/review-runs/{run_id}/provenance", response_model=RunProvenanceResponse)
+    def review_run_provenance(
+        run_id: str, response: Response, expected_project_id: str | None = None
+    ):
+        with review_workflow_lock:
+            try:
+                result = RunProvenanceResponse.model_validate(
+                    review_decisions.run_provenance(run_id, expected_project_id)
+                )
+            except ReviewConflictError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+            except KeyError as exc:
+                raise HTTPException(
+                    status_code=404, detail="Run not found in the active project."
+                ) from exc
+            except (sqlite3.Error, OSError, ValueError) as exc:
+                raise HTTPException(
+                    status_code=503, detail="Run provenance could not be read."
+                ) from exc
+            response.headers["Content-Disposition"] = (
+                'attachment; filename="hardwise-run-provenance.json"'
+            )
+            return result
 
     @app.put("/api/workbench/review-decisions")
     def update_review_decisions(request: ReviewDecisionRequest) -> WorkbenchState:

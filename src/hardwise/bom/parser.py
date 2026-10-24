@@ -7,6 +7,7 @@ import io
 import re
 import zipfile
 from pathlib import Path
+from hardwise.input_provenance import read_input_text, read_input_bytes
 from xml.etree import ElementTree
 
 from hardwise.bom.types import Bom, BomItem, BomParseError, split_refdes
@@ -23,7 +24,7 @@ def parse_bom(path: Path) -> Bom:
     if suffix == ".xlsx":
         return Bom(source_file=path, items=_parse_xlsx_bom(path))
 
-    text = path.read_text(encoding="utf-8-sig", errors="replace")
+    text = read_input_text(path, role="bom", encoding="utf-8-sig", errors="replace")
     if suffix == ".csv":
         return Bom(source_file=path, items=_parse_delimited_bom(path, text, ","))
     if suffix == ".tsv":
@@ -160,7 +161,7 @@ def _parse_xlsx_bom(path: Path) -> list[BomItem]:
 
 def _read_first_xlsx_sheet(path: Path) -> list[list[str]]:
     try:
-        with zipfile.ZipFile(path) as workbook:
+        with zipfile.ZipFile(io.BytesIO(read_input_bytes(path, role="bom"))) as workbook:
             shared_strings = _xlsx_shared_strings(workbook)
             sheet_name = _first_sheet_name(workbook)
             sheet_xml = workbook.read(sheet_name)

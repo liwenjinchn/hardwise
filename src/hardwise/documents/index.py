@@ -6,6 +6,7 @@ import csv
 import io
 import re
 from pathlib import Path
+from hardwise.input_provenance import read_input_text
 
 from hardwise.documents.types import (
     DocumentIndex,
@@ -17,7 +18,7 @@ from hardwise.documents.types import (
 def parse_document_index(path: Path) -> DocumentIndex:
     """Parse a CSV/TSV index of public datasheet/document links."""
 
-    text = path.read_text(encoding="utf-8-sig", errors="replace")
+    text = read_input_text(path, role="document_index", encoding="utf-8-sig", errors="replace")
     suffix = path.suffix.lower()
     if suffix == ".csv":
         entries = _parse_delimited_index(path, text, ",")
@@ -35,7 +36,9 @@ def _parse_delimited_index(path: Path, text: str, delimiter: str) -> list[Docume
     if reader.fieldnames is None:
         raise DocumentIndexParseError(f"{path}: missing document index header")
     fields = {_normalize_header(name): name for name in reader.fieldnames}
-    url_field = _find_field(fields, ["url", "link", "document_url", "datasheet_url", "path", "file"])
+    url_field = _find_field(
+        fields, ["url", "link", "document_url", "datasheet_url", "path", "file"]
+    )
     if url_field is None:
         raise DocumentIndexParseError(f"{path}: missing URL/link/path column")
 

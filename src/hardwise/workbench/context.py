@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from hardwise.input_provenance import InputReadManifest
+from hardwise.workbench.intake_provenance import record_intake_inputs
 from threading import RLock
 from typing import Any
 
@@ -71,6 +73,7 @@ class WorkbenchContext:
     generated_at: str
     property_count: int
     voltage_facts_path: Path | None = None
+    input_manifest: InputReadManifest | None = None
     projection: WorkbenchProjectionIndex = field(init=False, repr=False, compare=False)
     agent_lock: Any = field(default_factory=RLock, init=False, repr=False, compare=False)
 
@@ -138,6 +141,7 @@ def board_registry_from_design(design: Design) -> BoardRegistry:
     )
 
 
+@record_intake_inputs
 def build_workbench_context(
     *,
     netlist_path: Path,

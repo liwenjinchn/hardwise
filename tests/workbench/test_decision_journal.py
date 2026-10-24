@@ -41,6 +41,28 @@ def test_restart_restores_same_snapshot_and_keeps_history(tmp_path):
     assert [e["decision"]["status"] for e in second.history()] == ["open", "waived"]
 
 
+def test_run_provenance_and_invalidations_rollback_together(tmp_path):
+    path = tmp_path / "review.sqlite"
+    store = ReviewDecisionStore(path)
+    store.begin_run("project", {"a": "f1", "b": "fb"}, provenance={"sentinel": "original"})
+    _decide(store)
+    before = store.summary(["a", "b"])
+    history = store.history()
+    with sqlite3.connect(path) as db:
+        db.execute(
+            "CREATE TRIGGER block_runs BEFORE INSERT ON review_runs "
+            "BEGIN SELECT RAISE(ABORT,'synthetic run failure'); END"
+        )
+    with pytest.raises(sqlite3.IntegrityError):
+        store.begin_run("project", {"a": "changed", "b": "fb"}, provenance={"sentinel": "new"})
+    assert store.summary(["a", "b"]) == before
+    assert store.history() == history
+    assert store.run_provenance(before.run_id)["provenance"] == {"sentinel": "original"}
+    with sqlite3.connect(path) as db:
+        assert db.execute("SELECT count(*) FROM review_runs").fetchone()[0] == 1
+        assert db.execute("SELECT count(*) FROM review_events").fetchone()[0] == 1
+
+
 def test_changed_fingerprint_requires_review_without_losing_original_reason(tmp_path):
     path = tmp_path / "review.sqlite"
     _decide(_store(path))

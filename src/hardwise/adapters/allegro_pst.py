@@ -11,6 +11,7 @@ layout geometry.
 from __future__ import annotations
 
 from pathlib import Path
+from hardwise.input_provenance import read_input_text
 
 from pydantic import BaseModel, Field
 
@@ -290,7 +291,7 @@ def _parse_words(text: str) -> list[str]:
 
 
 def _read_lines(path: Path) -> list[str]:
-    return path.read_text(encoding="utf-8", errors="replace").splitlines()
+    return read_input_text(path, role="pst", errors="replace").splitlines()
 
 
 def _validate_unique_refdes(parts: list[AllegroPstPart]) -> None:

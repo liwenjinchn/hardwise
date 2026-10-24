@@ -9,6 +9,7 @@ layout geometry.
 from __future__ import annotations
 
 from pathlib import Path
+from hardwise.input_provenance import read_input_text
 
 from pydantic import BaseModel, Field
 
@@ -59,7 +60,7 @@ def parse_allegro_netlist(path: Path) -> AllegroNetlistRegistry:
     rejected instead of being fabricated downstream.
     """
 
-    text = path.read_text(encoding="utf-8")
+    text = read_input_text(path, role="netlist")
     records = _section_records(text)
 
     packages = [_parse_package(record, line_no) for line_no, record in records["$PACKAGES"]]

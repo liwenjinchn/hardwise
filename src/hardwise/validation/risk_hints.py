@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from difflib import get_close_matches
 from pathlib import Path
+from hardwise.input_provenance import read_input_text
 from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
@@ -120,7 +121,7 @@ def load_risk_hint_report(path: Path | str, design: Design) -> RiskHintReport:
     """Load external risk-hints JSON from ``path`` and build a verified report."""
 
     hint_path = Path(path)
-    raw_payload = json.loads(hint_path.read_text(encoding="utf-8"))
+    raw_payload = json.loads(read_input_text(hint_path, role="risk_hints"))
     report = build_risk_hint_report(raw_payload, design)
     return report.model_copy(update={"source_path": str(hint_path)})
 

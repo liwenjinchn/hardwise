@@ -10,6 +10,7 @@ from typing import TypeVar
 from uuid import uuid4
 
 from hardwise.workbench.decision_journal import DecisionJournal, ReviewConflictError
+from hardwise.workbench.run_provenance import load_run_provenance
 
 # Retain the public imports used by existing API/CLI callers.
 from hardwise.workbench.review_decision_contracts import (
@@ -32,6 +33,7 @@ class ReviewDecisionStore:
         self._stale_removed_on_rerun = 0
         self._journal = DecisionJournal(path) if path else None
         self._history: list[dict] = []
+        self._runs: dict[str, dict] = {}
         self._revision = 0
         self._project = "memory"
         self._run_id = str(uuid4())
@@ -47,6 +49,7 @@ class ReviewDecisionStore:
                 dict(self._fingerprints),
                 self._stale_removed_on_rerun,
                 len(self._history),
+                set(self._runs),
             )
 
     def restore_checkpoint(self, checkpoint):
@@ -60,8 +63,10 @@ class ReviewDecisionStore:
                 self._fingerprints,
                 self._stale_removed_on_rerun,
                 length,
+                runs,
             ) = checkpoint
             del self._history[length:]
+            self._runs = {key: value for key, value in self._runs.items() if key in runs}
 
     def _save(self, items, events, *, run=None, run_id=None):
         rid = run_id or self._run_id
@@ -79,10 +84,21 @@ class ReviewDecisionStore:
                 self._history.append(
                     dict(id=len(self._history) + 1, run_id=rid, project=self._project, **event)
                 )
+        if run is not None and self._journal is None:
+            self._runs[rid] = {
+                "project": self._project,
+                "created_at": run["created_at"],
+                "provenance": run.get("provenance"),
+            }
         self._items = items
 
     def begin_run(
-        self, project: str, fingerprints: dict[str, str], *, tasks: list[dict] | None = None
+        self,
+        project: str,
+        fingerprints: dict[str, str],
+        *,
+        tasks: list[dict] | None = None,
+        provenance: dict | None = None,
     ) -> int:
         """Restore a project and invalidate changed facts without discarding reasons."""
         with self._lock:
@@ -117,6 +133,7 @@ class ReviewDecisionStore:
                     events,
                     run={
                         "fingerprints": fingerprints,
+                        "provenance": provenance,
                         "tasks": tasks or [],
                         "created_at": self._now(),
                     },
@@ -250,6 +267,14 @@ class ReviewDecisionStore:
             return dict(
                 project_id=self._project, run_id=self._run_id, limit=limit, offset=offset, **page
             )
+
+    def run_provenance(self, run_id, expected_project_id=None):
+        with self._lock:
+            if expected_project_id is not None and expected_project_id != self._project:
+                raise ReviewConflictError(
+                    "active project changed; reload before reading run provenance"
+                )
+            return load_run_provenance(self._journal, self._runs, self._project, run_id)
 
     @staticmethod
     def _now():

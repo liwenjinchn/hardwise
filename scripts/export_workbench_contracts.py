@@ -10,6 +10,7 @@ from pydantic import create_model
 
 from hardwise.workbench.api_contracts import ImportResponse
 from hardwise.workbench.review_history import ReviewHistoryPage
+from hardwise.workbench.run_provenance import RunProvenanceResponse
 from hardwise.workbench.chat_contracts import ChatRequest, ChatResponse
 from hardwise.workbench.view_model import ComponentDetail, WorkbenchState
 
@@ -38,6 +39,7 @@ def main() -> None:
         component_detail=(ComponentDetail, ...),
         import_response=(ImportResponse, ...),
         review_history=(ReviewHistoryPage, ...),
+        run_provenance=(RunProvenanceResponse, ...),
         chat_request=(ChatRequest, ...),
         chat_response=(ChatResponse, ...),
     )

@@ -132,6 +132,13 @@ class DecisionJournal:
             ]
             return {"total": total, "events": events}
 
+    def run_data(self, project: str, run_id: str) -> dict | None:
+        with self.connect() as db:
+            row = db.execute(
+                "SELECT data FROM review_runs WHERE project=? AND run_id=?", (project, run_id)
+            ).fetchone()
+            return json.loads(row[0]) if row else None
+
     def history_count(self, project: str) -> int:
         with self.connect() as db:
             return db.execute(

@@ -260,6 +260,39 @@ export type Offset = number;
 export type ProjectId = string;
 export type RunId1 = string;
 export type Total4 = number;
+export type CreatedAt1 = string | null;
+export type ProjectId1 = string;
+export type EmittedRecords = number;
+export type ImplementationIdentityAssurance = "declared_rule_versions";
+export type InputCaptureStatus = "captured" | "unavailable";
+export type Assurance = "observed_readset_verified";
+export type Path2 = string;
+export type ResolvedPath = string;
+export type Roles = string[];
+export type Sha2561 = string;
+export type SizeBytes = number;
+export type Files = InputFileDigest[];
+export type ReadsetSha256 = string;
+export type SchemaVersion1 = "hardwise.input_reads.v1";
+export type StartedAt = string;
+export type VerifiedAt = string;
+export type PackageVersion = string;
+export type ProfileSnapshotEncoding = "json_with_nonfinite_float_tags";
+export type PartNumber3 = string;
+export type ReviewStatus1 = string;
+export type Sha2562 = string;
+export type Profiles = ProfileModelSnapshot[];
+export type PythonVersion = string;
+export type RawInputsArchived = false;
+export type EmittedCount = number;
+export type Name3 = string;
+export type Scope2 = "pin" | "component" | "net";
+export type Version = string;
+export type RuleVersions = EmittedRuleVersion[];
+export type SchemaVersion2 = "hardwise.run_provenance.v1";
+export type Reason8 = string;
+export type RunId2 = string;
+export type Status16 = "recorded" | "not_recorded";
 export type Basis = "emitted_check_records";
 export type Boundary = string;
 export type CompletedChecks = number;
@@ -282,7 +315,7 @@ export type Check1 = string;
 export type Evidence4 = EvidenceView[];
 export type NetName = string;
 export type Nodes = string[];
-export type Status16 = string;
+export type Status17 = string;
 export type StatusGroup6 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel5 = string;
 export type Summary4 = string;
@@ -295,13 +328,13 @@ export type EvidenceCount = number;
 export type IssueCount = number;
 export type Manufacturer3 = string;
 export type Package1 = string;
-export type PartNumber3 = string;
+export type PartNumber4 = string;
 export type PinTableTaskCount = number;
 export type ProfilePath = string | null;
 export type ProfileStatus = string;
 export type Refdes4 = string;
 export type RiskHintCount = number;
-export type Status17 = string;
+export type Status18 = string;
 export type StatusGroup7 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel6 = string;
 export type Subtitle = string;
@@ -316,9 +349,9 @@ export type Accepted = number;
 export type HistoryCount = number;
 export type NeedsReview1 = number;
 export type Open = number;
-export type ProjectId1 = string | null;
+export type ProjectId2 = string | null;
 export type Resolved = number;
-export type RunId2 = string | null;
+export type RunId3 = string | null;
 export type StaleRemovedOnRerun = number;
 export type Storage = "memory" | "local_file";
 export type TotalTasks = number;
@@ -344,7 +377,7 @@ export type AcceptedExternalCount = number;
 export type Count1 = number;
 export type ExternalStatus = string;
 export type Count2 = number;
-export type Reason8 = string;
+export type Reason9 = string;
 export type Rejected1 = RejectedRiskHintSummary[];
 export type RejectedExternalCount = number;
 export type WrappedRefdesCount1 = number;
@@ -365,7 +398,7 @@ export type Source6 = string;
 export type Typical = number | null;
 export type Unit1 = "V";
 export type Facts = VoltageFact[];
-export type SchemaVersion1 = "hardwise.voltage_facts.v1";
+export type SchemaVersion3 = "hardwise.voltage_facts.v1";
 
 export interface WorkbenchContracts {
   chat_request: ChatRequest;
@@ -373,6 +406,7 @@ export interface WorkbenchContracts {
   component_detail: ComponentDetail;
   import_response: ImportResponse;
   review_history: ReviewHistoryPage;
+  run_provenance: RunProvenanceResponse;
   workbench_state: WorkbenchState;
 }
 /**
@@ -823,6 +857,61 @@ export interface ReviewHistoryEvent {
   run_id: RunId;
   stable_key: StableKey2;
 }
+export interface RunProvenanceResponse {
+  created_at: CreatedAt1;
+  project_id: ProjectId1;
+  provenance: RunProvenance | null;
+  reason: Reason8;
+  run_id: RunId2;
+  status: Status16;
+}
+export interface RunProvenance {
+  emitted_records: EmittedRecords;
+  implementation_identity_assurance: ImplementationIdentityAssurance;
+  input_capture_status: InputCaptureStatus;
+  inputs: InputReadManifest | null;
+  package_version: PackageVersion;
+  profile_bindings: ProfileBindings;
+  profile_snapshot_encoding: ProfileSnapshotEncoding;
+  profiles: Profiles;
+  python_version: PythonVersion;
+  raw_inputs_archived: RawInputsArchived;
+  rule_versions: RuleVersions;
+  schema_version: SchemaVersion2;
+}
+export interface InputReadManifest {
+  assurance: Assurance;
+  files: Files;
+  readset_sha256: ReadsetSha256;
+  schema_version: SchemaVersion1;
+  started_at: StartedAt;
+  verified_at: VerifiedAt;
+}
+export interface InputFileDigest {
+  path: Path2;
+  resolved_path: ResolvedPath;
+  roles: Roles;
+  sha256: Sha2561;
+  size_bytes: SizeBytes;
+}
+export interface ProfileBindings {
+  [k: string]: string;
+}
+export interface ProfileModelSnapshot {
+  part_number: PartNumber3;
+  review_status: ReviewStatus1;
+  sha256: Sha2562;
+  values: Values;
+}
+export interface Values {
+  [k: string]: unknown;
+}
+export interface EmittedRuleVersion {
+  emitted_count: EmittedCount;
+  name: Name3;
+  scope: Scope2;
+  version: Version;
+}
 /**
  * Top-level SPA state returned by ``/api/workbench/state``.
  */
@@ -886,7 +975,7 @@ export interface NetCheckView {
   evidence: Evidence4;
   net_name: NetName;
   nodes: Nodes;
-  status: Status16;
+  status: Status17;
   status_group: StatusGroup6;
   status_label: StatusLabel5;
   summary: Summary4;
@@ -904,13 +993,13 @@ export interface ReviewQueueItem {
   issue_count: IssueCount;
   manufacturer: Manufacturer3;
   package: Package1;
-  part_number: PartNumber3;
+  part_number: PartNumber4;
   pin_table_task_count: PinTableTaskCount;
   profile_path: ProfilePath;
   profile_status: ProfileStatus;
   refdes: Refdes4;
   risk_hint_count: RiskHintCount;
-  status: Status17;
+  status: Status18;
   status_group: StatusGroup7;
   status_label: StatusLabel6;
   subtitle: Subtitle;
@@ -930,9 +1019,9 @@ export interface ReviewDecisionSummary {
   history_count: HistoryCount;
   needs_review: NeedsReview1;
   open: Open;
-  project_id: ProjectId1;
+  project_id: ProjectId2;
   resolved: Resolved;
-  run_id: RunId2;
+  run_id: RunId3;
   stale_removed_on_rerun: StaleRemovedOnRerun;
   storage: Storage;
   total_tasks: TotalTasks;
@@ -974,7 +1063,7 @@ export interface RiskHintsView {
  */
 export interface RejectedRiskHintSummary {
   count: Count2;
-  reason: Reason8;
+  reason: Reason9;
 }
 /**
  * Backward-compatible compact risk-hints summary.
@@ -991,7 +1080,7 @@ export interface RiskHintsSummary {
 export interface VoltageFactsDocument {
   active_mode: ActiveMode;
   facts: Facts;
-  schema_version: SchemaVersion1;
+  schema_version: SchemaVersion3;
 }
 /**
  * One user-supplied DC envelope relative to an identified reference net.

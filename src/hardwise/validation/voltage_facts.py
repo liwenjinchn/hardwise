@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from hardwise.input_provenance import read_input_text
 
 from hardwise.ir.types import Component, Design
 from hardwise.ir.voltage import VoltageFactsDocument
@@ -11,7 +12,7 @@ from hardwise.ir.voltage import VoltageFactsDocument
 
 def load_voltage_facts(path: Path, design: Design) -> None:
     """Reject invalid/foreign-net inputs before assigning any new facts."""
-    document = VoltageFactsDocument.model_validate_json(path.read_text(encoding="utf-8"))
+    document = VoltageFactsDocument.model_validate_json(read_input_text(path, role="voltage_facts"))
     known_nets = set(design.nets) | {
         pin.net for component in design.components.values() for pin in component.pins if pin.net
     }

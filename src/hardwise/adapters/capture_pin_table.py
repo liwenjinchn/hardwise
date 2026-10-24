@@ -12,8 +12,10 @@ Windows Tcl writes CRLF; parsing strips stray carriage returns everywhere.
 from __future__ import annotations
 
 import csv
+import io
 import re
 from pathlib import Path
+from hardwise.input_provenance import read_input_text
 
 from pydantic import BaseModel
 
@@ -94,23 +96,20 @@ def parse_pin_table(path: Path) -> list[PinTableRecord]:
     count — a malformed export should fail loudly, not produce partial truth.
     """
     records: list[PinTableRecord] = []
-    with path.open(encoding="utf-8", newline="") as fh:
+    with io.StringIO(read_input_text(path, role="pin_table", newline=""), newline="") as fh:
         reader = csv.reader(fh)
         try:
             header = [_clean(c) for c in next(reader)]
         except StopIteration as e:
             raise ValueError(f"{path}: empty pin-table CSV") from e
         if header != EXPECTED_HEADER:
-            raise ValueError(
-                f"{path}: unexpected header {header!r}; expected {EXPECTED_HEADER!r}"
-            )
+            raise ValueError(f"{path}: unexpected header {header!r}; expected {EXPECTED_HEADER!r}")
         for line_no, row in enumerate(reader, start=2):
             if not row or all(_clean(c) == "" for c in row):
                 continue
             if len(row) != len(EXPECTED_HEADER):
                 raise ValueError(
-                    f"{path}:{line_no}: expected {len(EXPECTED_HEADER)} columns, "
-                    f"got {len(row)}"
+                    f"{path}:{line_no}: expected {len(EXPECTED_HEADER)} columns, got {len(row)}"
                 )
             cleaned = [_clean(c) for c in row]
             (

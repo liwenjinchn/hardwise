@@ -1029,6 +1029,39 @@
       "title": "DocumentCoverageView",
       "type": "object"
     },
+    "EmittedRuleVersion": {
+      "properties": {
+        "emitted_count": {
+          "title": "Emitted Count",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "pin",
+            "component",
+            "net"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "emitted_count",
+        "name",
+        "scope",
+        "version"
+      ],
+      "title": "EmittedRuleVersion",
+      "type": "object"
+    },
     "EvidenceChainItem": {
       "description": "A reader-facing chain-of-custody card.",
       "properties": {
@@ -1534,6 +1567,87 @@
       "title": "ImportResponse",
       "type": "object"
     },
+    "InputFileDigest": {
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "resolved_path": {
+          "title": "Resolved Path",
+          "type": "string"
+        },
+        "roles": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Roles",
+          "type": "array"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "resolved_path",
+        "roles",
+        "sha256",
+        "size_bytes"
+      ],
+      "title": "InputFileDigest",
+      "type": "object"
+    },
+    "InputReadManifest": {
+      "properties": {
+        "assurance": {
+          "const": "observed_readset_verified",
+          "default": "observed_readset_verified",
+          "title": "Assurance",
+          "type": "string"
+        },
+        "files": {
+          "items": {
+            "$ref": "#/$defs/InputFileDigest"
+          },
+          "title": "Files",
+          "type": "array"
+        },
+        "readset_sha256": {
+          "title": "Readset Sha256",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "hardwise.input_reads.v1",
+          "default": "hardwise.input_reads.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "started_at": {
+          "title": "Started At",
+          "type": "string"
+        },
+        "verified_at": {
+          "title": "Verified At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assurance",
+        "files",
+        "readset_sha256",
+        "schema_version",
+        "started_at",
+        "verified_at"
+      ],
+      "title": "InputReadManifest",
+      "type": "object"
+    },
     "NetCheckView": {
       "description": "Design-level net check shown in the project summary area.",
       "properties": {
@@ -1776,6 +1890,35 @@
         "summary"
       ],
       "title": "PinView",
+      "type": "object"
+    },
+    "ProfileModelSnapshot": {
+      "properties": {
+        "part_number": {
+          "title": "Part Number",
+          "type": "string"
+        },
+        "review_status": {
+          "title": "Review Status",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "values": {
+          "additionalProperties": true,
+          "title": "Values",
+          "type": "object"
+        }
+      },
+      "required": [
+        "part_number",
+        "review_status",
+        "sha256",
+        "values"
+      ],
+      "title": "ProfileModelSnapshot",
       "type": "object"
     },
     "ProfileView": {
@@ -2979,6 +3122,156 @@
       "title": "RiskHintsView",
       "type": "object"
     },
+    "RunProvenance": {
+      "properties": {
+        "emitted_records": {
+          "title": "Emitted Records",
+          "type": "integer"
+        },
+        "implementation_identity_assurance": {
+          "const": "declared_rule_versions",
+          "default": "declared_rule_versions",
+          "title": "Implementation Identity Assurance",
+          "type": "string"
+        },
+        "input_capture_status": {
+          "enum": [
+            "captured",
+            "unavailable"
+          ],
+          "title": "Input Capture Status",
+          "type": "string"
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InputReadManifest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "package_version": {
+          "title": "Package Version",
+          "type": "string"
+        },
+        "profile_bindings": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Profile Bindings",
+          "type": "object"
+        },
+        "profile_snapshot_encoding": {
+          "const": "json_with_nonfinite_float_tags",
+          "default": "json_with_nonfinite_float_tags",
+          "title": "Profile Snapshot Encoding",
+          "type": "string"
+        },
+        "profiles": {
+          "items": {
+            "$ref": "#/$defs/ProfileModelSnapshot"
+          },
+          "title": "Profiles",
+          "type": "array"
+        },
+        "python_version": {
+          "title": "Python Version",
+          "type": "string"
+        },
+        "raw_inputs_archived": {
+          "const": false,
+          "default": false,
+          "title": "Raw Inputs Archived",
+          "type": "boolean"
+        },
+        "rule_versions": {
+          "items": {
+            "$ref": "#/$defs/EmittedRuleVersion"
+          },
+          "title": "Rule Versions",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "hardwise.run_provenance.v1",
+          "default": "hardwise.run_provenance.v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "emitted_records",
+        "implementation_identity_assurance",
+        "input_capture_status",
+        "inputs",
+        "package_version",
+        "profile_bindings",
+        "profile_snapshot_encoding",
+        "profiles",
+        "python_version",
+        "raw_inputs_archived",
+        "rule_versions",
+        "schema_version"
+      ],
+      "title": "RunProvenance",
+      "type": "object"
+    },
+    "RunProvenanceResponse": {
+      "properties": {
+        "created_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Created At"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RunProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "recorded",
+            "not_recorded"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "created_at",
+        "project_id",
+        "provenance",
+        "reason",
+        "run_id",
+        "status"
+      ],
+      "title": "RunProvenanceResponse",
+      "type": "object"
+    },
     "SignoffReadiness": {
       "description": "Whether L1 evidence can be reproduced from the exported local package.",
       "properties": {
@@ -3435,6 +3728,9 @@
     "review_history": {
       "$ref": "#/$defs/ReviewHistoryPage"
     },
+    "run_provenance": {
+      "$ref": "#/$defs/RunProvenanceResponse"
+    },
     "workbench_state": {
       "$ref": "#/$defs/WorkbenchState"
     }
@@ -3444,6 +3740,7 @@
     "component_detail",
     "import_response",
     "review_history",
+    "run_provenance",
     "chat_request",
     "chat_response"
   ],
