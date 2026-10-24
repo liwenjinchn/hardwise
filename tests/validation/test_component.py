@@ -323,7 +323,7 @@ def test_validate_xl1509_fixture_reports_dcdc_peripheral_errors() -> None:
 
     summaries = "\n".join(check.summary for check in report.component_checks)
     assert "D5 (1N4007W)" in summaries
-    assert "not a Schottky-style diode family" in summaries
+    assert "type cannot be classified deterministically from its part string" in summaries
     assert "电感 L1 为 6.8 uH" in summaries
     assert "不套用全局电感阈值" in summaries
 
@@ -477,14 +477,14 @@ def test_validate_xl1509_feedback_needs_confirmed_bounds() -> None:
     assert "网名和 voltage_hint 仅为候选" in feedback.summary
 
 
-def test_validate_mpq8626_sync_buck_topology_passes() -> None:
+def test_validate_mpq8626_output_role_requires_declared_topology() -> None:
     design = _mpq8626_design()
     _confirm(design, {"P12V": 12.0, "GND": 0.0})
     report = validate_component_against_profile(
         design.components["U13"], _mpq8626_profile(), design
     )
 
-    assert report.status == "PASS"
+    assert report.status == "UNKNOWN"
     assert report.counts_by_status == {
         "PASS": 14,
         "WARN": 0,
@@ -493,10 +493,10 @@ def test_validate_mpq8626_sync_buck_topology_passes() -> None:
         "NOT_APPLICABLE": 0,
     }
     assert report.component_counts_by_status == {
-        "PASS": 2,
+        "PASS": 1,
         "WARN": 0,
         "ERROR": 0,
-        "UNKNOWN": 0,
+        "UNKNOWN": 1,
         "NOT_APPLICABLE": 0,
     }
     summaries = "\n".join(check.summary for check in report.component_checks)

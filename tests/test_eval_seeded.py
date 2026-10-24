@@ -20,9 +20,9 @@ def test_seeded_defect_benchmark_reports_recall_and_false_positives() -> None:
         profiles=Path("data/datasheet_profiles"),
     )
 
-    assert summary.headline == "7 seeded defects, recall 7/7, 0 false positives"
+    assert summary.headline == "7 seeded defects, recall 6/7, 0 false positives"
     assert summary.seeded_defects == 7
-    assert summary.recall == 7
+    assert summary.recall == 6
     assert summary.false_positives == 0
     assert {case.name for case in summary.cases} == {
         "capacitor_low_voltage",
@@ -33,11 +33,15 @@ def test_seeded_defect_benchmark_reports_recall_and_false_positives() -> None:
         "i2c_mux_half_connected_channel",
         "buck_inductor_output_grounded",
     }
-    assert all(case.detected for case in summary.cases)
+    assert {case.name for case in summary.cases if not case.detected} == {
+        "buck_inductor_output_grounded"
+    }
     capacitor = next(case for case in summary.cases if case.name == "capacitor_low_voltage")
     assert capacitor.voltage_facts == "tests/fixtures/allegro/pst_dc_voltage_facts.json"
     assert all(case.false_positives == [] for case in summary.cases)
-    assert all(case.new_issues == [case.expected] for case in summary.cases)
+    assert all(
+        case.new_issues == ([case.expected] if case.detected else []) for case in summary.cases
+    )
 
     family_metrics = {item.family: item for item in summary.family_metrics}
     assert set(family_metrics) == {
@@ -50,7 +54,12 @@ def test_seeded_defect_benchmark_reports_recall_and_false_positives() -> None:
     }
     assert family_metrics["capacitor"].seeded_defects == 2
     assert family_metrics["capacitor"].recall == 2
-    assert all(item.recall == item.seeded_defects for item in family_metrics.values())
+    assert family_metrics["dcdc_buck"].recall == 0
+    assert all(
+        item.recall == item.seeded_defects
+        for family, item in family_metrics.items()
+        if family != "dcdc_buck"
+    )
     assert all(item.false_positives == 0 for item in family_metrics.values())
     assert len(summary.fixture_sources) == 5
 
@@ -68,14 +77,16 @@ def test_seeded_defect_cli_writes_json_summary(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0, result.output
-    assert "eval seeded-defects: 7 seeded defects, recall 7/7, 0 false positives" in result.output
+    assert "eval seeded-defects: 7 seeded defects, recall 6/7, 0 false positives" in result.output
     assert "family capacitor: recall 2/2, 0 false positives" in result.output
     assert "capacitor_low_voltage [capacitor]: detected" in result.output
     assert f"summary: {output}" in result.output
 
     summary = SeededDefectSummary.model_validate_json(output.read_text(encoding="utf-8"))
-    assert summary.headline == "7 seeded defects, recall 7/7, 0 false positives"
-    assert all(case.detected for case in summary.cases)
+    assert summary.headline == "7 seeded defects, recall 6/7, 0 false positives"
+    assert {case.name for case in summary.cases if not case.detected} == {
+        "buck_inductor_output_grounded"
+    }
     assert summary.false_positives == 0
     assert len(summary.family_metrics) == 6
 
@@ -116,3 +127,23 @@ def test_seeded_defect_benchmark_subtracts_clean_baseline_issues(tmp_path: Path)
     assert summary.recall == 0
     assert summary.false_positives == 0
     assert summary.cases[0].new_issues == []
+
+
+def test_actual_converter_ground_short_is_detected_independently_of_label(tmp_path):
+    cases = json.loads(Path("tests/fixtures/eval/seeded_family_matrix.json").read_text())
+    case = next(c for c in cases["cases"] if c["name"] == "buck_inductor_output_grounded")
+    text = Path("tests/fixtures/allegro/mpq8626_sync_buck.net").read_text()
+    case.update(
+        name="buck_inductor_actual_return_short",
+        description="Connect PL1.2 to the actual converter ground pins, not a ground-like label.",
+        mutation_old=text,
+        mutation_new=text.replace(
+            "'GND' ; U13.1, U13.7, U13.14", "'GND' ; U13.1, U13.7, U13.14, PL1.2"
+        ).replace("  'P1V8' ; PL1.2\n", ""),
+    )
+    matrix = tmp_path / "physical-short.json"
+    matrix.write_text(json.dumps({"version": 1, "cases": [case]}))
+    summary = run_seeded_defect_benchmark(matrix=matrix)
+    assert summary.recall == summary.seeded_defects == 1
+    assert summary.false_positives == 0
+    assert summary.cases[0].new_issues == [summary.cases[0].expected]

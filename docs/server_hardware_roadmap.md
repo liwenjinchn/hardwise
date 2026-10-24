@@ -1,5 +1,7 @@
 # Server Hardware Review Roadmap
 
+> Evidence correction (2026-10-24): earlier 7/7 seeded figures below describe the historical implementation. The unchanged seven-case matrix now reports **6/7**, zero unexpected differential findings: its Buck "grounded" mutation only renamed an isolated node GND_OUT and did not connect it to converter ground. A separate actual-return short regression detects **1/1**. These are internal regression checks, not independent engineering accuracy or a release gate. Current execution and remaining A01–A14 gates are in `docs/product/execution.md`.
+
 Hardwise is not trying to become another automatic PCB layout system. The
 durable product goal is narrower: a trust layer for server-hardware engineers
 before Layout handoff, built around exported enterprise EDA evidence and public

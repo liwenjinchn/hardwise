@@ -15,7 +15,6 @@ from hardwise.validation.topology import (
     components_on_net,
     first_by_prefix,
     first_by_prefixes,
-    is_likely_schottky_diode,
     parse_inductance_uh,
 )
 from hardwise.validation.types import ComponentValidation
@@ -45,7 +44,9 @@ def validate_buck_topology(
     checks = [_validate_buck_inductor(inductor, component, profile, design, output_pin.net)]
     if _external_freewheel_diode_required(profile):
         checks.append(
-            _validate_buck_diode(first_by_prefix(neighbors, "D"), profile, output_pin.net)
+            _validate_buck_diode(
+                first_by_prefix(neighbors, "D"), profile, output_pin.net, component
+            )
         )
     else:
         checks.append(_validate_synchronous_buck_freewheel(profile))
@@ -63,6 +64,7 @@ def _validate_buck_inductor(
     if inductor is None:
         return ComponentValidation(
             check="buck_inductor",
+            rule_version="2",
             result="FAIL",
             severity="ERROR",
             summary="Buck switch output net does not connect to an inductor.",
@@ -81,6 +83,7 @@ def _validate_buck_inductor(
         )
         return ComponentValidation(
             check="buck_inductor",
+            rule_version="2",
             result=result_for_attention(
                 worst_status("WARN", path_status), warning_result="UNKNOWN"
             ),
@@ -96,6 +99,7 @@ def _validate_buck_inductor(
         )
         return ComponentValidation(
             check="buck_inductor",
+            rule_version="2",
             result="FAIL",
             severity="ERROR",
             refdes=inductor.refdes,
@@ -109,6 +113,7 @@ def _validate_buck_inductor(
         )
         return ComponentValidation(
             check="buck_inductor",
+            rule_version="2",
             result="FAIL" if path_status in {"PASS", "ERROR"} else "UNKNOWN",
             severity=severity_for_attention(worst_status("WARN", path_status)),
             refdes=inductor.refdes,
@@ -118,6 +123,7 @@ def _validate_buck_inductor(
     if profile.recommended.get("inductor_requires_operating_conditions"):
         return ComponentValidation(
             check="buck_inductor",
+            rule_version="2",
             result="FAIL" if path_status == "ERROR" else "UNKNOWN",
             severity="ERROR" if path_status == "ERROR" else "INFO",
             refdes=inductor.refdes,
@@ -131,6 +137,7 @@ def _validate_buck_inductor(
         )
         return ComponentValidation(
             check="buck_inductor",
+            rule_version="2",
             result=result_for_attention(path_status, warning_result="UNKNOWN"),
             severity=severity_for_attention(path_status),
             refdes=inductor.refdes,
@@ -139,6 +146,7 @@ def _validate_buck_inductor(
         )
     return ComponentValidation(
         check="buck_inductor",
+        rule_version="2",
         result=result_for_attention(path_status, warning_result="UNKNOWN"),
         severity=severity_for_attention(path_status),
         refdes=inductor.refdes,
@@ -154,6 +162,7 @@ def _validate_buck_diode(
     diode: Component | None,
     profile: DatasheetProfile,
     switch_net: str,
+    component: Component,
 ) -> ComponentValidation:
     evidence = _profile_evidence(profile, "recommended.freewheel_diode")
     if diode is None:
@@ -161,59 +170,23 @@ def _validate_buck_diode(
             check="buck_freewheel_diode",
             result="FAIL",
             severity="ERROR",
+            rule_version="2",
             summary="Buck switch output net does not connect to a freewheel diode.",
             evidence=evidence,
         )
-
-    path_status, path_summary = buck_diode_path_result(diode, switch_net)
-    identity = " ".join(
-        value
-        for value in [
-            diode.part_number,
-            diode.value,
-            diode.properties.get("BOM_DESCRIPTION"),
-        ]
-        if value
-    )
-    schottky = is_likely_schottky_diode(identity)
-    if schottky is False:
-        summary = (
-            f"Freewheel diode {diode.refdes} ({diode.part_number or diode.value}) "
-            f"is not a Schottky-style diode family. {path_summary}"
-        )
-        return ComponentValidation(
-            check="buck_freewheel_diode",
-            result=result_for_attention(
-                worst_status("ERROR", path_status), warning_result="UNKNOWN"
-            ),
-            severity=severity_for_attention(worst_status("ERROR", path_status)),
-            refdes=diode.refdes,
-            summary=summary,
-            evidence=evidence,
-        )
-    if schottky is None:
-        summary = (
-            f"Freewheel diode {diode.refdes} ({diode.part_number or diode.value}) "
-            f"type cannot be classified deterministically. {path_summary}"
-        )
-        return ComponentValidation(
-            check="buck_freewheel_diode",
-            result=result_for_attention(
-                worst_status("WARN", path_status), warning_result="UNKNOWN"
-            ),
-            severity=severity_for_attention(worst_status("WARN", path_status)),
-            refdes=diode.refdes,
-            summary=summary,
-            evidence=evidence,
-        )
+    path_status, path_summary = buck_diode_path_result(diode, switch_net, component, profile)
+    failed = path_status == "ERROR"
     return ComponentValidation(
         check="buck_freewheel_diode",
-        result=result_for_attention(path_status, warning_result="UNKNOWN"),
-        severity=severity_for_attention(path_status),
+        result="FAIL" if failed else "UNKNOWN",
+        severity="ERROR" if failed else "INFO",
         refdes=diode.refdes,
+        rule_version="2",
+        needs_review=not failed,
         summary=(
-            f"Freewheel diode {diode.refdes} is in a recognized Schottky-style family. "
-            f"{path_summary}"
+            f"Freewheel diode candidate {diode.refdes} ({diode.part_number or diode.value}); "
+            "type cannot be classified deterministically from its part string. "
+            f"{path_summary} Polarity, ratings and switching suitability are unassessed."
         ),
         evidence=evidence,
     )

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
-from hardwise.validation.pins import is_ground_net, voltage_for_net
 
 
 def buck_inductor_path_result(
@@ -22,109 +21,76 @@ def buck_inductor_path_result(
             "ERROR",
             f"Buck inductor {inductor.refdes} is not connected to switch net {switch_net}.",
         )
-
-    other_nets = sorted(net for net in nets if net != switch_net)
+    other_nets = sorted(nets - {switch_net})
     if not other_nets:
         return (
             "ERROR",
             f"Buck inductor {inductor.refdes} has no second-terminal net beyond {switch_net}.",
         )
+    if len(inductor.pins) != 2 or len(other_nets) != 1:
+        return (
+            "UNKNOWN",
+            f"Buck inductor candidate {inductor.refdes} is not a proven two-terminal branch.",
+        )
+
+    returns = _converter_returns(component, profile)
+    if len(returns) == 1 and other_nets[0] in returns:
+        return "ERROR", (
+            f"Buck inductor {inductor.refdes} terminates at actual converter return "
+            f"{other_nets[0]}, rather than a separate output node."
+        )
 
     fixed_output_net = _fixed_output_net(component, profile)
-    fixed_output_voltage = _float_recommended(profile, "fixed_output_voltage")
     if fixed_output_net:
         if fixed_output_net in other_nets:
-            return (
-                "PASS",
-                (
-                    f"Buck inductor path runs from switch net {switch_net} "
-                    f"to fixed output rail {fixed_output_net}."
-                ),
-            )
-        matching_voltage = _matching_voltage_net(other_nets, fixed_output_voltage, design)
-        if matching_voltage:
-            return (
-                "PASS",
-                (
-                    f"Buck inductor path runs from switch net {switch_net} to {matching_voltage}, "
-                    f"matching fixed output voltage {fixed_output_voltage:g} V."
-                ),
-            )
-        known = [net for net in other_nets if voltage_for_net(net, design) is not None]
-        status = "ERROR" if known and fixed_output_voltage is not None else "WARN"
-        return (
-            status,
-            (
-                f"Buck inductor path from switch net {switch_net} does not return to the "
-                f"fixed output rail {fixed_output_net}; other terminal net(s): "
-                f"{', '.join(other_nets)}."
-            ),
-        )
-
-    output_like = [
-        net
-        for net in other_nets
-        if not is_ground_net(net) and voltage_for_net(net, design) is not None
-    ]
-    if output_like:
-        return (
-            "PASS",
-            (
+            return "PASS", (
                 f"Buck inductor path runs from switch net {switch_net} "
-                f"to output-like rail {output_like[0]}."
-            ),
+                f"to fixed output rail {fixed_output_net}; connection only."
+            )
+        return "ERROR", (
+            f"Buck inductor path from switch net {switch_net} does not return to the "
+            f"fixed output rail {fixed_output_net}; other terminal net(s): {', '.join(other_nets)}. "
+            "Equal rail labels or voltages do not prove the feedback connection."
         )
-
-    non_ground = [net for net in other_nets if not is_ground_net(net)]
-    if non_ground:
-        return (
-            "WARN",
-            (
-                f"Buck inductor leaves switch net {switch_net} via {', '.join(non_ground)}, "
-                "but the output-rail voltage cannot be proven deterministically."
-            ),
-        )
-    return (
-        "ERROR",
-        (
-            f"Buck inductor {inductor.refdes} returns only to ground-like net(s) "
-            f"{', '.join(other_nets)}; expected an output rail."
-        ),
+    return "UNKNOWN", (
+        f"Buck inductor leaves switch net {switch_net} via {', '.join(other_nets)}; "
+        "output role and operating conditions are unconfirmed. Net names and voltage hints "
+        "do not establish an output rail."
     )
 
 
-def buck_diode_path_result(diode: Component, switch_net: str) -> tuple[str, str]:
-    """Return status and summary for the switch-node-to-return diode path."""
-
+def buck_diode_path_result(
+    diode: Component, switch_net: str, component: Component, profile: DatasheetProfile
+) -> tuple[str, str]:
+    """Compare a candidate branch with the converter's actual declared return pin."""
     nets = _component_nets(diode)
     if switch_net not in nets:
         return (
             "ERROR",
             f"Freewheel diode {diode.refdes} is not connected to switch net {switch_net}.",
         )
-
-    other_nets = sorted(net for net in nets if net != switch_net)
+    other_nets = sorted(nets - {switch_net})
     if not other_nets:
+        return "ERROR", f"Freewheel diode {diode.refdes} has no return net beyond {switch_net}."
+    if len(diode.pins) != 2 or len(other_nets) != 1:
         return (
-            "ERROR",
-            f"Freewheel diode {diode.refdes} has no return net beyond {switch_net}.",
+            "UNKNOWN",
+            f"Freewheel diode candidate {diode.refdes} is not a proven two-terminal branch.",
         )
-
-    ground_returns = [net for net in other_nets if is_ground_net(net)]
-    if ground_returns:
-        return (
-            "PASS",
-            (
-                f"Freewheel diode path runs from switch net {switch_net} "
-                f"to ground return {ground_returns[0]}."
-            ),
+    returns = _converter_returns(component, profile)
+    if len(returns) != 1:
+        return "UNKNOWN", (
+            "Converter return is missing or ambiguous; distinct ground nets are not assumed equivalent."
         )
-    return (
-        "ERROR",
-        (
-            f"Freewheel diode {diode.refdes} connects from switch net {switch_net} "
-            f"to {', '.join(other_nets)}, not a recognized ground return."
-        ),
+    actual_return = next(iter(returns))
+    if actual_return in other_nets:
+        return "PASS", (
+            f"Freewheel diode path runs from switch net {switch_net} "
+            f"to actual converter return {actual_return}; connection only."
+        )
+    return "ERROR", (
+        f"Freewheel diode {diode.refdes} connects from switch net {switch_net} "
+        f"to {', '.join(other_nets)}, not the converter's recognized ground return {actual_return}."
     )
 
 
@@ -139,6 +105,16 @@ def _component_nets(component: Component) -> set[str]:
     return {pin.net for pin in component.pins if pin.net}
 
 
+def _converter_returns(component: Component, profile: DatasheetProfile) -> set[str]:
+    return {
+        pin.net
+        for role in profile.pins
+        if role.category == "ground"
+        for pin in [component.pin_by_number(role.number)]
+        if pin is not None and pin.net
+    }
+
+
 def _fixed_output_net(component: Component, profile: DatasheetProfile) -> str | None:
     if _float_recommended(profile, "fixed_output_voltage") is None:
         return None
@@ -147,20 +123,6 @@ def _fixed_output_net(component: Component, profile: DatasheetProfile) -> str | 
             pin = component.pin_by_number(pin_profile.number)
             if pin is not None and pin.net:
                 return pin.net
-    return None
-
-
-def _matching_voltage_net(
-    net_names: list[str],
-    expected_voltage: float | None,
-    design: Design,
-) -> str | None:
-    if expected_voltage is None:
-        return None
-    for net_name in net_names:
-        voltage = voltage_for_net(net_name, design)
-        if voltage is not None and abs(voltage - expected_voltage) <= 0.2:
-            return net_name
     return None
 
 

@@ -73,8 +73,8 @@ def test_report_component_validation_writes_xl1509_dcdc_errors(tmp_path: Path) -
     assert "电感选型" in md
     assert "datasheet:xl1509.pdf#p9" in md
     assert "6. 综合总结" in md
-    assert "D5（1N4007W）" in md
-    assert "不是肖特基类型" in md
+    assert "D5 (1N4007W)" in md
+    assert "type cannot be classified deterministically from its part string" in md
     assert "电感 L1 为 6.8 uH" in md
     assert "不套用全局电感阈值" in md
     assert "低于器件档案下限 68 uH" not in md
