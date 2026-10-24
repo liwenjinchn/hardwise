@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections import Counter
-
+from hardwise.bom.conflicts import CONFLICT_PROPERTY, conflict_reason, group_bom_rows
 from hardwise.bom.types import Bom, BomMatchReport, BomQuantityMismatch, BomRow, sort_refdes_key
 from hardwise.ir.types import Design
 
@@ -12,14 +11,16 @@ def match_bom_to_design(bom: Bom, design: Design) -> BomMatchReport:
     """Validate BOM refdes against ``Design.refdes_set`` and build a match report."""
 
     rows = bom.rows
-    counts = Counter(row.refdes for row in rows)
+    grouped = group_bom_rows(rows)
+    counts = {ref: len(records) for ref, records in grouped.items()}
     duplicate_refdes = sorted(
         (refdes for refdes, count in counts.items() if count > 1),
         key=sort_refdes_key,
     )
     rows_by_refdes: dict[str, BomRow] = {}
     for row in rows:
-        rows_by_refdes.setdefault(row.refdes, row)
+        if counts[row.refdes] == 1:
+            rows_by_refdes[row.refdes] = row
 
     bom_refdes = set(counts)
     design_refdes = design.refdes_set
@@ -43,12 +44,15 @@ def match_bom_to_design(bom: Bom, design: Design) -> BomMatchReport:
         non_refdes_item_count=len(bom.non_refdes_items),
         bom_row_count=len(rows),
         bom_refdes_count=len(bom_refdes),
-        matched_refdes=sorted(design_refdes & bom_refdes, key=sort_refdes_key),
+        matched_refdes=sorted(
+            (design_refdes & bom_refdes) - set(duplicate_refdes), key=sort_refdes_key
+        ),
         bom_only_refdes=sorted(bom_refdes - design_refdes, key=sort_refdes_key),
         design_only_refdes=sorted(design_refdes - bom_refdes, key=sort_refdes_key),
         duplicate_bom_refdes=duplicate_refdes,
         quantity_mismatches=quantity_mismatches,
         rows_by_refdes=rows_by_refdes,
+        conflicting_rows={ref: grouped[ref] for ref in duplicate_refdes},
     )
 
 
@@ -59,11 +63,19 @@ def apply_bom_to_design(design: Design, report: BomMatchReport) -> Design:
     components = {}
     for refdes, component in design.components.items():
         row = report.rows_by_refdes.get(refdes)
-        if row is None or refdes in ambiguous:
+        if refdes in ambiguous:
+            properties = dict(component.properties)
+            properties[CONFLICT_PROPERTY] = conflict_reason(
+                refdes, report.conflicting_rows.get(refdes, [])
+            )
+            components[refdes] = component.model_copy(update={"properties": properties})
+            continue
+        if row is None:
             components[refdes] = component
             continue
 
         properties = dict(component.properties)
+        properties.pop(CONFLICT_PROPERTY, None)
         properties["BOM_ITEM"] = row.item_number
         properties["BOM_SOURCE"] = f"{row.source_file}#line{row.source_line}"
         if row.item_quantity is not None:

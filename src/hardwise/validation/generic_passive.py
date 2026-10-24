@@ -20,6 +20,7 @@ from hardwise.validation.passive_helpers import (
     _component_value,
     _terminal_connectivity,
 )
+from hardwise.validation.identity_scope import identity_conflict_report
 from hardwise.validation.types import ValidationReport
 from hardwise.validation.value_parsing import (
     ParsedCurrentRating,
@@ -57,6 +58,9 @@ def validate_generic_passive(
 ) -> ValidationReport:
     """Validate common passive value/package facts without a per-MPN profile."""
 
+    conflict = identity_conflict_report(component)
+    if conflict is not None:
+        return conflict
     value = _component_value(component, bom_row)
     evidence = _bom_evidence(bom_row)
     pin_results = _terminal_connectivity(component, family, evidence)

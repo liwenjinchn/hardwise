@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
+from hardwise.validation.identity_scope import identity_conflict_report, scope_topology_identities
 from hardwise.validation.pins import validate_pin
 from hardwise.validation.pin_voltage import profile_reference_pin
 from hardwise.validation.profile_conditions import validate_voltage_relations
@@ -16,6 +17,10 @@ def validate_component_against_profile(
     design: Design,
 ) -> ValidationReport:
     """Validate one component's schematic pins against a structured pin profile."""
+
+    conflict = identity_conflict_report(component)
+    if conflict is not None:
+        return conflict
 
     relation_targets = {relation.target_pin for relation in profile.voltage_relations}
     reference = profile_reference_pin(component, profile)
@@ -34,7 +39,9 @@ def validate_component_against_profile(
     component_checks = [
         *_validate_profile_review_status(component, profile),
         *validate_voltage_relations(component, profile, design),
-        *_validate_component_topology(component, profile, design),
+        *scope_topology_identities(
+            _validate_component_topology(component, profile, design), design
+        ),
     ]
     if profile.review_status != "ready":
         # Unreviewed profile premises cannot certify electrical PASS/FAIL.

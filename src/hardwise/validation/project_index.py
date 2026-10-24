@@ -13,6 +13,7 @@ from hardwise.ir.types import Design
 from hardwise.ir.voltage import VoltageFactsDocument
 from hardwise.path_display import display_path
 from hardwise.validation.component import validate_component_against_profile
+from hardwise.validation.identity_scope import identity_conflict_report
 from hardwise.validation.component_groups import ProjectComponentGroup, build_component_groups
 from hardwise.validation.component_groups import normalize_bom_item_identity
 from hardwise.validation.generic_passive import (
@@ -139,13 +140,20 @@ def build_project_validation_index(
         match_status = "manual_needed"
         reason = "No BOM/profile candidate was available for this refdes."
 
-        if candidate is not None:
+        conflict = identity_conflict_report(component)
+        if candidate is not None and conflict is None:
             match_status = candidate.match_status
             reason = candidate.reason
             profile_path = candidate.profile
             profile = validation_targets.get(component.refdes)
             if profile is not None:
                 validation = validate_component_against_profile(component, profile, design)
+
+        if conflict is not None:
+            validation = conflict
+            match_status = "ambiguous"
+            reason = conflict.component_checks[0].summary
+            profile_path = None
 
         passive_family = passive_families.get(component.refdes)
         if validation is None and passive_family is not None:

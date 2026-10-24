@@ -329,6 +329,10 @@ def run_component_validation(
         suggestions = difflib.get_close_matches(refdes, candidates, n=5, cutoff=0.6)
         return ValidationRefdesNotFound(refdes=refdes, closest_matches=suggestions)
 
+    from hardwise.bom.conflicts import CONFLICT_PROPERTY
+
+    if component.properties.get(CONFLICT_PROPERTY):
+        return ValidationNoProfile(refdes=refdes, reason=component.properties[CONFLICT_PROPERTY])
     profile = targets.get(refdes)
     if profile is None:
         return ValidationNoProfile(refdes=refdes)

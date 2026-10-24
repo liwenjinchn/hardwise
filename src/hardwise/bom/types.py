@@ -109,6 +109,7 @@ class BomMatchReport(BaseModel):
     duplicate_bom_refdes: list[str] = Field(default_factory=list)
     quantity_mismatches: list[BomQuantityMismatch] = Field(default_factory=list)
     rows_by_refdes: dict[str, BomRow] = Field(default_factory=dict)
+    conflicting_rows: dict[str, list[BomRow]] = Field(default_factory=dict)
 
     @property
     def is_clean(self) -> bool:

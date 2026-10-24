@@ -107,3 +107,33 @@ def test_apply_bom_to_design_attaches_identity_without_touching_pins(
     assert updated.components["U1"].properties["BOM_ITEM"] == "1"
     assert updated.components["U1"].properties["BOM_ITEM_QUANTITY"] == "1"
     assert updated.components["U1"].pins == []
+
+
+def test_duplicate_rows_are_retained_without_a_preferred_identity(tmp_path):
+    bom_path = tmp_path / "repeated.csv"
+    bom_path.write_text("Reference,Quantity,Value,MPN\nU1,1,partA,A\nU1,1,partB,B\n")
+    report = match_bom_to_design(parse_bom(bom_path), _design("U1"))
+    assert report.rows_by_refdes == {}
+    assert report.matched_refdes == []
+    assert [row.part_number for row in report.conflicting_rows["U1"]] == ["A", "B"]
+    assert [row.source_line for row in report.conflicting_rows["U1"]] == [2, 3]
+    blocked = apply_bom_to_design(_design("U1"), report)
+    assert blocked.components["U1"].part_number is None
+    assert "#line2" in blocked.components["U1"].properties["BOM_IDENTITY_CONFLICT"]
+    bom_path.write_text("Reference,Quantity,Value,MPN\nU1,1,partA,A\n")
+    clean = match_bom_to_design(parse_bom(bom_path), _design("U1"))
+    repaired = apply_bom_to_design(blocked, clean)
+    assert "BOM_IDENTITY_CONFLICT" not in repaired.components["U1"].properties
+    assert repaired.components["U1"].part_number == "A"
+
+
+def test_conflict_sources_use_physical_csv_lines_after_multiline_records(tmp_path):
+    path = tmp_path / "multiline.csv"
+    path.write_text(
+        'Reference,Quantity,Value,MPN,Description\nU1,1,A,A,"first\nsecond"\n\nU1,1,B,B,last\n'
+    )
+    report = match_bom_to_design(parse_bom(path), _design("U1"))
+    assert [row.source_line for row in report.conflicting_rows["U1"]] == [2, 5]
+    blocked = apply_bom_to_design(_design("U1"), report)
+    reason = blocked.components["U1"].properties["BOM_IDENTITY_CONFLICT"]
+    assert "#line2" in reason and "#line5" in reason

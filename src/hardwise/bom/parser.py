@@ -82,7 +82,13 @@ def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]
     description_field = _find_field(fields, ["description", "desc"])
 
     items: list[BomItem] = []
-    for line_no, row in enumerate(reader, start=2):
+    physical_lines = text.splitlines()
+    previous_end = reader.line_num
+    for row in reader:
+        line_no = previous_end + 1
+        while line_no <= len(physical_lines) and not physical_lines[line_no - 1]:
+            line_no += 1
+        previous_end = reader.line_num
         raw_refdes = row.get(refdes_field, "") or ""
         refdes_list = split_refdes(raw_refdes)
         quantity = _parse_quantity(row.get(quantity_field, "") or "", path, line_no)
@@ -92,9 +98,15 @@ def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]
                 quantity=quantity,
                 refdes_list=refdes_list,
                 value=_blank_to_none(row.get(value_field) if value_field else None),
-                manufacturer=_blank_to_none(row.get(manufacturer_field) if manufacturer_field else None),
-                part_number=_blank_to_none(row.get(part_number_field) if part_number_field else None),
-                description=_blank_to_none(row.get(description_field) if description_field else None),
+                manufacturer=_blank_to_none(
+                    row.get(manufacturer_field) if manufacturer_field else None
+                ),
+                part_number=_blank_to_none(
+                    row.get(part_number_field) if part_number_field else None
+                ),
+                description=_blank_to_none(
+                    row.get(description_field) if description_field else None
+                ),
                 source_file=path,
                 source_line=line_no,
                 raw_refdes=raw_refdes,
