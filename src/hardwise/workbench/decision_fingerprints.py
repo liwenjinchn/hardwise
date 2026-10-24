@@ -4,6 +4,14 @@ import hashlib
 import json
 
 from hardwise.ir.identity_sources import MPN_RECORDS, is_mpn_field, netlist_mpn_sources
+from hardwise.validation.passive_ratings import resolve_passive_rating
+from hardwise.bom.source_fields import RATING_SOURCES
+
+RATING_CHECKS = {
+    "capacitor_rated_voltage_parse": "voltage",
+    "capacitor_voltage_margin": "voltage",
+    "resistor_power_estimate": "power",
+}
 
 
 # Audited local dependencies, bound to the producer's declared version.
@@ -11,6 +19,9 @@ LOCAL_RULES = {
     ("capacitor_rated_voltage_parse", "1"),
     ("capacitor_voltage_margin", "1"),
     ("resistor_power_estimate", "1"),
+    ("capacitor_rated_voltage_parse", "2"),
+    ("capacitor_voltage_margin", "2"),
+    ("resistor_power_estimate", "2"),
     ("diode_reverse_voltage", "2"),
     ("tvs_working_standoff", "2"),
     ("mosfet_vgs_rating", "2"),
@@ -43,7 +54,8 @@ def _component(component):
     data["properties"] = {
         k: v
         for k, v in data["properties"].items()
-        if k not in {"BOM_SOURCE", MPN_RECORDS} and not (records and is_mpn_field(k))
+        if k not in {"BOM_SOURCE", MPN_RECORDS, RATING_SOURCES}
+        and not (records and is_mpn_field(k))
     }
     if records:
         data["properties"][MPN_RECORDS] = sorted(
@@ -74,9 +86,25 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
     design = context.design
     project = review_project_key(context)
     profiles = {k: _profile(v) for k, v in context.validation_targets.items()}
+    ratings = {}
+    for row in context.index.validated_rows:
+        component = design.components[row.refdes]
+        bom_row = context.bom_report.rows_by_refdes.get(row.refdes)
+        value = (bom_row.value if bom_row and bom_row.value else component.value) or ""
+        dimensions = {
+            RATING_CHECKS[check.check]
+            for check in row.validation.component_checks
+            if check.check in RATING_CHECKS
+        }
+        if dimensions:
+            ratings[row.refdes] = {
+                dimension: resolve_passive_rating(value, bom_row, dimension, component).signature()
+                for dimension in sorted(dimensions)
+            }
     broad = {
         "components": {k: _component(v) for k, v in sorted(design.components.items())},
         "profiles": profiles,
+        "passive_rating_premises": ratings,
         "voltage_facts": design.voltage_facts.model_dump(mode="json"),
         "net_checks": [c.model_dump(mode="json") for c in context.index.net_checks],
         "auxiliary_tasks": [
@@ -113,6 +141,10 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
                     if f.net in nets and f.mode == design.voltage_facts.active_mode
                 ],
             }
+            if check in RATING_CHECKS:
+                payload["passive_rating_premises"] = ratings.get(task.refdes, {}).get(
+                    RATING_CHECKS[check]
+                )
         else:
             payload = {"scope": "project_snapshot", "snapshot": broad_hash}
         output[task.stable_key] = _digest(

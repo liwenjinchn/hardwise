@@ -22,6 +22,7 @@ from hardwise.validation.value_parsing import (
     parse_rated_voltage,
     parse_resistance_ohms,
 )
+from hardwise.validation.passive_ratings import PassiveRating, attach_rating_sources
 
 
 def _capacitor_checks(
@@ -29,10 +30,11 @@ def _capacitor_checks(
     value: str,
     design: Design,
     evidence: list[str],
+    rating: PassiveRating | None = None,
 ) -> list[ComponentValidation]:
     capacitance = parse_capacitance_f(value)
-    rated_voltage = parse_rated_voltage(value)
-    return [
+    rated_voltage = rating.value if rating is not None else parse_rated_voltage(value)
+    checks = [
         _value_check(
             component,
             "capacitor_value_parse",
@@ -45,6 +47,13 @@ def _capacitor_checks(
         _package_check(component, "capacitor", evidence),
         _capacitor_voltage_margin(component, rated_voltage, design, evidence),
     ]
+    return [
+        attach_rating_sources(check, rating)
+        if rating is not None
+        and check.check in {"capacitor_rated_voltage_parse", "capacitor_voltage_margin"}
+        else check
+        for check in checks
+    ]
 
 
 def _resistor_checks(
@@ -52,9 +61,10 @@ def _resistor_checks(
     value: str,
     design: Design,
     evidence: list[str],
+    rating: PassiveRating | None = None,
 ) -> list[ComponentValidation]:
     resistance = parse_resistance_ohms(value)
-    power_rating = parse_power_watts(value)
+    power_rating = rating.value if rating is not None else parse_power_watts(value)
     return [
         _value_check(
             component,
@@ -65,7 +75,11 @@ def _resistor_checks(
             evidence,
         ),
         _package_check(component, "resistor", evidence),
-        _resistor_power_check(component, resistance, power_rating, design, evidence),
+        attach_rating_sources(
+            _resistor_power_check(component, resistance, power_rating, design, evidence), rating
+        )
+        if rating is not None
+        else _resistor_power_check(component, resistance, power_rating, design, evidence),
     ]
 
 

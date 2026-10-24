@@ -10,7 +10,7 @@
 | result | PASS / FAIL / UNKNOWN / NOT_APPLICABLE | 该项检查是否完成、是否满足条件 |
 | severity | ERROR / WARNING / INFO | 需要多高程度的关注，不能代替结果 |
 | evidence_kind | SOURCE_FACT / DERIVED / HYPOTHESIS | 来源记录、规则推导、待核假设 |
-| rule_version | 非空版本号，目前为各已标识检查的首次正式版本 1 | 和检查标识一起解释规则版本 |
+| rule_version | 每项生产者的非空声明版本；当前样例含 1、2，不能当作固定全局版本 | 和检查标识一起解释规则版本 |
 | needs_review | 布尔值 | 仍需要复核；不能同时认证 PASS |
 | migration_state | current / legacy_needs_review | 区分新结果与历史结果待重放 |
 | legacy_status | 历史 status 或空 | 保留旧含义，不当作本轮结果 |
@@ -58,14 +58,15 @@ T03 的受控子集、条件参数与出处核查。
 - 注入评测把“资料不可解析”的预期改为 UNKNOWN，并保留这项检出验收。
   回归的未预期差分项不是总体误报率。
 
-公开 mixed_controller_power_stage 样例：22 个器件有报告，1 个综合 PASS、4 个
-综合 FAIL、17 个 UNKNOWN；另有 3 个器件档案缺口。共生成 155 条检查记录，
-116 PASS、9 FAIL、30 UNKNOWN、0 NOT_APPLICABLE。组件数与检查记录数不是同一个
-分母。这些数值描述软件回归，不能证明实际硬件安全或专家金标准确率。
+公开 mixed_controller_power_stage 当前样例：25 个器件，21 个有报告，0 个综合 PASS、
+2 个综合 FAIL、19 个 UNKNOWN，另有4个档案缺口。生成146条检查记录：98 PASS、
+4 FAIL、44 UNKNOWN、0 NOT_APPLICABLE；完成数102，仅为已生成的PASS+FAIL记录，
+full_candidate_count 仍为空。组件与检查记录不是同一分母，也不是全板覆盖率或专家准确率。
 
 ## 未完成的产品门槛
 
-完整候选检查集合、每项输入/规则的依赖指纹、跨重启历史与版本失效仍待实施。
+完整候选检查集合和所有规则的精确依赖仍待完成。事务日志、同来源跨重启历史、
+输入/规则版本失效及运行清单已实现；完整原文件所有权、可搬迁项目恢复仍缺失。
 rule_version 字段不替代源码/档案指纹。已有器件族仍需完成 T03/T04：条件约束、
 READY 档案逐字段复核，以及网名推断不能充当可信电压输入。DERIVED 说明规则
 进行了推导，不单独证明推导前提正确。正式 AI 输出约束、真实 Windows/Cadence

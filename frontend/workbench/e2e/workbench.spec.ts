@@ -211,3 +211,39 @@ for (const viewport of [
     }
   });
 }
+
+test("white import keeps conflicting BOM rating premises unknown and accepts an explicit correction", async ({ page, request }, testInfo) => {
+  await openReview(page);
+  await page.getByRole("button", { name: "导入", exact: true }).click();
+  await page.getByLabel("选择 netlist / PST").setInputFiles(path.resolve("../../tests/fixtures/allegro/l78_regulator.net"));
+  const bom = (rating: string) => Buffer.from(
+    "Reference,Quantity,Value,Voltage Rating,Manufacturer,MPN\n" +
+    "U1,1,L7805,,ST,L7805\nC1,1,100nF 25V," + rating + ",Fixture,CAP-100N\nC2,1,100nF,,Fixture,CAP-OTHER\n"
+  );
+  await page.getByLabel("选择 BOM CSV").setInputFiles({ name: "ratings.csv", mimeType: "text/csv", buffer: bom("16V") });
+  const voltageFacts = Buffer.from(JSON.stringify({
+    schema_version: "hardwise.voltage_facts.v1", active_mode: "dc",
+    facts: [{ net: "+12V", minimum: 20, maximum: 20 }, { net: "GND", minimum: 0, maximum: 0 }].map(fact => ({
+      ...fact, reference_net: "GND", confirmed: true, confirmed_by: "public synthetic author", source: "public rating conflict fixture"
+    }))
+  }));
+  await page.getByLabel("选择 已确认电压事实").setInputFiles({ name: "facts.json", mimeType: "application/json", buffer: voltageFacts });
+  await page.getByRole("button", { name: "导入并解析" }).click();
+  await expect(queueRow(page, "C1")).toBeVisible();
+  await page.getByRole("button", { name: "问题清单" }).click();
+  await expect(page.locator(".findings-list")).toContainText("Value=25V");
+  await expect(page.locator(".findings-list")).toContainText("Voltage Rating=16V");
+  const exported = await (await request.get("/api/workbench/export?format=json")).json();
+  const task = exported.review_tasks.find((item: { refdes: string; check: string }) => item.refdes === "C1" && item.check === "capacitor_voltage_margin");
+  expect(task.assessment.result).toBe("UNKNOWN");
+  expect(task.assessment.needs_review).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("bom-rating-conflict-white.png"), animations: "disabled" });
+  await page.getByRole("button", { name: "导入", exact: true }).click();
+  await page.getByLabel("选择 netlist / PST").setInputFiles(path.resolve("../../tests/fixtures/allegro/l78_regulator.net"));
+  await page.getByLabel("选择 BOM CSV").setInputFiles({ name: "ratings.csv", mimeType: "text/csv", buffer: bom("25000mV") });
+  await page.getByLabel("选择 已确认电压事实").setInputFiles({ name: "facts.json", mimeType: "application/json", buffer: voltageFacts });
+  await page.getByRole("button", { name: "导入并解析" }).click();
+  await expect(queueRow(page, "C1")).toBeVisible();
+  const state = await (await request.get("/api/workbench/state")).json();
+  expect(state.queue.find((row: { refdes: string }) => row.refdes === "C1").deterministic_status).toBe("PASS");
+});

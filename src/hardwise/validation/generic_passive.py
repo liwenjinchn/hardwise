@@ -21,6 +21,7 @@ from hardwise.validation.passive_helpers import (
     _terminal_connectivity,
 )
 from hardwise.validation.identity_scope import identity_conflict_report
+from hardwise.validation.passive_ratings import resolve_passive_rating
 from hardwise.validation.types import ValidationReport
 from hardwise.validation.value_parsing import (
     ParsedCurrentRating,
@@ -65,9 +66,21 @@ def validate_generic_passive(
     evidence = _bom_evidence(bom_row)
     pin_results = _terminal_connectivity(component, family, evidence)
     if family == "capacitor":
-        checks = _capacitor_checks(component, value, design, evidence)
+        checks = _capacitor_checks(
+            component,
+            value,
+            design,
+            evidence,
+            resolve_passive_rating(value, bom_row, "voltage", component),
+        )
     elif family == "resistor":
-        checks = _resistor_checks(component, value, design, evidence)
+        checks = _resistor_checks(
+            component,
+            value,
+            design,
+            evidence,
+            resolve_passive_rating(value, bom_row, "power", component),
+        )
     elif family == "inductor":
         checks = _inductor_checks(component, value, evidence)
     else:

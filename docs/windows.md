@@ -31,9 +31,11 @@ uv sync --extra dev
 Copy-Item .env.example .env
 ```
 
-Edit `.env` for API-backed commands such as `ask`, `verify-api`, or live
-`serve-workbench` without `--fake-ai`. Local deterministic commands and
-`--fake-ai` work without an API key.
+Edit `.env` for API-backed commands such as `ask`, `verify-api`, and live AI
+questions. `serve-workbench` also starts in real mode without a model key; only
+chat reports unavailable while deterministic review remains usable. Local
+deterministic commands and `--fake-ai` need no model key. This behavior has local
+macOS evidence; it does not replace the required actual Windows/Cadence walkthrough.
 
 Useful `.env` fields:
 

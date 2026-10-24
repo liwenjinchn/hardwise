@@ -127,3 +127,36 @@ def test_parse_bom_rejects_invalid_quantity(tmp_path: Path) -> None:
 
     with pytest.raises(BomParseError, match="invalid BOM quantity"):
         parse_bom(bom_path)
+
+
+def test_xlsx_preserves_competing_rating_columns_for_validation(tmp_path):
+    from hardwise.workbench.context import build_workbench_context, close_workbench_context
+
+    root = Path(__file__).parents[2]
+    path = tmp_path / "ratings.xlsx"
+    write_minimal_xlsx(
+        path,
+        [
+            ["位号", "数量", "名称", "Voltage Rating", "Voltage Rating"],
+            ["C1", "1", "100nF 25V", "16V", "25V"],
+        ],
+    )
+    bom = parse_bom(path)
+    assert [(field.column, field.value) for field in bom.rows[0].source_fields[3:]] == [
+        (4, "16V"),
+        (5, "25V"),
+    ]
+    context = build_workbench_context(
+        netlist_path=root / "tests/fixtures/allegro/l78_regulator.net",
+        bom_path=path,
+        profiles=root / "data/datasheet_profiles",
+    )
+    try:
+        row = next(row for row in context.index.validated_rows if row.refdes == "C1")
+        check = next(
+            c for c in row.validation.component_checks if c.check == "capacitor_voltage_margin"
+        )
+        assert check.result == "UNKNOWN" and check.needs_review
+        assert "16V" in check.summary and "25V" in check.summary
+    finally:
+        close_workbench_context(context)

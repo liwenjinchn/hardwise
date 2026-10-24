@@ -11,6 +11,7 @@ from hardwise.input_provenance import read_input_text, read_input_bytes
 from xml.etree import ElementTree
 
 from hardwise.bom.types import Bom, BomItem, BomParseError, split_refdes
+from hardwise.bom.source_fields import delimited_source_fields, table_source_fields
 
 _XLSX_MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 _XLSX_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -70,6 +71,7 @@ def _parse_cadence_report_bom(path: Path, text: str) -> list[BomItem]:
 
 def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]:
     reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+    original_fields = iter(delimited_source_fields(text, delimiter))
     if reader.fieldnames is None:
         raise BomParseError(f"{path}: missing BOM header")
     fields = {_normalize_header(name): name for name in reader.fieldnames}
@@ -111,6 +113,7 @@ def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]
                 source_file=path,
                 source_line=line_no,
                 raw_refdes=raw_refdes,
+                source_fields=next(original_fields),
             )
         )
     if not items:
@@ -151,6 +154,7 @@ def _parse_xlsx_bom(path: Path) -> list[BomItem]:
                 source_file=path,
                 source_line=row_index,
                 raw_refdes=raw_refdes,
+                source_fields=table_source_fields(rows[header_index], row),
             )
         )
 

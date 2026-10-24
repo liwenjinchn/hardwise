@@ -15,6 +15,14 @@ class BomParseError(ValueError):
     """Raised when a BOM file cannot be parsed as a schematic BOM."""
 
 
+class BomSourceField(BaseModel):
+    """One original table cell; ordinal preserves repeated column names."""
+
+    column: int = Field(ge=1)
+    name: str
+    value: str
+
+
 class BomRow(BaseModel):
     """One expanded BOM identity row for exactly one refdes."""
 
@@ -24,6 +32,7 @@ class BomRow(BaseModel):
     manufacturer: str | None = None
     part_number: str | None = None
     description: str | None = None
+    source_fields: list[BomSourceField] = Field(default_factory=list)
     source_file: Path
     source_line: int
     item_number: str | None = None
@@ -40,6 +49,7 @@ class BomItem(BaseModel):
     manufacturer: str | None = None
     part_number: str | None = None
     description: str | None = None
+    source_fields: list[BomSourceField] = Field(default_factory=list)
     source_file: Path
     source_line: int
     raw_refdes: str = ""
@@ -54,6 +64,7 @@ class BomItem(BaseModel):
                 manufacturer=self.manufacturer,
                 part_number=self.part_number,
                 description=self.description,
+                source_fields=self.source_fields,
                 source_file=self.source_file,
                 source_line=self.source_line,
                 item_number=self.item_number,
