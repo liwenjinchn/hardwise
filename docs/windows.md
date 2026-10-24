@@ -120,3 +120,7 @@ passed for the commit you plan to show.
   `reports/`.
 - Chroma/vector search may initialize extra local model data on first semantic
   retrieval use. The default fast test suite avoids slow vector ranking tests.
+
+## Pinned public validation capsule
+
+See [validation capsule v1](product/windows-validation-capsule-v1.md) for the fixed-source package, hash verifier, native-Windows commands and manual Cadence record. A macOS smoke result does not close Windows/Cadence acceptance.
