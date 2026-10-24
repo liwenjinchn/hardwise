@@ -97,3 +97,18 @@ The white Import page now downloads a complete saved-project ZIP and uploads a Z
 The restore action means 'restore to new directory'. To open it, run the provided command as a new local service, retaining the original service/project as-is. If receipt writing fails, remove only that newly restored copy and return failure. User-visible errors never claim successful restoration. UI loading disables overlapping project actions; offline list/save/open/backup/restore make no API request.
 
 Browser proof downloads the actual ZIP, uploads a corrupt file and observes an error, retries with the downloaded archive, displays the new copy/commands, compares original active state unchanged and runs real CLI dry-run from the restored journal. Narrow760px receipt/PowerShell command rendering is inspected without horizontal overflow. PowerShell quoting is checked as text; actual Windows execution remains an external gate.
+
+## Process-exit save publication matrix — 2026-10-24
+
+Four actual subprocesses use os._exit at precise save boundaries on an owned public L78 fixture:
+
+| Boundary | Exit | Authoritative outcome after a new process opens the journal |
+|---|---:|---|
+| Before source staging rename |41| Prior catalog head and exact prior source bytes remain; abandoned staging is not a project |
+| After source rename, before catalog transaction |42| Prior catalog head/bytes remain; unreferenced published snapshot is not active |
+| After catalog INSERT, before SQLite commit |43| SQLite rolls back; prior head/bytes remain; state/history/runs/heads unchanged |
+| After SQLite commit, before normal return |44| Complete new head/source bytes remain; same managed ID; previous committed source is retained |
+
+Each test changes BOM bytes with a trailing newline, removes the external source directory before reopening, compares exact expected old/new bytes, restores the selected local-pin waiver and Chinese reason, and creates a post-crash backup containing only committed source references. No changed electrical premise is hidden by the test. The four pre-existing review tables remain unchanged by the save attempt itself.
+
+No production change was needed at these measured boundaries. Abandoned staging/orphan directories may remain after a hard process exit; tests prove they are not promoted or included in complete backups. This is not a safe automatic-GC protocol, all-family dependency proof, arbitrary board coverage, SIGKILL timing sweep, filesystem power-loss simulation or Windows/Cadence run. Broader lifecycle/target-environment gates remain explicit.
