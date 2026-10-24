@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 from typing import Literal
 
 from pydantic import BaseModel, Field
+from hardwise.validation.profile_identity_scope import block_identity_candidates
 
 from hardwise.bom.types import Bom, BomItem
-from hardwise.bom.conflicts import conflict_reason, group_bom_rows
 from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.validation.profile_candidate_documents import candidates_from_document_identity
@@ -92,17 +92,8 @@ def suggest_profile_candidates(
             design=design,
         )
     ]
-    grouped = group_bom_rows(bom.rows)
-    conflicts = {ref: conflict_reason(ref, rows) for ref, rows in grouped.items() if len(rows) > 1}
+    block_identity_candidates(candidates, bom, design)
     for candidate in candidates:
-        if candidate.refdes in conflicts:
-            candidate.match_status = "ambiguous"
-            candidate.profile = None
-            candidate.candidates = []
-            candidate.identity = "-"
-            candidate.identity_kind = "missing"
-            candidate.reason = conflicts[candidate.refdes]
-            continue
         blocked = quarantined.get(_normalize_identity(candidate.identity), [])
         if candidate.match_status == "no_result" and blocked:
             candidate.reason = "器件档案已隔离，等待工程复核；不参与确定性判定。"

@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
-from hardwise.validation.identity_scope import identity_conflict_report, scope_topology_identities
+from hardwise.validation.identity_scope import (
+    identity_conflict_report,
+    scope_topology_identities,
+    profile_identity_conflict_report,
+)
 from hardwise.validation.pins import validate_pin
 from hardwise.validation.pin_voltage import profile_reference_pin
 from hardwise.validation.profile_conditions import validate_voltage_relations
@@ -18,7 +22,9 @@ def validate_component_against_profile(
 ) -> ValidationReport:
     """Validate one component's schematic pins against a structured pin profile."""
 
-    conflict = identity_conflict_report(component)
+    conflict = identity_conflict_report(component) or profile_identity_conflict_report(
+        component, profile
+    )
     if conflict is not None:
         return conflict
 

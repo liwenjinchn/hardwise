@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from hardwise.bom.conflicts import CONFLICT_PROPERTY, conflict_reason, group_bom_rows
+from hardwise.bom.conflicts import (
+    CONFLICT_PROPERTY,
+    conflict_reason,
+    group_bom_rows,
+    single_row_identity_conflict,
+)
 from hardwise.bom.types import Bom, BomMatchReport, BomQuantityMismatch, BomRow, sort_refdes_key
 from hardwise.ir.types import Design
 
@@ -21,6 +26,14 @@ def match_bom_to_design(bom: Bom, design: Design) -> BomMatchReport:
     for row in rows:
         if counts[row.refdes] == 1:
             rows_by_refdes[row.refdes] = row
+
+    identity_conflicts = {}
+    for refdes, row in list(rows_by_refdes.items()):
+        component = design.components.get(refdes)
+        reason = single_row_identity_conflict(component, row) if component is not None else None
+        if reason:
+            identity_conflicts[refdes] = reason
+            rows_by_refdes.pop(refdes)
 
     bom_refdes = set(counts)
     design_refdes = design.refdes_set
@@ -45,14 +58,19 @@ def match_bom_to_design(bom: Bom, design: Design) -> BomMatchReport:
         bom_row_count=len(rows),
         bom_refdes_count=len(bom_refdes),
         matched_refdes=sorted(
-            (design_refdes & bom_refdes) - set(duplicate_refdes), key=sort_refdes_key
+            (design_refdes & bom_refdes) - set(duplicate_refdes) - set(identity_conflicts),
+            key=sort_refdes_key,
         ),
         bom_only_refdes=sorted(bom_refdes - design_refdes, key=sort_refdes_key),
         design_only_refdes=sorted(design_refdes - bom_refdes, key=sort_refdes_key),
         duplicate_bom_refdes=duplicate_refdes,
         quantity_mismatches=quantity_mismatches,
         rows_by_refdes=rows_by_refdes,
-        conflicting_rows={ref: grouped[ref] for ref in duplicate_refdes},
+        conflicting_rows={
+            ref: grouped[ref]
+            for ref in sorted(set(duplicate_refdes) | set(identity_conflicts), key=sort_refdes_key)
+        },
+        identity_conflicts=identity_conflicts,
     )
 
 
@@ -63,6 +81,11 @@ def apply_bom_to_design(design: Design, report: BomMatchReport) -> Design:
     components = {}
     for refdes, component in design.components.items():
         row = report.rows_by_refdes.get(refdes)
+        if refdes in report.identity_conflicts:
+            properties = dict(component.properties)
+            properties[CONFLICT_PROPERTY] = report.identity_conflicts[refdes]
+            components[refdes] = component.model_copy(update={"properties": properties})
+            continue
         if refdes in ambiguous:
             properties = dict(component.properties)
             properties[CONFLICT_PROPERTY] = conflict_reason(

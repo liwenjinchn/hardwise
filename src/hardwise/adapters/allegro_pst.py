@@ -146,6 +146,8 @@ def _parse_chip_properties(chip_file: Path) -> dict[str, dict[str, str]]:
             if len(fields) < 2:
                 raise ValueError(f"line {line_no}: malformed primitive row")
             current = fields[1]
+            if current in primitives:
+                raise ValueError(f"{chip_file}:{line_no}: duplicate primitive {current!r}")
             primitives[current] = {}
             in_body = False
             continue
@@ -163,6 +165,10 @@ def _parse_chip_properties(chip_file: Path) -> dict[str, dict[str, str]]:
             continue
         if in_body and "=" in line:
             key, value = _parse_assignment(line)
+            if key in primitives[current] and primitives[current][key] != value:
+                raise ValueError(
+                    f"{chip_file}:{line_no}: conflicting property {key!r} in primitive {current!r}"
+                )
             primitives[current][key] = value
 
     return primitives

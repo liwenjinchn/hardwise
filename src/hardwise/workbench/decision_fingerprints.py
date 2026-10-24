@@ -3,6 +3,8 @@
 import hashlib
 import json
 
+from hardwise.ir.identity_sources import MPN_RECORDS, is_mpn_field, netlist_mpn_sources
+
 
 # Audited local dependencies, bound to the producer's declared version.
 LOCAL_RULES = {
@@ -37,7 +39,16 @@ def _component(component):
         mode="json", exclude={"findings", "decision", "datasheet_profile", "datasheet_path"}
     )
     # Provenance location can move without changing a parsed electrical premise.
-    data["properties"] = {k: v for k, v in data["properties"].items() if k != "BOM_SOURCE"}
+    records = netlist_mpn_sources(component)
+    data["properties"] = {
+        k: v
+        for k, v in data["properties"].items()
+        if k not in {"BOM_SOURCE", MPN_RECORDS} and not (records and is_mpn_field(k))
+    }
+    if records:
+        data["properties"][MPN_RECORDS] = sorted(
+            {record["value"].strip().casefold() for record in records}
+        )
     data["pins"] = sorted(data["pins"], key=lambda p: p["number"])
     return data
 

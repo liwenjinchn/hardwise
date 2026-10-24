@@ -110,6 +110,7 @@ class BomMatchReport(BaseModel):
     quantity_mismatches: list[BomQuantityMismatch] = Field(default_factory=list)
     rows_by_refdes: dict[str, BomRow] = Field(default_factory=dict)
     conflicting_rows: dict[str, list[BomRow]] = Field(default_factory=dict)
+    identity_conflicts: dict[str, str] = Field(default_factory=dict)
 
     @property
     def is_clean(self) -> bool:
@@ -119,6 +120,7 @@ class BomMatchReport(BaseModel):
             or self.design_only_refdes
             or self.duplicate_bom_refdes
             or self.quantity_mismatches
+            or self.identity_conflicts
         )
 
 

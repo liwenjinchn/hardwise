@@ -162,7 +162,7 @@ def _bom_lane(context: WorkbenchContext) -> EvidencePackageLane:
         action = "Keep the matched BOM export with the review packet."
     elif matched:
         status, group, label = "partial", "warn", "identity gaps"
-        action = "Resolve BOM-only, design-only, duplicate, and quantity mismatches."
+        action = "Resolve BOM-only, design-only, duplicate, declared MPN conflicts, and quantity mismatches."
     else:
         status, group, label = "gap", "manual", "unmatched"
         action = "Provide a BOM whose refdes match the parsed registry."
@@ -207,6 +207,19 @@ def _bom_lane(context: WorkbenchContext) -> EvidencePackageLane:
                 len(report.quantity_mismatches),
                 None,
                 "BOM items",
+            ),
+            *(
+                [
+                    _metric(
+                        "identity_conflicts",
+                        "Declared MPN conflicts",
+                        len(report.identity_conflicts),
+                        None,
+                        "refdes",
+                    )
+                ]
+                if report.identity_conflicts
+                else []
             ),
         ],
     )

@@ -13,6 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 from urllib.parse import urlparse
 
+from hardwise.ir.identity_sources import attach_mpn_sources, is_mpn_field
 from hardwise.adapters.allegro_netlist import AllegroNetlistRegistry
 from hardwise.adapters.allegro_pst import AllegroPstRegistry
 from hardwise.adapters.base import BoardRegistry, NcPinRecord
@@ -86,6 +87,26 @@ def build_design_from_netlist(registry: AllegroNetlistRegistry) -> Design:
                 package=package.package_name,
             )
 
+    # Only explicit MPN fields carry manufacturer identity; device names are library facts.
+    by_refdes: dict[str, list[dict[str, str]]] = {}
+    for index, prop in enumerate(registry.properties, start=1):
+        if not is_mpn_field(prop.name) or not prop.value.strip():
+            continue
+        for refdes in prop.targets:
+            if refdes not in components:
+                raise ValueError(
+                    f"{registry.source_file}#A_PROPERTIES[{index}]: explicit MPN target {refdes} is absent from the component registry"
+                )
+            by_refdes.setdefault(refdes, []).append(
+                {
+                    "field": prop.name,
+                    "value": prop.value,
+                    "source": f"{registry.source_file}#A_PROPERTIES[{index}];refdes={refdes}",
+                }
+            )
+    for refdes, component in components.items():
+        components[refdes] = attach_mpn_sources(component, by_refdes.get(refdes, []))
+
     nets: dict[str, Net] = {}
     seen_pin_nets: dict[tuple[str, str], str] = {}
     pins_by_refdes: dict[str, list[Pin]] = {refdes: [] for refdes in components}
@@ -142,6 +163,18 @@ def build_design_from_pst(registry: AllegroPstRegistry) -> Design:
             part_number=part.properties.get("PART_NAME"),
             properties=part.properties,
         )
+
+    for part in registry.parts:
+        records = [
+            {
+                "field": name,
+                "value": value,
+                "source": f"{registry.chip_file or registry.source_dir}#primitive={part.primitive_name};field={name}",
+            }
+            for name, value in part.properties.items()
+            if is_mpn_field(name) and value.strip()
+        ]
+        components[part.refdes] = attach_mpn_sources(components[part.refdes], records)
 
     nets: dict[str, Net] = {}
     seen_pin_nets: dict[tuple[str, str], str] = {}

@@ -109,3 +109,34 @@ def test_rejects_node_before_net(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="NODE_NAME before NET_NAME"):
         parse_allegro_pst(tmp_path)
+
+
+@pytest.mark.parametrize("field", ["MPN", "VALUE"])
+def test_primitive_conflicting_properties_are_not_last_row_wins(tmp_path, field):
+    from hardwise.adapters.allegro_pst import _parse_chip_properties
+
+    path = tmp_path / "pstchip.dat"
+    path.write_text(
+        f"primitive 'A';\nbody\n{field}='first';\n{field}='second';\nend_body;\nend_primitive;\n"
+    )
+    with pytest.raises(ValueError, match=f"pstchip.dat:4: conflicting property '{field}'"):
+        _parse_chip_properties(path)
+
+
+def test_duplicate_primitive_definition_cannot_erase_previous_properties(tmp_path):
+    from hardwise.adapters.allegro_pst import _parse_chip_properties
+
+    path = tmp_path / "pstchip.dat"
+    path.write_text(
+        "primitive 'A';\nbody\nMPN='first';\nend_body;\nend_primitive;\nprimitive 'A';\n"
+    )
+    with pytest.raises(ValueError, match="pstchip.dat:6: duplicate primitive"):
+        _parse_chip_properties(path)
+
+
+def test_identical_repeated_property_keeps_the_same_literal_fact(tmp_path):
+    from hardwise.adapters.allegro_pst import _parse_chip_properties
+
+    path = tmp_path / "pstchip.dat"
+    path.write_text("primitive 'A';\nbody\nMPN='same';\nMPN='same';\nend_body;\nend_primitive;\n")
+    assert _parse_chip_properties(path) == {"A": {"MPN": "same"}}
