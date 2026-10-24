@@ -7,6 +7,8 @@ from typing import Literal, get_args
 
 from pydantic import BaseModel, Field, computed_field
 
+from hardwise.validation.assessment import Assessment, CHECK_RESULTS, CheckResult, Severity
+
 PinValidationStatus = Literal["PASS", "WARN", "ERROR", "UNKNOWN", "NOT_APPLICABLE"]
 VALIDATION_STATUSES: tuple[PinValidationStatus, ...] = get_args(PinValidationStatus)
 
@@ -19,23 +21,21 @@ def status_counts(statuses: Iterable[PinValidationStatus]) -> dict[PinValidation
     return counts
 
 
-class PinValidation(BaseModel):
+class PinValidation(Assessment):
     """Validation outcome for one profiled pin."""
 
     pin_number: str
     pin_name: str
     category: str
-    status: PinValidationStatus
     summary: str
     net: str | None = None
     evidence: list[str] = Field(default_factory=list)
 
 
-class ComponentValidation(BaseModel):
+class ComponentValidation(Assessment):
     """Validation outcome for one component-level topology/peripheral check."""
 
     check: str
-    status: PinValidationStatus
     summary: str
     evidence: list[str] = Field(default_factory=list)
     refdes: str | None = None
@@ -51,24 +51,57 @@ class ValidationReport(BaseModel):
     pin_results: list[PinValidation] = Field(default_factory=list)
     component_checks: list[ComponentValidation] = Field(default_factory=list)
 
+    @property
+    def assessment(self) -> Assessment:
+        return Assessment(
+            result=self.result,
+            severity=self.severity,
+            needs_review=self.needs_review,
+            evidence_kind="HYPOTHESIS" if self.needs_review else "DERIVED",
+            not_applicable_reason="All emitted checks are inapplicable"
+            if self.result == "NOT_APPLICABLE"
+            else None,
+        )
+
+    @computed_field
+    @property
+    def result(self) -> CheckResult:
+        results = [item.result for item in [*self.pin_results, *self.component_checks]]
+        if "FAIL" in results:
+            return "FAIL"
+        if not results or "UNKNOWN" in results:
+            return "UNKNOWN"
+        return "PASS" if "PASS" in results else "NOT_APPLICABLE"
+
+    @computed_field
+    @property
+    def severity(self) -> Severity:
+        checks = [*self.pin_results, *self.component_checks]
+        failures = [item for item in checks if item.result == "FAIL"]
+        severities = [item.severity for item in (failures or checks)]
+        return max(severities, key={"INFO": 0, "WARNING": 1, "ERROR": 2}.get, default="INFO")
+
+    @computed_field
+    @property
+    def needs_review(self) -> bool:
+        return any(item.needs_review for item in [*self.pin_results, *self.component_checks])
+
+    @computed_field
+    @property
+    def result_counts(self) -> dict[CheckResult, int]:
+        counts = dict.fromkeys(CHECK_RESULTS, 0)
+        for item in [*self.pin_results, *self.component_checks]:
+            counts[item.result] += 1
+        return counts
+
     @computed_field
     @property
     def status(self) -> PinValidationStatus:
         """Roll up pin and component-level status to component status."""
 
-        statuses = [
-            *[pin.status for pin in self.pin_results],
-            *[check.status for check in self.component_checks],
-        ]
-        if "ERROR" in statuses:
-            return "ERROR"
-        if "WARN" in statuses:
-            return "WARN"
-        if not statuses or "UNKNOWN" in statuses:
-            return "UNKNOWN"
-        if "PASS" in statuses:
-            return "PASS"
-        return "NOT_APPLICABLE"
+        from hardwise.validation.assessment import attention_status
+
+        return attention_status(self.result, self.severity)
 
     @computed_field
     @property

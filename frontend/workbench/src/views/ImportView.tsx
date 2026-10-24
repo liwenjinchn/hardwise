@@ -145,6 +145,13 @@ export function ImportView({
           {busy ? "正在导入" : "导入并解析"}
         </button>
       </form>
+      {state.assessment_coverage && <section className="current-snapshot" aria-label="已生成检查范围">
+        <strong>已生成检查 {state.assessment_coverage.generated_checks} 项</strong>
+        <p>已完成 {state.assessment_coverage.completed_checks}，未知 {state.assessment_coverage.unknown_checks}，
+          不适用 {state.assessment_coverage.not_applicable_checks}，
+          待复核历史记录 {state.assessment_coverage.legacy_needs_review}。</p>
+        <p>{state.assessment_coverage.boundary}</p>
+      </section>}
       <section className="current-snapshot" aria-label="当前电压确认记录">
         <strong>电压事实 · 工况 {state.voltage_facts.active_mode}</strong>
         <p>仅用于已支持的电容耐压和电阻 DC 功耗检查；网名与旧电压提示不能作为确认。</p>

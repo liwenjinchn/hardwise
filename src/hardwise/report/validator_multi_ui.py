@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hardwise.report.assessment_html import assessment_table
+
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
@@ -259,6 +261,7 @@ def _detail_panel(
     <div class="kpi"><span>UNKNOWN 检查</span><strong>{component_counts["UNKNOWN"]}</strong></div>
     <div class="kpi"><span>NOT_APPLICABLE 检查</span><strong>{component_counts["NOT_APPLICABLE"]}</strong></div>
   </div>
+  {assessment_table(validation)}
   {section_model_check(component, validation)}
   {section_pin_summary(component, validation, item.profile)}
   {section_connection_path(validation, component, design)}

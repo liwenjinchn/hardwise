@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hardwise.report.assessment_html import assessment_table
+
 from collections import Counter
 from html import escape
 from pathlib import Path
@@ -178,7 +180,7 @@ def render(
               <label for="tab-boundary">范围</label>
             </div>
             <div class="panels">
-              <div class="tab-panel report" id="evidence-details">{_pin_table(validation)}</div>
+              <div class="tab-panel report" id="evidence-details">{assessment_table(validation)}{_pin_table(validation)}</div>
               <div class="tab-panel topology" id="connection-path">{_topology_panel(selected, design, validation)}</div>
               <div class="tab-panel boundary">{_scope_panel(generated_at, profile_path)}</div>
             </div>

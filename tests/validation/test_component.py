@@ -255,15 +255,17 @@ def test_needs_review_profile_adds_component_warning() -> None:
     review = next(
         check for check in report.component_checks if check.check == "profile_review_status"
     )
-    assert report.status == "WARN"
+    assert report.status == "UNKNOWN"
+    assert report.needs_review is True
+    assert all(item.result == "UNKNOWN" for item in [*report.pin_results, *report.component_checks])
     assert report.component_counts_by_status == {
         "PASS": 0,
-        "WARN": 1,
+        "WARN": 0,
         "ERROR": 0,
-        "UNKNOWN": 0,
+        "UNKNOWN": 1,
         "NOT_APPLICABLE": 0,
     }
-    assert review.status == "WARN"
+    assert review.status == "UNKNOWN"
     assert "needs_review" in review.summary
 
 
@@ -281,9 +283,9 @@ def test_validate_component_warns_when_input_voltage_unknown() -> None:
     component = _component(vin_net="VIN_RAW")
     report = validate_component_against_profile(component, _profile(), _design(component))
 
-    assert report.status == "WARN"
+    assert report.status == "UNKNOWN"
     vin = report.pin_results[0]
-    assert vin.status == "WARN"
+    assert vin.status == "UNKNOWN"
     assert "cannot be inferred" in vin.summary
 
 
@@ -422,8 +424,8 @@ def test_validate_xl1509_bas_small_signal_diode_warns_not_schottky_pass() -> Non
     diode = next(
         check for check in report.component_checks if check.check == "buck_freewheel_diode"
     )
-    assert report.status == "WARN"
-    assert diode.status == "WARN"
+    assert report.status == "UNKNOWN"
+    assert diode.status == "UNKNOWN"
     assert "cannot be classified deterministically" in diode.summary
 
 
@@ -455,8 +457,8 @@ def test_validate_xl1509_unknown_diode_type_warns_without_fabricating() -> None:
     diode = next(
         check for check in report.component_checks if check.check == "buck_freewheel_diode"
     )
-    assert report.status == "WARN"
-    assert diode.status == "WARN"
+    assert report.status == "UNKNOWN"
+    assert diode.status == "UNKNOWN"
     assert "cannot be classified deterministically" in diode.summary
 
 
@@ -628,7 +630,7 @@ def test_validate_eg2132_bootstrap_diode_warns_without_high_side_voltage() -> No
     bootstrap = next(
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
     )
-    assert bootstrap.status == "WARN"
+    assert bootstrap.status == "UNKNOWN"
     assert "cannot be inferred from a switch-node/high-side rail" in bootstrap.summary
 
 
@@ -679,7 +681,7 @@ def test_validate_eg2132_unknown_bootstrap_diode_warns_without_fabricating() -> 
     bootstrap = next(
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
     )
-    assert bootstrap.status == "WARN"
+    assert bootstrap.status == "UNKNOWN"
     assert "cannot be classified deterministically" in bootstrap.summary
 
 
@@ -819,5 +821,22 @@ def test_validate_stm32_unknown_voltage_and_reset_topology_warn() -> None:
 
     vdd = next(check for check in report.component_checks if check.check == "mcu_vdd_vdda_rail")
     nrst = next(check for check in report.component_checks if check.check == "mcu_nrst")
-    assert vdd.status == "WARN"
-    assert nrst.status == "WARN"
+    assert vdd.status == "UNKNOWN"
+    assert nrst.status == "UNKNOWN"
+
+
+@pytest.mark.parametrize(
+    "path_status,result", [("PASS", "FAIL"), ("WARN", "UNKNOWN"), ("ERROR", "FAIL")]
+)
+def test_above_recommended_inductance_requires_a_resolved_path(monkeypatch, path_status, result):
+    from hardwise.validation import dcdc
+
+    design = _xl1509_design()
+    profile = _xl1509_profile().model_copy(update={"recommended": {"inductor_max_uh": 1.0}})
+    inductor = design.components["L1"]
+    monkeypatch.setattr(
+        dcdc, "buck_inductor_path_result", lambda *args: (path_status, "Synthetic path condition")
+    )
+    check = dcdc._validate_buck_inductor(inductor, design.components["U12"], profile, design, "SW")
+    assert check.result == result
+    assert check.severity == ("ERROR" if path_status == "ERROR" else "WARNING")

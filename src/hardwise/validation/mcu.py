@@ -40,7 +40,8 @@ def _validate_supply(
     if pin is None or not pin.net:
         return ComponentValidation(
             check=f"mcu_{_slug(name)}_rail",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"MCU {name} supply pin is missing or has no connected net.",
             evidence=evidence,
         )
@@ -50,7 +51,8 @@ def _validate_supply(
     if voltage is None:
         return ComponentValidation(
             check=f"mcu_{_slug(name)}_rail",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=f"MCU {name} rail voltage on net {pin.net} cannot be inferred.",
             evidence=evidence,
@@ -58,14 +60,16 @@ def _validate_supply(
     if nominal is not None and abs(voltage - nominal) > 0.2:
         return ComponentValidation(
             check=f"mcu_{_slug(name)}_rail",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"MCU {name} net {pin.net} is {voltage:g} V, expected {nominal:g} V.",
             evidence=evidence,
         )
     return ComponentValidation(
         check=f"mcu_{_slug(name)}_rail",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"MCU {name} net {pin.net} is a valid {voltage:g} V rail.",
         evidence=evidence,
@@ -82,7 +86,8 @@ def _validate_reset(
     if pin is None or not pin.net:
         return ComponentValidation(
             check="mcu_nrst",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="MCU NRST pin is missing or has no connected net.",
             evidence=evidence,
         )
@@ -91,7 +96,8 @@ def _validate_reset(
     if not neighbors:
         return ComponentValidation(
             check="mcu_nrst",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"MCU NRST net {pin.net} has no reset network or connector.",
             evidence=evidence,
@@ -102,14 +108,16 @@ def _validate_reset(
     if has_pullup or has_cap:
         return ComponentValidation(
             check="mcu_nrst",
-            status="PASS",
+            result="PASS",
+            severity="INFO",
             refdes=component.refdes,
             summary=f"MCU NRST net {pin.net} has a recognizable reset pull/default network.",
             evidence=evidence,
         )
     return ComponentValidation(
         check="mcu_nrst",
-        status="WARN",
+        result="UNKNOWN",
+        severity="WARNING",
         refdes=component.refdes,
         summary=f"MCU NRST net {pin.net} is connected, but reset topology is unclear.",
         evidence=evidence,
@@ -126,14 +134,16 @@ def _validate_boot0(
     if pin is None or not pin.net:
         return ComponentValidation(
             check="mcu_boot0",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="MCU BOOT0 pin is missing or has no connected net.",
             evidence=evidence,
         )
     if is_ground_net(pin.net) or _has_component_between_net_and_ground(design, pin.net, "R"):
         return ComponentValidation(
             check="mcu_boot0",
-            status="PASS",
+            result="PASS",
+            severity="INFO",
             refdes=component.refdes,
             summary=f"MCU BOOT0 net {pin.net} has a deterministic low default state.",
             evidence=evidence,
@@ -143,14 +153,16 @@ def _validate_boot0(
     if not neighbors:
         return ComponentValidation(
             check="mcu_boot0",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"MCU BOOT0 net {pin.net} is floating.",
             evidence=evidence,
         )
     return ComponentValidation(
         check="mcu_boot0",
-        status="WARN",
+        result="UNKNOWN",
+        severity="WARNING",
         refdes=component.refdes,
         summary=f"MCU BOOT0 net {pin.net} is connected, but default boot state is unclear.",
         evidence=evidence,
@@ -168,7 +180,8 @@ def _validate_debug_pin(
     if pin is None or not pin.net:
         return ComponentValidation(
             check=f"mcu_{name.lower()}",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"MCU {name} debug pin is missing or has no connected net.",
             evidence=evidence,
         )
@@ -177,14 +190,16 @@ def _validate_debug_pin(
     if expected and pin.net.upper() != expected.upper():
         return ComponentValidation(
             check=f"mcu_{name.lower()}",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"MCU {name} is connected to {pin.net}, expected {expected}.",
             evidence=evidence,
         )
     return ComponentValidation(
         check=f"mcu_{name.lower()}",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"MCU {name} is connected to expected debug net {pin.net}.",
         evidence=evidence,
@@ -201,7 +216,8 @@ def _validate_signal_pin(
     if pin is None:
         return ComponentValidation(
             check=f"mcu_{name.lower()}",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=f"MCU {name} is not present in the fixture profile.",
             evidence=evidence,
@@ -209,14 +225,16 @@ def _validate_signal_pin(
     if not pin.net:
         return ComponentValidation(
             check=f"mcu_{name.lower()}",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"MCU {name} has no connected net.",
             evidence=evidence,
         )
     return ComponentValidation(
         check=f"mcu_{name.lower()}",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"MCU {name} is connected to schematic net {pin.net}.",
         evidence=evidence,

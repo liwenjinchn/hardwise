@@ -26,6 +26,19 @@ export type Wrapped = number;
 export type Trace = EvidenceTrace[];
 export type UnsupportedEvidenceTokens = string[];
 export type WrappedCount = number;
+export type ContractVersion = "hardwise.assessment.v1";
+export type EvidenceKind = "SOURCE_FACT" | "DERIVED" | "HYPOTHESIS";
+export type LegacyStatus = ("PASS" | "WARN" | "ERROR" | "UNKNOWN" | "NOT_APPLICABLE") | null;
+export type MigrationState = "current" | "legacy_needs_review";
+export type NeedsReview = boolean;
+export type NotApplicableReason = string | null;
+export type Result = "PASS" | "FAIL" | "UNKNOWN" | "NOT_APPLICABLE";
+export type RuleVersion = string;
+export type Severity = "ERROR" | "WARNING" | "INFO";
+/**
+ * Legacy attention alias; use result/severity for new decisions.
+ */
+export type Status1 = "PASS" | "WARN" | "ERROR" | "UNKNOWN" | "NOT_APPLICABLE";
 export type Description = string;
 export type ItemNumber = string | null;
 export type Manufacturer = string;
@@ -41,7 +54,7 @@ export type SourceClass1 = string;
 export type Token1 = string;
 export type TrustTier1 = "l1" | "l2" | "l3";
 export type Evidence1 = EvidenceView[];
-export type Status1 = string;
+export type Status2 = string;
 export type StatusGroup = "error" | "warn" | "pass" | "manual";
 export type StatusLabel = string;
 export type Subject = string;
@@ -68,21 +81,21 @@ export type Provider = string;
 export type Query = string;
 export type Reason2 = string | null;
 export type RemainingMonth = number | null;
-export type Status2 = string;
+export type Status3 = string;
 export type Candidates1 = number;
 export type GroupId = string | null;
 export type Identity = string;
 export type IdentityKind = string;
 export type Reason3 = string;
 export type Source2 = string | null;
-export type Status3 = string;
+export type Status4 = string;
 export type SuggestedFamily = string;
 export type Title1 = string | null;
 export type Url = string | null;
 export type Body = string;
 export type Evidence2 = EvidenceView[];
 export type Kind = string;
-export type Status4 = string;
+export type Status5 = string;
 export type StatusGroup1 = "error" | "warn" | "pass" | "manual";
 export type Title2 = string;
 export type TrustTier2 = "l1" | "l2" | "l3";
@@ -98,22 +111,22 @@ export type IsNc = boolean;
 export type Name = string;
 export type Net = string | null;
 export type Number = string;
-export type Status5 = string | null;
+export type Status6 = string | null;
 export type Summary2 = string;
 export type Pins = PinView[];
 export type PartNumber2 = string;
 export type Path = string | null;
 export type Reason4 = string;
-export type Status6 = string;
+export type Status7 = string;
 export type ProfilePartNumber = string;
 export type Refdes = string;
 export type Body1 = string;
 export type Refdes1 = string;
-export type Severity = string | null;
+export type Severity1 = string | null;
 export type Title3 = string;
 export type WrappedRefdesCount = number;
 export type RiskHints = RiskHintView[];
-export type Status7 = string;
+export type Status8 = string;
 export type StatusGroup2 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel1 = string;
 export type Error = number;
@@ -132,11 +145,11 @@ export type RecommendedAction = string;
 export type Refdes2 = string;
 export type Reason5 = string;
 export type StableKey = string;
-export type Status8 = "open" | "accepted" | "waived" | "resolved";
+export type Status9 = "open" | "accepted" | "waived" | "resolved";
 export type UpdatedAt = string;
 export type SourceClasses = string[];
 export type StableKey1 = string;
-export type Status9 = string;
+export type Status10 = string;
 export type StatusGroup3 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel2 = string;
 export type Subject1 = string | null;
@@ -158,7 +171,7 @@ export type Metrics = EvidencePackageMetric[];
 export type RecommendedAction1 = string;
 export type Source3 = string | null;
 export type SourceToken = string | null;
-export type Status10 = "present" | "partial" | "gap" | "not_configured";
+export type Status11 = "present" | "partial" | "gap" | "not_configured";
 export type StatusGroup4 = "pass" | "warn" | "manual";
 export type StatusLabel3 = string;
 export type Summary3 = string;
@@ -171,7 +184,7 @@ export type MissingLocalSources = number;
 export type MissingTokens = string[];
 export type Reason6 = string;
 export type SignoffReady = boolean;
-export type Status11 = "ready" | "blocked";
+export type Status12 = "ready" | "blocked";
 export type Ok = boolean;
 export type AcceptedFindings = number;
 export type AcceptedRefdes = string[];
@@ -187,7 +200,7 @@ export type Rejected = RejectedPinTableFindingView[];
 export type RejectedFindings = number;
 export type RejectedUnknownRefdes = string[];
 export type Source4 = string | null;
-export type Status12 = "loaded" | "not_configured";
+export type Status13 = "loaded" | "not_configured";
 export type BomSource = string;
 export type GeneratedAt = string;
 export type Name1 = string;
@@ -202,7 +215,7 @@ export type Note = string | null;
 export type Path1 = string;
 export type Required = boolean;
 export type Sha256 = string | null;
-export type Status13 = string;
+export type Status14 = string;
 export type Artifacts = ReviewPackageArtifactView[];
 export type HashMismatch = number;
 export type ManualGapCount = number;
@@ -212,7 +225,7 @@ export type PackageStatus = "not_configured" | "complete" | "optional_gap" | "mi
 export type Present = number;
 export type RecommendedAction2 = string;
 export type Source5 = string | null;
-export type Status14 = "loaded" | "not_configured";
+export type Status15 = "loaded" | "not_configured";
 export type StatusGroup5 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel4 = string;
 export type Total2 = number;
@@ -231,6 +244,17 @@ export type Manual2 = number;
 export type PassCount2 = number;
 export type Total3 = number;
 export type Warn1 = number;
+export type Basis = "emitted_check_records";
+export type Boundary = string;
+export type CompletedChecks = number;
+export type FullCandidateCount = number | null;
+export type GeneratedChecks = number;
+export type LegacyNeedsReview = number;
+export type NeedsReviewChecks = number;
+export type NotApplicableChecks = number;
+export type RuleSetVersion = string;
+export type UnknownChecks = number;
+export type UnsupportedComponents = number;
 export type Chat = boolean;
 export type DatasheetCandidateLookupEnabled = boolean;
 export type DatasheetSearchEnabled1 = boolean;
@@ -242,7 +266,7 @@ export type Check1 = string;
 export type Evidence4 = EvidenceView[];
 export type NetName = string;
 export type Nodes = string[];
-export type Status15 = string;
+export type Status16 = string;
 export type StatusGroup6 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel5 = string;
 export type Summary4 = string;
@@ -261,7 +285,7 @@ export type ProfilePath = string | null;
 export type ProfileStatus = string;
 export type Refdes4 = string;
 export type RiskHintCount = number;
-export type Status16 = string;
+export type Status17 = string;
 export type StatusGroup7 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel6 = string;
 export type Subtitle = string;
@@ -388,6 +412,7 @@ export interface Input {
  * Full component detail consumed by the SPA.
  */
 export interface ComponentDetail {
+  assessment: Assessment | null;
   bom: BomView | null;
   checks: Checks;
   deterministic_status: DeterministicStatus;
@@ -405,13 +430,28 @@ export interface ComponentDetail {
   profile_part_number: ProfilePartNumber;
   refdes: Refdes;
   risk_hints: RiskHints;
-  status: Status7;
+  status: Status8;
   status_group: StatusGroup2;
   status_label: StatusLabel1;
   task_counts: ComponentTaskCounts;
   tasks: Tasks;
   trust_tier: TrustTier4;
   value: Value1;
+}
+/**
+ * Canonical check contract; old status-only records cannot certify a result.
+ */
+export interface Assessment {
+  contract_version: ContractVersion;
+  evidence_kind: EvidenceKind;
+  legacy_status: LegacyStatus;
+  migration_state: MigrationState;
+  needs_review: NeedsReview;
+  not_applicable_reason: NotApplicableReason;
+  result: Result;
+  rule_version: RuleVersion;
+  severity: Severity;
+  status: Status1;
 }
 /**
  * BOM identity shown in detail and prep packet views.
@@ -429,8 +469,9 @@ export interface BomView {
  * Validation check detail shown in the component panel.
  */
 export interface CheckView {
+  assessment: Assessment | null;
   evidence: Evidence1;
-  status: Status1;
+  status: Status2;
   status_group: StatusGroup;
   status_label: StatusLabel;
   subject: Subject;
@@ -459,7 +500,7 @@ export interface DocumentCoverageView {
   identity_kind: IdentityKind;
   reason: Reason3;
   source: Source2;
-  status: Status3;
+  status: Status4;
   suggested_family: SuggestedFamily;
   title: Title1;
   url: Url;
@@ -476,7 +517,7 @@ export interface DatasheetCandidateSearchView {
   query: Query;
   reason: Reason2;
   remaining_month: RemainingMonth;
-  status: Status2;
+  status: Status3;
 }
 /**
  * One provider candidate shown as reviewer-only data.
@@ -500,7 +541,7 @@ export interface EvidenceChainItem {
   body: Body;
   evidence: Evidence2;
   kind: Kind;
-  status: Status4;
+  status: Status5;
   status_group: StatusGroup1;
   title: Title2;
   trust_tier: TrustTier2;
@@ -509,13 +550,14 @@ export interface EvidenceChainItem {
  * Pin/net detail shown in the component panel.
  */
 export interface PinView {
+  assessment: Assessment | null;
   electrical_type: ElectricalType;
   evidence: Evidence3;
   is_nc: IsNc;
   name: Name;
   net: Net;
   number: Number;
-  status: Status5;
+  status: Status6;
   summary: Summary2;
 }
 /**
@@ -525,7 +567,7 @@ export interface ProfileView {
   part_number: PartNumber2;
   path: Path;
   reason: Reason4;
-  status: Status6;
+  status: Status7;
 }
 /**
  * Registry-verified external hint for read-only display.
@@ -533,7 +575,7 @@ export interface ProfileView {
 export interface RiskHintView {
   body: Body1;
   refdes: Refdes1;
-  severity: Severity;
+  severity: Severity1;
   source: EvidenceView | null;
   title: Title3;
   wrapped_refdes_count: WrappedRefdesCount;
@@ -552,6 +594,7 @@ export interface ComponentTaskCounts {
  * One finding-first review task in the SPA workflow.
  */
 export interface ReviewTask {
+  assessment: Assessment | null;
   body: Body2;
   check: Check;
   derived_from_task_id: DerivedFromTaskId;
@@ -564,7 +607,7 @@ export interface ReviewTask {
   review_decision: ReviewDecisionView | null;
   source_classes: SourceClasses;
   stable_key: StableKey1;
-  status: Status9;
+  status: Status10;
   status_group: StatusGroup3;
   status_label: StatusLabel2;
   subject: Subject1;
@@ -577,7 +620,7 @@ export interface ReviewTask {
 export interface ReviewDecisionView {
   reason: Reason5;
   stable_key: StableKey;
-  status: Status8;
+  status: Status9;
   updated_at: UpdatedAt;
 }
 /**
@@ -614,7 +657,7 @@ export interface EvidencePackageLane {
   recommended_action: RecommendedAction1;
   source: Source3;
   source_token: SourceToken;
-  status: Status10;
+  status: Status11;
   status_group: StatusGroup4;
   status_label: StatusLabel3;
   summary: Summary3;
@@ -639,7 +682,7 @@ export interface SignoffReadiness {
   missing_tokens: MissingTokens;
   reason: Reason6;
   signoff_ready: SignoffReady;
-  status: Status11;
+  status: Status12;
 }
 /**
  * Capture pin-table intake status shown beside first-class imports.
@@ -654,7 +697,7 @@ export interface PinTableSummary {
   rejected_findings: RejectedFindings;
   rejected_unknown_refdes: RejectedUnknownRefdes;
   source: Source4;
-  status: Status12;
+  status: Status13;
 }
 export interface Checks1 {
   [k: string]: number;
@@ -695,7 +738,7 @@ export interface ReviewPackageSummary {
   present: Present;
   recommended_action: RecommendedAction2;
   source: Source5;
-  status: Status14;
+  status: Status15;
   status_group: StatusGroup5;
   status_label: StatusLabel4;
   total: Total2;
@@ -711,7 +754,7 @@ export interface ReviewPackageArtifactView {
   path: Path1;
   required: Required;
   sha256: Sha256;
-  status: Status13;
+  status: Status14;
 }
 /**
  * Count summary for the current workbench run.
@@ -741,6 +784,7 @@ export interface ReviewTaskCounts {
  * Top-level SPA state returned by ``/api/workbench/state``.
  */
 export interface WorkbenchState {
+  assessment_coverage: CheckCoverage | null;
   capabilities: WorkbenchCapabilities;
   evidence_package: EvidencePackageSummary;
   net_checks: NetChecks;
@@ -759,6 +803,26 @@ export interface WorkbenchState {
   voltage_facts: VoltageFactsDocument;
 }
 /**
+ * An explicit emitted-record denominator, not claimed whole-design coverage.
+ */
+export interface CheckCoverage {
+  basis: Basis;
+  boundary: Boundary;
+  completed_checks: CompletedChecks;
+  full_candidate_count: FullCandidateCount;
+  generated_checks: GeneratedChecks;
+  legacy_needs_review: LegacyNeedsReview;
+  needs_review_checks: NeedsReviewChecks;
+  not_applicable_checks: NotApplicableChecks;
+  result_counts: ResultCounts;
+  rule_set_version: RuleSetVersion;
+  unknown_checks: UnknownChecks;
+  unsupported_components: UnsupportedComponents;
+}
+export interface ResultCounts {
+  [k: string]: number;
+}
+/**
  * Feature flags surfaced to the SPA.
  */
 export interface WorkbenchCapabilities {
@@ -774,11 +838,12 @@ export interface WorkbenchCapabilities {
  * Design-level net check shown in the project summary area.
  */
 export interface NetCheckView {
+  assessment: Assessment | null;
   check: Check1;
   evidence: Evidence4;
   net_name: NetName;
   nodes: Nodes;
-  status: Status15;
+  status: Status16;
   status_group: StatusGroup6;
   status_label: StatusLabel5;
   summary: Summary4;
@@ -787,6 +852,7 @@ export interface NetCheckView {
  * One row in the SPA review queue.
  */
 export interface ReviewQueueItem {
+  assessment: Assessment | null;
   deterministic_status: DeterministicStatus1;
   deterministic_status_group: DeterministicStatusGroup1;
   deterministic_status_label: DeterministicStatusLabel1;
@@ -801,7 +867,7 @@ export interface ReviewQueueItem {
   profile_status: ProfileStatus;
   refdes: Refdes4;
   risk_hint_count: RiskHintCount;
-  status: Status16;
+  status: Status17;
   status_group: StatusGroup7;
   status_label: StatusLabel6;
   subtitle: Subtitle;

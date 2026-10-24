@@ -90,7 +90,7 @@ def test_highside_floating_source_warns_not_errors(mosfet_profile, highside_desi
     results = validate_component_against_profile(component, mosfet_profile, highside_design)
 
     vgs = next(c for c in results.component_checks if c.check == "mosfet_vgs_rating")
-    assert vgs.status == "WARN"
+    assert vgs.status == "UNKNOWN"
     assert "ground" in vgs.summary.lower()
 
 
@@ -338,7 +338,7 @@ Q13,1,PE537BA,NIKO-SEM,PE537BA
 
     results = validate_component_against_profile(design.components["Q13"], profile, design)
 
-    assert results.status == "WARN"
+    assert results.status == "UNKNOWN"
     assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in results.pin_results] == [
         ("4", "Gate", "P3V3", "PASS"),
         ("1", "Source", "P12V", "PASS"),
@@ -349,7 +349,7 @@ Q13,1,PE537BA,NIKO-SEM,PE537BA
     assert vgs.status == "PASS"
     assert "gate 3.3 V - source 12 V" in vgs.summary
     assert vgs.evidence == ["datasheet:pe537ba.pdf#p1"]
-    assert vds.status == "WARN"
+    assert vds.status == "UNKNOWN"
     assert "Not assuming ground" in vds.summary
 
 
@@ -383,8 +383,8 @@ def test_jmtk3005a_controller_stage_uses_existing_mosfet_rules() -> None:
     q1_results = validate_component_against_profile(design.components["Q1"], profile, design)
     q2_results = validate_component_against_profile(design.components["Q2"], profile, design)
 
-    assert q1_results.status == "WARN"
-    assert q2_results.status == "WARN"
+    assert q1_results.status == "UNKNOWN"
+    assert q2_results.status == "UNKNOWN"
     assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in q1_results.pin_results] == [
         ("1", "Gate", "HO_GATE_Q", "PASS"),
         ("2", "Drain", "+24V", "PASS"),
@@ -396,6 +396,6 @@ def test_jmtk3005a_controller_stage_uses_existing_mosfet_rules() -> None:
         ("3", "Source", "GND", "PASS"),
     ]
     q1_checks = {check.check: check for check in q1_results.component_checks}
-    assert q1_checks["mosfet_vgs_rating"].status == "WARN"
+    assert q1_checks["mosfet_vgs_rating"].status == "UNKNOWN"
     assert q1_checks["mosfet_vgs_rating"].evidence == ["datasheet:jmtk3005a.pdf#p1"]
-    assert q1_checks["mosfet_vds_rating"].status == "WARN"
+    assert q1_checks["mosfet_vds_rating"].status == "UNKNOWN"

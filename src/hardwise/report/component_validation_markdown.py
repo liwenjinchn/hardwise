@@ -53,6 +53,8 @@ def render(
     if profile_path is not None:
         lines.append(f"| 器件档案来源 | `{profile_path}` |")
     lines.append(f"| 综合判定 | {report.status} |")
+    lines.append(f"| 检查结果 / 严重度 | {report.result} / {report.severity} |")
+    lines.append(f"| 历史记录需复核 | {report.needs_review} |")
     lines.append(
         f"| 引脚 PASS/WARN/ERROR | {counts['PASS']} / {counts['WARN']} / {counts['ERROR']} |"
     )
@@ -75,6 +77,21 @@ def render(
         "本报告只使用解析后的原理图/netlist 引脚、网络拓扑和公开结构化器件档案事实；"
         "不解析 PCB layout、boardview/板图、布局、走线、供应商在线数据、PLM、生命周期、价格或库存。"
     )
+    lines.append("")
+    lines.extend(
+        [
+            "## 检查结果合同",
+            "",
+            "| 检查 | 结果 | 严重度 | 证据性质 | 规则版本 | 需复核 | 不适用原因 |",
+            "|---|---|---|---|---|---|---|",
+        ]
+    )
+    for item in [*report.pin_results, *report.component_checks]:
+        name = getattr(item, "check", None) or f"pin:{item.pin_number}"
+        lines.append(
+            f"| {name} | {item.result} | {item.severity} | {item.evidence_kind} | "
+            f"{item.rule_version} | {item.needs_review} | {_escape_pipe(item.not_applicable_reason or '-')} |"
+        )
     lines.append("")
     lines.extend(_render_model_check(report))
     lines.extend(_render_component_basic_info(report))
@@ -295,6 +312,9 @@ def _render_summary(report: ValidationReport) -> list[str]:
     lines = ["## 6. 综合总结", ""]
     lines.append(f"综合判定：**{report.status}**。")
     lines.append("")
+    unknowns = [
+        item for item in [*report.pin_results, *report.component_checks] if item.result == "UNKNOWN"
+    ]
     if problems:
         lines.append("问题：")
         lines.append("")
@@ -304,8 +324,18 @@ def _render_summary(report: ValidationReport) -> list[str]:
                 f"- {issue.status}: {refdes} - "
                 f"{_escape_pipe(validation_summary_label(issue.summary))}"
             )
-    else:
-        lines.append("未发现确定性引脚或外围/拓扑问题。")
+    elif not report.pin_results and not report.component_checks:
+        lines.append("未评估：没有可执行的检查，未产生通过结论。")
+    elif report.result == "NOT_APPLICABLE":
+        lines.append("当前检查均不适用；不代表通过。")
+    elif not unknowns:
+        lines.append("已完成的配置检查未发现不满足项；不代表整板签核。")
+    if unknowns:
+        lines.append("待补资料 / 未评估：")
+        lines.extend(
+            f"- UNKNOWN: {_escape_pipe(validation_summary_label(item.summary))}"
+            for item in unknowns
+        )
     lines.append("")
     return lines
 

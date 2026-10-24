@@ -94,6 +94,6 @@ def test_i2c_repeater_swapped_bus_names_warn(tmp_path: Path) -> None:
     port_a = next(
         check for check in report.component_checks if check.check == "i2c_repeater_port_a_pair"
     )
-    assert report.status == "WARN"
-    assert port_a.status == "WARN"
+    assert report.status == "UNKNOWN"
+    assert port_a.status == "UNKNOWN"
     assert "do not look like an I2C clock/data pair" in port_a.summary

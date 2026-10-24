@@ -128,6 +128,7 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     ):
         assert html.count(f'data-section="{section}"') == 2
     assert _section_order(html, "U12") == [
+        "assessment-contract",
         "model-check",
         "pin-summary",
         "connection-path",

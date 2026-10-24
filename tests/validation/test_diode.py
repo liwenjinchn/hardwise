@@ -378,7 +378,7 @@ def test_mixed_controller_diode_profiles_warn_without_topology_claim(
         checks = {check.check: check for check in results.component_checks}
         summaries = " ".join(check.summary for check in results.component_checks)
 
-        assert results.status == "WARN"
+        assert results.status == "UNKNOWN"
         assert results.counts_by_status == {
             "PASS": 2,
             "WARN": 0,
@@ -388,14 +388,14 @@ def test_mixed_controller_diode_profiles_warn_without_topology_claim(
         }
         assert results.component_counts_by_status == {
             "PASS": 2,
-            "WARN": 1,
+            "WARN": 0,
             "ERROR": 0,
-            "UNKNOWN": 0,
+            "UNKNOWN": 1,
             "NOT_APPLICABLE": 0,
         }
         assert checks["diode_cathode_connectivity"].status == "PASS"
         assert checks["diode_anode_connectivity"].status == "PASS"
-        assert checks["diode_reverse_voltage"].status == "WARN"
+        assert checks["diode_reverse_voltage"].status == "UNKNOWN"
         assert "cannot be inferred from cathode/anode net names" in summaries
         assert "buck" not in summaries.lower()
         assert "freewheel" not in summaries.lower()

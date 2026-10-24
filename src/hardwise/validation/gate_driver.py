@@ -48,7 +48,8 @@ def _validate_vcc(
     if pin is None or not pin.net:
         return ComponentValidation(
             check="gate_driver_vcc",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="Gate-driver VCC pin is missing or has no connected net.",
             evidence=evidence,
         )
@@ -59,7 +60,8 @@ def _validate_vcc(
     if voltage is None:
         return ComponentValidation(
             check="gate_driver_vcc",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary="Gate-driver VCC voltage cannot be inferred deterministically.",
             evidence=evidence,
@@ -67,7 +69,8 @@ def _validate_vcc(
     if vcc_min is not None and voltage < vcc_min:
         return ComponentValidation(
             check="gate_driver_vcc",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"Gate-driver VCC is {voltage:g} V, below profile minimum {vcc_min:g} V.",
             evidence=evidence,
@@ -75,14 +78,16 @@ def _validate_vcc(
     if vcc_max is not None and voltage > vcc_max:
         return ComponentValidation(
             check="gate_driver_vcc",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"Gate-driver VCC is {voltage:g} V, above profile maximum {vcc_max:g} V.",
             evidence=evidence,
         )
     return ComponentValidation(
         check="gate_driver_vcc",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"Gate-driver VCC net {pin.net} is within the profile supply range.",
         evidence=evidence,
@@ -100,7 +105,8 @@ def _validate_logic_input(
     if pin is None or not pin.net:
         return ComponentValidation(
             check=f"gate_driver_{name.lower()}",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"Gate-driver {name} input pin is missing or has no connected net.",
             evidence=evidence,
         )
@@ -108,7 +114,8 @@ def _validate_logic_input(
     if looks_like_logic_input_net(pin.net):
         return ComponentValidation(
             check=f"gate_driver_{name.lower()}",
-            status="PASS",
+            result="PASS",
+            severity="INFO",
             refdes=component.refdes,
             summary=f"Gate-driver {name} input is connected to logic/PWM net {pin.net}.",
             evidence=evidence,
@@ -118,7 +125,8 @@ def _validate_logic_input(
     if neighbors:
         return ComponentValidation(
             check=f"gate_driver_{name.lower()}",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=(
                 f"Gate-driver {name} input is connected, but net {pin.net} "
@@ -128,7 +136,8 @@ def _validate_logic_input(
         )
     return ComponentValidation(
         check=f"gate_driver_{name.lower()}",
-        status="ERROR",
+        result="FAIL",
+        severity="ERROR",
         refdes=component.refdes,
         summary=f"Gate-driver {name} input net {pin.net} has no other connected component.",
         evidence=evidence,
@@ -146,7 +155,8 @@ def _validate_gate_output(
     if pin is None or not pin.net:
         return ComponentValidation(
             check=f"gate_driver_{name.lower()}_gate_load",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"Gate-driver {name} output pin is missing or has no connected net.",
             evidence=evidence,
         )
@@ -156,7 +166,8 @@ def _validate_gate_output(
         loads = ", ".join(sorted(component.refdes for component in reachable))
         return ComponentValidation(
             check=f"gate_driver_{name.lower()}_gate_load",
-            status="PASS",
+            result="PASS",
+            severity="INFO",
             refdes=loads,
             summary=(
                 f"Gate-driver {name} output reaches Q-prefixed drive target(s): {loads}; "
@@ -166,7 +177,8 @@ def _validate_gate_output(
         )
     return ComponentValidation(
         check=f"gate_driver_{name.lower()}_gate_load",
-        status="ERROR",
+        result="FAIL",
+        severity="ERROR",
         refdes=component.refdes,
         summary=f"Gate-driver {name} output net {pin.net} does not reach a Q-prefixed drive target.",
         evidence=evidence,
@@ -183,7 +195,8 @@ def _validate_switch_node(
     if pin is None or not pin.net:
         return ComponentValidation(
             check="gate_driver_vs_switch_node",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="Gate-driver VS pin is missing or has no connected net.",
             evidence=evidence,
         )
@@ -193,7 +206,8 @@ def _validate_switch_node(
     if q_count >= 2:
         return ComponentValidation(
             check="gate_driver_vs_switch_node",
-            status="PASS",
+            result="PASS",
+            severity="INFO",
             refdes=component.refdes,
             summary=(
                 f"Gate-driver VS net {pin.net} reaches two Q-prefixed devices; "
@@ -204,7 +218,8 @@ def _validate_switch_node(
     if q_count == 1:
         return ComponentValidation(
             check="gate_driver_vs_switch_node",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=(
                 f"Gate-driver VS net {pin.net} reaches one Q-prefixed device only; "
@@ -214,7 +229,8 @@ def _validate_switch_node(
         )
     return ComponentValidation(
         check="gate_driver_vs_switch_node",
-        status="ERROR",
+        result="FAIL",
+        severity="ERROR",
         refdes=component.refdes,
         summary=f"Gate-driver VS net {pin.net} does not reach a Q-prefixed switch target.",
         evidence=evidence,
@@ -233,7 +249,8 @@ def _validate_bootstrap(
     if vb is None or not vb.net or vs is None or not vs.net:
         return ComponentValidation(
             check="gate_driver_bootstrap",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="Gate-driver bootstrap pins VB/VS are missing or not connected.",
             evidence=evidence,
         )
@@ -242,7 +259,8 @@ def _validate_bootstrap(
     if not capacitors:
         return ComponentValidation(
             check="gate_driver_bootstrap",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"Gate-driver bootstrap path lacks a capacitor between {vb.net} and {vs.net}.",
             evidence=evidence,
@@ -252,7 +270,8 @@ def _validate_bootstrap(
     if diode is None:
         return ComponentValidation(
             check="gate_driver_bootstrap",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"Gate-driver bootstrap path lacks a diode feeding {vb.net}.",
             evidence=evidence,
@@ -263,7 +282,8 @@ def _validate_bootstrap(
     if min_voltage is None:
         return ComponentValidation(
             check="gate_driver_bootstrap",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=diode.refdes,
             summary=(
                 f"Bootstrap diode {diode.refdes} ({diode.part_number or diode.value}) is present, "
@@ -274,7 +294,8 @@ def _validate_bootstrap(
     if rating is not None and min_voltage is not None and rating < min_voltage:
         return ComponentValidation(
             check="gate_driver_bootstrap",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=diode.refdes,
             summary=(
                 f"Bootstrap diode {diode.refdes} ({diode.part_number or diode.value}) "
@@ -285,7 +306,8 @@ def _validate_bootstrap(
     if rating is None:
         return ComponentValidation(
             check="gate_driver_bootstrap",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=diode.refdes,
             summary=(
                 f"Bootstrap diode {diode.refdes} ({diode.part_number or diode.value}) "
@@ -296,7 +318,8 @@ def _validate_bootstrap(
     caps = ", ".join(sorted(cap.refdes for cap in capacitors))
     return ComponentValidation(
         check="gate_driver_bootstrap",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=diode.refdes,
         summary=(
             f"Bootstrap path has diode {diode.refdes} and capacitor(s) {caps}; "

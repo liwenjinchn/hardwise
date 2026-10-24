@@ -90,7 +90,9 @@ def validate_net_naming(
     for net_name in sorted(design.nets):
         reasons: list[str] = []
         if not allowed.fullmatch(net_name):
-            reasons.append(f"contains characters outside the policy pattern {policy.allowed_pattern!r}")
+            reasons.append(
+                f"contains characters outside the policy pattern {policy.allowed_pattern!r}"
+            )
         if policy.forbid_double_underscore and "__" in net_name:
             reasons.append("contains a double underscore")
         if policy.uppercase_only and net_name != net_name.upper():
@@ -100,7 +102,8 @@ def validate_net_naming(
                 NetValidation(
                     net_name=net_name,
                     check=CHECK_NAME_CHARSET,
-                    status="WARN",
+                    result="FAIL",
+                    severity="WARNING",
                     summary=(
                         f"Net name {net_name} {'; '.join(reasons)}. Off-policy names "
                         "risk breaking netlist interop and constraint matching. "
@@ -114,7 +117,8 @@ def validate_net_naming(
                 NetValidation(
                     net_name=net_name,
                     check=CHECK_NAME_LENGTH,
-                    status="WARN",
+                    result="FAIL",
+                    severity="WARNING",
                     summary=(
                         f"Net name {net_name} is {len(net_name)} characters, over the "
                         f"policy limit of {policy.max_length}. Long names get truncated "
@@ -142,7 +146,8 @@ def validate_net_naming(
                 NetValidation(
                     net_name=net_name,
                     check=CHECK_DIFF_PAIR,
-                    status="WARN",
+                    result="FAIL",
+                    severity="WARNING",
                     summary=(
                         f"Net {net_name} carries the differential suffix _{match['side']}"
                         f"{match['index']} but its mate {mate} is not in the design. "

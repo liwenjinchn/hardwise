@@ -8,7 +8,9 @@ from hardwise.validation.pins import voltage_for_net
 from hardwise.validation.types import ComponentValidation
 
 
-def validate_i2c_mux(component: Component, profile: DatasheetProfile, design: Design) -> list[ComponentValidation]:
+def validate_i2c_mux(
+    component: Component, profile: DatasheetProfile, design: Design
+) -> list[ComponentValidation]:
     """Validate the selected component as a schematic-side I2C mux."""
 
     return [
@@ -29,7 +31,8 @@ def _validate_supply(
     if pin is None or not pin.net:
         return ComponentValidation(
             check="i2c_mux_vdd",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="I2C mux VDD pin is missing or has no connected net.",
             evidence=evidence,
         )
@@ -39,7 +42,8 @@ def _validate_supply(
     if voltage is None:
         return ComponentValidation(
             check="i2c_mux_vdd",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=f"I2C mux VDD net {pin.net} voltage cannot be inferred deterministically.",
             evidence=evidence,
@@ -47,7 +51,8 @@ def _validate_supply(
     if vdd_min is not None and voltage < vdd_min:
         return ComponentValidation(
             check="i2c_mux_vdd",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"I2C mux VDD is {voltage:g} V, below profile minimum {vdd_min:g} V.",
             evidence=evidence,
@@ -55,14 +60,16 @@ def _validate_supply(
     if vdd_max is not None and voltage > vdd_max:
         return ComponentValidation(
             check="i2c_mux_vdd",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"I2C mux VDD is {voltage:g} V, above profile maximum {vdd_max:g} V.",
             evidence=evidence,
         )
     return ComponentValidation(
         check="i2c_mux_vdd",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"I2C mux VDD net {pin.net} is within the profile supply range.",
         evidence=evidence,
@@ -77,14 +84,16 @@ def _validate_upstream_bus(component: Component, profile: DatasheetProfile) -> C
     if missing:
         return ComponentValidation(
             check="i2c_mux_upstream_bus",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"I2C mux upstream bus pin(s) missing or unconnected: {', '.join(missing)}.",
             evidence=evidence,
         )
     assert scl is not None and sda is not None
     return ComponentValidation(
         check="i2c_mux_upstream_bus",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"I2C mux upstream SCL/SDA are connected to {scl.net} / {sda.net}.",
         evidence=evidence,
@@ -102,14 +111,16 @@ def _validate_control_pins(component: Component, profile: DatasheetProfile) -> C
     if missing:
         return ComponentValidation(
             check="i2c_mux_control_pins",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"I2C mux control pin(s) missing or unconnected: {', '.join(missing)}.",
             evidence=evidence,
         )
     return ComponentValidation(
         check="i2c_mux_control_pins",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary="I2C mux reset and address pins are connected for deterministic review.",
         evidence=evidence,
@@ -135,14 +146,16 @@ def _validate_channel_pairs(component: Component, profile: DatasheetProfile) -> 
     if mismatched:
         return ComponentValidation(
             check="i2c_mux_channel_pairs",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary="I2C mux channel SCn/SDn mismatch on channel(s): " + ", ".join(mismatched),
             evidence=evidence,
         )
     return ComponentValidation(
         check="i2c_mux_channel_pairs",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=(
             f"I2C mux channel pairs are consistent: {connected_pairs} connected, "

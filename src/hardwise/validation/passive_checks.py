@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hardwise.validation.assessment import result_for_attention, severity_for_attention
+
 from hardwise.ir.types import Component, Design
 from hardwise.validation.passive_helpers import (
     _current_rating_token_check,
@@ -117,7 +119,11 @@ def _rated_voltage_check(
 ) -> ComponentValidation:
     return ComponentValidation(
         check="capacitor_rated_voltage_parse",
-        status="PASS" if rated_voltage is not None else "UNKNOWN",
+        result=result_for_attention(
+            "PASS" if rated_voltage is not None else "UNKNOWN", warning_result="UNKNOWN"
+        ),
+        severity=severity_for_attention("PASS" if rated_voltage is not None else "UNKNOWN"),
+        evidence_kind="SOURCE_FACT",
         refdes=component.refdes,
         summary=(
             f"Capacitor rated voltage {rated_voltage:g} V was parsed from '{value}'."
@@ -137,7 +143,8 @@ def _capacitor_voltage_margin(
     if rated_voltage is None:
         return ComponentValidation(
             check="capacitor_voltage_margin",
-            status="UNKNOWN",
+            result="UNKNOWN",
+            severity="INFO",
             refdes=component.refdes,
             summary="Capacitor voltage margin cannot be checked because rated voltage is missing.",
             evidence=evidence,
@@ -148,7 +155,8 @@ def _capacitor_voltage_margin(
     if stress.maximum_delta is None:
         return ComponentValidation(
             check="capacitor_voltage_margin",
-            status="UNKNOWN",
+            result="UNKNOWN",
+            severity="INFO",
             refdes=component.refdes,
             summary=(f"Capacitor voltage margin cannot be checked: {stress.reason}."),
             evidence=evidence,
@@ -158,7 +166,8 @@ def _capacitor_voltage_margin(
     if rated_voltage < dc_stress:
         return ComponentValidation(
             check="capacitor_voltage_margin",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Capacitor rated voltage {rated_voltage:g} V is below confirmed "
@@ -169,7 +178,8 @@ def _capacitor_voltage_margin(
         )
     return ComponentValidation(
         check="capacitor_voltage_margin",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=(
             f"Capacitor rated voltage {rated_voltage:g} V is not below confirmed "
@@ -190,7 +200,8 @@ def _resistor_power_check(
     if resistance is None:
         return ComponentValidation(
             check="resistor_power_estimate",
-            status="UNKNOWN",
+            result="UNKNOWN",
+            severity="INFO",
             refdes=component.refdes,
             summary="Resistor power cannot be estimated because resistance is missing.",
             evidence=evidence,
@@ -201,7 +212,8 @@ def _resistor_power_check(
     if stress.maximum_delta is None:
         return ComponentValidation(
             check="resistor_power_estimate",
-            status="UNKNOWN",
+            result="UNKNOWN",
+            severity="INFO",
             refdes=component.refdes,
             summary=(f"Resistor power cannot be estimated: {stress.reason}."),
             evidence=evidence,
@@ -211,7 +223,8 @@ def _resistor_power_check(
     if resistance.ohms == 0:
         return ComponentValidation(
             check="resistor_power_estimate",
-            status="WARN" if delta else "UNKNOWN",
+            result=result_for_attention("WARN" if delta else "UNKNOWN", warning_result="UNKNOWN"),
+            severity=severity_for_attention("WARN" if delta else "UNKNOWN"),
             refdes=component.refdes,
             summary=(
                 f"Zero-ohm link may bridge a confirmed DC difference up to {delta:g} V; "
@@ -226,7 +239,8 @@ def _resistor_power_check(
     if power_rating is not None and power > power_rating:
         return ComponentValidation(
             check="resistor_power_estimate",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Estimated resistor power {power:g} W from {delta:g} V across "
@@ -242,7 +256,10 @@ def _resistor_power_check(
     )
     return ComponentValidation(
         check="resistor_power_estimate",
-        status="PASS" if power_rating is not None else "UNKNOWN",
+        result=result_for_attention(
+            "PASS" if power_rating is not None else "UNKNOWN", warning_result="UNKNOWN"
+        ),
+        severity=severity_for_attention("PASS" if power_rating is not None else "UNKNOWN"),
         refdes=component.refdes,
         summary=(
             f"Estimated resistor power {power:g} W from {delta:g} V across "

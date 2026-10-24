@@ -44,13 +44,15 @@ def _validate_pin_connected(
     if pin is None or not pin.net:
         return ComponentValidation(
             check=check,
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"MOSFET {pin_name.lower()} pin is not connected.",
             evidence=evidence,
         )
     return ComponentValidation(
         check=check,
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"MOSFET {pin_name.lower()} is connected to {pin.net}.",
         evidence=evidence,
@@ -68,14 +70,16 @@ def _validate_vgs(
     if gate is None or not gate.net:
         return ComponentValidation(
             check="mosfet_vgs_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="MOSFET gate pin is not connected; cannot check Vgs.",
             evidence=evidence,
         )
     if source is None or not source.net:
         return ComponentValidation(
             check="mosfet_vgs_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="MOSFET source pin is not connected; cannot check Vgs.",
             evidence=evidence,
         )
@@ -85,7 +89,8 @@ def _validate_vgs(
     if gate_voltage is None or source_voltage is None:
         return ComponentValidation(
             check="mosfet_vgs_rating",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=(
                 "Vgs cannot be statically inferred: the gate or source net has no known "
@@ -99,7 +104,8 @@ def _validate_vgs(
     if vgs_limit is not None and abs(vgs) > vgs_limit:
         return ComponentValidation(
             check="mosfet_vgs_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Vgs is {vgs:g} V (gate {gate_voltage:g} V - source {source_voltage:g} V), "
@@ -109,7 +115,8 @@ def _validate_vgs(
         )
     return ComponentValidation(
         check="mosfet_vgs_rating",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=(
             f"Vgs is {vgs:g} V (gate {gate_voltage:g} V - source {source_voltage:g} V)"
@@ -130,14 +137,16 @@ def _validate_vds(
     if drain is None or not drain.net:
         return ComponentValidation(
             check="mosfet_vds_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="MOSFET drain pin is not connected; cannot check Vds.",
             evidence=evidence,
         )
     if source is None or not source.net:
         return ComponentValidation(
             check="mosfet_vds_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="MOSFET source pin is not connected; cannot check Vds.",
             evidence=evidence,
         )
@@ -147,7 +156,8 @@ def _validate_vds(
     if drain_voltage is None or source_voltage is None:
         return ComponentValidation(
             check="mosfet_vds_rating",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=(
                 "Vds cannot be statically inferred: the drain or source net has no known "
@@ -161,7 +171,8 @@ def _validate_vds(
     if vds_limit is not None and abs(vds) > vds_limit:
         return ComponentValidation(
             check="mosfet_vds_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Vds is {vds:g} V (drain {drain_voltage:g} V - source {source_voltage:g} V), "
@@ -171,7 +182,8 @@ def _validate_vds(
         )
     return ComponentValidation(
         check="mosfet_vds_rating",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=(
             f"Vds is {vds:g} V (drain {drain_voltage:g} V - source {source_voltage:g} V)"

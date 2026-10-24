@@ -21,30 +21,27 @@ this is also WARN. It only fires when net facts exist at all; an empty
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from hardwise.ir.types import Design
 from hardwise.validation.pins import is_ground_net
-from hardwise.validation.types import PinValidationStatus
+from hardwise.validation.assessment import Assessment
 
 CHECK_SINGLE_ENDPOINT = "net_single_endpoint"
 CHECK_MISSING_GROUND = "design_missing_ground_net"
 
 
-class NetValidation(BaseModel):
+class NetValidation(Assessment):
     """Validation outcome for one design-level net check."""
 
     net_name: str
     check: str
-    status: PinValidationStatus
     summary: str
     nodes: list[str] = Field(default_factory=list)
     evidence: list[str] = Field(default_factory=list)
 
 
-def validate_design_nets(
-    design: Design, *, source_label: str | None = None
-) -> list[NetValidation]:
+def validate_design_nets(design: Design, *, source_label: str | None = None) -> list[NetValidation]:
     """Run net-level connectivity checks over ``design.nets``.
 
     ``source_label`` names the netlist source in evidence tokens; it
@@ -59,7 +56,8 @@ def validate_design_nets(
             NetValidation(
                 net_name="-",
                 check=CHECK_MISSING_GROUND,
-                status="WARN",
+                result="UNKNOWN",
+                severity="WARNING",
                 summary=(
                     f"No net in this design is a recognized ground reference "
                     f"(checked {len(design.nets)} nets). A schematic export "
@@ -80,7 +78,8 @@ def validate_design_nets(
             NetValidation(
                 net_name=net_name,
                 check=CHECK_SINGLE_ENDPOINT,
-                status="WARN",
+                result="UNKNOWN",
+                severity="WARNING",
                 summary=(
                     f"Net {net_name} has a single endpoint {refdes}.{pin_number}; "
                     "a one-node net cannot form a current path. Reviewer to "

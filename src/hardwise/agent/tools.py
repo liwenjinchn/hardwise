@@ -38,6 +38,7 @@ from hardwise.agent.topology_tools import TOPOLOGY_TOOL_DEFINITIONS
 from hardwise.store.relational import query_components, query_nc_pins
 from hardwise.store.vector import query_chunks
 from hardwise.validation.types import PinValidationStatus, VALIDATION_STATUSES
+from hardwise.validation.assessment import Assessment, CheckResult, Severity
 
 # ─────────────────────────── Common output shapes ──────────────────────────
 
@@ -263,11 +264,10 @@ class RunComponentValidationInput(BaseModel):
     refdes: str
 
 
-class ValidationCheckSummary(BaseModel):
+class ValidationCheckSummary(Assessment):
     """One check row (pin or component-level) flattened for the agent reply."""
 
     check: str
-    status: PinValidationStatus
     summary: str
     evidence: list[str] = Field(default_factory=list)
 
@@ -279,6 +279,9 @@ class ValidationRan(BaseModel):
     refdes: str
     profile_part_number: str
     overall: PinValidationStatus
+    result: CheckResult = "UNKNOWN"
+    severity: Severity = "INFO"
+    result_counts: dict[str, int] = Field(default_factory=dict)
     counts: dict[str, int]
     checks: list[ValidationCheckSummary] = Field(default_factory=list)
 
@@ -334,7 +337,7 @@ def run_component_validation(
     checks = [
         ValidationCheckSummary(
             check=pin.pin_name or pin.pin_number,
-            status=pin.status,
+            **pin.model_dump(include=set(Assessment.model_fields)),
             summary=pin.summary,
             evidence=pin.evidence,
         )
@@ -342,7 +345,7 @@ def run_component_validation(
     ] + [
         ValidationCheckSummary(
             check=check.check,
-            status=check.status,
+            **check.model_dump(include=set(Assessment.model_fields)),
             summary=check.summary,
             evidence=check.evidence,
         )
@@ -355,6 +358,9 @@ def run_component_validation(
         refdes=refdes,
         profile_part_number=report.profile_part_number,
         overall=report.status,
+        result=report.result,
+        severity=report.severity,
+        result_counts=report.result_counts,
         counts=counts,
         checks=checks,
     )
@@ -363,55 +369,60 @@ def run_component_validation(
 # ─────────────────────────── Anthropic SDK manifest ────────────────────────
 
 
-TOOL_DEFINITIONS: list[dict] = [
-    {
-        "name": "list_components",
-        "description": (
-            "Return components from the schematic registry, optionally filtered by "
-            "refdes prefix or value substring. Use this to enumerate caps, transistors, "
-            "or any class of part by prefix."
-        ),
-        "input_schema": ListComponentsInput.model_json_schema(),
-    },
-    {
-        "name": "get_component",
-        "description": (
-            "Look up one component by exact refdes (e.g. 'U3'). On hit, returns "
-            "value/footprint/datasheet. On miss, returns the closest-matching refdes "
-            "suggestions from the registry — NEVER fabricate a refdes; pick from "
-            "suggestions or ask the user."
-        ),
-        "input_schema": GetComponentInput.model_json_schema(),
-    },
-    {
-        "name": "get_nc_pins",
-        "description": (
-            "Return pins marked NC (no_connect) on the schematic, optionally filtered "
-            "to one refdes. Use when checking R003 (NC pin handling) or verifying a "
-            "specific device's NC strategy."
-        ),
-        "input_schema": GetNcPinsInput.model_json_schema(),
-    },
-    {
-        "name": "search_datasheet",
-        "description": (
-            "Semantic query against the datasheet vector store; returns text chunks "
-            "with page + source_pdf provenance. Optionally filter to one part_ref. "
-            "Use for cross-checking schematic decisions against vendor specs."
-        ),
-        "input_schema": SearchDatasheetInput.model_json_schema(),
-    },
-    {
-        "name": "run_component_validation",
-        "description": (
-            "Run the deterministic family validator for one component by exact refdes "
-            "(e.g. 'Q1'). Returns structured pin/topology PASS/WARN/ERROR/UNKNOWN/NOT_APPLICABLE rows with "
-            "evidence tokens — use this whenever asked whether a component is wired "
-            "correctly, instead of reasoning about electrical limits yourself. On a "
-            "refdes with no assigned profile, returns 'no_profile' (manual review); on "
-            "an unknown refdes, returns closest-matching suggestions — NEVER fabricate "
-            "a refdes or a PASS/FAIL verdict."
-        ),
-        "input_schema": RunComponentValidationInput.model_json_schema(),
-    },
-] + TOPOLOGY_TOOL_DEFINITIONS + DOCUMENT_TOOL_DEFINITIONS + EVIDENCE_LOCATOR_TOOL_DEFINITIONS
+TOOL_DEFINITIONS: list[dict] = (
+    [
+        {
+            "name": "list_components",
+            "description": (
+                "Return components from the schematic registry, optionally filtered by "
+                "refdes prefix or value substring. Use this to enumerate caps, transistors, "
+                "or any class of part by prefix."
+            ),
+            "input_schema": ListComponentsInput.model_json_schema(),
+        },
+        {
+            "name": "get_component",
+            "description": (
+                "Look up one component by exact refdes (e.g. 'U3'). On hit, returns "
+                "value/footprint/datasheet. On miss, returns the closest-matching refdes "
+                "suggestions from the registry — NEVER fabricate a refdes; pick from "
+                "suggestions or ask the user."
+            ),
+            "input_schema": GetComponentInput.model_json_schema(),
+        },
+        {
+            "name": "get_nc_pins",
+            "description": (
+                "Return pins marked NC (no_connect) on the schematic, optionally filtered "
+                "to one refdes. Use when checking R003 (NC pin handling) or verifying a "
+                "specific device's NC strategy."
+            ),
+            "input_schema": GetNcPinsInput.model_json_schema(),
+        },
+        {
+            "name": "search_datasheet",
+            "description": (
+                "Semantic query against the datasheet vector store; returns text chunks "
+                "with page + source_pdf provenance. Optionally filter to one part_ref. "
+                "Use for cross-checking schematic decisions against vendor specs."
+            ),
+            "input_schema": SearchDatasheetInput.model_json_schema(),
+        },
+        {
+            "name": "run_component_validation",
+            "description": (
+                "Run the deterministic family validator for one component by exact refdes "
+                "(e.g. 'Q1'). Returns structured pin/topology result (PASS/FAIL/UNKNOWN/NOT_APPLICABLE), severity and evidence_kind; legacy status rows have "
+                "evidence tokens — use this whenever asked whether a component is wired "
+                "correctly, instead of reasoning about electrical limits yourself. On a "
+                "refdes with no assigned profile, returns 'no_profile' (manual review); on "
+                "an unknown refdes, returns closest-matching suggestions — NEVER fabricate "
+                "a refdes or a PASS/FAIL verdict."
+            ),
+            "input_schema": RunComponentValidationInput.model_json_schema(),
+        },
+    ]
+    + TOPOLOGY_TOOL_DEFINITIONS
+    + DOCUMENT_TOOL_DEFINITIONS
+    + EVIDENCE_LOCATOR_TOOL_DEFINITIONS
+)

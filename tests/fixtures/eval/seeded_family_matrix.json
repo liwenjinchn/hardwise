@@ -31,7 +31,7 @@
         "refdes": "C1",
         "kind": "component",
         "check": "capacitor_value_parse",
-        "status": "WARN"
+        "status": "UNKNOWN"
       },
       "voltage_facts": "pst_dc_voltage_facts.json"
     },

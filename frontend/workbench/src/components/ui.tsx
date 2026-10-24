@@ -90,6 +90,23 @@ export function EvidenceCard({ item }: { item: EvidenceChainItem }) {
   );
 }
 
+export function AssessmentBadges({ assessment }: {
+  assessment?: import("../generated/workbench-contracts").Assessment | null;
+}) {
+  if (!assessment) return <span className="source-badge">未评估，需复核</span>;
+  const resultLabels = { PASS: "通过", FAIL: "不满足", UNKNOWN: "待补资料 / 未评估", NOT_APPLICABLE: "不适用" };
+  const severityLabels = { ERROR: "错误", WARNING: "提醒", INFO: "信息" };
+  const evidenceLabels = { SOURCE_FACT: "来源事实", DERIVED: "规则推导", HYPOTHESIS: "待核假设" };
+  return <span className="row-badges" aria-label="检查结果与严重度">
+    <span className="source-badge">结果：{resultLabels[assessment.result]}</span>
+    <span className="source-badge">严重度：{severityLabels[assessment.severity]}</span>
+    <span className="source-badge">{evidenceLabels[assessment.evidence_kind]}</span>
+    {assessment.not_applicable_reason && <span className="source-badge">不适用原因：{assessment.not_applicable_reason}</span>}
+    {assessment.legacy_status && <span className="source-badge">旧状态：{assessment.legacy_status}</span>}
+    {assessment.needs_review && <span className="source-badge">需复核</span>}
+  </span>;
+}
+
 export function CheckCard({ check }: { check: CheckView }) {
   return (
     <article className={`check-card ${check.status_group}`}>
@@ -98,6 +115,7 @@ export function CheckCard({ check }: { check: CheckView }) {
         <strong>{check.subject}</strong>
         <StatusBadge group={check.status_group} label={check.status_label} />
       </div>
+      <AssessmentBadges assessment={check.assessment} />
       <p>{formatSummary(check.summary)}</p>
       <div className="evidence-tokens">
         {check.evidence.slice(0, 4).map((item) => <EvidenceToken evidence={item} key={item.token} />)}

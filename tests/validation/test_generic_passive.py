@@ -153,8 +153,8 @@ R1,1,0R 5%,Fixture,GW_RESISTOR
     power = next(
         check for check in validation.component_checks if check.check == "resistor_power_estimate"
     )
-    assert validation.status == "WARN"
-    assert power.status == "WARN"
+    assert validation.status == "UNKNOWN"
+    assert power.status == "UNKNOWN"
     assert "Zero-ohm link may bridge a confirmed DC difference" in power.summary
 
 
@@ -208,12 +208,12 @@ FB1,1,BLM18PG121SN1,Murata,BLM18PG121SN1
         design.components["FB1"], report.rows_by_refdes["FB1"], design, "ferrite"
     )
 
-    assert validation.status == "WARN"
+    assert validation.status == "UNKNOWN"
     assert validation.profile_part_number == "GENERIC_FERRITE"
     checks = {check.check: check for check in validation.component_checks}
-    assert checks["ferrite_impedance_parse"].status == "WARN"
+    assert checks["ferrite_impedance_parse"].status == "UNKNOWN"
     assert checks["ferrite_package_presence"].status == "PASS"
-    assert checks["ferrite_current_rating_token"].status == "PASS"
+    assert checks["ferrite_current_rating_token"].status == "UNKNOWN"
     assert "could not be parsed deterministically" in checks["ferrite_impedance_parse"].summary
 
 

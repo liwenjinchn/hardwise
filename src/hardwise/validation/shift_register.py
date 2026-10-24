@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hardwise.validation.assessment import result_for_attention, severity_for_attention
+
 import re
 
 from hardwise.ir.profile import DatasheetProfile
@@ -162,10 +164,7 @@ def _validate_serial_chain(
             "shift_register_serial_chain",
             "PASS",
             component,
-            (
-                f"Serial output {output_pin.net} cascades to DS pin on "
-                f"{', '.join(next_peers)}."
-            ),
+            (f"Serial output {output_pin.net} cascades to DS pin on {', '.join(next_peers)}."),
             evidence,
         )
 
@@ -245,7 +244,10 @@ def _peer_components(
     profile: DatasheetProfile,
     design: Design,
 ) -> list[Component]:
-    identities = {_normalize(profile.part_number), *[_normalize(alias) for alias in profile.part_number_aliases]}
+    identities = {
+        _normalize(profile.part_number),
+        *[_normalize(alias) for alias in profile.part_number_aliases],
+    }
     return [
         peer
         for peer in design.components.values()
@@ -292,7 +294,10 @@ def _max_chain_index(profile: DatasheetProfile, design: Design) -> int | None:
 
 
 def _profile_identities(profile: DatasheetProfile) -> set[str]:
-    return {_normalize(profile.part_number), *[_normalize(alias) for alias in profile.part_number_aliases]}
+    return {
+        _normalize(profile.part_number),
+        *[_normalize(alias) for alias in profile.part_number_aliases],
+    }
 
 
 def _chain_index(net_name: str) -> int | None:
@@ -325,7 +330,8 @@ def _check(
 ) -> ComponentValidation:
     return ComponentValidation(
         check=name,
-        status=status,  # type: ignore[arg-type]
+        result=result_for_attention(status, warning_result="UNKNOWN"),
+        severity=severity_for_attention(status),  # type: ignore[arg-type]
         refdes=component.refdes,
         summary=summary,
         evidence=evidence,

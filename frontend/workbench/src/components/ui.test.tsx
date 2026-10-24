@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
+  AssessmentBadges,
   CheckCard,
   EvidenceCard,
   EvidenceToken,
@@ -137,5 +138,37 @@ describe("CheckCard", () => {
     const html = renderToStaticMarkup(<CheckCard check={makeCheck({ evidence })} />);
     expect(html).toContain("EV-4");
     expect(html).not.toContain("EV-5");
+  });
+});
+
+
+describe("AssessmentBadges", () => {
+  function assessment(overrides: Partial<import("../generated/workbench-contracts").Assessment> = {}): import("../generated/workbench-contracts").Assessment {
+    return {contract_version: "hardwise.assessment.v1", result: "UNKNOWN", severity: "WARNING",
+      evidence_kind: "DERIVED", rule_version: "1", needs_review: false, migration_state: "current",
+      legacy_status: null, not_applicable_reason: null, status: "UNKNOWN", ...overrides};
+  }
+
+  it("keeps an urgent unknown distinct from a failed check", () => {
+    const html = renderToStaticMarkup(<AssessmentBadges assessment={assessment({severity: "ERROR"})} />);
+    expect(html).toContain("待补资料 / 未评估");
+    expect(html).toContain("严重度：错误");
+    expect(html).toContain("规则推导");
+    expect(html).not.toContain("结果：不满足");
+  });
+
+  it("shows a warning-severity failure without calling it unknown", () => {
+    const html = renderToStaticMarkup(<AssessmentBadges assessment={assessment({result: "FAIL", status: "WARN"})} />);
+    expect(html).toContain("结果：不满足");
+    expect(html).toContain("严重度：提醒");
+    expect(html).not.toContain("待补资料");
+  });
+
+  it("preserves the historical status beside the required review marker", () => {
+    const html = renderToStaticMarkup(<AssessmentBadges assessment={assessment({legacy_status: "PASS", needs_review: true, migration_state: "legacy_needs_review", evidence_kind: "HYPOTHESIS"})} />);
+    expect(html).toContain("旧状态：PASS");
+    expect(html).toContain("需复核");
+    expect(html).toContain("待核假设");
+    expect(html).toContain("待补资料 / 未评估");
   });
 });

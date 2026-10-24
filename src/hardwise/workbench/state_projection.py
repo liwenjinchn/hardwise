@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hardwise.validation.assessment import Assessment
+
 from collections import Counter
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
@@ -81,6 +83,7 @@ def build_workbench_state(
     evidence_package.signoff_readiness = build_signoff_readiness(list(review_tasks))
 
     return WorkbenchState(
+        assessment_coverage=context.index.assessment_coverage,
         voltage_facts=context.design.voltage_facts,
         project=_project_view(context),
         summary=WorkbenchSummary(
@@ -162,6 +165,7 @@ def _queue_item(
     task_counts = _component_task_counts(tasks)
     pin_table_task_count = sum(1 for task in tasks if task.kind == "pin_table_check")
     return ReviewQueueItem(
+        assessment=validation.assessment if validation else None,
         refdes=component.refdes,
         value=component.value or "",
         part_number=component.part_number or (row.part_number if row else ""),
@@ -227,6 +231,7 @@ def _net_check_views(context: WorkbenchContext) -> list[NetCheckView]:
 
     return [
         NetCheckView(
+            assessment=Assessment.model_validate(net_check.model_dump()),
             net_name=net_check.net_name,
             check=net_check.check,
             status=net_check.status,

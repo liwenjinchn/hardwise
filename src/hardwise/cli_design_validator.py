@@ -26,7 +26,8 @@ def register_design_validator_commands(app: typer.Typer) -> None:
             ),
         ),
         voltage_facts: Path | None = typer.Option(
-            None, "--voltage-facts",
+            None,
+            "--voltage-facts",
             help="Explicit confirmed DC voltage envelopes JSON; net names are candidates only for passive stress checks.",
         ),
         profiles: Path = typer.Option(
@@ -161,6 +162,14 @@ def register_design_validator_commands(app: typer.Typer) -> None:
         if index_json is not None:
             write_json(context.index, index_json)
 
+        coverage = context.index.assessment_coverage
+        typer.echo(
+            f"assessment-contract: emitted={coverage.generated_checks}, "
+            f"PASS/FAIL/UNKNOWN/NOT_APPLICABLE="
+            f"{coverage.result_counts['PASS']}/{coverage.result_counts['FAIL']}/"
+            f"{coverage.result_counts['UNKNOWN']}/{coverage.result_counts['NOT_APPLICABLE']}, "
+            f"legacy-needs-review={coverage.legacy_needs_review}; scope=emitted_check_records"
+        )
         totals = context.index.totals
         typer.echo(f"selected-netlist: {display_path(context.netlist_source)}")
         typer.echo(f"selected-bom: {display_path(context.bom.source_file)}")

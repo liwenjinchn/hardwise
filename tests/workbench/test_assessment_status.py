@@ -25,7 +25,7 @@ def test_unknown_is_manual_attention_and_survives_offline_export(tmp_path):
     context = _context()
     try:
         state = build_workbench_state(context, datasheet_search_enabled=False)
-        assert state.summary.unknown_count == 12
+        assert state.summary.unknown_count == 17
         assert sum(context.index.totals.values()) == state.summary.validated
         tasks = [task for task in state.review_tasks if task.refdes == "R1"]
         assert any(task.status == "UNKNOWN" and task.status_group == "manual" for task in tasks)
@@ -36,11 +36,11 @@ def test_unknown_is_manual_attention_and_survives_offline_export(tmp_path):
         output = tmp_path / "index.json"
         write_json(context.index, output)
         payload = json.loads(output.read_text())
-        assert payload["schema_version"] == "hardwise.validation_index.v2"
+        assert payload["schema_version"] == "hardwise.validation_index.v3"
         resistor = next(row for row in payload["rows"] if row["refdes"] == "R1")
         assert resistor["validation"]["status"] == "UNKNOWN"
         assert resistor["validation"]["component_counts_by_status"]["UNKNOWN"] == 1
-        assert "| UNKNOWN / NOT_APPLICABLE | 12 / 0 |" in render(context.index)
+        assert "| UNKNOWN / NOT_APPLICABLE | 17 / 0 |" in render(context.index)
     finally:
         close_workbench_context(context)
 
@@ -91,7 +91,12 @@ def test_unassessed_and_inapplicable_rows_never_join_pass_queue(status):
             profile_part_number="Fixture",
             component_checks=[
                 ComponentValidation(
-                    check="scope", status=status, summary="Public scope restriction"
+                    check="scope",
+                    result=status,
+                    not_applicable_reason="Public scope restriction"
+                    if status == "NOT_APPLICABLE"
+                    else None,
+                    summary="Public scope restriction",
                 )
             ],
         )
@@ -107,3 +112,53 @@ def test_unassessed_and_inapplicable_rows_never_join_pass_queue(status):
             assert "不适用" in queue_row.title
     finally:
         close_workbench_context(context)
+
+
+def test_canonical_axes_survive_api_export_and_human_decision():
+    from fastapi.testclient import TestClient
+    from hardwise.workbench.server import create_workbench_app
+
+    class LocalOnlyChat:
+        datasheet_search_enabled = False
+
+    with TestClient(
+        create_workbench_app(_context(), LocalOnlyChat(), auto_datasheet_candidates=False)
+    ) as client:
+        state = client.get("/api/workbench/state").json()
+        coverage = state["assessment_coverage"]
+        assert coverage["legacy_needs_review"] == 0
+        assert sum(coverage["result_counts"].values()) == coverage["generated_checks"]
+        assert coverage["full_candidate_count"] is None
+        task = next(task for task in state["review_tasks"] if task["refdes"] == "R1")
+        before = task["assessment"]
+        assert before["result"] == "UNKNOWN"
+        assert before["evidence_kind"] == "DERIVED"
+        response = client.put(
+            "/api/workbench/review-decisions",
+            json={
+                "stable_keys": [task["stable_key"]],
+                "status": "waived",
+                "reason": "Public synthetic workflow test only",
+            },
+        )
+        assert response.status_code == 200
+        reviewed = next(
+            item
+            for item in response.json()["review_tasks"]
+            if item["stable_key"] == task["stable_key"]
+        )
+        assert reviewed["review_decision"]["status"] == "waived"
+        assert reviewed["assessment"] == before
+        exported = client.get("/api/workbench/export?format=json").json()
+        item = next(
+            item for item in exported["review_tasks"] if item["stable_key"] == task["stable_key"]
+        )
+        assert item["assessment"] == before
+        detail = client.get("/api/workbench/components/R1").json()
+        assert detail["assessment"]["result"] == "UNKNOWN"
+        check = next(
+            check
+            for check in detail["checks"]
+            if check["subject"] == "R1" and check["assessment"]["result"] == "UNKNOWN"
+        )
+        assert check["assessment"]["severity"] == "INFO"

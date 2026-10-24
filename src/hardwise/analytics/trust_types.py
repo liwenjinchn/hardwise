@@ -67,6 +67,8 @@ class ValidationCoverage(BaseModel):
     coverage_percent: float = 0.0
     manual_percent: float = 0.0
     pass_warn_error: dict[str, int] = Field(default_factory=dict)
+    legacy_validation_totals: dict[str, int] = Field(default_factory=dict)
+    legacy_components_needing_review: int = 0
     match_status_counts: dict[str, int] = Field(default_factory=dict)
     document_status_counts: dict[str, int] = Field(default_factory=dict)
     top_profile_gaps: list[dict[str, Any]] = Field(default_factory=list)

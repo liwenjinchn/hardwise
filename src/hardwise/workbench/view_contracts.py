@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from hardwise.ir.voltage import VoltageFactsDocument
+from hardwise.validation.assessment import Assessment, CheckCoverage
 
 from hardwise.workbench.evidence_package import EvidencePackageSummary
 from hardwise.workbench.review_decisions import ReviewDecisionSummary, ReviewDecisionView
@@ -143,6 +144,8 @@ class ComponentTaskCounts(BaseModel):
 class ReviewQueueItem(BaseModel):
     """One row in the SPA review queue."""
 
+    assessment: Assessment | None = None
+
     refdes: str
     value: str = ""
     part_number: str = ""
@@ -172,6 +175,8 @@ class ReviewQueueItem(BaseModel):
 
 class ReviewTask(BaseModel):
     """One finding-first review task in the SPA workflow."""
+
+    assessment: Assessment | None = None
 
     id: str
     stable_key: str
@@ -291,6 +296,8 @@ class DatasheetCandidateSearchView(BaseModel):
 class PinView(BaseModel):
     """Pin/net detail shown in the component panel."""
 
+    assessment: Assessment | None = None
+
     number: str
     name: str
     electrical_type: str
@@ -304,6 +311,8 @@ class PinView(BaseModel):
 class CheckView(BaseModel):
     """Validation check detail shown in the component panel."""
 
+    assessment: Assessment | None = None
+
     subject: str
     status: str
     status_label: str
@@ -314,6 +323,8 @@ class CheckView(BaseModel):
 
 class NetCheckView(BaseModel):
     """Design-level net check shown in the project summary area."""
+
+    assessment: Assessment | None = None
 
     net_name: str
     check: str
@@ -379,6 +390,8 @@ class RiskHintsSummary(BaseModel):
 class ComponentDetail(BaseModel):
     """Full component detail consumed by the SPA."""
 
+    assessment: Assessment | None = None
+
     refdes: str
     value: str
     part_number: str = ""
@@ -423,6 +436,7 @@ class ReviewPrepPacket(BaseModel):
 class WorkbenchState(BaseModel):
     """Top-level SPA state returned by ``/api/workbench/state``."""
 
+    assessment_coverage: CheckCoverage | None = None
     voltage_facts: VoltageFactsDocument = Field(default_factory=VoltageFactsDocument)
 
     project: WorkbenchProject

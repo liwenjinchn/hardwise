@@ -1,3 +1,4 @@
+import { AssessmentBadges } from "../../components/ui";
 import { CircleHelp, Link2, ShieldCheck } from "lucide-react";
 import { EvidenceCard, EvidenceToken, StatusBadge, TrustBadge } from "../../components/ui";
 import { TRUST_LABEL, attentionLabel, chainKindLabel, formatSummary, taskKindLabel } from "../../lib/format";
@@ -72,6 +73,7 @@ export function EvidenceColumn({
                   <TrustBadge tier={task.trust_tier} />
                 </div>
                 <strong>{formatSummary(task.title)}</strong>
+                    <AssessmentBadges assessment={task.assessment} />
                 <p>{formatSummary(task.body)}</p>
                 <div className="guard-note">
                   <ShieldCheck size={15} />

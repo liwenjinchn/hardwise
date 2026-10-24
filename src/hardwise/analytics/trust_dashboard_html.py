@@ -114,9 +114,9 @@ def _validation_section(summary: TrustDashboardSummary) -> str:
     }
         {
         _card(
-            "Validated",
+            "Stored reports",
             coverage.validated_components,
-            f"{coverage.coverage_percent:.1f}% coverage",
+            f"{coverage.coverage_percent:.1f}% of components have reports; not check coverage",
         )
     }
         {_card("Manual", coverage.manual_components, f"{coverage.manual_percent:.1f}% remaining")}
@@ -124,8 +124,19 @@ def _validation_section(summary: TrustDashboardSummary) -> str:
         {_card("WARN", coverage.pass_warn_error.get("WARN", 0), "component verdicts")}
         {_card("ERROR", coverage.pass_warn_error.get("ERROR", 0), "component verdicts")}
         {_card("UNKNOWN", coverage.pass_warn_error.get("UNKNOWN", 0), "unassessed components")}
-        {_card("NOT_APPLICABLE", coverage.pass_warn_error.get("NOT_APPLICABLE", 0), "inapplicable checks")}
+        {
+        _card(
+            "NOT_APPLICABLE",
+            coverage.pass_warn_error.get("NOT_APPLICABLE", 0),
+            "inapplicable checks",
+        )
+    }
       </div>
+      <p class="note">Historical records needing replay: {
+        coverage.legacy_components_needing_review
+    }. Old totals: {
+        escape(str(coverage.legacy_validation_totals))
+    }; retained for audit, not current verdicts.</p>
       <div class="split">
         {_bar_table("Match Status", coverage.match_status_counts)}
         {_bar_table("Document Coverage", coverage.document_status_counts)}

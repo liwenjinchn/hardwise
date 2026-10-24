@@ -10,6 +10,7 @@ from hardwise.checklist.finding import Finding
 from hardwise.report.ui_terms import reason_label, validation_summary_label
 from hardwise.validation.project_index import ProjectValidationRow
 from hardwise.validation.risk_hints import RiskHint
+from hardwise.validation.assessment import Assessment
 from hardwise.validation.types import ValidationReport
 from hardwise.workbench.document_task_projection import _document_candidate_tasks
 from hardwise.workbench.projection_common import (
@@ -66,6 +67,7 @@ def _build_review_tasks_uncached(context: WorkbenchContext) -> list[ReviewTask]:
                     check="validation_scope",
                     status="UNKNOWN",
                     trust_tier="l3",
+                    assessment=Assessment(result="UNKNOWN", evidence_kind="SOURCE_FACT"),
                     title="未评估：没有可执行的检查",
                     body="当前检查集为空；没有产生任何通过结论。",
                     recommended_action="补充适用的检查模型后重新评估。",
@@ -131,6 +133,7 @@ def _component_check_tasks(
                 check=check.check,
                 subject=check.refdes or check.check,
                 status=check.status,
+                assessment=Assessment.model_validate(check.model_dump()),
                 trust_tier="l1",
                 title=validation_summary_label(check.summary),
                 body=f"{check.check}: {validation_summary_label(check.summary)}",
@@ -187,6 +190,7 @@ def _pin_check_tasks(row: ProjectValidationRow, validation: ValidationReport) ->
                 pin_number=pin.pin_number,
                 subject=f"{row.refdes}.{pin.pin_number}",
                 status=pin.status,
+                assessment=Assessment.model_validate(pin.model_dump()),
                 trust_tier="l1",
                 title=title,
                 body=(
@@ -308,6 +312,11 @@ def _pin_table_task(finding: Finding) -> ReviewTask:
         pin_number=finding.pin_number,
         subject=f"{finding.refdes}{pin}",
         status=status,
+        assessment=Assessment(
+            result="FAIL" if finding.rule_id in {"R008", "R009", "R010"} else "UNKNOWN",
+            severity="ERROR" if status == "ERROR" else "WARNING",
+            evidence_kind="DERIVED",
+        ),
         trust_tier="l1",
         title=f"{finding.rule_id} · {finding.message}",
         body=finding.message,
@@ -346,6 +355,7 @@ def _cleared_task(row: ProjectValidationRow, validation: ValidationReport) -> Re
         kind="cleared_summary",
         subject=row.refdes,
         status="PASS",
+        assessment=validation.assessment,
         trust_tier="l1",
         title=f"{row.refdes} 已通过当前确定性检查",
         body="该器件的已配置规则没有发现 WARN/ERROR；这不是全板电气保证，只是当前规则覆盖下的 cleared summary。",

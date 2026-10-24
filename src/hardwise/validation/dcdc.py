@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hardwise.validation.assessment import result_for_attention, severity_for_attention
+
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Pin
 from hardwise.validation.dcdc_paths import (
@@ -31,7 +33,8 @@ def validate_buck_topology(
         return [
             ComponentValidation(
                 check="buck_output_topology",
-                status="ERROR",
+                result="FAIL",
+                severity="ERROR",
                 summary="Buck switch output pin is missing or has no connected net.",
                 evidence=_profile_evidence(profile, "recommended.output_topology"),
             )
@@ -41,7 +44,9 @@ def validate_buck_topology(
     inductor = first_by_prefixes(neighbors, ("L", "PL"))
     checks = [_validate_buck_inductor(inductor, component, profile, design, output_pin.net)]
     if _external_freewheel_diode_required(profile):
-        checks.append(_validate_buck_diode(first_by_prefix(neighbors, "D"), profile, output_pin.net))
+        checks.append(
+            _validate_buck_diode(first_by_prefix(neighbors, "D"), profile, output_pin.net)
+        )
     else:
         checks.append(_validate_synchronous_buck_freewheel(profile))
     return checks
@@ -58,7 +63,8 @@ def _validate_buck_inductor(
     if inductor is None:
         return ComponentValidation(
             check="buck_inductor",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="Buck switch output net does not connect to an inductor.",
             evidence=evidence,
         )
@@ -71,12 +77,14 @@ def _validate_buck_inductor(
     max_uh = _float_recommended(profile, "inductor_max_uh")
     if inductance is None:
         summary = (
-            f"Inductor {inductor.refdes} value cannot be parsed deterministically. "
-            f"{path_summary}"
+            f"Inductor {inductor.refdes} value cannot be parsed deterministically. {path_summary}"
         )
         return ComponentValidation(
             check="buck_inductor",
-            status=worst_status("WARN", path_status),
+            result=result_for_attention(
+                worst_status("WARN", path_status), warning_result="UNKNOWN"
+            ),
+            severity=severity_for_attention(worst_status("WARN", path_status)),
             refdes=inductor.refdes,
             summary=summary,
             evidence=evidence,
@@ -88,7 +96,8 @@ def _validate_buck_inductor(
         )
         return ComponentValidation(
             check="buck_inductor",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=inductor.refdes,
             summary=summary,
             evidence=evidence,
@@ -100,7 +109,8 @@ def _validate_buck_inductor(
         )
         return ComponentValidation(
             check="buck_inductor",
-            status=worst_status("WARN", path_status),
+            result="FAIL" if path_status in {"PASS", "ERROR"} else "UNKNOWN",
+            severity=severity_for_attention(worst_status("WARN", path_status)),
             refdes=inductor.refdes,
             summary=summary,
             evidence=evidence,
@@ -112,14 +122,16 @@ def _validate_buck_inductor(
         )
         return ComponentValidation(
             check="buck_inductor",
-            status=path_status,
+            result=result_for_attention(path_status, warning_result="UNKNOWN"),
+            severity=severity_for_attention(path_status),
             refdes=inductor.refdes,
             summary=summary,
             evidence=evidence,
         )
     return ComponentValidation(
         check="buck_inductor",
-        status=path_status,
+        result=result_for_attention(path_status, warning_result="UNKNOWN"),
+        severity=severity_for_attention(path_status),
         refdes=inductor.refdes,
         summary=(
             f"Inductor {inductor.refdes} value {inductance:g} uH is within profile range. "
@@ -138,7 +150,8 @@ def _validate_buck_diode(
     if diode is None:
         return ComponentValidation(
             check="buck_freewheel_diode",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="Buck switch output net does not connect to a freewheel diode.",
             evidence=evidence,
         )
@@ -161,7 +174,10 @@ def _validate_buck_diode(
         )
         return ComponentValidation(
             check="buck_freewheel_diode",
-            status=worst_status("ERROR", path_status),
+            result=result_for_attention(
+                worst_status("ERROR", path_status), warning_result="UNKNOWN"
+            ),
+            severity=severity_for_attention(worst_status("ERROR", path_status)),
             refdes=diode.refdes,
             summary=summary,
             evidence=evidence,
@@ -173,14 +189,18 @@ def _validate_buck_diode(
         )
         return ComponentValidation(
             check="buck_freewheel_diode",
-            status=worst_status("WARN", path_status),
+            result=result_for_attention(
+                worst_status("WARN", path_status), warning_result="UNKNOWN"
+            ),
+            severity=severity_for_attention(worst_status("WARN", path_status)),
             refdes=diode.refdes,
             summary=summary,
             evidence=evidence,
         )
     return ComponentValidation(
         check="buck_freewheel_diode",
-        status=path_status,
+        result=result_for_attention(path_status, warning_result="UNKNOWN"),
+        severity=severity_for_attention(path_status),
         refdes=diode.refdes,
         summary=(
             f"Freewheel diode {diode.refdes} is in a recognized Schottky-style family. "
@@ -223,7 +243,8 @@ def _external_freewheel_diode_required(profile: DatasheetProfile) -> bool:
 def _validate_synchronous_buck_freewheel(profile: DatasheetProfile) -> ComponentValidation:
     return ComponentValidation(
         check="buck_freewheel_diode",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         summary=(
             "Synchronous buck profile uses an integrated low-side switch; "
             "no external freewheel diode is required by this profile."

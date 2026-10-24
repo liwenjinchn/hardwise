@@ -20,6 +20,20 @@ def validate_component_against_profile(
         *_validate_profile_review_status(component, profile),
         *_validate_component_topology(component, profile, design),
     ]
+    if profile.review_status != "ready":
+        # Unreviewed profile premises cannot certify electrical PASS/FAIL.
+        results = [
+            item.model_copy(
+                update={"result": "UNKNOWN", "evidence_kind": "HYPOTHESIS", "needs_review": True}
+            )
+            for item in results
+        ]
+        component_checks = [
+            item.model_copy(
+                update={"result": "UNKNOWN", "evidence_kind": "HYPOTHESIS", "needs_review": True}
+            )
+            for item in component_checks
+        ]
     return ValidationReport(
         refdes=component.refdes,
         component_value=component.value,
@@ -39,7 +53,9 @@ def _validate_profile_review_status(
     return [
         ComponentValidation(
             check="profile_review_status",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
+            evidence_kind="HYPOTHESIS",
             refdes=component.refdes,
             summary=(
                 f"Datasheet profile {profile.part_number} is marked {profile.review_status}; "

@@ -30,12 +30,14 @@ def test_trust_dashboard_summary_derives_metrics(tmp_path: Path) -> None:
     assert summary.validation_coverage.manual_components == 1
     assert summary.validation_coverage.coverage_percent == 66.7
     assert summary.validation_coverage.pass_warn_error == {
-        "PASS": 1,
+        "PASS": 0,
         "WARN": 0,
-        "ERROR": 1,
-        "UNKNOWN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 2,
         "NOT_APPLICABLE": 0,
     }
+    assert summary.validation_coverage.legacy_components_needing_review == 2
+    assert summary.validation_coverage.legacy_validation_totals["PASS"] == 1
     assert summary.validation_coverage.document_status_counts == {
         "matched": 1,
         "no_result": 1,
@@ -241,3 +243,55 @@ def _write_trace(path: Path) -> Path:
         encoding="utf-8",
     )
     return path
+
+
+def test_dashboard_does_not_trust_claimed_totals_without_canonical_check_records(tmp_path):
+    from hardwise.analytics.trust_dashboard import _load_validation_index
+
+    path = tmp_path / "historical.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "hardwise.validation_index.v2",
+                "components_in_design": 1,
+                "totals": {"PASS": 1},
+                "rows": [{"refdes": "U1", "validation": {"status": "PASS"}}],
+            }
+        )
+    )
+    old = _load_validation_index(path)
+    assert old.pass_warn_error["PASS"] == 0
+    assert old.pass_warn_error["UNKNOWN"] == 1
+    assert old.legacy_components_needing_review == 1
+    assert old.legacy_validation_totals == {"PASS": 1}
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "hardwise.validation_index.v3",
+                "components_in_design": 1,
+                "totals": {"PASS": 99},
+                "rows": [
+                    {
+                        "refdes": "U1",
+                        "validation": {
+                            "refdes": "U1",
+                            "component_value": "Fixture",
+                            "profile_part_number": "Fixture",
+                            "component_checks": [
+                                {
+                                    "check": "scope",
+                                    "summary": "A recorded predicate",
+                                    "result": "FAIL",
+                                    "severity": "WARNING",
+                                }
+                            ],
+                        },
+                    }
+                ],
+            }
+        )
+    )
+    current = _load_validation_index(path)
+    assert current.pass_warn_error["PASS"] == 0
+    assert current.pass_warn_error["WARN"] == 1
+    assert current.legacy_components_needing_review == 0

@@ -1,5 +1,125 @@
 {
   "$defs": {
+    "Assessment": {
+      "description": "Canonical check contract; old status-only records cannot certify a result.",
+      "properties": {
+        "contract_version": {
+          "const": "hardwise.assessment.v1",
+          "default": "hardwise.assessment.v1",
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "evidence_kind": {
+          "default": "DERIVED",
+          "enum": [
+            "SOURCE_FACT",
+            "DERIVED",
+            "HYPOTHESIS"
+          ],
+          "title": "Evidence Kind",
+          "type": "string"
+        },
+        "legacy_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "PASS",
+                "WARN",
+                "ERROR",
+                "UNKNOWN",
+                "NOT_APPLICABLE"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Legacy Status"
+        },
+        "migration_state": {
+          "default": "current",
+          "enum": [
+            "current",
+            "legacy_needs_review"
+          ],
+          "title": "Migration State",
+          "type": "string"
+        },
+        "needs_review": {
+          "default": false,
+          "title": "Needs Review",
+          "type": "boolean"
+        },
+        "not_applicable_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Not Applicable Reason"
+        },
+        "result": {
+          "default": "UNKNOWN",
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN",
+            "NOT_APPLICABLE"
+          ],
+          "title": "Result",
+          "type": "string"
+        },
+        "rule_version": {
+          "default": "1",
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        },
+        "severity": {
+          "default": "INFO",
+          "enum": [
+            "ERROR",
+            "WARNING",
+            "INFO"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "status": {
+          "description": "Legacy attention alias; use result/severity for new decisions.",
+          "enum": [
+            "PASS",
+            "WARN",
+            "ERROR",
+            "UNKNOWN",
+            "NOT_APPLICABLE"
+          ],
+          "readOnly": true,
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "contract_version",
+        "evidence_kind",
+        "legacy_status",
+        "migration_state",
+        "needs_review",
+        "not_applicable_reason",
+        "result",
+        "rule_version",
+        "severity",
+        "status"
+      ],
+      "title": "Assessment",
+      "type": "object"
+    },
     "BomView": {
       "description": "BOM identity shown in detail and prep packet views.",
       "properties": {
@@ -194,9 +314,113 @@
       "title": "ChatResponse",
       "type": "object"
     },
+    "CheckCoverage": {
+      "description": "An explicit emitted-record denominator, not claimed whole-design coverage.",
+      "properties": {
+        "basis": {
+          "const": "emitted_check_records",
+          "default": "emitted_check_records",
+          "title": "Basis",
+          "type": "string"
+        },
+        "boundary": {
+          "default": "只统计已生成的检查记录；尚未建立全板候选检查集合，不代表全板覆盖率。",
+          "title": "Boundary",
+          "type": "string"
+        },
+        "completed_checks": {
+          "title": "Completed Checks",
+          "type": "integer"
+        },
+        "full_candidate_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Full Candidate Count"
+        },
+        "generated_checks": {
+          "title": "Generated Checks",
+          "type": "integer"
+        },
+        "legacy_needs_review": {
+          "title": "Legacy Needs Review",
+          "type": "integer"
+        },
+        "needs_review_checks": {
+          "title": "Needs Review Checks",
+          "type": "integer"
+        },
+        "not_applicable_checks": {
+          "title": "Not Applicable Checks",
+          "type": "integer"
+        },
+        "result_counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "UNKNOWN",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "title": "Result Counts",
+          "type": "object"
+        },
+        "rule_set_version": {
+          "default": "hardwise.assessment.v1",
+          "title": "Rule Set Version",
+          "type": "string"
+        },
+        "unknown_checks": {
+          "title": "Unknown Checks",
+          "type": "integer"
+        },
+        "unsupported_components": {
+          "default": 0,
+          "title": "Unsupported Components",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "basis",
+        "boundary",
+        "completed_checks",
+        "full_candidate_count",
+        "generated_checks",
+        "legacy_needs_review",
+        "needs_review_checks",
+        "not_applicable_checks",
+        "result_counts",
+        "rule_set_version",
+        "unknown_checks",
+        "unsupported_components"
+      ],
+      "title": "CheckCoverage",
+      "type": "object"
+    },
     "CheckView": {
       "description": "Validation check detail shown in the component panel.",
       "properties": {
+        "assessment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Assessment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "evidence": {
           "items": {
             "$ref": "#/$defs/EvidenceView"
@@ -232,6 +456,7 @@
         }
       },
       "required": [
+        "assessment",
         "evidence",
         "status",
         "status_group",
@@ -245,6 +470,17 @@
     "ComponentDetail": {
       "description": "Full component detail consumed by the SPA.",
       "properties": {
+        "assessment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Assessment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "bom": {
           "anyOf": [
             {
@@ -401,6 +637,7 @@
         }
       },
       "required": [
+        "assessment",
         "bom",
         "checks",
         "deterministic_status",
@@ -1282,6 +1519,17 @@
     "NetCheckView": {
       "description": "Design-level net check shown in the project summary area.",
       "properties": {
+        "assessment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Assessment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "check": {
           "title": "Check",
           "type": "string"
@@ -1328,6 +1576,7 @@
         }
       },
       "required": [
+        "assessment",
         "check",
         "evidence",
         "net_name",
@@ -1432,6 +1681,17 @@
     "PinView": {
       "description": "Pin/net detail shown in the component panel.",
       "properties": {
+        "assessment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Assessment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "electrical_type": {
           "title": "Electrical Type",
           "type": "string"
@@ -1487,6 +1747,7 @@
         }
       },
       "required": [
+        "assessment",
         "electrical_type",
         "evidence",
         "is_nc",
@@ -1885,6 +2146,17 @@
     "ReviewQueueItem": {
       "description": "One row in the SPA review queue.",
       "properties": {
+        "assessment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Assessment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "deterministic_status": {
           "title": "Deterministic Status",
           "type": "string"
@@ -2031,6 +2303,7 @@
         }
       },
       "required": [
+        "assessment",
         "deterministic_status",
         "deterministic_status_group",
         "deterministic_status_label",
@@ -2063,6 +2336,17 @@
     "ReviewTask": {
       "description": "One finding-first review task in the SPA workflow.",
       "properties": {
+        "assessment": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Assessment"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "body": {
           "title": "Body",
           "type": "string"
@@ -2193,6 +2477,7 @@
         }
       },
       "required": [
+        "assessment",
         "body",
         "check",
         "derived_from_task_id",
@@ -2764,6 +3049,17 @@
     "WorkbenchState": {
       "description": "Top-level SPA state returned by ``/api/workbench/state``.",
       "properties": {
+        "assessment_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CheckCoverage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "capabilities": {
           "$ref": "#/$defs/WorkbenchCapabilities"
         },
@@ -2846,6 +3142,7 @@
         }
       },
       "required": [
+        "assessment_coverage",
         "capabilities",
         "evidence_package",
         "net_checks",

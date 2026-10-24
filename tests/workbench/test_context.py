@@ -271,10 +271,10 @@ def test_workbench_state_exposes_spa_queue_and_risk_hint_details(tmp_path: Path)
             "bom_matched": 25,
             "validated": 22,
             "manual": 3,
-            "pass_count": 2,
-            "warn_count": 4,
+            "pass_count": 1,
+            "warn_count": 0,
             "error_count": 4,
-            "unknown_count": 12,
+            "unknown_count": 17,
             "not_applicable_count": 0,
         }
         assert payload["selected_refdes"] == "Q12"
@@ -358,10 +358,10 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
             "bom_matched": 25,
             "validated": 22,
             "manual": 3,
-            "pass_count": 2,
-            "warn_count": 4,
+            "pass_count": 1,
+            "warn_count": 0,
             "error_count": 4,
-            "unknown_count": 12,
+            "unknown_count": 17,
             "not_applicable_count": 0,
         }
         assert payload["capabilities"]["pin_table_enabled"] is True
@@ -437,10 +437,10 @@ def test_workbench_state_surfaces_document_candidate_confirmation_tasks(
             "bom_matched": 25,
             "validated": 22,
             "manual": 3,
-            "pass_count": 2,
-            "warn_count": 4,
+            "pass_count": 1,
+            "warn_count": 0,
             "error_count": 4,
-            "unknown_count": 12,
+            "unknown_count": 17,
             "not_applicable_count": 0,
         }
         queue_by_refdes = {item["refdes"]: item for item in payload["queue"]}
@@ -637,10 +637,10 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
             "bom_matched": 25,
             "validated": 22,
             "manual": 3,
-            "pass_count": 2,
-            "warn_count": 4,
+            "pass_count": 1,
+            "warn_count": 0,
             "error_count": 4,
-            "unknown_count": 12,
+            "unknown_count": 17,
             "not_applicable_count": 0,
         }
         assert packet["queue"][0]["refdes"] == "Q12"
@@ -1035,10 +1035,10 @@ def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
             "bom_matched": 25,
             "validated": 22,
             "manual": 3,
-            "pass_count": 2,
-            "warn_count": 4,
+            "pass_count": 1,
+            "warn_count": 0,
             "error_count": 4,
-            "unknown_count": 12,
+            "unknown_count": 17,
             "not_applicable_count": 0,
         }
         imported = response.json()
@@ -1384,12 +1384,12 @@ def test_workbench_state_exposes_net_checks() -> None:
         assert response.status_code == 200
         net_checks = response.json()["net_checks"]
         assert [(c["net_name"], c["status"], c["nodes"]) for c in net_checks] == [
-            ("ADC_POT", "WARN", ["U8.11"]),
-            ("PWM1L", "WARN", ["U3.3"]),
+            ("ADC_POT", "UNKNOWN", ["U8.11"]),
+            ("PWM1L", "UNKNOWN", ["U3.3"]),
         ]
         first = net_checks[0]
         assert first["check"] == "net_single_endpoint"
-        assert first["status_group"] == "warn"
+        assert first["status_group"] == "manual"
         assert first["evidence"][0]["token"] == (
             "netlist:mixed_controller_power_stage.net#net=ADC_POT"
         )

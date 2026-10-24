@@ -5203,3 +5203,35 @@ Correct subtraction does not establish its input authority. Tests must declare
 synthetic premises instead of accidentally relying on production guesses.
 Other profile families and stored-decision dependency invalidation are still
 open; do not extrapolate this passive-only result to whole-product correctness.
+
+
+## 2026-10-24 — WARN and report totals cannot stand in for result truth
+
+**Symptom**
+
+WARN covered recommendation violations, missing voltage, unproven topology and
+unreviewed profiles. Historical dashboard totals could recertify a stored PASS
+without any check records. Missing passive current-rating tokens also passed.
+
+**Root cause**
+
+One attention enum combined outcome and severity. Intermediate output consumers
+trusted historical aggregates. A parser-presence check returned success even
+when the token was absent. Unreviewed profile warnings did not gate individual
+PASS/FAIL rows.
+
+**Fix**
+
+Add independent typed axes, inspect each warning branch and retain explicit
+legacy provenance. Replay or mark historical records unassessed. Recompute
+analytics from check records instead of stored totals. Keep unreviewed profile
+checks UNKNOWN/HYPOTHESIS. Separate emitted-record denominators from unbuilt
+full-candidate coverage, and show unknown details in readable exports.
+
+**Takeaway**
+
+A migration can serialize new fields correctly while still leaking old meaning
+through rollups, tools, UI badges or analytics. Verify these boundaries with
+urgent UNKNOWN, warning FAIL, historical PASS/WARN, unreviewed profiles and human
+waivers. Typed DERIVED output does not independently validate its engineering
+premises; input authority and profile conditions remain separate work.

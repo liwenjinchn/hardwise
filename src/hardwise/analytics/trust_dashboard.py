@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hardwise.validation.types import ValidationReport
+
 import json
 from collections import Counter
 from datetime import datetime, timezone
@@ -140,14 +142,27 @@ def _load_validation_index(path: Path | None) -> ValidationCoverage:
             source=SourceState(path=str(path), status="invalid", message=f"Invalid JSON: {e}")
         )
 
+    if not isinstance(payload, dict):
+        return ValidationCoverage(
+            source=SourceState(
+                path=str(path), status="invalid", message="Validation index must be a JSON object."
+            )
+        )
     rows = _list(payload.get("rows"))
     component_groups = _list(payload.get("component_groups"))
     totals = _pass_warn_error(payload, rows)
+    legacy_count = _legacy_validation_count(payload, rows)
     components = _int(payload.get("components_in_design"))
     validated = sum(1 for row in rows if isinstance(row, dict) and row.get("validation"))
     manual = max(components - validated, 0)
     return ValidationCoverage(
-        source=SourceState(path=str(path), status="loaded", message="Loaded validation index."),
+        source=SourceState(
+            path=str(path),
+            status="loaded",
+            message="Loaded validation index."
+            if not legacy_count
+            else "Historical status-only records need replay; current results are unassessed.",
+        ),
         available=True,
         project_name=str(payload.get("project_name") or ""),
         generated_at=str(payload.get("generated_at") or ""),
@@ -159,6 +174,12 @@ def _load_validation_index(path: Path | None) -> ValidationCoverage:
         coverage_percent=_percent(validated, components),
         manual_percent=_percent(manual, components),
         pass_warn_error=totals,
+        legacy_validation_totals={
+            key: _int(value) for key, value in payload.get("totals", {}).items()
+        }
+        if legacy_count and isinstance(payload.get("totals"), dict)
+        else {},
+        legacy_components_needing_review=legacy_count,
         match_status_counts=dict(
             Counter(
                 str(row.get("match_status") or "unknown") for row in rows if isinstance(row, dict)
@@ -176,19 +197,44 @@ def _load_validation_index(path: Path | None) -> ValidationCoverage:
 
 
 def _pass_warn_error(payload: dict[str, Any], rows: list[Any]) -> dict[str, int]:
-    totals = payload.get("totals")
-    if isinstance(totals, dict):
-        return {
-            key: _int(totals.get(key))
-            for key in ("PASS", "WARN", "ERROR", "UNKNOWN", "NOT_APPLICABLE")
-        }
+    # Stored totals are historical metadata, never authoritative canonical results.
     counts: Counter[str] = Counter()
     for row in rows:
-        if isinstance(row, dict) and isinstance(row.get("validation"), dict):
-            counts[str(row["validation"].get("status") or "unknown")] += 1
+        if not isinstance(row, dict) or not isinstance(row.get("validation"), dict):
+            continue
+        raw = row["validation"]
+        try:
+            report = ValidationReport.model_validate(
+                {
+                    "refdes": row.get("refdes", "unknown"),
+                    "component_value": row.get("bom_value", ""),
+                    "profile_part_number": "unrecorded",
+                    **raw,
+                }
+            )
+            counts[report.status] += 1
+        except (ValueError, TypeError):
+            counts["UNKNOWN"] += 1
     return {
         key: counts.get(key, 0) for key in ("PASS", "WARN", "ERROR", "UNKNOWN", "NOT_APPLICABLE")
     }
+
+
+def _legacy_validation_count(payload: dict[str, Any], rows: list[Any]) -> int:
+    count = 0
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("validation"), dict):
+            continue
+        report = row["validation"]
+        checks = [*_list(report.get("pin_results")), *_list(report.get("component_checks"))]
+        if payload.get("schema_version") != "hardwise.validation_index.v3" or any(
+            not isinstance(check, dict)
+            or "result" not in check
+            or check.get("migration_state") == "legacy_needs_review"
+            for check in checks
+        ):
+            count += 1
+    return count
 
 
 def _list(value: Any) -> list[Any]:

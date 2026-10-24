@@ -53,13 +53,15 @@ def _validate_pin_connected(
     if pin is None or not pin.net:
         return ComponentValidation(
             check=check,
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"Diode {pin_name.lower()} pin is not connected.",
             evidence=evidence,
         )
     return ComponentValidation(
         check=check,
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"Diode {pin_name.lower()} is connected to {pin.net}.",
         evidence=evidence,
@@ -77,14 +79,16 @@ def _validate_reverse_voltage(
     if cathode is None or not cathode.net:
         return ComponentValidation(
             check="diode_reverse_voltage",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="Diode cathode pin is not connected; cannot check reverse voltage.",
             evidence=evidence,
         )
     if anode is None or not anode.net:
         return ComponentValidation(
             check="diode_reverse_voltage",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="Diode anode pin is not connected; cannot check reverse voltage.",
             evidence=evidence,
         )
@@ -94,7 +98,8 @@ def _validate_reverse_voltage(
     if cathode_voltage is None or anode_voltage is None:
         return ComponentValidation(
             check="diode_reverse_voltage",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary="Diode reverse voltage cannot be inferred from cathode/anode net names.",
             evidence=evidence,
@@ -105,7 +110,8 @@ def _validate_reverse_voltage(
     if reverse_limit is not None and reverse_voltage > reverse_limit:
         return ComponentValidation(
             check="diode_reverse_voltage",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Diode reverse voltage is {reverse_voltage:g} V, "
@@ -115,7 +121,8 @@ def _validate_reverse_voltage(
         )
     return ComponentValidation(
         check="diode_reverse_voltage",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=(
             f"Diode reverse voltage is {reverse_voltage:g} V"
@@ -136,14 +143,16 @@ def _validate_led_indicator_polarity(
     if anode is None or not anode.net:
         return ComponentValidation(
             check="led_indicator_polarity",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="LED anode pin is not connected; cannot check indicator polarity.",
             evidence=evidence,
         )
     if cathode is None or not cathode.net:
         return ComponentValidation(
             check="led_indicator_polarity",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="LED cathode pin is not connected; cannot check indicator polarity.",
             evidence=evidence,
         )
@@ -153,7 +162,8 @@ def _validate_led_indicator_polarity(
     if anode_voltage is None or cathode_voltage is None:
         return ComponentValidation(
             check="led_indicator_polarity",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary="LED indicator polarity cannot be inferred from anode/cathode net names.",
             evidence=evidence,
@@ -161,7 +171,8 @@ def _validate_led_indicator_polarity(
     if anode_voltage <= cathode_voltage:
         return ComponentValidation(
             check="led_indicator_polarity",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"LED anode is at {anode_voltage:g} V and cathode is at "
@@ -171,7 +182,8 @@ def _validate_led_indicator_polarity(
         )
     return ComponentValidation(
         check="led_indicator_polarity",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=(f"LED anode is at {anode_voltage:g} V and cathode is at {cathode_voltage:g} V."),
         evidence=evidence,
@@ -187,7 +199,8 @@ def _validate_led_current_limit(
     if not _bool_recommended(profile, "requires_current_limit"):
         return ComponentValidation(
             check="led_current_limit",
-            status="PASS",
+            result="PASS",
+            severity="INFO",
             refdes=component.refdes,
             summary="LED indicator profile does not require a deterministic current-limit check.",
             evidence=evidence,
@@ -198,14 +211,16 @@ def _validate_led_current_limit(
     if anode is None or not anode.net:
         return ComponentValidation(
             check="led_current_limit",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="LED anode pin is not connected; cannot check current limiting.",
             evidence=evidence,
         )
     if cathode is None or not cathode.net:
         return ComponentValidation(
             check="led_current_limit",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="LED cathode pin is not connected; cannot check current limiting.",
             evidence=evidence,
         )
@@ -214,7 +229,8 @@ def _validate_led_current_limit(
     if summary is None:
         return ComponentValidation(
             check="led_current_limit",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 "LED indicator has no deterministic series current-limit resistor "
@@ -224,7 +240,8 @@ def _validate_led_current_limit(
         )
     return ComponentValidation(
         check="led_current_limit",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=summary,
         evidence=evidence,
@@ -242,14 +259,16 @@ def _validate_bidirectional_tvs_standoff(
     if terminal_1 is None or not terminal_1.net:
         return ComponentValidation(
             check="tvs_working_standoff",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="TVS terminal 1 is not connected; cannot check rail clamp.",
             evidence=evidence,
         )
     if terminal_2 is None or not terminal_2.net:
         return ComponentValidation(
             check="tvs_working_standoff",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="TVS terminal 2 is not connected; cannot check rail clamp.",
             evidence=evidence,
         )
@@ -259,7 +278,8 @@ def _validate_bidirectional_tvs_standoff(
     if not ground_terminals:
         return ComponentValidation(
             check="tvs_working_standoff",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary="Bidirectional TVS has no terminal on a recognized ground net; rail clamp cannot be confirmed.",
             evidence=evidence,
@@ -267,7 +287,8 @@ def _validate_bidirectional_tvs_standoff(
     if len(ground_terminals) == 2:
         return ComponentValidation(
             check="tvs_working_standoff",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary="Bidirectional TVS terminals are both on ground-like nets; no protected rail is present.",
             evidence=evidence,
@@ -280,7 +301,8 @@ def _validate_bidirectional_tvs_standoff(
     if reference_voltage is None or protected_voltage is None:
         return ComponentValidation(
             check="tvs_working_standoff",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=(
                 "Bidirectional TVS rail voltage cannot be inferred from terminal nets "
@@ -294,7 +316,8 @@ def _validate_bidirectional_tvs_standoff(
     if standoff is not None and working_voltage > standoff:
         return ComponentValidation(
             check="tvs_working_standoff",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Bidirectional TVS sees {working_voltage:g} V from {protected.net} to "
@@ -304,7 +327,8 @@ def _validate_bidirectional_tvs_standoff(
         )
     return ComponentValidation(
         check="tvs_working_standoff",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=(
             f"Bidirectional TVS clamps {protected.net} to {reference.net}; "

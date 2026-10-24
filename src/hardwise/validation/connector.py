@@ -40,7 +40,8 @@ def _validate_power_pin(
     if pin is None or not pin.net:
         return ComponentValidation(
             check="connector_power_voltage",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"Connector power pin {pin_number} is not connected.",
             evidence=evidence,
         )
@@ -48,7 +49,8 @@ def _validate_power_pin(
     if voltage is None:
         return ComponentValidation(
             check="connector_power_voltage",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=f"Connector power net {pin.net} voltage cannot be inferred.",
             evidence=evidence,
@@ -60,7 +62,8 @@ def _validate_power_pin(
     if min_voltage is not None and voltage < min_voltage:
         return ComponentValidation(
             check="connector_power_voltage",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Connector power net {pin.net} is {voltage:g} V, "
@@ -71,7 +74,8 @@ def _validate_power_pin(
     if max_voltage is not None and voltage > max_voltage:
         return ComponentValidation(
             check="connector_power_voltage",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Connector power net {pin.net} is {voltage:g} V, "
@@ -81,7 +85,8 @@ def _validate_power_pin(
         )
     return ComponentValidation(
         check="connector_power_voltage",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"Connector power net {pin.net} is within the profile voltage range.",
         evidence=evidence,
@@ -98,21 +103,24 @@ def _validate_ground_pin(
     if pin is None or not pin.net:
         return ComponentValidation(
             check="connector_ground_connectivity",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"Connector ground pin {pin_number} is not connected.",
             evidence=evidence,
         )
     if not is_ground_net(pin.net):
         return ComponentValidation(
             check="connector_ground_connectivity",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=f"Connector ground pin {pin_number} is connected to non-ground net {pin.net}.",
             evidence=evidence,
         )
     return ComponentValidation(
         check="connector_ground_connectivity",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"Connector ground pin {pin_number} is connected to {pin.net}.",
         evidence=evidence,
@@ -129,13 +137,15 @@ def _validate_signal_pin(
     if pin is None or not pin.net:
         return ComponentValidation(
             check=f"connector_signal_{pin_number}_connectivity",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"Connector signal pin {pin_number} is not connected.",
             evidence=evidence,
         )
     return ComponentValidation(
         check=f"connector_signal_{pin_number}_connectivity",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"Connector signal pin {pin_number} is connected to {pin.net}.",
         evidence=evidence,

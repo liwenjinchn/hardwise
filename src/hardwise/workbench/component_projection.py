@@ -11,6 +11,7 @@ from hardwise.ir.types import Component
 from hardwise.report.ui_terms import reason_label, status_label, validation_summary_label
 from hardwise.validation.project_index import ProjectValidationRow
 from hardwise.validation.risk_hints import RiskHint
+from hardwise.validation.assessment import Assessment
 from hardwise.validation.types import ComponentValidation, PinValidation, ValidationReport
 from hardwise.workbench.projection_common import (
     _component_task_counts,
@@ -170,6 +171,7 @@ def build_component_detail(
     document = _document_view(context, component.refdes)
 
     return ComponentDetail(
+        assessment=validation.assessment if validation else None,
         refdes=component.refdes,
         value=component.value or "-",
         part_number=component.part_number or "",
@@ -211,6 +213,7 @@ def _pin_views(component: Component, validation: ValidationReport | None) -> lis
                 electrical_type=pin.electrical_type,
                 net=pin.net,
                 is_nc=pin.is_nc,
+                assessment=Assessment.model_validate(result.model_dump()) if result else None,
                 status=result.status if result else None,
                 summary=validation_summary_label(result.summary) if result else "",
                 evidence=_evidence_views(result.evidence if result else [], "l1"),
@@ -224,6 +227,7 @@ def _check_views(validation: ValidationReport | None) -> list[CheckView]:
         return []
     return [
         CheckView(
+            assessment=Assessment.model_validate(check.model_dump()),
             subject=check.refdes or check.check,
             status=check.status,
             status_label=status_label(check.status),

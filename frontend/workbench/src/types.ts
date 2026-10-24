@@ -135,6 +135,7 @@ export interface EvidenceView {
 }
 
 export interface ReviewQueueItem {
+  assessment: import("./generated/workbench-contracts").Assessment | null;
   refdes: string;
   value: string;
   part_number: string;
@@ -163,6 +164,7 @@ export interface ReviewQueueItem {
 }
 
 export interface ReviewTask {
+  assessment: import("./generated/workbench-contracts").Assessment | null;
   id: string;
   stable_key: string;
   refdes: string;
@@ -227,6 +229,7 @@ export interface ReviewTaskCounts {
 }
 
 export interface PinView {
+  assessment: import("./generated/workbench-contracts").Assessment | null;
   number: string;
   name: string;
   electrical_type: string;
@@ -238,6 +241,7 @@ export interface PinView {
 }
 
 export interface CheckView {
+  assessment: import("./generated/workbench-contracts").Assessment | null;
   subject: string;
   status: string;
   status_label: string;
@@ -247,6 +251,7 @@ export interface CheckView {
 }
 
 export interface NetCheckView {
+  assessment: import("./generated/workbench-contracts").Assessment | null;
   net_name: string;
   check: string;
   status: string;
@@ -355,6 +360,7 @@ export interface DatasheetCandidateSearchView {
 }
 
 export interface WorkbenchState {
+  assessment_coverage: import("./generated/workbench-contracts").CheckCoverage | null;
   voltage_facts: import("./generated/workbench-contracts").VoltageFactsDocument;
   project: WorkbenchProject;
   summary: WorkbenchSummary;
@@ -385,6 +391,7 @@ export interface ImportResponse {
 }
 
 export interface ComponentDetail {
+  assessment: import("./generated/workbench-contracts").Assessment | null;
   refdes: string;
   value: string;
   part_number: string;

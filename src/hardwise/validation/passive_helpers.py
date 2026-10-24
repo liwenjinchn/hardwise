@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hardwise.validation.assessment import result_for_attention, severity_for_attention
+
 import re
 from typing import Literal
 
@@ -36,7 +38,9 @@ def _terminal_connectivity(
             pin_number=pin.number,
             pin_name=pin.name or f"Terminal {pin.number}",
             category=f"generic_{family}_terminal",
-            status="PASS" if pin.net else "ERROR",
+            result=result_for_attention("PASS" if pin.net else "ERROR", warning_result="UNKNOWN"),
+            severity=severity_for_attention("PASS" if pin.net else "ERROR"),
+            evidence_kind="SOURCE_FACT",
             net=pin.net,
             summary=(
                 f"Generic {label} terminal is connected to {pin.net}."
@@ -59,7 +63,9 @@ def _value_check(
 ) -> ComponentValidation:
     return ComponentValidation(
         check=check,
-        status="PASS" if parsed else "WARN",
+        result=result_for_attention("PASS" if parsed else "WARN", warning_result="UNKNOWN"),
+        severity=severity_for_attention("PASS" if parsed else "WARN"),
+        evidence_kind="SOURCE_FACT",
         refdes=component.refdes,
         summary=(
             f"{label} value was parsed from BOM/component value '{value}'."
@@ -79,7 +85,9 @@ def _package_check(
     if not package:
         return ComponentValidation(
             check=f"{family}_package_presence",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
+            evidence_kind="DERIVED",
             refdes=component.refdes,
             summary=f"Generic {family} check has no schematic package field to inspect.",
             evidence=evidence,
@@ -89,7 +97,9 @@ def _package_check(
     conflict = _passive_package_conflict(family, upper)
     return ComponentValidation(
         check=f"{family}_package_presence",
-        status="WARN" if conflict else "PASS",
+        result=result_for_attention("WARN" if conflict else "PASS", warning_result="FAIL"),
+        severity=severity_for_attention("WARN" if conflict else "PASS"),
+        evidence_kind="DERIVED",
         refdes=component.refdes,
         summary=(
             f"Schematic package '{package}' looks inconsistent with generic {family} family."
@@ -131,7 +141,9 @@ def _current_rating_token_check(
         )
     return ComponentValidation(
         check=f"{family}_current_rating_token",
-        status="PASS",
+        result="PASS" if current_rating is not None else "UNKNOWN",
+        evidence_kind="SOURCE_FACT",
+        severity="INFO",
         refdes=component.refdes,
         summary=summary,
         evidence=evidence,

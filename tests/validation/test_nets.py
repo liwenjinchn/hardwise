@@ -44,7 +44,7 @@ def test_single_endpoint_net_warns_with_evidence_token():
     result = results[0]
     assert result.net_name == "DANGLE"
     assert result.check == CHECK_SINGLE_ENDPOINT
-    assert result.status == "WARN"
+    assert result.status == "UNKNOWN"
     assert result.nodes == ["U1.7"]
     assert result.evidence == ["netlist:synthetic_board#net=DANGLE"]
     assert "U1.7" in result.summary
@@ -109,7 +109,7 @@ def test_design_without_ground_net_warns_once():
     ]
     missing = results[0]
     assert missing.net_name == "-"
-    assert missing.status == "WARN"
+    assert missing.status == "UNKNOWN"
     assert missing.nodes == []
     assert missing.evidence == ["netlist:board.net#nets=2"]
     assert "checked 2 nets" in missing.summary
@@ -141,7 +141,7 @@ def test_emitter_reference_fixture_ground_truth():
         (CHECK_SINGLE_ENDPOINT, "+24V"),
         (CHECK_SINGLE_ENDPOINT, "EMITTER_NODE"),
     ]
-    assert all(r.status == "WARN" for r in results)
+    assert all(r.status == "UNKNOWN" for r in results)
 
 
 def test_mixed_controller_power_stage_fixture_ground_truth():
@@ -159,7 +159,7 @@ def test_mixed_controller_power_stage_fixture_ground_truth():
         ("ADC_POT", ["U8.11"]),
         ("PWM1L", ["U3.3"]),
     ]
-    assert all(r.status == "WARN" for r in results)
+    assert all(r.status == "UNKNOWN" for r in results)
     assert results[0].evidence == [
         "netlist:mixed_controller_power_stage.net#net=ADC_POT"
     ]
@@ -220,7 +220,7 @@ def test_project_index_populates_net_checks(tmp_path):
 
     index = _index_from_text(tmp_path, _DANGLING_NETLIST, _DANGLING_BOM)
 
-    assert [(c.net_name, c.status) for c in index.net_checks] == [("DANGLE", "WARN")]
+    assert [(c.net_name, c.status) for c in index.net_checks] == [("DANGLE", "UNKNOWN")]
     assert index.net_checks[0].check == CHECK_SINGLE_ENDPOINT
     # Token uses the netlist basename, never the absolute local path.
     assert index.net_checks[0].evidence == ["netlist:fixture.net#net=DANGLE"]
@@ -233,7 +233,7 @@ def test_markdown_report_renders_net_checks_section(tmp_path):
     report = render(index)
 
     assert "## Net Checks" in report
-    assert "| DANGLE | net_single_endpoint | WARN | U1.7 |" in report
+    assert "| DANGLE | net_single_endpoint | UNKNOWN | U1.7 |" in report
     assert "`netlist:fixture.net#net=DANGLE`" in report
     # The net-check evidence token never carries the absolute local path.
     # (The header Netlist/BOM source fields show what display_path returns

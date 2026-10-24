@@ -110,9 +110,9 @@ def test_floating_base_or_emitter_warns_not_errors(bjt_profile, emitter_referenc
 
     results = validate_component_against_profile(component, bjt_profile, emitter_reference_design)
 
-    assert results.status == "WARN"
+    assert results.status == "UNKNOWN"
     vebo = next(c for c in results.component_checks if c.check == "bjt_vebo_rating")
-    assert vebo.status == "WARN"
+    assert vebo.status == "UNKNOWN"
     assert "not assuming emitter is ground" in vebo.summary.lower()
 
 

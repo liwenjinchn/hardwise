@@ -32,6 +32,16 @@ test("queue clicks on Q12 / U8 / U12 update detail and evidence columns", async 
   }
 });
 
+test("unknown check shows its result, severity and evidence kind independently", async ({ page }) => {
+  await openReview(page);
+  await pickComponent(page, "R1");
+  const check = page.locator(".check-card").filter({ hasText: "电阻功耗未知" });
+  await expect(check).toContainText("结果：待补资料 / 未评估");
+  await expect(check).toContainText("严重度：信息");
+  await expect(check).toContainText("规则推导");
+  await expect(check).toHaveClass(/manual/);
+});
+
 test("copilot wraps unknown refdes U999 as ⟨?U999⟩", async ({ page }) => {
   await openReview(page);
   await page.getByRole("button", { name: "AI 助手" }).click();

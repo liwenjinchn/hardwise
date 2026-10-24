@@ -8,6 +8,7 @@ from hardwise.guards.evidence_class import EvidenceClassification, classify_evid
 from hardwise.report.ui_terms import status_label
 from hardwise.validation.project_index import ProjectValidationRow
 from hardwise.validation.types import ValidationReport
+from hardwise.validation.assessment import Assessment
 from hardwise.workbench.view_contracts import (
     ComponentTaskCounts,
     EvidenceChainItem,
@@ -31,11 +32,13 @@ def _task(
     body: str,
     recommended_action: str,
     chain: list[EvidenceChainItem],
+    assessment: Assessment | None = None,
 ) -> ReviewTask:
     evidence = [token for item in chain for token in item.evidence]
     source_classes = _dedupe([item.source_class for item in evidence])
     group = _status_group(status)
     return ReviewTask(
+        assessment=assessment or Assessment(result="UNKNOWN", evidence_kind="HYPOTHESIS"),
         id="F-000",
         stable_key=_task_stable_key(
             kind=kind,
@@ -156,9 +159,9 @@ def _trust_for_row(row: ProjectValidationRow | None) -> TrustTier:
 def _issue_count(validation: ValidationReport | None) -> int:
     if validation is None:
         return 0
-    return sum(item.status not in {"PASS", "NOT_APPLICABLE"} for item in validation.pin_results) + sum(
-        item.status not in {"PASS", "NOT_APPLICABLE"} for item in validation.component_checks
-    )
+    return sum(
+        item.status not in {"PASS", "NOT_APPLICABLE"} for item in validation.pin_results
+    ) + sum(item.status not in {"PASS", "NOT_APPLICABLE"} for item in validation.component_checks)
 
 
 def _dedupe(tokens: list[str]) -> list[str]:

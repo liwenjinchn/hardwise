@@ -38,6 +38,27 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
     lines.append(f"| Generated at | {index.generated_at} |")
     lines.append("")
 
+    coverage = index.assessment_coverage
+    lines.extend(
+        [
+            "## Check result contract",
+            "",
+            f"Emitted checks: {coverage.generated_checks}; completed: {coverage.completed_checks}; "
+            f"UNKNOWN: {coverage.unknown_checks}; NOT_APPLICABLE: {coverage.not_applicable_checks}.",
+            coverage.boundary,
+            "",
+            "| Refdes | Check | Result | Severity | Evidence kind | Rule version | Needs review | N/A reason |",
+            "|---|---|---|---|---|---|---|---|",
+        ]
+    )
+    for row in index.validated_rows:
+        for check in [*row.validation.pin_results, *row.validation.component_checks]:
+            name = getattr(check, "check", None) or f"pin:{check.pin_number}"
+            lines.append(
+                f"| {row.refdes} | {name} | {check.result} | {check.severity} | "
+                f"{check.evidence_kind} | {check.rule_version} | {check.needs_review} | {_escape_pipe(check.not_applicable_reason or '-')} |"
+            )
+    lines.append("")
     lines.append("## Net Checks")
     lines.append("")
     if index.net_checks:
@@ -160,7 +181,7 @@ def write_json(index: ProjectValidationIndex, output: Path) -> None:
     """Write a JSON sidecar for the design-validator UI."""
 
     payload = index.model_dump(mode="json")
-    payload["schema_version"] = "hardwise.validation_index.v2"
+    payload["schema_version"] = "hardwise.validation_index.v3"
     payload["scope"] = SCOPE
     payload["totals"] = index.totals
     payload["profile_gap_groups"] = [

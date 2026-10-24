@@ -41,13 +41,15 @@ def _validate_pin_connected(
     if pin is None or not pin.net:
         return ComponentValidation(
             check=check,
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary=f"BJT {pin_name.lower()} pin is not connected.",
             evidence=evidence,
         )
     return ComponentValidation(
         check=check,
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=f"BJT {pin_name.lower()} is connected to {pin.net}.",
         evidence=evidence,
@@ -65,14 +67,16 @@ def _validate_vebo(
     if base is None or not base.net:
         return ComponentValidation(
             check="bjt_vebo_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="BJT base pin is not connected; cannot check VEBO.",
             evidence=evidence,
         )
     if emitter is None or not emitter.net:
         return ComponentValidation(
             check="bjt_vebo_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="BJT emitter pin is not connected; cannot check VEBO.",
             evidence=evidence,
         )
@@ -82,7 +86,8 @@ def _validate_vebo(
     if base_voltage is None or emitter_voltage is None:
         return ComponentValidation(
             check="bjt_vebo_rating",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=(
                 "BJT reverse B-E voltage cannot be statically inferred: the base or "
@@ -96,7 +101,8 @@ def _validate_vebo(
     if vebo_limit is not None and reverse_be_voltage > vebo_limit:
         return ComponentValidation(
             check="bjt_vebo_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Reverse B-E voltage is {reverse_be_voltage:g} V "
@@ -108,7 +114,8 @@ def _validate_vebo(
     vbe = base_voltage - emitter_voltage
     return ComponentValidation(
         check="bjt_vebo_rating",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=(
             f"Vbe is {vbe:g} V (base {base_voltage:g} V - emitter {emitter_voltage:g} V); "
@@ -130,14 +137,16 @@ def _validate_vceo(
     if collector is None or not collector.net:
         return ComponentValidation(
             check="bjt_vceo_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="BJT collector pin is not connected; cannot check VCEO.",
             evidence=evidence,
         )
     if emitter is None or not emitter.net:
         return ComponentValidation(
             check="bjt_vceo_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             summary="BJT emitter pin is not connected; cannot check VCEO.",
             evidence=evidence,
         )
@@ -147,7 +156,8 @@ def _validate_vceo(
     if collector_voltage is None or emitter_voltage is None:
         return ComponentValidation(
             check="bjt_vceo_rating",
-            status="WARN",
+            result="UNKNOWN",
+            severity="WARNING",
             refdes=component.refdes,
             summary=(
                 "BJT Vce cannot be statically inferred: the collector or emitter net has "
@@ -161,7 +171,8 @@ def _validate_vceo(
     if vceo_limit is not None and vce > vceo_limit:
         return ComponentValidation(
             check="bjt_vceo_rating",
-            status="ERROR",
+            result="FAIL",
+            severity="ERROR",
             refdes=component.refdes,
             summary=(
                 f"Vce is {vce:g} V (collector {collector_voltage:g} V - emitter "
@@ -171,7 +182,8 @@ def _validate_vceo(
         )
     return ComponentValidation(
         check="bjt_vceo_rating",
-        status="PASS",
+        result="PASS",
+        severity="INFO",
         refdes=component.refdes,
         summary=(
             f"Vce is {vce:g} V (collector {collector_voltage:g} V - emitter "

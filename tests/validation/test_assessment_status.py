@@ -2,6 +2,7 @@
 
 import pytest
 
+from hardwise.validation.assessment import result_for_attention, severity_for_attention
 from hardwise.validation.types import ComponentValidation, ValidationReport, VALIDATION_STATUSES
 
 
@@ -12,7 +13,13 @@ def _report(*statuses):
         profile_part_number="Fixture",
         component_checks=[
             ComponentValidation(
-                check=f"check_{i}", status=status, summary="Public synthetic fixture"
+                check=f"check_{i}",
+                result=result_for_attention(status, warning_result="FAIL"),
+                severity=severity_for_attention(status),
+                not_applicable_reason="Synthetic scope exclusion"
+                if status == "NOT_APPLICABLE"
+                else None,
+                summary="Public synthetic fixture",
             )
             for i, status in enumerate(statuses)
         ],
@@ -46,8 +53,12 @@ def test_unknown_roundtrip_keeps_check_and_count():
     assert restored.component_counts_by_status["NOT_APPLICABLE"] == 1
 
 
-def test_legacy_warn_is_not_reinterpreted_as_unknown_or_fail():
-    report = _report("WARN")
-    restored = ValidationReport.model_validate_json(report.model_dump_json())
-    assert restored.status == "WARN"
-    assert restored.component_counts_by_status["UNKNOWN"] == 0
+def test_legacy_warn_retains_original_and_requires_review():
+    legacy = ComponentValidation.model_validate(
+        {"check": "legacy", "status": "WARN", "summary": "Old ambiguous warning"}
+    )
+    assert legacy.result == "UNKNOWN"
+    assert legacy.needs_review is True
+    assert legacy.legacy_status == "WARN"
+    restored = ComponentValidation.model_validate_json(legacy.model_dump_json())
+    assert restored == legacy

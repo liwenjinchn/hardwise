@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from hardwise.validation.assessment import result_for_attention, severity_for_attention
+
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.pins import voltage_for_net
@@ -163,7 +165,8 @@ def _check(
 ) -> ComponentValidation:
     return ComponentValidation(
         check=name,
-        status=status,  # type: ignore[arg-type]
+        result=result_for_attention(status, warning_result="UNKNOWN"),
+        severity=severity_for_attention(status),  # type: ignore[arg-type]
         refdes=component.refdes,
         summary=summary,
         evidence=evidence,

@@ -54,6 +54,7 @@ export function makeTaskCounts(overrides: Partial<ReviewTaskCounts> = {}): Revie
 
 export function makeQueueItem(overrides: Partial<ReviewQueueItem> = {}): ReviewQueueItem {
   return {
+    assessment: null,
     refdes: "U8",
     value: "STM32F103",
     part_number: "STM32F103C8T6",
@@ -85,6 +86,7 @@ export function makeQueueItem(overrides: Partial<ReviewQueueItem> = {}): ReviewQ
 
 export function makeTask(overrides: Partial<ReviewTask> = {}): ReviewTask {
   return {
+    assessment: null,
     id: "T1",
     stable_key: "T1-key",
     refdes: "U8",
@@ -109,6 +111,7 @@ export function makeTask(overrides: Partial<ReviewTask> = {}): ReviewTask {
 
 export function makeCheck(overrides: Partial<CheckView> = {}): CheckView {
   return {
+    assessment: null,
     subject: "VEBO",
     status: "WARN",
     status_label: "看证据",
@@ -121,6 +124,7 @@ export function makeCheck(overrides: Partial<CheckView> = {}): CheckView {
 
 export function makePin(overrides: Partial<PinView> = {}): PinView {
   return {
+    assessment: null,
     number: "1",
     name: "VDD",
     electrical_type: "power",
@@ -139,10 +143,10 @@ export function makeSummary(overrides: Partial<WorkbenchSummary> = {}): Workbenc
     bom_matched: 24,
     validated: 22,
     manual: 3,
-    pass_count: 2,
-    warn_count: 4,
+    pass_count: 1,
+    warn_count: 0,
     error_count: 4,
-    unknown_count: 12,
+    unknown_count: 17,
     not_applicable_count: 0,
     ...overrides
   };
@@ -371,6 +375,7 @@ export function makeEvidencePackage(
 
 export function makeState(overrides: Partial<WorkbenchState> = {}): WorkbenchState {
   return {
+    assessment_coverage: null,
     voltage_facts: { schema_version: "hardwise.voltage_facts.v1", active_mode: "dc", facts: [] },
     project: makeProject(),
     summary: makeSummary(),
@@ -439,6 +444,7 @@ export function makeDocument(overrides: Partial<DocumentCoverageView> = {}): Doc
 
 export function makeDetail(overrides: Partial<ComponentDetail> = {}): ComponentDetail {
   return {
+    assessment: null,
     refdes: "U8",
     value: "STM32F103",
     part_number: "STM32F103C8T6",

@@ -1,3 +1,4 @@
+import { AssessmentBadges } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { Bot, Download, FileSearch, Layers3, Loader2 } from "lucide-react";
 import { fetchPrepPacketMarkdown } from "../../api";
@@ -157,7 +158,7 @@ export function DetailColumn({
                 <span className="mono">{pin.number}</span>
                 <span>{pin.name}</span>
                 <span className="mono net-name">{pin.net || "-"}</span>
-                <span>{pin.status ? <StatusBadge group={statusGroup(pin.status)} label={pinStatusLabel(pin.status)} /> : "-"}</span>
+                <span>{pin.status ? <StatusBadge group={statusGroup(pin.status)} label={pinStatusLabel(pin.status)} /> : "-"}<AssessmentBadges assessment={pin.assessment} /></span>
               </div>
             ))}
           </div>

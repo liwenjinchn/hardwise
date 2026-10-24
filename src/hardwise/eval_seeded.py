@@ -160,7 +160,7 @@ def _run_validation(
             if row.validation is None:
                 continue
             for pin in row.validation.pin_results:
-                if pin.status in {"WARN", "ERROR"}:
+                if pin.result in {"FAIL", "UNKNOWN"}:
                     issues.append(
                         SeededFindingSignature(
                             refdes=row.refdes,
@@ -170,7 +170,7 @@ def _run_validation(
                         )
                     )
             for check in row.validation.component_checks:
-                if check.status in {"WARN", "ERROR"}:
+                if check.result in {"FAIL", "UNKNOWN"}:
                     issues.append(
                         SeededFindingSignature(
                             refdes=check.refdes or row.refdes,

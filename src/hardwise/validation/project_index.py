@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from hardwise.bom.types import Bom, BomMatchReport, sort_refdes_key
 from hardwise.documents.types import DocumentMatchReport
@@ -24,6 +24,7 @@ from hardwise.validation.net_naming import NamingPolicy, validate_net_naming
 from hardwise.validation.nets import NetValidation, validate_design_nets
 from hardwise.validation.profile_candidates import ProfileCandidateReport
 from hardwise.validation.types import ValidationReport
+from hardwise.validation.assessment import CheckCoverage, check_coverage
 
 
 def _zero_counts() -> dict[str, int]:
@@ -77,6 +78,17 @@ class ProjectValidationIndex(BaseModel):
     component_groups: list[ProjectComponentGroup] = Field(default_factory=list)
     net_checks: list[NetValidation] = Field(default_factory=list)
     voltage_facts: VoltageFactsDocument = Field(default_factory=VoltageFactsDocument)
+
+    @computed_field
+    @property
+    def assessment_coverage(self) -> CheckCoverage:
+        checks = [
+            check
+            for row in self.rows
+            if row.validation is not None
+            for check in [*row.validation.pin_results, *row.validation.component_checks]
+        ]
+        return check_coverage([*checks, *self.net_checks], len(self.manual_rows))
 
     @property
     def validated_rows(self) -> list[ProjectValidationRow]:
