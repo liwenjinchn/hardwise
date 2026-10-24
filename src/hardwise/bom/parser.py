@@ -12,6 +12,7 @@ from xml.etree import ElementTree
 
 from hardwise.bom.types import Bom, BomItem, BomParseError, split_refdes
 from hardwise.bom.source_fields import delimited_source_fields, table_source_fields
+from hardwise.bom.identity_fields import identity_value
 
 _XLSX_MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 _XLSX_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -80,8 +81,6 @@ def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]
         raise BomParseError(f"{path}: missing Reference/refdes column")
     quantity_field = _find_field(fields, ["quantity", "qty"])
     value_field = _find_field(fields, ["value", "part"])
-    manufacturer_field = _find_field(fields, ["manufacturer", "mfr"])
-    part_number_field = _find_field(fields, ["part_number", "mpn", "manufacturer_part_number"])
     description_field = _find_field(fields, ["description", "desc"])
 
     items: list[BomItem] = []
@@ -95,25 +94,22 @@ def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]
         raw_refdes = row.get(refdes_field, "") or ""
         refdes_list = split_refdes(raw_refdes)
         quantity = _parse_quantity(row.get(quantity_field, "") or "", path, line_no)
+        source_fields = next(original_fields)
         items.append(
             BomItem(
                 item_number=str(len(items) + 1),
                 quantity=quantity,
                 refdes_list=refdes_list,
                 value=_blank_to_none(row.get(value_field) if value_field else None),
-                manufacturer=_blank_to_none(
-                    row.get(manufacturer_field) if manufacturer_field else None
-                ),
-                part_number=_blank_to_none(
-                    row.get(part_number_field) if part_number_field else None
-                ),
+                manufacturer=identity_value(source_fields, "manufacturer"),
+                part_number=identity_value(source_fields, "part_number"),
                 description=_blank_to_none(
                     row.get(description_field) if description_field else None
                 ),
                 source_file=path,
                 source_line=line_no,
                 raw_refdes=raw_refdes,
-                source_fields=next(original_fields),
+                source_fields=source_fields,
             )
         )
     if not items:
@@ -144,6 +140,7 @@ def _parse_xlsx_bom(path: Path) -> list[BomItem]:
         )
         value = _blank_to_none(_xlsx_cell(row, value_index))
         item_number = _blank_to_none(_xlsx_cell(row, item_number_index))
+        source_fields = table_source_fields(rows[header_index], row)
         items.append(
             BomItem(
                 item_number=item_number,
@@ -151,10 +148,12 @@ def _parse_xlsx_bom(path: Path) -> list[BomItem]:
                 refdes_list=refdes_list,
                 value=value,
                 description=value,
+                part_number=identity_value(source_fields, "part_number"),
+                manufacturer=identity_value(source_fields, "manufacturer"),
                 source_file=path,
                 source_line=row_index,
                 raw_refdes=raw_refdes,
-                source_fields=table_source_fields(rows[header_index], row),
+                source_fields=source_fields,
             )
         )
 

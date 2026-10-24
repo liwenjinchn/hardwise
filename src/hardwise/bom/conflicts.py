@@ -4,6 +4,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 
 from hardwise.bom.types import BomRow
+from hardwise.bom.identity_fields import row_identity_conflicts
 from hardwise.ir.identity_sources import netlist_mpn_sources
 from hardwise.ir.types import Component
 
@@ -12,7 +13,8 @@ CONFLICT_PROPERTY = "BOM_IDENTITY_CONFLICT"
 
 def conflict_reason(refdes: str, rows: list[BomRow]) -> str:
     records = "; ".join(
-        f"{row.source_file}#line{row.source_line} "
+        row_identity_conflicts(row)
+        or f"{row.source_file}#line{row.source_line} "
         f"[Value={row.value or '-'}, MPN={row.part_number or '-'}, "
         f"Manufacturer={row.manufacturer or '-'}]"
         for row in rows
@@ -28,6 +30,9 @@ def group_bom_rows(rows: Iterable[BomRow]) -> dict[str, list[BomRow]]:
 
 
 def single_row_identity_conflict(component: Component, row: BomRow) -> str | None:
+    column_conflict = row_identity_conflicts(row)
+    if column_conflict:
+        return column_conflict
     records = netlist_mpn_sources(component)
     identities = {record["value"].strip().casefold() for record in records}
     if not identities:

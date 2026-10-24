@@ -34,7 +34,7 @@ def identity_conflict_report(component: Component) -> ValidationReport | None:
         component_checks=[
             ComponentValidation(
                 check="bom_identity_conflict",
-                rule_version="2",
+                rule_version="3",
                 refdes=component.refdes,
                 result="UNKNOWN",
                 severity="WARNING",

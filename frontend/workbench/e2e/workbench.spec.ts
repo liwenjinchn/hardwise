@@ -247,3 +247,37 @@ test("white import keeps conflicting BOM rating premises unknown and accepts an 
   const state = await (await request.get("/api/workbench/state")).json();
   expect(state.queue.find((row: { refdes: string }) => row.refdes === "C1").deterministic_status).toBe("PASS");
 });
+
+test("white import exposes every competing identity column and clears the block after correction", async ({ page, request }, testInfo) => {
+  const bom = (conflicting: boolean) => Buffer.from(
+    "Reference,Quantity,Value,MPN,MPN,Manufacturer,Mfr,Package,Footprint\n" +
+    (conflicting ? "U1,1,L7805,WRONG_PUBLIC_FIXTURE,L7805,VendorA,VendorB,TO220,SOT23\n"
+      : "U1,1,L7805,L7805,L7805,ST,ST,TO220,TO220\n") +
+    "C1,1,100nF,,,,,,\nC2,1,100nF,,,,,,\n"
+  );
+  const load = async (conflicting: boolean) => {
+    await page.getByRole("button", { name: "导入", exact: true }).click();
+    await page.getByLabel("选择 netlist / PST").setInputFiles(path.resolve("../../tests/fixtures/allegro/l78_regulator.net"));
+    await page.getByLabel("选择 BOM CSV").setInputFiles({ name: "identity-columns.csv", mimeType: "text/csv", buffer: bom(conflicting) });
+    await page.getByRole("button", { name: "导入并解析" }).click();
+    await expect(queueRow(page, "U1")).toBeVisible();
+  };
+  await openReview(page);
+  await load(true);
+  await page.getByRole("button", { name: "问题清单" }).click();
+  for (const value of ["WRONG_PUBLIC_FIXTURE", "VendorA", "VendorB", "TO220", "SOT23", "column4", "column5", "#line2"]) {
+    await expect(page.locator(".findings-list")).toContainText(value);
+  }
+  const state = await (await request.get("/api/workbench/export?format=json")).json();
+  const blocked = state.review_tasks.find((task: { refdes: string; check: string }) => task.refdes === "U1" && task.check === "bom_identity_conflict");
+  expect(blocked.assessment.result).toBe("UNKNOWN");
+  expect(blocked.assessment.needs_review).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("identity-columns-white.png"), animations: "disabled" });
+  await page.setViewportSize({ width: 760, height: 900 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("identity-columns-narrow.png"), animations: "disabled" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await load(false);
+  const repaired = await (await request.get("/api/workbench/state")).json();
+  expect(repaired.review_tasks.some((task: { check: string }) => task.check === "bom_identity_conflict")).toBe(false);
+});

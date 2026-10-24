@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 from hardwise.bom.conflicts import CONFLICT_PROPERTY, conflict_reason, group_bom_rows
 from hardwise.bom.types import Bom
+from hardwise.bom.identity_fields import row_identity_conflicts
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Design
 from hardwise.validation.identity_scope import profile_identity_conflict_report
@@ -15,7 +16,11 @@ def block_identity_candidates(
     candidates: list["ProfileCandidate"], bom: Bom, design: Design | None
 ):
     grouped = group_bom_rows(bom.rows)
-    conflicts = {ref: conflict_reason(ref, rows) for ref, rows in grouped.items() if len(rows) > 1}
+    conflicts = {}
+    for ref, rows in grouped.items():
+        reason = conflict_reason(ref, rows) if len(rows) > 1 else row_identity_conflicts(rows[0])
+        if reason:
+            conflicts[ref] = reason
     if design is not None:
         conflicts.update(
             {
