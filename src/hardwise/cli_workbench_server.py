@@ -12,8 +12,8 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
 
     @app.command(name="serve-workbench")
     def serve_workbench(
-        netlist_path: Path = typer.Argument(
-            ...,
+        netlist_path: Path | None = typer.Argument(
+            None,
             help="Path to an Allegro/Telesis third-party ASCII netlist, or a Capture/Allegro PST input.",
         ),
         bom_path: Path | None = typer.Argument(
@@ -33,10 +33,15 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
             "--review-db",
             help="Optional local SQLite reviewer journal; retain source inputs for restart recovery.",
         ),
-        profiles: Path = typer.Option(
-            Path("data/datasheet_profiles"),
+        open_project: str | None = typer.Option(
+            None,
+            "--open-project",
+            help="Open a saved project ID from --review-db without original source paths.",
+        ),
+        profiles: Path | None = typer.Option(
+            None,
             "--profiles",
-            help="Directory containing structured DatasheetProfile JSON files.",
+            help="Structured profile directory (default for source inputs: data/datasheet_profiles).",
         ),
         host: str = typer.Option("127.0.0.1", "--host", help="Host interface for localhost UI."),
         port: int = typer.Option(8765, "--port", help="Port for localhost UI."),
@@ -106,7 +111,8 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
 
         from hardwise.validation import ProfileCandidateError
         from hardwise.workbench.chat import WorkbenchChatService
-        from hardwise.workbench.context import build_workbench_context
+        from contextlib import ExitStack
+        from hardwise.workbench.startup import startup_context
         from hardwise.workbench.server import create_workbench_app
         from hardwise.workbench.view_model import build_pin_table_summary
 
@@ -115,95 +121,100 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
             raise typer.Exit(1)
 
         load_dotenv(override=True)
-        try:
-            context = build_workbench_context(
-                netlist_path=netlist_path,
-                bom_path=bom_path,
-                profiles=profiles,
-                document_index=document_index,
-                risk_hints_json=risk_hints_json,
-                review_package_manifest=review_package_manifest,
-                pin_table=pin_table,
-                voltage_facts=voltage_facts,
-            )
-            collection = None
-            if use_vector:
-                from hardwise.store.vector import create_collection
+        with ExitStack() as resources:
+            try:
+                context = resources.enter_context(
+                    startup_context(
+                        review_db=review_db,
+                        open_project=open_project,
+                        netlist_path=netlist_path,
+                        bom_path=bom_path,
+                        profiles=profiles,
+                        document_index=document_index,
+                        risk_hints_json=risk_hints_json,
+                        review_package_manifest=review_package_manifest,
+                        pin_table=pin_table,
+                        voltage_facts=voltage_facts,
+                    )
+                )
+                collection = None
+                if use_vector:
+                    from hardwise.store.vector import create_collection
 
-                collection = create_collection(persist_dir)
-            chat_service = WorkbenchChatService(
+                    collection = create_collection(persist_dir)
+                chat_service = WorkbenchChatService(
+                    context,
+                    mode="fake" if fake_ai else "real",
+                    tier=tier,  # type: ignore[arg-type]
+                    collection=collection,
+                )
+            except ProfileCandidateError as e:
+                typer.echo(f"error: profile candidate generation failed: {e}", err=True)
+                raise typer.Exit(1) from e
+            except Exception as e:
+                typer.echo(f"error: serve-workbench failed: {type(e).__name__}: {e}", err=True)
+                raise typer.Exit(1) from e
+
+            url = f"http://{host}:{port}"
+            document_state = "off"
+            if context.document_report is not None:
+                doc_counts = context.document_report.counts_by_status
+                document_state = (
+                    f"on document_index_matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
+                    f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']}"
+                )
+            risk_hints_state = "not_configured"
+            if context.risk_hints.source_path is not None:
+                risk_hints_state = (
+                    "loaded "
+                    f"accepted={context.risk_hints.accepted_count}, "
+                    f"rejected={context.risk_hints.rejected_count}"
+                )
+            pin_table_state = "not_configured"
+            if context.pin_table_path is not None:
+                pin_table_summary = build_pin_table_summary(context)
+                affected = ",".join(pin_table_summary.affected_refdes_list) or "-"
+                rejected = ",".join(pin_table_summary.rejected_unknown_refdes) or "-"
+                pin_table_state = (
+                    f"loaded accepted={pin_table_summary.accepted_findings}, "
+                    f"affected_refdes={pin_table_summary.affected_refdes} [{affected}], "
+                    f"rejected_unknown_refdes={pin_table_summary.rejected_findings} [{rejected}]"
+                )
+            review_package_state = "not_configured"
+            if context.review_package.source_path is not None:
+                pkg_counts = context.review_package.counts
+                review_package_state = (
+                    f"loaded package_status={context.review_package.package_status}, "
+                    f"status_group={context.review_package.status_group}, "
+                    f"manual_gaps={context.review_package.manual_gap_count}, "
+                    f"present={pkg_counts['present']}, "
+                    f"missing_required={pkg_counts['missing_required']}, "
+                    f"missing_optional={pkg_counts['missing_optional']}, "
+                    f"hash_mismatch={pkg_counts['hash_mismatch']}"
+                )
+            typer.echo(
+                f"serve-workbench: {url} "
+                f"({context.index.components_in_design} components, "
+                f"validated={len(context.index.validated_rows)}, "
+                f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'}, "
+                f"document-index={document_state}, risk-hints={risk_hints_state}, "
+                f"pin-table={pin_table_state}, "
+                f"review-package={review_package_state}, "
+                f"datasheet-candidates={'auto' if auto_datasheet_candidates else 'off'})"
+            )
+            if dry_run:
+                return
+
+            import uvicorn
+
+            app_obj = create_workbench_app(
                 context,
-                mode="fake" if fake_ai else "real",
-                tier=tier,  # type: ignore[arg-type]
-                collection=collection,
+                chat_service,
+                profiles=Path(context.candidate_report.profiles_dir),
+                document_index=document_index,
+                pin_table=pin_table,
+                review_package_manifest=review_package_manifest,
+                auto_datasheet_candidates=auto_datasheet_candidates,
+                review_db=review_db,
             )
-        except ProfileCandidateError as e:
-            typer.echo(f"error: profile candidate generation failed: {e}", err=True)
-            raise typer.Exit(1) from e
-        except Exception as e:
-            typer.echo(f"error: serve-workbench failed: {type(e).__name__}: {e}", err=True)
-            raise typer.Exit(1) from e
-
-        url = f"http://{host}:{port}"
-        document_state = "off"
-        if context.document_report is not None:
-            doc_counts = context.document_report.counts_by_status
-            document_state = (
-                f"on document_index_matched={doc_counts['matched']}, no_result={doc_counts['no_result']}, "
-                f"ambiguous={doc_counts['ambiguous']}, manual_needed={doc_counts['manual_needed']}"
-            )
-        risk_hints_state = "not_configured"
-        if context.risk_hints.source_path is not None:
-            risk_hints_state = (
-                "loaded "
-                f"accepted={context.risk_hints.accepted_count}, "
-                f"rejected={context.risk_hints.rejected_count}"
-            )
-        pin_table_state = "not_configured"
-        if context.pin_table_path is not None:
-            pin_table_summary = build_pin_table_summary(context)
-            affected = ",".join(pin_table_summary.affected_refdes_list) or "-"
-            rejected = ",".join(pin_table_summary.rejected_unknown_refdes) or "-"
-            pin_table_state = (
-                f"loaded accepted={pin_table_summary.accepted_findings}, "
-                f"affected_refdes={pin_table_summary.affected_refdes} [{affected}], "
-                f"rejected_unknown_refdes={pin_table_summary.rejected_findings} [{rejected}]"
-            )
-        review_package_state = "not_configured"
-        if context.review_package.source_path is not None:
-            pkg_counts = context.review_package.counts
-            review_package_state = (
-                f"loaded package_status={context.review_package.package_status}, "
-                f"status_group={context.review_package.status_group}, "
-                f"manual_gaps={context.review_package.manual_gap_count}, "
-                f"present={pkg_counts['present']}, "
-                f"missing_required={pkg_counts['missing_required']}, "
-                f"missing_optional={pkg_counts['missing_optional']}, "
-                f"hash_mismatch={pkg_counts['hash_mismatch']}"
-            )
-        typer.echo(
-            f"serve-workbench: {url} "
-            f"({context.index.components_in_design} components, "
-            f"validated={len(context.index.validated_rows)}, "
-            f"mode={'fake' if fake_ai else 'real'}, vector={'on' if use_vector else 'off'}, "
-            f"document-index={document_state}, risk-hints={risk_hints_state}, "
-            f"pin-table={pin_table_state}, "
-            f"review-package={review_package_state}, "
-            f"datasheet-candidates={'auto' if auto_datasheet_candidates else 'off'})"
-        )
-        if dry_run:
-            return
-
-        import uvicorn
-
-        app_obj = create_workbench_app(
-            context,
-            chat_service,
-            profiles=profiles,
-            document_index=document_index,
-            pin_table=pin_table,
-            review_package_manifest=review_package_manifest,
-            auto_datasheet_candidates=auto_datasheet_candidates,
-            review_db=review_db,
-        )
-        uvicorn.run(app_obj, host=host, port=port)
+            uvicorn.run(app_obj, host=host, port=port)

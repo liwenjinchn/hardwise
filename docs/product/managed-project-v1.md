@@ -45,4 +45,16 @@ The storage primitive alone does not close A09/M2 or the full goal. Every integr
 
 Observed: public L78 source copies removed, journal plus sidecar moved and renamed, new independent process rebuilt the context and recovered a real API waiver with the exact Chinese reason and history count1. This verifies that local pin finding only; full topology dependency precision remains open. Basenames/relative layout are retained during reconstruction, but absent external PDFs are not invented. Invalid descriptor/snapshot validation is before context activation.
 
-Not implemented yet: white save/open controls, startup project selection without a starter context, complete backup archive/restore, crash/power-loss proof spanning directory publication and SQLite, retention/cleanup of unreferenced snapshots. Do not mark A09/M2 complete from these API and source tests.
+Not implemented yet: white save/open controls, complete backup archive/restore, crash/power-loss proof spanning directory publication and SQLite, retention/cleanup of unreferenced snapshots. Do not mark A09/M2 complete from these API and source tests.
+
+## Direct saved-project startup
+
+```bash
+uv run hardwise serve-workbench --review-db /path/to/review.sqlite --open-project <saved-id> --no-auto-datasheet-candidates
+```
+
+No source positional argument is required with --open-project. The journal must already exist, and the ID is obtained from the saved-project catalog. Do not combine it with netlist/BOM, --profiles or optional source files: mixed sources are rejected rather than silently overriding the saved version. Existing source-based invocation remains supported; its profile directory default is unchanged. Use --dry-run to validate reconstruction without starting HTTP or adding a reviewed run. A normal startup opens a new reviewed run, applying existing fact/rule re-review logic.
+
+The reconstructed source tree lives for the server lifetime, including reruns, and is cleaned on dry-run, initialization failure or server return/exception. Owned immutable snapshots stay in the sidecar. SIGKILL/OS crash temporary-tree cleanup remains unproven and is not claimed. Current CLI assumes an explicitly selected saved ID; a blank-start graphical project picker is not yet provided.
+
+Observed in a real CLI/HTTP process with dotenv disabled and model credentials absent: a moved journal/sidecar copy from the deleted-source experiment started without positional source args. HTTP root/state returned200, selected local-pin waiver and exact Chinese reason/history1 remained. Service shutdown log completed and its port no longer listened. This is macOS local startup evidence, not Windows/Cadence acceptance.
