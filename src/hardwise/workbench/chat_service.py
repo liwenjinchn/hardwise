@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from functools import partial
 from threading import RLock
 from typing import Any
 
@@ -30,6 +31,7 @@ from hardwise.workbench.chat_fake_model import (
     _trace_refdes,
 )
 from hardwise.workbench.context import WorkbenchContext
+from hardwise.workbench.chat_client import DeferredWorkbenchClient, WorkbenchAIUnavailable
 
 
 class WorkbenchChatService:
@@ -48,7 +50,21 @@ class WorkbenchChatService:
         self.mode = mode
         self.tier = tier
         self.collection = collection
-        self.client = client or self._default_client(mode)
+        if mode == "real" and client is None:
+            from dotenv import load_dotenv
+
+            # Preserve model-slot configuration before the router snapshots
+            # the environment, without requiring a key or constructing an SDK client.
+            load_dotenv(override=True)
+        self.client = (
+            client
+            if client is not None
+            else (
+                DeferredWorkbenchClient(partial(self._default_client, mode))
+                if mode == "real"
+                else self._default_client(mode)
+            )
+        )
         # Shallow request snapshots intentionally share this lock with the
         # underlying client, including across an imported context swap.
         self._turn_lock = RLock()
@@ -82,7 +98,16 @@ class WorkbenchChatService:
                 project_index=self.context.index,
                 document_report=self.context.document_report,
             )
-            result = runner.run(_runner_prompt(request.question, selected, request.history))
+            from anthropic import APIError
+
+            try:
+                result = runner.run(_runner_prompt(request.question, selected, request.history))
+            except APIError as exc:
+                # Provider errors may contain request details. Keep them out of
+                # the browser and do not synthesize an engineering answer.
+                raise WorkbenchAIUnavailable(
+                    "AI 服务暂不可用；导入、确定性检查、人工处理和导出仍可使用。"
+                ) from exc
             return self._response_from_result(result, selected)
 
     def fallback_response(self, question: str, selected_refdes: str | None = None) -> ChatResponse:
@@ -175,7 +200,9 @@ class WorkbenchChatService:
         api_key = os.environ.get("ANTHROPIC_API_KEY", "")
         base_url = os.environ.get("ANTHROPIC_BASE_URL", "")
         if not api_key or api_key == "replace_me":
-            raise ValueError("ANTHROPIC_API_KEY missing or unset in .env")
+            raise WorkbenchAIUnavailable(
+                "未配置有效的 ANTHROPIC_API_KEY；导入、确定性检查、人工处理和导出仍可使用。"
+            )
         return Anthropic(api_key=api_key, base_url=base_url)
 
 

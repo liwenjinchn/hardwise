@@ -22,6 +22,7 @@ from hardwise.agent.evidence_locator import (
 from hardwise.report.copilot_panel import render_copilot_panel
 from hardwise.report.validator_project_ui import render_project_workbench
 from hardwise.workbench.chat import ChatRequest, ChatResponse, WorkbenchChatService, default_refdes
+from hardwise.workbench.chat_client import WorkbenchAIUnavailable
 from hardwise.workbench.api_contracts import ImportResponse
 from hardwise.workbench.review_history import ReviewHistoryPage
 from hardwise.workbench.run_provenance import RunProvenanceResponse, build_run_provenance
@@ -586,6 +587,9 @@ def create_workbench_app(
         with context_manager.lease() as context:
             snapshot_service = copy.copy(chat_service)
             snapshot_service.context = context
-            return snapshot_service.ask(request)
+            try:
+                return snapshot_service.ask(request)
+            except WorkbenchAIUnavailable as exc:
+                raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return app
