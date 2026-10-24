@@ -1,0 +1,3709 @@
+{
+  "schema_version": "hardwise.profile_review_candidate.v1",
+  "generated_at": "2026-10-24T06:57:14.455592+00:00",
+  "runtime_effect": "none; not consumed by matching or validation",
+  "approval_status": "not_approved",
+  "independent_review_complete": false,
+  "scope": "Five candidate profiles, selected-field source triage only; all facts require human review.",
+  "profiles": [
+    {
+      "profile_path": "data/datasheet_profiles/l78.json",
+      "profile_sha256": "a6dbcbf4a157d8f4bebeb5217ded293aa4665dd400db2dbf1cc43690feb21a43",
+      "legacy_review_status": "ready",
+      "candidate_source": {
+        "url": "https://www.st.com/resource/en/datasheet/l78.pdf",
+        "document_revision": "ST DS0422 Rev 38, February 2025",
+        "manufacturer_scope": "ST L7805 family; suffix and package unconfirmed",
+        "sha256": null,
+        "capture_status": "not_downloaded",
+        "capture_error": "HTTP Error 567: Unknown Status",
+        "source_observation": "web_pdf_text_only; byte hash not captured"
+      },
+      "approval_status": "not_approved",
+      "fields": [
+        {
+          "id": "l78-001",
+          "json_pointer": "/part_number",
+          "current_value": "L7805",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-002",
+          "json_pointer": "/abs_max/vin",
+          "current_value": 35.0,
+          "current_evidence": [
+            "datasheet:l78.pdf#p4"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 4,
+          "candidate_source_fact": "35 V applies to 5–18 V output variants.",
+          "review_question": "Confirm L7805 variant; absolute limit is not recommended operation.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-003",
+          "json_pointer": "/abs_max/iout",
+          "current_value": "internally limited",
+          "current_evidence": [
+            "datasheet:l78.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-004",
+          "json_pointer": "/abs_max/power_dissipation",
+          "current_value": "internally limited",
+          "current_evidence": [
+            "datasheet:l78.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-005",
+          "json_pointer": "/abs_max/tj",
+          "current_value": 125.0,
+          "current_evidence": [
+            "datasheet:l78.pdf#p4"
+          ],
+          "triage_status": "condition_gap",
+          "candidate_pdf_page": 4,
+          "candidate_source_fact": "125 degC upper junction operating bound; lower temperature depends on grade.",
+          "review_question": "Current scalar loses grade and minimum-temperature scope.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-006",
+          "json_pointer": "/recommended/vin_min",
+          "current_value": 7.5,
+          "current_evidence": [
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "condition_gap",
+          "candidate_pdf_page": 6,
+          "candidate_source_fact": "7.5 V appears in qualified L7805A test ranges.",
+          "review_question": "Do not promote a test-condition boundary into unconditional operation.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-007",
+          "json_pointer": "/recommended/vin_max",
+          "current_value": 25.0,
+          "current_evidence": [
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "condition_gap",
+          "candidate_pdf_page": 6,
+          "candidate_source_fact": "25 V appears in line-regulation test at 500 mA and 25 degC.",
+          "review_question": "The cited table does not grant unconditional 7.5–25 V operation.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-008",
+          "json_pointer": "/recommended/iout_max",
+          "current_value": 1.5,
+          "current_evidence": [
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "condition_gap",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "Up to 1.5 A; capability depends on thermal/operating conditions.",
+          "review_question": "Do not treat the headline as continuous current proof.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-009",
+          "json_pointer": "/pin_function/1",
+          "current_value": "VI (input)",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-010",
+          "json_pointer": "/pin_function/2",
+          "current_value": "GND (ground)",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-011",
+          "json_pointer": "/pin_function/3",
+          "current_value": "VO (5 V output)",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-012",
+          "json_pointer": "/pins/0/number",
+          "current_value": "1",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p4",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-013",
+          "json_pointer": "/pins/0/name",
+          "current_value": "VI",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p4",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-014",
+          "json_pointer": "/pins/0/category",
+          "current_value": "power_input",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p4",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-015",
+          "json_pointer": "/pins/0/function",
+          "current_value": "Voltage input for the linear regulator.",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p4",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-016",
+          "json_pointer": "/pins/0/limits/abs_max_voltage",
+          "current_value": 35.0,
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p4",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-017",
+          "json_pointer": "/pins/0/limits/recommended_voltage_min",
+          "current_value": 7.5,
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p4",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-018",
+          "json_pointer": "/pins/0/limits/recommended_voltage_max",
+          "current_value": 25.0,
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p4",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-019",
+          "json_pointer": "/pins/0/recommended_topology/0",
+          "current_value": "Connect to the unregulated input rail.",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p4",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-020",
+          "json_pointer": "/pins/0/recommended_topology/1",
+          "current_value": "Place the input bypass capacitor close to VI and GND.",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p4",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-021",
+          "json_pointer": "/pins/1/number",
+          "current_value": "2",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-022",
+          "json_pointer": "/pins/1/name",
+          "current_value": "GND",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-023",
+          "json_pointer": "/pins/1/category",
+          "current_value": "ground",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-024",
+          "json_pointer": "/pins/1/function",
+          "current_value": "Ground reference for input and output regulation.",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-025",
+          "json_pointer": "/pins/1/recommended_topology/0",
+          "current_value": "Connect directly to the system ground return.",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-026",
+          "json_pointer": "/pins/1/recommended_topology/1",
+          "current_value": "Share the local return path with input and output bypass capacitors.",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-027",
+          "json_pointer": "/pins/2/number",
+          "current_value": "3",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-028",
+          "json_pointer": "/pins/2/name",
+          "current_value": "VO",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-029",
+          "json_pointer": "/pins/2/category",
+          "current_value": "power_output",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-030",
+          "json_pointer": "/pins/2/function",
+          "current_value": "Regulated 5 V output.",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-031",
+          "json_pointer": "/pins/2/limits/nominal_voltage",
+          "current_value": 5.0,
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-032",
+          "json_pointer": "/pins/2/limits/recommended_current_max",
+          "current_value": 1.5,
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-033",
+          "json_pointer": "/pins/2/recommended_topology/0",
+          "current_value": "Connect to the regulated 5 V rail.",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "l78-034",
+          "json_pointer": "/pins/2/recommended_topology/1",
+          "current_value": "Place the output bypass capacitor close to VO and GND.",
+          "current_evidence": [
+            "datasheet:l78.pdf#p3",
+            "datasheet:l78.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        }
+      ]
+    },
+    {
+      "profile_path": "data/datasheet_profiles/2n3904.json",
+      "profile_sha256": "cd6c26a902db28dccb9b58ab8077c477fc227fd2f85945aaf304e44ba5bb72c1",
+      "legacy_review_status": "ready",
+      "candidate_source": {
+        "url": "https://www.onsemi.com/pdf/datasheet/2n3904-d.pdf",
+        "document_revision": "onsemi 2N3904/D Rev 3, October 2024",
+        "manufacturer_scope": "onsemi 2N3904 TO-92; BOM manufacturer unconfirmed",
+        "sha256": null,
+        "capture_status": "not_downloaded",
+        "capture_error": "HTTP Error 403: Forbidden",
+        "source_observation": "web_pdf_text_only; byte hash not captured"
+      },
+      "approval_status": "not_approved",
+      "fields": [
+        {
+          "id": "2n3904-001",
+          "json_pointer": "/part_number",
+          "current_value": "2N3904",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-002",
+          "json_pointer": "/abs_max/vceo",
+          "current_value": 40.0,
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "40 V maximum; steady-state ratings with stated temperature conditions.",
+          "review_question": "Confirm the manufacturer and operating conditions.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-003",
+          "json_pointer": "/abs_max/vcbo",
+          "current_value": 60.0,
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "60 V maximum.",
+          "review_question": "Confirm terminal mode; not a substitute for VCEO.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-004",
+          "json_pointer": "/abs_max/vebo",
+          "current_value": 6.0,
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "6 V maximum.",
+          "review_question": "Not a normal forward-base operating voltage.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-005",
+          "json_pointer": "/abs_max/ic",
+          "current_value": 0.2,
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "200 mA continuous rating equals 0.2 A.",
+          "review_question": "Retain thermal/steady-state conditions; no SOA/function approval.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-006",
+          "json_pointer": "/recommended/topology_family",
+          "current_value": "bjt",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-007",
+          "json_pointer": "/recommended/polarity",
+          "current_value": "npn",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-008",
+          "json_pointer": "/pin_function/1",
+          "current_value": "Emitter",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "TO-92 lead 1 is emitter.",
+          "review_question": "Confirm the exact package/view.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-009",
+          "json_pointer": "/pin_function/2",
+          "current_value": "Base",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "TO-92 lead 2 is base.",
+          "review_question": "Confirm the exact package/view.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-010",
+          "json_pointer": "/pin_function/3",
+          "current_value": "Collector",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "TO-92 lead 3 is collector.",
+          "review_question": "Confirm the exact package/view.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-011",
+          "json_pointer": "/pins/0/name",
+          "current_value": "Emitter",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-012",
+          "json_pointer": "/pins/0/number",
+          "current_value": "1",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-013",
+          "json_pointer": "/pins/0/category",
+          "current_value": "switch_node",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-014",
+          "json_pointer": "/pins/0/function",
+          "current_value": "Emitter terminal; Vbe and Vce reference node for the first NPN validator.",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-015",
+          "json_pointer": "/pins/1/name",
+          "current_value": "Base",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-016",
+          "json_pointer": "/pins/1/number",
+          "current_value": "2",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-017",
+          "json_pointer": "/pins/1/category",
+          "current_value": "analog_input",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-018",
+          "json_pointer": "/pins/1/function",
+          "current_value": "Base control input; Vbe is measured against the emitter, not ground.",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-019",
+          "json_pointer": "/pins/2/name",
+          "current_value": "Collector",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-020",
+          "json_pointer": "/pins/2/number",
+          "current_value": "3",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-021",
+          "json_pointer": "/pins/2/category",
+          "current_value": "switch_output",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "2n3904-022",
+          "json_pointer": "/pins/2/function",
+          "current_value": "Collector terminal for the switched current path.",
+          "current_evidence": [
+            "datasheet:2n3904-d.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        }
+      ]
+    },
+    {
+      "profile_path": "data/datasheet_profiles/irf540n.json",
+      "profile_sha256": "5fe1cb138aa0c9c9fb796b0f180d37c7cda03b15cedef06594279143017263fb",
+      "legacy_review_status": "ready",
+      "candidate_source": {
+        "url": "https://www.infineon.com/assets/row/public/documents/24/49/infineon-irf540n-datasheet-en.pdf",
+        "document_revision": "Infineon IRF540NPbF Rev 2.1, 2026-07-24",
+        "manufacturer_scope": "Infineon IRF540NPbF TO-220; bare IRF540N manufacturer unconfirmed",
+        "sha256": null,
+        "capture_status": "not_downloaded",
+        "capture_error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1010)>",
+        "source_observation": "web_pdf_text_only; byte hash not captured"
+      },
+      "approval_status": "not_approved",
+      "fields": [
+        {
+          "id": "irf540n-001",
+          "json_pointer": "/part_number",
+          "current_value": "IRF540N",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-002",
+          "json_pointer": "/abs_max/vds",
+          "current_value": 100.0,
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "100 V rating; breakdown test conditions appear on p2.",
+          "review_question": "Confirm exact vendor/variant and bound semantics.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-003",
+          "json_pointer": "/abs_max/vgs",
+          "current_value": 20.0,
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "Gate-source rating is plus/minus 20 V.",
+          "review_question": "Positive scalar alone does not encode both polarities.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-004",
+          "json_pointer": "/abs_max/id",
+          "current_value": 33.0,
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "condition_gap",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "33 A at case 25 degC and VGS 10 V; case 100 degC uses 23 A.",
+          "review_question": "The unconditional scalar omits thermal/drive conditions.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-005",
+          "json_pointer": "/abs_max/power_dissipation",
+          "current_value": 94.0,
+          "current_evidence": [],
+          "triage_status": "value_conflict",
+          "candidate_pdf_page": 1,
+          "candidate_source_fact": "Current candidate PDF table gives 130 W at case 25 degC; profile says 94 W.",
+          "review_question": "Vendor landing page currently says 140 W; resolve source/revision before editing.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-006",
+          "json_pointer": "/recommended/topology_family",
+          "current_value": "mosfet",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-007",
+          "json_pointer": "/recommended/vgs_typical",
+          "current_value": 10.0,
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p2"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-008",
+          "json_pointer": "/recommended/vgs_threshold_min",
+          "current_value": 2.0,
+          "current_evidence": [],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 2,
+          "candidate_source_fact": "Minimum 2 V at VDS=VGS, ID=250 uA.",
+          "review_question": "Threshold is not evidence of full enhancement.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-009",
+          "json_pointer": "/recommended/vgs_threshold_max",
+          "current_value": 4.0,
+          "current_evidence": [],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 2,
+          "candidate_source_fact": "Maximum 4 V under the same threshold-test conditions.",
+          "review_question": "Threshold is not evidence of full enhancement.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-010",
+          "json_pointer": "/recommended/rds_on_typical",
+          "current_value": 0.077,
+          "current_evidence": [],
+          "triage_status": "value_conflict",
+          "candidate_pdf_page": 2,
+          "candidate_source_fact": "PDF gives a maximum 44 mOhm at VGS 10 V, ID 16 A, with pulse qualification.",
+          "review_question": "Profile 0.077 ohm typical mismatches both numeric value and statistic.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-011",
+          "json_pointer": "/pin_function/1",
+          "current_value": "Gate (control input)",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-012",
+          "json_pointer": "/pin_function/2",
+          "current_value": "Drain",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-013",
+          "json_pointer": "/pin_function/3",
+          "current_value": "Source",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-014",
+          "json_pointer": "/pins/0/name",
+          "current_value": "Gate",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-015",
+          "json_pointer": "/pins/0/number",
+          "current_value": "1",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-016",
+          "json_pointer": "/pins/0/category",
+          "current_value": "analog_input",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-017",
+          "json_pointer": "/pins/0/function",
+          "current_value": "Gate control input; the Vgs it sees is referenced to the source pin, not ground",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-018",
+          "json_pointer": "/pins/1/name",
+          "current_value": "Drain",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-019",
+          "json_pointer": "/pins/1/number",
+          "current_value": "2",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-020",
+          "json_pointer": "/pins/1/category",
+          "current_value": "switch_output",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-021",
+          "json_pointer": "/pins/1/function",
+          "current_value": "Drain terminal; high-side current path to the load or inductor",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-022",
+          "json_pointer": "/pins/2/name",
+          "current_value": "Source",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-023",
+          "json_pointer": "/pins/2/number",
+          "current_value": "3",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-024",
+          "json_pointer": "/pins/2/category",
+          "current_value": "switch_node",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "irf540n-025",
+          "json_pointer": "/pins/2/function",
+          "current_value": "Source terminal; the Vgs/Vds reference node. Ground for a low-side FET, the switch node for a high-side FET",
+          "current_evidence": [
+            "datasheet:irf540n.pdf#p1"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        }
+      ]
+    },
+    {
+      "profile_path": "data/datasheet_profiles/lm393.json",
+      "profile_sha256": "ce50d5330574a4b84af40d2dcd2731d97ee57a3e6c0b5e010e3784c196827684",
+      "legacy_review_status": "ready",
+      "candidate_source": {
+        "url": "https://www.ti.com/lit/ds/symlink/lm393.pdf",
+        "document_revision": "TI SLCS005AH, April 2025",
+        "manufacturer_scope": "TI non-B vs B variants; generic profile also admits LM293/LM2903",
+        "sha256": "f28830c2f4cbd9ef6a1cd6788a840fa2b92caafee366d53385f88d1cf24e9456",
+        "capture_status": "downloaded",
+        "capture_error": null,
+        "source_observation": "downloaded_bytes_and_selected_table_text"
+      },
+      "approval_status": "not_approved",
+      "fields": [
+        {
+          "id": "lm393-001",
+          "json_pointer": "/part_number",
+          "current_value": "LM393",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-002",
+          "json_pointer": "/part_number_aliases/0",
+          "current_value": "LM393B",
+          "current_evidence": [],
+          "triage_status": "variant_scope_conflict",
+          "candidate_pdf_page": 4,
+          "candidate_source_fact": "LM393B supply recommendation differs from ordinary LM393.",
+          "review_question": "Same pinout is not a grant of shared limits.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-003",
+          "json_pointer": "/part_number_aliases/1",
+          "current_value": "LM293",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-004",
+          "json_pointer": "/part_number_aliases/2",
+          "current_value": "LM2903",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-005",
+          "json_pointer": "/recommended/validation_scope",
+          "current_value": "basic_pin_profile",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-006",
+          "json_pointer": "/recommended/device_role",
+          "current_value": "dual_comparator",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-007",
+          "json_pointer": "/recommended/vcc_min",
+          "current_value": 2.0,
+          "current_evidence": [
+            "datasheet:lm393.pdf#p6"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 4,
+          "candidate_source_fact": "2 V lower supply bound for listed variants.",
+          "review_question": "Current p6 token is not the candidate document supply table (p4).",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-008",
+          "json_pointer": "/recommended/vcc_max",
+          "current_value": 36.0,
+          "current_evidence": [
+            "datasheet:lm393.pdf#p6"
+          ],
+          "triage_status": "variant_scope_conflict",
+          "candidate_pdf_page": 4,
+          "candidate_source_fact": "TI ordinary non-V parts: 30 V; V parts: 32 V; B parts: 36 V.",
+          "review_question": "Do not apply B-version 36 V to all aliases; ST manufacturer scope may differ.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-009",
+          "json_pointer": "/pin_function/1",
+          "current_value": "OUT 1",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-010",
+          "json_pointer": "/pin_function/2",
+          "current_value": "IN- 1",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-011",
+          "json_pointer": "/pin_function/3",
+          "current_value": "IN+ 1",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-012",
+          "json_pointer": "/pin_function/4",
+          "current_value": "GND",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-013",
+          "json_pointer": "/pin_function/5",
+          "current_value": "IN+ 2",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-014",
+          "json_pointer": "/pin_function/6",
+          "current_value": "IN- 2",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-015",
+          "json_pointer": "/pin_function/7",
+          "current_value": "OUT 2",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-016",
+          "json_pointer": "/pin_function/8",
+          "current_value": "VCC",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-017",
+          "json_pointer": "/pins/0/number",
+          "current_value": "1",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-018",
+          "json_pointer": "/pins/0/name",
+          "current_value": "OUT 1",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-019",
+          "json_pointer": "/pins/0/category",
+          "current_value": "open_collector_output",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-020",
+          "json_pointer": "/pins/0/function",
+          "current_value": "Comparator 1 output.",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-021",
+          "json_pointer": "/pins/1/number",
+          "current_value": "2",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-022",
+          "json_pointer": "/pins/1/name",
+          "current_value": "IN- 1",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-023",
+          "json_pointer": "/pins/1/category",
+          "current_value": "analog_input",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-024",
+          "json_pointer": "/pins/1/function",
+          "current_value": "Comparator 1 inverting input.",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-025",
+          "json_pointer": "/pins/2/number",
+          "current_value": "3",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-026",
+          "json_pointer": "/pins/2/name",
+          "current_value": "IN+ 1",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-027",
+          "json_pointer": "/pins/2/category",
+          "current_value": "analog_input",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-028",
+          "json_pointer": "/pins/2/function",
+          "current_value": "Comparator 1 non-inverting input.",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-029",
+          "json_pointer": "/pins/3/number",
+          "current_value": "4",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-030",
+          "json_pointer": "/pins/3/name",
+          "current_value": "GND",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-031",
+          "json_pointer": "/pins/3/category",
+          "current_value": "ground",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-032",
+          "json_pointer": "/pins/3/function",
+          "current_value": "Ground reference.",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-033",
+          "json_pointer": "/pins/4/number",
+          "current_value": "5",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-034",
+          "json_pointer": "/pins/4/name",
+          "current_value": "IN+ 2",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-035",
+          "json_pointer": "/pins/4/category",
+          "current_value": "analog_input",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-036",
+          "json_pointer": "/pins/4/function",
+          "current_value": "Comparator 2 non-inverting input.",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-037",
+          "json_pointer": "/pins/5/number",
+          "current_value": "6",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-038",
+          "json_pointer": "/pins/5/name",
+          "current_value": "IN- 2",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-039",
+          "json_pointer": "/pins/5/category",
+          "current_value": "analog_input",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-040",
+          "json_pointer": "/pins/5/function",
+          "current_value": "Comparator 2 inverting input.",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-041",
+          "json_pointer": "/pins/6/number",
+          "current_value": "7",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-042",
+          "json_pointer": "/pins/6/name",
+          "current_value": "OUT 2",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-043",
+          "json_pointer": "/pins/6/category",
+          "current_value": "open_collector_output",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-044",
+          "json_pointer": "/pins/6/function",
+          "current_value": "Comparator 2 output.",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p4"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-045",
+          "json_pointer": "/pins/7/number",
+          "current_value": "8",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-046",
+          "json_pointer": "/pins/7/name",
+          "current_value": "VCC",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-047",
+          "json_pointer": "/pins/7/category",
+          "current_value": "power_input",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-048",
+          "json_pointer": "/pins/7/function",
+          "current_value": "Positive supply rail.",
+          "current_evidence": [
+            "datasheet:lm393.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-049",
+          "json_pointer": "/pins/7/limits/recommended_voltage_min",
+          "current_value": 2.0,
+          "current_evidence": [
+            "datasheet:lm393.pdf#p6"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "lm393-050",
+          "json_pointer": "/pins/7/limits/recommended_voltage_max",
+          "current_value": 36.0,
+          "current_evidence": [
+            "datasheet:lm393.pdf#p6"
+          ],
+          "triage_status": "variant_scope_conflict",
+          "candidate_pdf_page": 4,
+          "candidate_source_fact": "Supply limit differs by exact TI variant as above.",
+          "review_question": "Pin-8 limit and root recommended value must be reviewed together.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        }
+      ]
+    },
+    {
+      "profile_path": "data/datasheet_profiles/74lv165.json",
+      "profile_sha256": "126855ddf54644d03e58e1a48936df0c25d1328339e9d7b2c91fe6b355748d31",
+      "legacy_review_status": "ready",
+      "candidate_source": {
+        "url": "https://assets.nexperia.com/documents/data-sheet/74LV165.pdf",
+        "document_revision": "Nexperia 74LV165 Rev 10, 2024-01-31",
+        "manufacturer_scope": "Nexperia 74LV165D/PW; exact package/order suffix unconfirmed",
+        "sha256": null,
+        "capture_status": "not_downloaded",
+        "capture_error": "HTTP Error 403: Forbidden",
+        "source_observation": "web_pdf_text_only; byte hash not captured"
+      },
+      "approval_status": "not_approved",
+      "fields": [
+        {
+          "id": "74lv165-001",
+          "json_pointer": "/part_number",
+          "current_value": "74LV165",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-002",
+          "json_pointer": "/part_number_aliases/0",
+          "current_value": "74LV165PW",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-003",
+          "json_pointer": "/part_number_aliases/1",
+          "current_value": "74LV165PW,118",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-004",
+          "json_pointer": "/abs_max/vcc",
+          "current_value": 7.0,
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p5"
+          ],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 5,
+          "candidate_source_fact": "Supply absolute maximum is +7 V; table minimum is -0.5 V.",
+          "review_question": "Absolute rating does not prove function.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-005",
+          "json_pointer": "/abs_max/input_voltage",
+          "current_value": 7.0,
+          "current_evidence": [],
+          "triage_status": "condition_gap",
+          "candidate_pdf_page": 5,
+          "candidate_source_fact": "Input absolute bound +7 V; recommended input 0..VCC; clamp-current conditions also apply.",
+          "review_question": "Do not confuse the absolute bound with logic/functional compatibility.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-006",
+          "json_pointer": "/abs_max/output_current",
+          "current_value": 25.0,
+          "current_evidence": [],
+          "triage_status": "unit_gap",
+          "candidate_pdf_page": 5,
+          "candidate_source_fact": "Output limiting value is plus/minus 25 mA under stated output-voltage conditions.",
+          "review_question": "Current scalar 25 has no typed unit; do not silently read it as amperes.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-007",
+          "json_pointer": "/recommended/topology_family",
+          "current_value": "shift_register_piso",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-008",
+          "json_pointer": "/recommended/vcc_min",
+          "current_value": 1.0,
+          "current_evidence": [],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 5,
+          "candidate_source_fact": "Recommended supply lower bound 1.0 V.",
+          "review_question": "Logic timing/levels still depend on voltage conditions.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-009",
+          "json_pointer": "/recommended/vcc_max",
+          "current_value": 5.5,
+          "current_evidence": [],
+          "triage_status": "value_correspondence",
+          "candidate_pdf_page": 5,
+          "candidate_source_fact": "Recommended supply upper bound 5.5 V.",
+          "review_question": "Not a guarantee of board timing/function.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-010",
+          "json_pointer": "/recommended/load_pin",
+          "current_value": "1",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-011",
+          "json_pointer": "/recommended/clock_pin",
+          "current_value": "2",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-012",
+          "json_pointer": "/recommended/serial_output_pin",
+          "current_value": "9",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-013",
+          "json_pointer": "/recommended/serial_input_pin",
+          "current_value": "10",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-014",
+          "json_pointer": "/recommended/clock_enable_pin",
+          "current_value": "15",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-015",
+          "json_pointer": "/pin_function/1",
+          "current_value": "PL parallel enable input, active LOW",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-016",
+          "json_pointer": "/pin_function/2",
+          "current_value": "CP clock input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-017",
+          "json_pointer": "/pin_function/3",
+          "current_value": "D4 parallel data input",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-018",
+          "json_pointer": "/pin_function/4",
+          "current_value": "D5 parallel data input",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-019",
+          "json_pointer": "/pin_function/5",
+          "current_value": "D6 parallel data input",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-020",
+          "json_pointer": "/pin_function/6",
+          "current_value": "D7 parallel data input",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-021",
+          "json_pointer": "/pin_function/7",
+          "current_value": "Q7 complementary serial output",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-022",
+          "json_pointer": "/pin_function/8",
+          "current_value": "GND ground",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-023",
+          "json_pointer": "/pin_function/9",
+          "current_value": "Q7 serial output",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-024",
+          "json_pointer": "/pin_function/10",
+          "current_value": "DS serial data input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-025",
+          "json_pointer": "/pin_function/11",
+          "current_value": "D0 parallel data input",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-026",
+          "json_pointer": "/pin_function/12",
+          "current_value": "D1 parallel data input",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-027",
+          "json_pointer": "/pin_function/13",
+          "current_value": "D2 parallel data input",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-028",
+          "json_pointer": "/pin_function/14",
+          "current_value": "D3 parallel data input",
+          "current_evidence": [],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-029",
+          "json_pointer": "/pin_function/15",
+          "current_value": "CE clock enable input, active LOW",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-030",
+          "json_pointer": "/pin_function/16",
+          "current_value": "VCC positive supply",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p5"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-031",
+          "json_pointer": "/pins/0/number",
+          "current_value": "1",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-032",
+          "json_pointer": "/pins/0/name",
+          "current_value": "PL",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-033",
+          "json_pointer": "/pins/0/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-034",
+          "json_pointer": "/pins/0/function",
+          "current_value": "Parallel load enable input, active low.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-035",
+          "json_pointer": "/pins/0/recommended_topology/0",
+          "current_value": "Fan out to all devices in the shift-register chain.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-036",
+          "json_pointer": "/pins/1/number",
+          "current_value": "2",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-037",
+          "json_pointer": "/pins/1/name",
+          "current_value": "CP",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-038",
+          "json_pointer": "/pins/1/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-039",
+          "json_pointer": "/pins/1/function",
+          "current_value": "Clock input, low-to-high edge triggered.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-040",
+          "json_pointer": "/pins/1/recommended_topology/0",
+          "current_value": "Fan out from the chain clock, optionally through series damping resistors.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-041",
+          "json_pointer": "/pins/2/number",
+          "current_value": "3",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-042",
+          "json_pointer": "/pins/2/name",
+          "current_value": "D4",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-043",
+          "json_pointer": "/pins/2/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-044",
+          "json_pointer": "/pins/2/function",
+          "current_value": "Parallel data input D4.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-045",
+          "json_pointer": "/pins/2/recommended_topology/0",
+          "current_value": "Connect to the sampled logic signal.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-046",
+          "json_pointer": "/pins/3/number",
+          "current_value": "4",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-047",
+          "json_pointer": "/pins/3/name",
+          "current_value": "D5",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-048",
+          "json_pointer": "/pins/3/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-049",
+          "json_pointer": "/pins/3/function",
+          "current_value": "Parallel data input D5.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-050",
+          "json_pointer": "/pins/3/recommended_topology/0",
+          "current_value": "Connect to the sampled logic signal.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-051",
+          "json_pointer": "/pins/4/number",
+          "current_value": "5",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-052",
+          "json_pointer": "/pins/4/name",
+          "current_value": "D6",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-053",
+          "json_pointer": "/pins/4/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-054",
+          "json_pointer": "/pins/4/function",
+          "current_value": "Parallel data input D6.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-055",
+          "json_pointer": "/pins/4/recommended_topology/0",
+          "current_value": "Connect to the sampled logic signal.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-056",
+          "json_pointer": "/pins/5/number",
+          "current_value": "6",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-057",
+          "json_pointer": "/pins/5/name",
+          "current_value": "D7",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-058",
+          "json_pointer": "/pins/5/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-059",
+          "json_pointer": "/pins/5/function",
+          "current_value": "Parallel data input D7.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-060",
+          "json_pointer": "/pins/5/recommended_topology/0",
+          "current_value": "Connect to the sampled logic signal.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-061",
+          "json_pointer": "/pins/6/number",
+          "current_value": "7",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-062",
+          "json_pointer": "/pins/6/name",
+          "current_value": "Q7_N",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-063",
+          "json_pointer": "/pins/6/category",
+          "current_value": "gpio",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-064",
+          "json_pointer": "/pins/6/function",
+          "current_value": "Complementary serial output from the last stage.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-065",
+          "json_pointer": "/pins/6/recommended_topology/0",
+          "current_value": "Connect if the inverted serial output is used, otherwise mark intentional NC in the schematic.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-066",
+          "json_pointer": "/pins/7/number",
+          "current_value": "8",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-067",
+          "json_pointer": "/pins/7/name",
+          "current_value": "GND",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-068",
+          "json_pointer": "/pins/7/category",
+          "current_value": "ground",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-069",
+          "json_pointer": "/pins/7/function",
+          "current_value": "Ground reference.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-070",
+          "json_pointer": "/pins/7/recommended_topology/0",
+          "current_value": "Connect to system ground.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-071",
+          "json_pointer": "/pins/8/number",
+          "current_value": "9",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-072",
+          "json_pointer": "/pins/8/name",
+          "current_value": "Q7",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-073",
+          "json_pointer": "/pins/8/category",
+          "current_value": "gpio",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-074",
+          "json_pointer": "/pins/8/function",
+          "current_value": "Serial output from the last stage.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-075",
+          "json_pointer": "/pins/8/recommended_topology/0",
+          "current_value": "Cascade to the next DS input or leave the terminal stage toward the controller.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-076",
+          "json_pointer": "/pins/9/number",
+          "current_value": "10",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-077",
+          "json_pointer": "/pins/9/name",
+          "current_value": "DS",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-078",
+          "json_pointer": "/pins/9/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-079",
+          "json_pointer": "/pins/9/function",
+          "current_value": "Serial data input.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-080",
+          "json_pointer": "/pins/9/recommended_topology/0",
+          "current_value": "Receive the previous stage Q7 output when devices are cascaded.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-081",
+          "json_pointer": "/pins/10/number",
+          "current_value": "11",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-082",
+          "json_pointer": "/pins/10/name",
+          "current_value": "D0",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-083",
+          "json_pointer": "/pins/10/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-084",
+          "json_pointer": "/pins/10/function",
+          "current_value": "Parallel data input D0.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-085",
+          "json_pointer": "/pins/10/recommended_topology/0",
+          "current_value": "Connect to the sampled logic signal.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-086",
+          "json_pointer": "/pins/11/number",
+          "current_value": "12",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-087",
+          "json_pointer": "/pins/11/name",
+          "current_value": "D1",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-088",
+          "json_pointer": "/pins/11/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-089",
+          "json_pointer": "/pins/11/function",
+          "current_value": "Parallel data input D1.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-090",
+          "json_pointer": "/pins/11/recommended_topology/0",
+          "current_value": "Connect to the sampled logic signal.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-091",
+          "json_pointer": "/pins/12/number",
+          "current_value": "13",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-092",
+          "json_pointer": "/pins/12/name",
+          "current_value": "D2",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-093",
+          "json_pointer": "/pins/12/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-094",
+          "json_pointer": "/pins/12/function",
+          "current_value": "Parallel data input D2.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-095",
+          "json_pointer": "/pins/12/recommended_topology/0",
+          "current_value": "Connect to the sampled logic signal.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-096",
+          "json_pointer": "/pins/13/number",
+          "current_value": "14",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-097",
+          "json_pointer": "/pins/13/name",
+          "current_value": "D3",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-098",
+          "json_pointer": "/pins/13/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-099",
+          "json_pointer": "/pins/13/function",
+          "current_value": "Parallel data input D3.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-100",
+          "json_pointer": "/pins/13/recommended_topology/0",
+          "current_value": "Connect to the sampled logic signal.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-101",
+          "json_pointer": "/pins/14/number",
+          "current_value": "15",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-102",
+          "json_pointer": "/pins/14/name",
+          "current_value": "CE",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-103",
+          "json_pointer": "/pins/14/category",
+          "current_value": "logic_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-104",
+          "json_pointer": "/pins/14/function",
+          "current_value": "Clock enable input, active low.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-105",
+          "json_pointer": "/pins/14/recommended_topology/0",
+          "current_value": "Tie low or drive to a defined logic level.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p3"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-106",
+          "json_pointer": "/pins/15/number",
+          "current_value": "16",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p5"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-107",
+          "json_pointer": "/pins/15/name",
+          "current_value": "VCC",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p5"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-108",
+          "json_pointer": "/pins/15/category",
+          "current_value": "power_input",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p5"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-109",
+          "json_pointer": "/pins/15/function",
+          "current_value": "Positive supply voltage.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p5"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-110",
+          "json_pointer": "/pins/15/limits/abs_max_voltage",
+          "current_value": 7.0,
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p5"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-111",
+          "json_pointer": "/pins/15/limits/recommended_voltage_min",
+          "current_value": 1.0,
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p5"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-112",
+          "json_pointer": "/pins/15/limits/recommended_voltage_max",
+          "current_value": 5.5,
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p5"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        },
+        {
+          "id": "74lv165-113",
+          "json_pointer": "/pins/15/recommended_topology/0",
+          "current_value": "Connect to the logic supply rail.",
+          "current_evidence": [
+            "datasheet:74lv165.pdf#p5"
+          ],
+          "triage_status": "not_checked",
+          "candidate_pdf_page": null,
+          "candidate_source_fact": null,
+          "review_question": "Independently check value, unit, variant, conditions and locator.",
+          "human_decision": null,
+          "human_reviewer": null,
+          "human_reviewed_at": null
+        }
+      ]
+    }
+  ]
+}
