@@ -8,7 +8,7 @@ import re
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
-from hardwise.validation.pins import is_ground_net, voltage_for_net
+from hardwise.validation.control_scope import observe_control_scope
 from hardwise.validation.types import ComponentValidation
 
 
@@ -103,40 +103,13 @@ def _validate_clock_enable(
     profile: DatasheetProfile,
     design: Design,
 ) -> ComponentValidation:
-    pin = component.pin_by_number(_profile_pin(profile, "clock_enable_pin", "15"))
-    evidence = _evidence(profile, "recommended.clock_enable_pin")
-    if pin is None or not pin.net:
-        return _check(
-            "shift_register_clock_enable",
-            "ERROR",
-            component,
-            "Clock-enable pin is missing or not connected.",
-            evidence,
-        )
-    reachable = _reachable_nets_through_one_resistor(component, design, pin.net)
-    ground = next((net for net in reachable if is_ground_net(net)), "")
-    if ground:
-        return _check(
-            "shift_register_clock_enable",
-            "PASS",
-            component,
-            f"Clock-enable pin reaches ground reference {ground}, enabling shift clocks.",
-            evidence,
-        )
-    if voltage_for_net(pin.net, design) is not None:
-        return _check(
-            "shift_register_clock_enable",
-            "PASS",
-            component,
-            f"Clock-enable pin is tied to deterministic net {pin.net}.",
-            evidence,
-        )
-    return _check(
-        "shift_register_clock_enable",
-        "WARN",
+    return observe_control_scope(
         component,
-        f"Clock-enable pin is connected to {pin.net}, but no defined level was proven.",
-        evidence,
+        profile,
+        design,
+        profile.pin_by_number(_profile_pin(profile, "clock_enable_pin", "15")),
+        "shift_register_clock_enable",
+        "移位时钟使能状态",
     )
 
 

@@ -68,14 +68,14 @@ def test_pca9617a_profile_matches_public_tssop8_pinout() -> None:
     assert profile.pin_by_number("8").limits["recommended_voltage_min"] == 2.2
 
 
-def test_i2c_repeater_nominal_level_shift_passes(tmp_path: Path) -> None:
+def test_i2c_repeater_connected_ports_do_not_prove_enable_level(tmp_path: Path) -> None:
     design = _design_from_text(tmp_path, _nominal_netlist())
 
     report = validate_component_against_profile(design.components["U1"], _profile(), design)
 
-    assert report.status == "PASS"
+    assert report.status == "UNKNOWN"
     checks = {check.check: check for check in report.component_checks}
-    assert checks["i2c_repeater_enable"].status == "PASS"
+    assert checks["i2c_repeater_enable"].status == "UNKNOWN"
     assert checks["i2c_repeater_port_a_pair"].status == "PASS"
     assert checks["i2c_repeater_port_b_pair"].status == "PASS"
 

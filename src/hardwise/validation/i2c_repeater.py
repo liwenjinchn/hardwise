@@ -6,7 +6,7 @@ from hardwise.validation.assessment import result_for_attention, severity_for_at
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
-from hardwise.validation.pins import voltage_for_net
+from hardwise.validation.control_scope import observe_control_scope
 from hardwise.validation.types import ComponentValidation
 
 
@@ -29,35 +29,13 @@ def _validate_enable(
     profile: DatasheetProfile,
     design: Design,
 ) -> ComponentValidation:
-    pin = component.pin_by_number(_profile_pin(profile, "enable_pin", "5"))
-    evidence = _evidence(profile, "recommended.enable_pin")
-    if pin is None or not pin.net:
-        return _check(
-            "i2c_repeater_enable",
-            "ERROR",
-            component,
-            "I2C repeater enable pin is missing or not connected.",
-            evidence,
-        )
-
-    reachable = _reachable_nets_through_one_resistor(component, design, pin.net)
-    known = [(net, voltage_for_net(net, design)) for net in sorted(reachable)]
-    proven = [(net, voltage) for net, voltage in known if voltage is not None]
-    if proven:
-        net, voltage = proven[-1]
-        return _check(
-            "i2c_repeater_enable",
-            "PASS",
-            component,
-            f"Enable pin reaches deterministic net {net} ({voltage:g} V).",
-            evidence,
-        )
-    return _check(
-        "i2c_repeater_enable",
-        "WARN",
+    return observe_control_scope(
         component,
-        f"Enable pin is connected to {pin.net}, but its logic level was not proven.",
-        evidence,
+        profile,
+        design,
+        profile.pin_by_number(_profile_pin(profile, "enable_pin", "5")),
+        "i2c_repeater_enable",
+        "repeater 使能状态",
     )
 
 
@@ -111,27 +89,6 @@ def _validate_bus_pair(
         ),
         evidence,
     )
-
-
-def _reachable_nets_through_one_resistor(
-    component: Component,
-    design: Design,
-    net_name: str,
-) -> set[str]:
-    reachable = {net_name}
-    net = design.nets.get(net_name)
-    if net is None:
-        return reachable
-    for refdes, _pin_number in net.nodes:
-        if refdes == component.refdes or not refdes.startswith("R"):
-            continue
-        resistor = design.components.get(refdes)
-        if resistor is None:
-            continue
-        for pin in resistor.pins:
-            if pin.net and pin.net != net_name:
-                reachable.add(pin.net)
-    return reachable
 
 
 def _looks_like_clock(net_name: str) -> bool:

@@ -205,20 +205,20 @@ def _queue_title(
         if row and row.reason:
             return reason_label(row.reason)
         return "待补器件档案或人工确认"
-    failed = [
-        check.summary
-        for check in validation.component_checks
-        if check.status not in {"PASS", "NOT_APPLICABLE"}
+    candidates = [
+        item
+        for item in [*validation.component_checks, *validation.pin_results]
+        if item.result in {"FAIL", "UNKNOWN"}
     ]
-    if failed:
-        return validation_summary_label(failed[0])
-    failed_pins = [
-        pin.summary
-        for pin in validation.pin_results
-        if pin.status not in {"PASS", "NOT_APPLICABLE"}
-    ]
-    if failed_pins:
-        return validation_summary_label(failed_pins[0])
+    if candidates:
+        primary = min(
+            candidates,
+            key=lambda item: (
+                0 if item.result == "FAIL" else 1,
+                {"ERROR": 0, "WARNING": 1, "INFO": 2}[item.severity],
+            ),
+        )
+        return validation_summary_label(primary.summary)
     if validation.status == "UNKNOWN":
         return f"{component.refdes} 未评估：没有可执行的检查"
     if validation.status == "NOT_APPLICABLE":

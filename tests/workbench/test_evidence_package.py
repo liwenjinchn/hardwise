@@ -226,8 +226,8 @@ def test_three_source_pilot_reduces_but_does_not_clear_signoff_gate(
 
         assert (before.status, before.affected_tasks, before.missing_local_sources) == (
             "blocked",
-            20,
-            13,
+            22,
+            14,
         )
         assert (after.status, after.affected_tasks, after.missing_local_sources) == (
             "blocked",

@@ -247,7 +247,8 @@ def test_fake_chat_uses_evidence_locator_for_exact_profile_evidence() -> None:
         assert response.trace[0].summary.startswith("status=found")
         assert response.trace[0].trust_tier == "l1"
         assert {item.source_class for item in response.trace[0].evidence_classification} == {
-            "reviewed_profile"
+            "reviewed_profile",
+            "design_source",
         }
     finally:
         context.session.close()

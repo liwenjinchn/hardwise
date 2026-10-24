@@ -86,11 +86,11 @@ def test_shift_register_chain_passes_through_series_resistors(tmp_path: Path) ->
     design = _design_from_text(tmp_path, _nominal_netlist())
     report = validate_component_against_profile(design.components["U1"], _profile(), design)
 
-    assert report.status == "PASS"
+    assert report.status == "UNKNOWN"
     checks = {check.check: check for check in report.component_checks}
     assert checks["shift_register_load_fanout"].status == "PASS"
     assert checks["shift_register_clock_fanout"].status == "PASS"
-    assert checks["shift_register_clock_enable"].status == "PASS"
+    assert checks["shift_register_clock_enable"].status == "UNKNOWN"
     assert checks["shift_register_serial_chain"].status == "PASS"
     assert "U2" in checks["shift_register_serial_chain"].summary
 
@@ -102,7 +102,7 @@ def test_shift_register_terminal_stage_is_allowed(tmp_path: Path) -> None:
     chain = next(
         check for check in report.component_checks if check.check == "shift_register_serial_chain"
     )
-    assert report.status == "PASS"
+    assert report.status == "UNKNOWN"
     assert chain.status == "PASS"
     assert "terminal stage" in chain.summary
 

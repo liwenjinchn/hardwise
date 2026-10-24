@@ -5,8 +5,7 @@ from __future__ import annotations
 from hardwise.ir.profile import DatasheetProfile, PinProfile
 from hardwise.ir.types import Component, Design, Pin
 from hardwise.validation.family_pin import family_pin_check
-from hardwise.validation.pins import is_ground_net, voltage_for_net
-from hardwise.validation.topology import components_on_net
+from hardwise.validation.control_scope import observe_control_scope
 from hardwise.validation.types import ComponentValidation
 
 
@@ -45,46 +44,13 @@ def _validate_reset(
     profile: DatasheetProfile,
     design: Design,
 ) -> ComponentValidation:
-    evidence = _profile_evidence(profile, "recommended.nrst")
-    pin = _pin_by_profile_name(component, profile, "NRST")
-    if pin is None or not pin.net:
-        return ComponentValidation(
-            check="mcu_nrst",
-            result="FAIL",
-            severity="ERROR",
-            summary="MCU NRST pin is missing or has no connected net.",
-            evidence=evidence,
-        )
-
-    neighbors = components_on_net(design, pin.net, exclude_refdes=component.refdes)
-    if not neighbors:
-        return ComponentValidation(
-            check="mcu_nrst",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=f"MCU NRST net {pin.net} has no reset network or connector.",
-            evidence=evidence,
-        )
-
-    has_pullup = _has_resistor_to_voltage(design, pin.net, 3.3)
-    has_cap = _has_component_between_net_and_ground(design, pin.net, "C")
-    if has_pullup or has_cap:
-        return ComponentValidation(
-            check="mcu_nrst",
-            result="PASS",
-            severity="INFO",
-            refdes=component.refdes,
-            summary=f"MCU NRST net {pin.net} has a recognizable reset pull/default network.",
-            evidence=evidence,
-        )
-    return ComponentValidation(
-        check="mcu_nrst",
-        result="UNKNOWN",
-        severity="WARNING",
-        refdes=component.refdes,
-        summary=f"MCU NRST net {pin.net} is connected, but reset topology is unclear.",
-        evidence=evidence,
+    return observe_control_scope(
+        component,
+        profile,
+        design,
+        _pin_profile_by_name(profile, "NRST"),
+        "mcu_nrst",
+        "复位释放、RC过程和上电时序",
     )
 
 
@@ -93,43 +59,13 @@ def _validate_boot0(
     profile: DatasheetProfile,
     design: Design,
 ) -> ComponentValidation:
-    evidence = _profile_evidence(profile, "recommended.boot0")
-    pin = _pin_by_profile_name(component, profile, "BOOT0")
-    if pin is None or not pin.net:
-        return ComponentValidation(
-            check="mcu_boot0",
-            result="FAIL",
-            severity="ERROR",
-            summary="MCU BOOT0 pin is missing or has no connected net.",
-            evidence=evidence,
-        )
-    if is_ground_net(pin.net) or _has_component_between_net_and_ground(design, pin.net, "R"):
-        return ComponentValidation(
-            check="mcu_boot0",
-            result="PASS",
-            severity="INFO",
-            refdes=component.refdes,
-            summary=f"MCU BOOT0 net {pin.net} has a deterministic low default state.",
-            evidence=evidence,
-        )
-
-    neighbors = components_on_net(design, pin.net, exclude_refdes=component.refdes)
-    if not neighbors:
-        return ComponentValidation(
-            check="mcu_boot0",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=f"MCU BOOT0 net {pin.net} is floating.",
-            evidence=evidence,
-        )
-    return ComponentValidation(
-        check="mcu_boot0",
-        result="UNKNOWN",
-        severity="WARNING",
-        refdes=component.refdes,
-        summary=f"MCU BOOT0 net {pin.net} is connected, but default boot state is unclear.",
-        evidence=evidence,
+    return observe_control_scope(
+        component,
+        profile,
+        design,
+        _pin_profile_by_name(profile, "BOOT0"),
+        "mcu_boot0",
+        "启动采样状态",
     )
 
 
@@ -218,28 +154,6 @@ def _pin_by_profile_name(
 
 def _pin_profile_by_name(profile: DatasheetProfile, name: str) -> PinProfile | None:
     return next((pin for pin in profile.pins if pin.name.upper() == name.upper()), None)
-
-
-def _has_resistor_to_voltage(design: Design, net_name: str, voltage: float) -> bool:
-    for component in components_on_net(design, net_name):
-        if not component.refdes.startswith("R"):
-            continue
-        for pin in component.pins:
-            if pin.net and pin.net != net_name:
-                inferred = voltage_for_net(pin.net, design)
-                if inferred is not None and abs(inferred - voltage) <= 0.2:
-                    return True
-    return False
-
-
-def _has_component_between_net_and_ground(design: Design, net_name: str, prefix: str) -> bool:
-    for component in components_on_net(design, net_name):
-        if not component.refdes.startswith(prefix):
-            continue
-        nets = {pin.net for pin in component.pins if pin.net}
-        if any(is_ground_net(net) for net in nets if net != net_name):
-            return True
-    return False
 
 
 def _profile_evidence(profile: DatasheetProfile, key: str) -> list[str]:

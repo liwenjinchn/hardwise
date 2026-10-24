@@ -743,13 +743,13 @@ def test_validate_stm32_nominal_debug_topology_has_no_component_error() -> None:
     report = validate_component_against_profile(design.components["U8"], _stm32_profile(), design)
 
     assert report.component_counts_by_status == {
-        "PASS": 8,
+        "PASS": 6,
         "WARN": 0,
         "ERROR": 0,
-        "UNKNOWN": 0,
+        "UNKNOWN": 2,
         "NOT_APPLICABLE": 0,
     }
-    assert report.status == "PASS"
+    assert report.status == "UNKNOWN"
 
 
 def test_validate_stm32_wrong_vdd_voltage_errors() -> None:
@@ -781,7 +781,7 @@ def test_validate_stm32_floating_nrst_errors() -> None:
 
     nrst = next(check for check in report.component_checks if check.check == "mcu_nrst")
     assert nrst.status == "ERROR"
-    assert "has no connected net" in nrst.summary
+    assert "没有连接网络" in nrst.summary
 
 
 def test_validate_stm32_floating_boot0_errors() -> None:
@@ -795,7 +795,7 @@ def test_validate_stm32_floating_boot0_errors() -> None:
 
     boot0 = next(check for check in report.component_checks if check.check == "mcu_boot0")
     assert boot0.status == "ERROR"
-    assert "has no connected net" in boot0.summary
+    assert "没有连接网络" in boot0.summary
 
 
 def test_validate_stm32_unknown_voltage_and_reset_topology_warn() -> None:

@@ -5321,3 +5321,18 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: duplicated family supply comparators were independent of the canonical pin assessment path. Duplicate top-level recommendation fields could bypass missing/invalid pin-field limits and sources.
 - Fix: a small family-pin adapter preserves the existing check identity and all independent assessment fields while reusing resolved reference pins, confirmed intervals, declared pin bounds and pin evidence. Callers require the expected pin category; a supply check cannot use ground connectivity as numeric proof. Ground connectivity explicitly covers connection only. Family recommendation violations now inherit WARNING rather than becoming an absolute-rating ERROR.
 - Takeaway: fixing shared pin checks is insufficient if component summaries independently recompute an older conclusion. API regressions compare the complete pin/family assessment, rerun, and exported non-PASS tasks. The API's state JSON is not the CLI validation-index JSON: it has review_tasks, not rows, and individual PASS checks create no review task. Do not claim export coverage from a guessed schema.
+
+
+### 2026-10-24 — Control connectivity was promoted to functional logic proof
+
+- Symptom: a reset capacitor, resistor to a named rail, ground-like name or deterministic-looking voltage could certify MCU reset/boot, repeater enable or shift-register clock-enable operation. An isolated connected control could be called floating despite unmodeled internal pulls/drivers.
+- Root cause: adjacent topology and net-name heuristics substituted for pin voltage, logic thresholds, operating intent and timing. One-resistor reachability was treated as automatic DC propagation. Missing external neighbors were treated as proof that no applicable drive existed.
+- Fix: keep four functional checks UNKNOWN where logic/timing conditions are unmodeled. Retain exact pin connection, direct adjacent refdes and two-terminal R/C branch candidates; do not propagate the other terminal voltage. Confirmed direct pin/reference ranges may be observed but do not certify function. Missing or unconnected pins remain FAIL connection errors; absent profile mapping needs review. Generic pin connection PASS remains separate. Candidate branch interpretation carries HYPOTHESIS; rule version is 2. Connection evidence uses an explicit parsed-pin rule token, not a guessed source file/line.
+- Takeaway: expose useful observations and precise uncovered scope instead of claiming enable/reset/default-state success from connectivity. Complete logic/condition models and independent profile approval remain future gates; this change does not implement them. Initial tests used an unsupported net: token; replaced it with the existing rule: provenance grammar rather than silently assigning a new source class.
+
+### 2026-10-24 — Queue heading did not match its failure badge
+
+- Symptom: the rendered MCU queue row showed a reset UNKNOWN description under a must-fix badge caused by a separate SWD FAIL.
+- Root cause: title projection selected the first non-PASS component check, regardless of result/severity, before considering failed pins.
+- Fix: select an actual FAIL before UNKNOWN and rank by severity across component and pin checks. API tests assert the real imported MCU queue title retains its SWD failure while reset/boot remain separately UNKNOWN.
+- Takeaway: a component rollup and its headline must refer to compatible evidence; moving an existing check to UNKNOWN can expose projection bugs even when overall counts do not change.
