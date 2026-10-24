@@ -79,7 +79,7 @@ function App() {
       .finally(() => {
         if (detailRequestId.current === requestId) setDetailLoading(false);
       });
-  }, [selectedRefdes]);
+  }, [selectedRefdes, state?.review_decisions?.run_id, state?.project.generated_at]);
 
   const selectedComponentTasks = useMemo(() => {
     if (!state || !selectedRefdes) return [];
@@ -182,7 +182,15 @@ function App() {
     <main className={`app-shell view-${view}`}>
       <Header state={state} currentView={view} onNavigate={setView} />
       {view === "import" && (
-        <ImportView state={state} onImported={(result) => void handleImportComplete(result)} />
+        <ImportView state={state} onImported={(result) => void handleImportComplete(result)}
+          onOpened={payload => {
+            detailRequestId.current += 1;
+            setDetail(null);
+            setQuery("");
+            setFilter("all");
+            applyState(payload);
+            setView("review");
+          }} />
       )}
       {view === "parse" && <ParseView state={state} parseResult={parseResult} />}
       {view === "review" && (

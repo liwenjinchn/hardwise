@@ -34,6 +34,7 @@ class SavedDescriptor(BaseModel):
     schema_version: Literal["hardwise.managed_project.v1"]
     arguments: SavedArguments
     sources: dict[str, str]
+    name: str = "已保存项目"
 
 
 class ManagedProjectMissing(KeyError):
@@ -74,9 +75,11 @@ class ManagedProjects:
     def list(self):
         with self.journal.connect() as db:
             return [
-                dict(id=i, project_id=p, snapshot=s)
-                for i, p, s in db.execute(
-                    "SELECT id,project,snapshot FROM managed_projects ORDER BY id"
+                dict(
+                    id=i, project_id=p, snapshot=s, name=SavedDescriptor.model_validate_json(d).name
+                )
+                for i, p, s, d in db.execute(
+                    "SELECT id,project,snapshot,descriptor FROM managed_projects ORDER BY id"
                 )
             ]
 
@@ -90,6 +93,7 @@ class ManagedProjects:
         base = Path(os.path.commonpath([str(p.parent) for p in paths]))
         descriptor = dict(
             schema_version="hardwise.managed_project.v1",
+            name=context.project_name,
             arguments={
                 k: str(Path(v).absolute().relative_to(base).as_posix()) if v else None
                 for k, v in args.items()
@@ -119,7 +123,7 @@ class ManagedProjects:
             )
         context.managed_project_id = identifier
         context.managed_project_key = project
-        return dict(id=identifier, project_id=project, snapshot=snapshot)
+        return dict(id=identifier, project_id=project, snapshot=snapshot, name=context.project_name)
 
     def open(self, identifier: str):
         with self.journal.connect() as db:

@@ -10,14 +10,17 @@ import {
 } from "lucide-react";
 import { importWorkbench } from "../api";
 import { EvidencePackageDashboard } from "../components/EvidencePackageDashboard";
+import { SavedProjects } from "../components/SavedProjects";
 import type { ImportResponse, WorkbenchState } from "../types";
 
 export function ImportView({
   state,
-  onImported
+  onImported,
+  onOpened
 }: {
   state: WorkbenchState;
   onImported: (result: ImportResponse) => void;
+  onOpened?: (state: WorkbenchState) => void;
 }) {
   const [netlist, setNetlist] = useState<File | null>(null);
   const [bom, setBom] = useState<File | null>(null);
@@ -57,6 +60,7 @@ export function ImportView({
 
   return (
     <section className="flow-page import-page">
+      {onOpened && <SavedProjects key={state.review_decisions?.run_id} state={state} onOpened={onOpened} />}
       <div className="flow-copy">
         <span className="eyebrow">Import</span>
         <h2>上传 netlist / BOM，重建当前工作台</h2>

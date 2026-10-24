@@ -3,6 +3,13 @@ import { defineConfig, devices } from "@playwright/test";
 // E2E runs against the real backend in deterministic fake-AI mode.
 // serve-workbench serves the built SPA from src/hardwise/workbench/static,
 // so run `npm run build` first (or use `npm run test:e2e`, which chains it).
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+const projectJournal = path.join(mkdtempSync(path.join(tmpdir(), "hardwise-e2e-projects-")), "review.sqlite");
+const quotedJournal = "'" + projectJournal.split("'").join(String.fromCharCode(39, 34, 39, 34, 39)) + "'";
+
 const HOST = "127.0.0.1";
 const PORT = 4399;
 
@@ -20,7 +27,7 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
     viewport: { width: 1440, height: 900 }
   },
-  webServer: {
+  webServer: [{
     command:
       "uv run hardwise serve-workbench " +
       "tests/fixtures/allegro/mixed_controller_power_stage.net " +
@@ -30,5 +37,11 @@ export default defineConfig({
     url: `http://${HOST}:${PORT}/`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000
-  }
+  }, {
+    command: "uv run hardwise serve-workbench tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --fake-ai --no-auto-datasheet-candidates --port 4400 --review-db " + quotedJournal,
+    cwd: "../..",
+    url: "http://127.0.0.1:4400/",
+    reuseExistingServer: false,
+    timeout: 120_000
+  }]
 });

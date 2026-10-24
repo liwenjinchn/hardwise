@@ -9,6 +9,7 @@ from hardwise.workbench.context import close_workbench_context
 from hardwise.workbench.decision_fingerprints import review_project_key
 from hardwise.workbench.decision_journal import ReviewConflictError
 from hardwise.workbench.managed_projects import ManagedProjects, ManagedProjectMissing
+from hardwise.workbench.managed_project_contracts import SavedProjectView, SavedProjectCatalog
 
 
 def register_managed_project_routes(
@@ -26,14 +27,14 @@ def register_managed_project_routes(
         if summary.run_id != expected_run_id:
             raise HTTPException(409, "Active review changed; refresh before saving or opening")
 
-    @app.get("/api/workbench/projects")
+    @app.get("/api/workbench/projects", response_model=SavedProjectCatalog)
     def list_projects():
         try:
             return dict(projects=require_store().list())
         except (sqlite3.Error, OSError, ValueError) as exc:
             raise HTTPException(503, "Saved project catalog is unavailable") from exc
 
-    @app.post("/api/workbench/projects/save")
+    @app.post("/api/workbench/projects/save", response_model=SavedProjectView)
     def save_project(expected_run_id: str = Query(..., min_length=1)):
         store = require_store()
         with lock, manager.lease() as context:

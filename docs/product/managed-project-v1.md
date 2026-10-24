@@ -45,7 +45,7 @@ The storage primitive alone does not close A09/M2 or the full goal. Every integr
 
 Observed: public L78 source copies removed, journal plus sidecar moved and renamed, new independent process rebuilt the context and recovered a real API waiver with the exact Chinese reason and history count1. This verifies that local pin finding only; full topology dependency precision remains open. Basenames/relative layout are retained during reconstruction, but absent external PDFs are not invented. Invalid descriptor/snapshot validation is before context activation.
 
-Not implemented yet: white save/open controls, complete backup archive/restore, crash/power-loss proof spanning directory publication and SQLite, retention/cleanup of unreferenced snapshots. Do not mark A09/M2 complete from these API and source tests.
+Not implemented yet: complete backup archive/restore, crash/power-loss proof spanning directory publication and SQLite, retention/cleanup of unreferenced snapshots. Do not mark A09/M2 complete from these API and source tests.
 
 ## Direct saved-project startup
 
@@ -58,3 +58,11 @@ No source positional argument is required with --open-project. The journal must 
 The reconstructed source tree lives for the server lifetime, including reruns, and is cleaned on dry-run, initialization failure or server return/exception. Owned immutable snapshots stay in the sidecar. SIGKILL/OS crash temporary-tree cleanup remains unproven and is not claimed. Current CLI assumes an explicitly selected saved ID; a blank-start graphical project picker is not yet provided.
 
 Observed in a real CLI/HTTP process with dotenv disabled and model credentials absent: a moved journal/sidecar copy from the deleted-source experiment started without positional source args. HTTP root/state returned200, selected local-pin waiver and exact Chinese reason/history1 remained. Service shutdown log completed and its port no longer listened. This is macOS local startup evidence, not Windows/Cadence acceptance.
+
+## White frontend save/open controls
+
+The existing Import page now includes Save and reopen. A file-backed live service lists saved names/managed IDs/source revisions, saves the current parsed source set, and opens a selection into the Review page. Opening resets stale component detail, query and filter state. Catalog read can be retried; stale-run open/save errors are displayed rather than converted into success. Initial catalog requests cannot overwrite a later refresh/save result. Old descriptors without a stored name use the explicit saved-project fallback label.
+
+The catalog and save response have generated Pydantic/TypeScript contracts. Offline HTML makes no project API requests and explains that its report cannot save/open local projects. Memory-mode servers explain --review-db. Saved originals and linked external originals remain different scopes; the panel does not call this a complete backup.
+
+Browser proof: save current public mixed design with a review reason, import L78, open the saved mixed project and recover project identity/reason; catalog outage retry and stale-open rejection. White narrow screenshot at760px inspected with no horizontal overflow. This is an existing live service UI, not an empty-start graphical picker or a complete backup/restore workflow.

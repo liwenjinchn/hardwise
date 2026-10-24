@@ -3272,6 +3272,50 @@
       "title": "RunProvenanceResponse",
       "type": "object"
     },
+    "SavedProjectCatalog": {
+      "properties": {
+        "projects": {
+          "items": {
+            "$ref": "#/$defs/SavedProjectView"
+          },
+          "title": "Projects",
+          "type": "array"
+        }
+      },
+      "required": [
+        "projects"
+      ],
+      "title": "SavedProjectCatalog",
+      "type": "object"
+    },
+    "SavedProjectView": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "snapshot": {
+          "title": "Snapshot",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "project_id",
+        "snapshot"
+      ],
+      "title": "SavedProjectView",
+      "type": "object"
+    },
     "SignoffReadiness": {
       "description": "Whether L1 evidence can be reproduced from the exported local package.",
       "properties": {
@@ -3731,6 +3775,12 @@
     "run_provenance": {
       "$ref": "#/$defs/RunProvenanceResponse"
     },
+    "saved_project": {
+      "$ref": "#/$defs/SavedProjectView"
+    },
+    "saved_project_catalog": {
+      "$ref": "#/$defs/SavedProjectCatalog"
+    },
     "workbench_state": {
       "$ref": "#/$defs/WorkbenchState"
     }
@@ -3741,6 +3791,8 @@
     "import_response",
     "review_history",
     "run_provenance",
+    "saved_project",
+    "saved_project_catalog",
     "chat_request",
     "chat_response"
   ],

@@ -293,6 +293,11 @@ export type SchemaVersion2 = "hardwise.run_provenance.v1";
 export type Reason8 = string;
 export type RunId2 = string;
 export type Status16 = "recorded" | "not_recorded";
+export type Id3 = string;
+export type Name4 = string;
+export type ProjectId2 = string;
+export type Snapshot = string;
+export type Projects = SavedProjectView[];
 export type Basis = "emitted_check_records";
 export type Boundary = string;
 export type CompletedChecks = number;
@@ -349,7 +354,7 @@ export type Accepted = number;
 export type HistoryCount = number;
 export type NeedsReview1 = number;
 export type Open = number;
-export type ProjectId2 = string | null;
+export type ProjectId3 = string | null;
 export type Resolved = number;
 export type RunId3 = string | null;
 export type StaleRemovedOnRerun = number;
@@ -360,7 +365,7 @@ export type AffectedRefdes1 = string[];
 export type Axis = "electrical" | "evidence";
 export type Check2 = string | null;
 export type DerivedTaskCount = number;
-export type Id3 = string;
+export type Id4 = string;
 export type Identity1 = string;
 export type RawTaskCount = number;
 export type RecommendedAction3 = string;
@@ -407,6 +412,8 @@ export interface WorkbenchContracts {
   import_response: ImportResponse;
   review_history: ReviewHistoryPage;
   run_provenance: RunProvenanceResponse;
+  saved_project: SavedProjectView;
+  saved_project_catalog: SavedProjectCatalog;
   workbench_state: WorkbenchState;
 }
 /**
@@ -912,6 +919,15 @@ export interface EmittedRuleVersion {
   scope: Scope2;
   version: Version;
 }
+export interface SavedProjectView {
+  id: Id3;
+  name: Name4;
+  project_id: ProjectId2;
+  snapshot: Snapshot;
+}
+export interface SavedProjectCatalog {
+  projects: Projects;
+}
 /**
  * Top-level SPA state returned by ``/api/workbench/state``.
  */
@@ -1019,7 +1035,7 @@ export interface ReviewDecisionSummary {
   history_count: HistoryCount;
   needs_review: NeedsReview1;
   open: Open;
-  project_id: ProjectId2;
+  project_id: ProjectId3;
   resolved: Resolved;
   run_id: RunId3;
   stale_removed_on_rerun: StaleRemovedOnRerun;
@@ -1035,7 +1051,7 @@ export interface ReviewTaskGroup {
   axis: Axis;
   check: Check2;
   derived_task_count: DerivedTaskCount;
-  id: Id3;
+  id: Id4;
   identity: Identity1;
   raw_task_count: RawTaskCount;
   recommended_action: RecommendedAction3;
