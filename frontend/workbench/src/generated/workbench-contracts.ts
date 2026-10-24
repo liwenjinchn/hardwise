@@ -249,6 +249,14 @@ export type Manual2 = number;
 export type PassCount2 = number;
 export type Total3 = number;
 export type Warn1 = number;
+export type Journal = string;
+export type CommandPosix = string;
+export type CommandPowershell = string;
+export type SavedId = string;
+export type Launches = RestoredProjectLaunch[];
+export type RestoreId = string;
+export type SavedProjectIds = string[];
+export type SourceUnownedProjectIds = string[];
 export type CreatedAt = string;
 export type Event = "human_decision" | "inputs_changed" | "disappeared";
 export type Id2 = number;
@@ -410,6 +418,7 @@ export interface WorkbenchContracts {
   chat_response: ChatResponse;
   component_detail: ComponentDetail;
   import_response: ImportResponse;
+  project_restore: ProjectRestoreReceipt;
   review_history: ReviewHistoryPage;
   run_provenance: RunProvenanceResponse;
   saved_project: SavedProjectView;
@@ -847,6 +856,18 @@ export interface ReviewTaskCounts {
   pass_count: PassCount2;
   total: Total3;
   warn: Warn1;
+}
+export interface ProjectRestoreReceipt {
+  journal: Journal;
+  launches: Launches;
+  restore_id: RestoreId;
+  saved_project_ids: SavedProjectIds;
+  source_unowned_project_ids: SourceUnownedProjectIds;
+}
+export interface RestoredProjectLaunch {
+  command_posix: CommandPosix;
+  command_powershell: CommandPowershell;
+  saved_id: SavedId;
 }
 export interface ReviewHistoryPage {
   events: Events;

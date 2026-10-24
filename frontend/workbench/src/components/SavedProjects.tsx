@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { SavedProjectView } from "../generated/workbench-contracts";
 import type { WorkbenchState } from "../types";
+import { ProjectArchive } from "./ProjectArchive";
 import { listSavedProjects, openSavedProject, saveCurrentProject } from "../project-api";
 
 export function SavedProjects({ state, onOpened }: { state: WorkbenchState; onOpened: (state: WorkbenchState) => void }) {
@@ -53,7 +54,8 @@ export function SavedProjects({ state, onOpened }: { state: WorkbenchState; onOp
         <div><strong>{project.name}</strong><small>项目 {project.id}</small><small>输入版本 {project.snapshot}</small></div>
         <button className="icon-text-btn" disabled={busy} aria-label={`打开项目 ${project.name}`} onClick={() => void operate("open", project)}>打开</button>
       </li>)}</ul> : !error && <p>尚无已保存项目。先保存当前评审。</p>}
+      <ProjectArchive runId={state.review_decisions?.run_id} busy={busy} onBusy={setBusy} />
     </>}
-    <p>页面暂未提供备份与恢复入口；可通过本地 backup-projects / restore-projects 命令创建和恢复完整保存项目包。外链原文未自动随附。</p>
+    <p>备份与恢复均在本机执行。恢复副本不会自动切换当前工作台；外链原文未自动随附。</p>
   </section>;
 }

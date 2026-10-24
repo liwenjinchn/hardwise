@@ -1961,6 +1961,48 @@
       "title": "ProfileView",
       "type": "object"
     },
+    "ProjectRestoreReceipt": {
+      "properties": {
+        "journal": {
+          "title": "Journal",
+          "type": "string"
+        },
+        "launches": {
+          "items": {
+            "$ref": "#/$defs/RestoredProjectLaunch"
+          },
+          "title": "Launches",
+          "type": "array"
+        },
+        "restore_id": {
+          "title": "Restore Id",
+          "type": "string"
+        },
+        "saved_project_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Saved Project Ids",
+          "type": "array"
+        },
+        "source_unowned_project_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Unowned Project Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "journal",
+        "launches",
+        "restore_id",
+        "saved_project_ids",
+        "source_unowned_project_ids"
+      ],
+      "title": "ProjectRestoreReceipt",
+      "type": "object"
+    },
     "RejectedPinTableFindingView": {
       "description": "One pin-table finding rejected before it can enter the L1 queue.",
       "properties": {
@@ -2042,6 +2084,29 @@
         "reason"
       ],
       "title": "RejectedRiskHintSummary",
+      "type": "object"
+    },
+    "RestoredProjectLaunch": {
+      "properties": {
+        "command_posix": {
+          "title": "Command Posix",
+          "type": "string"
+        },
+        "command_powershell": {
+          "title": "Command Powershell",
+          "type": "string"
+        },
+        "saved_id": {
+          "title": "Saved Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "command_posix",
+        "command_powershell",
+        "saved_id"
+      ],
+      "title": "RestoredProjectLaunch",
       "type": "object"
     },
     "ReviewDecisionSummary": {
@@ -3769,6 +3834,9 @@
     "import_response": {
       "$ref": "#/$defs/ImportResponse"
     },
+    "project_restore": {
+      "$ref": "#/$defs/ProjectRestoreReceipt"
+    },
     "review_history": {
       "$ref": "#/$defs/ReviewHistoryPage"
     },
@@ -3793,6 +3861,7 @@
     "run_provenance",
     "saved_project",
     "saved_project_catalog",
+    "project_restore",
     "chat_request",
     "chat_response"
   ],

@@ -27,6 +27,16 @@ def register_managed_project_routes(
         if summary.run_id != expected_run_id:
             raise HTTPException(409, "Active review changed; refresh before saving or opening")
 
+    from hardwise.workbench.project_archive_routes import register_project_archive_routes
+
+    register_project_archive_routes(
+        app,
+        require_store=require_store,
+        require_current=require_current,
+        manager=manager,
+        lock=lock,
+    )
+
     @app.get("/api/workbench/projects", response_model=SavedProjectCatalog)
     def list_projects():
         try:

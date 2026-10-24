@@ -12,3 +12,17 @@ class SavedProjectView(BaseModel):
 
 class SavedProjectCatalog(BaseModel):
     projects: list[SavedProjectView]
+
+
+class RestoredProjectLaunch(BaseModel):
+    saved_id: str
+    command_posix: str
+    command_powershell: str
+
+
+class ProjectRestoreReceipt(BaseModel):
+    restore_id: str
+    journal: str
+    saved_project_ids: list[str]
+    source_unowned_project_ids: list[str]
+    launches: list[RestoredProjectLaunch]

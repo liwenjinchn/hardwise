@@ -11,7 +11,11 @@ from pydantic import create_model
 from hardwise.workbench.api_contracts import ImportResponse
 from hardwise.workbench.review_history import ReviewHistoryPage
 from hardwise.workbench.run_provenance import RunProvenanceResponse
-from hardwise.workbench.managed_project_contracts import SavedProjectView, SavedProjectCatalog
+from hardwise.workbench.managed_project_contracts import (
+    SavedProjectView,
+    SavedProjectCatalog,
+    ProjectRestoreReceipt,
+)
 from hardwise.workbench.chat_contracts import ChatRequest, ChatResponse
 from hardwise.workbench.view_model import ComponentDetail, WorkbenchState
 
@@ -43,6 +47,7 @@ def main() -> None:
         run_provenance=(RunProvenanceResponse, ...),
         saved_project=(SavedProjectView, ...),
         saved_project_catalog=(SavedProjectCatalog, ...),
+        project_restore=(ProjectRestoreReceipt, ...),
         chat_request=(ChatRequest, ...),
         chat_response=(ChatResponse, ...),
     )

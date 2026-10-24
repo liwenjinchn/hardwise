@@ -15,3 +15,10 @@
 .saved-projects small { display: block; font-size: 11px; overflow-wrap: anywhere; margin-top: 4px; }
 .saved-projects [role="alert"] { color: #a13d2b; }
 .saved-projects [role="status"] { color: #237050; }
+.project-archive { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.project-archive h4 { margin: 0; font-size: 14px; }
+.project-archive input { max-width: 100%; min-width: 0; font-size: 12px; }
+.restore-receipt { margin-top: 14px; padding: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-sm); }
+.restore-receipt p, .restore-receipt pre { overflow-wrap: anywhere; }
+.restore-receipt pre { white-space: pre-wrap; font-size: 11px; line-height: 1.65; }
+.restore-receipt select { max-width: 100%; margin: 8px 0; }

@@ -45,7 +45,7 @@ The storage primitive alone does not close A09/M2 or the full goal. Every integr
 
 Observed: public L78 source copies removed, journal plus sidecar moved and renamed, new independent process rebuilt the context and recovered a real API waiver with the exact Chinese reason and history count1. This verifies that local pin finding only; full topology dependency precision remains open. Basenames/relative layout are retained during reconstruction, but absent external PDFs are not invented. Invalid descriptor/snapshot validation is before context activation.
 
-Remaining: page archive backup/restore controls, further crash/power-loss proof spanning input publication and SQLite, cleanup of unreferenced snapshots. Complete CLI backup/restore is described below. Do not mark A09/M2 complete from these API and source tests.
+Remaining: further crash/power-loss proof spanning input publication and SQLite, cleanup of unreferenced snapshots. Complete CLI backup/restore is described below. Do not mark A09/M2 complete from these API and source tests.
 
 ## Direct saved-project startup
 
@@ -85,4 +85,15 @@ Destination must be new; backup output must be new. Neither operation may write 
 
 Observed real CLI/HTTP experiment: backup from current public demo journal, restore to a fresh directory, then independently start --open-project without source paths/key/fake mode. The three prior history events and original NEEDS_REVIEW reason were retained. Original demo inputs/journal were preserved. Separate tests delete source and journal before restore, retain repeated saved versions, preserve local-pin waived reason, prove a concurrent later save cannot mix into the frozen catalog, reject damaged packages/existing targets and block interrupted restore.
 
-White save/open controls remain; archive backup/restore is currently available through these local commands, not a page upload/download flow. Full A09/M2 requires remaining source-publication/SQLite crash boundaries, all relevant rule-dependency acceptance and target environment proof; do not close the full product goal from these tests.
+Archive backup/restore is available through both these local commands and the white page described below; restored copies remain separate from the current service. Full A09/M2 requires remaining source-publication/SQLite crash boundaries, all relevant rule-dependency acceptance and target environment proof; do not close the full product goal from these tests.
+
+## Browser archive operations
+
+The white Import page now downloads a complete saved-project ZIP and uploads a ZIP for restore into a fresh server-owned sibling directory `<journal>.restored/<uuid>/`. The current journal and active context are never replaced or merged by restore. A typed receipt identifies the restored journal, source-unowned namespaces and explicit startup commands for macOS/Linux and PowerShell. It also persists as restore-info.json beside the recovered journal. This is not an automatic switch of the current tab or an empty-start graphical project picker.
+
+- `POST /api/workbench/projects/backup?expected_run_id=<current>` returns application/zip with saved/unowned-project count headers. Temporary download staging is cleaned after the response; interrupted-process cleanup is not claimed.
+- `POST /api/workbench/projects/restore?expected_run_id=<current>` accepts multipart `archive`, ignoring its filename as a destination. Payload size is bounded including ZIP overhead, then existing full archive validation runs. Returns a generated ProjectRestoreReceipt. Stale run409; corrupt backup422; oversized copied payload413. No arbitrary destination path is accepted from the browser. The framework may spool multipart data before route validation; this is not advertised as an ingress bandwidth limit.
+
+The restore action means 'restore to new directory'. To open it, run the provided command as a new local service, retaining the original service/project as-is. If receipt writing fails, remove only that newly restored copy and return failure. User-visible errors never claim successful restoration. UI loading disables overlapping project actions; offline list/save/open/backup/restore make no API request.
+
+Browser proof downloads the actual ZIP, uploads a corrupt file and observes an error, retries with the downloaded archive, displays the new copy/commands, compares original active state unchanged and runs real CLI dry-run from the restored journal. Narrow760px receipt/PowerShell command rendering is inspected without horizontal overflow. PowerShell quoting is checked as text; actual Windows execution remains an external gate.
