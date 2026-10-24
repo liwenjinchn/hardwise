@@ -83,6 +83,17 @@ test("real single-file export downloads embedded evidence with zero API requests
     });
     await page.goto("/offline-provenance.html");
     await page.getByRole("button", { name: "导出", exact: true }).click();
+    const evidence = page.getByRole("region", { name: "来源核对和原文随附状态" });
+    await expect(evidence).toContainText("来源核对 · 生成时观察");
+    await expect(evidence).toContainText("未附带 PDF 原文");
+    await expect(evidence).toContainText("允许导出");
+    await evidence.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath("offline-evidence-delivery-white.png") });
+    await page.setViewportSize({ width: 760, height: 900 });
+    await evidence.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("offline-evidence-delivery-narrow.png") });
+    await page.setViewportSize({ width: 1440, height: 900 });
     const promise = page.waitForEvent("download");
     await page.getByRole("button", { name: "下载本次输入与版本清单" }).click();
     const file = await promise;
@@ -97,11 +108,14 @@ test("real single-file export downloads embedded evidence with zero API requests
     await page.screenshot({ path: testInfo.outputPath("offline-provenance-white.png") });
     expect(calls).toEqual([]);
     // Simulate an older artifact by removing only its additive manifest field.
-    html = html.replace('"run_provenance":', '"old_unavailable_provenance":');
+    html = html.replace('"run_provenance":', '"old_unavailable_provenance":')
+      .replaceAll('"source_audit":', '"old_source_audit":')
+      .replaceAll('"original_delivery":', '"old_original_delivery":');
     await page.reload();
     await page.getByRole("button", { name: "导出", exact: true }).click();
     await page.getByRole("button", { name: "下载本次输入与版本清单" }).click();
     await expect(page.getByRole("alert")).toContainText("旧离线快照未记录");
+    await expect(page.getByRole("region", { name: "来源核对和原文随附状态" })).toContainText("旧报告未记录原文随附状态");
     expect(calls).toEqual([]);
   } finally {
     await rm(directory, { recursive: true, force: true });

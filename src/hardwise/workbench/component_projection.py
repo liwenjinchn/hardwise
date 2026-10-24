@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from difflib import get_close_matches
 from typing import TYPE_CHECKING
+from datetime import datetime, timezone
 
 from hardwise.bom.types import sort_refdes_key
 from hardwise.ir.types import Component
@@ -46,6 +47,7 @@ def build_review_prep_packet(
 ) -> ReviewPrepPacket | ComponentMiss:
     """Build one component's review-prep packet from backend-owned facts."""
 
+    observed_at = datetime.now(timezone.utc).isoformat()
     detail = build_component_detail(context, refdes)
     if isinstance(detail, ComponentMiss):
         return detail
@@ -62,7 +64,16 @@ def build_review_prep_packet(
             *[hint.source for hint in detail.risk_hints if hint.source is not None],
         ]
     )
+    from hardwise.workbench.evidence_delivery import evidence_axes
+
+    audit, delivery = evidence_axes(
+        detail.tasks,
+        extra_evidence=evidence,
+        observed_at=observed_at,
+    )
     return ReviewPrepPacket(
+        source_audit=audit,
+        original_delivery=delivery,
         project=_project_view(context),
         component=detail,
         tasks=detail.tasks,
@@ -119,6 +130,23 @@ def render_review_prep_packet_markdown(packet: ReviewPrepPacket) -> str:
     else:
         lines.append("- 当前组件没有进入 finding 队列。")
 
+    lines.extend(
+        [
+            "",
+            "## 来源核对 / Source audit",
+            "",
+            f"- Observed at: {packet.source_audit.observed_at}",
+            f"- {packet.source_audit.reason}",
+            *[f"- Missing local source: {token}" for token in packet.source_audit.missing_tokens],
+            *[f"- Unchecked source: {token}" for token in packet.source_audit.unchecked_tokens],
+            "",
+            "## 原文随附 / Original delivery",
+            "",
+            f"- {packet.original_delivery.status}: {packet.original_delivery.reason}",
+            *[f"- Missing original: {token}" for token in packet.original_delivery.missing_tokens],
+            "- Export allowed; signoff is not assessed.",
+        ]
+    )
     lines.extend(["", "## Evidence Tokens"])
     if packet.evidence:
         for evidence in packet.evidence:

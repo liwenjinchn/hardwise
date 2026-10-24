@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import csv
-import io
 import json
 import re
 from html import escape
 from pathlib import Path
 
 from hardwise.bom.types import sort_refdes_key
-from hardwise.csv_safety import csv_safe_cell
 from hardwise.workbench.chat import ChatResponse, build_snapshot_responses
 from hardwise.workbench.context import WorkbenchContext
 from hardwise.workbench.run_provenance import build_run_provenance
@@ -22,7 +19,6 @@ from hardwise.workbench.view_model import (
     ComponentMiss,
     build_component_detail,
     build_review_prep_packet,
-    build_review_tasks,
     build_workbench_state,
     render_review_prep_packet_markdown,
 )
@@ -82,64 +78,19 @@ def _component_prep_markdown(context: WorkbenchContext) -> dict[str, str]:
 
 def _chat_responses(context: WorkbenchContext) -> dict[str, object]:
     responses: dict[str, ChatResponse] = build_snapshot_responses(context)
-    return {
-        question: response.model_dump(mode="json")
-        for question, response in responses.items()
-    }
+    return {question: response.model_dump(mode="json") for question, response in responses.items()}
 
 
 def _tasks_csv(context: WorkbenchContext) -> str:
-    buffer = io.StringIO()
-    writer = csv.DictWriter(
-        buffer,
-        fieldnames=[
-            "id",
-            "refdes",
-            "status_group",
-            "trust_tier",
-            "title",
-            "recommended_action",
-            "source_classes",
-        ],
-    )
-    writer.writeheader()
-    for task in build_review_tasks(context):
-        writer.writerow(
-            {
-                "id": csv_safe_cell(task.id),
-                "refdes": csv_safe_cell(task.refdes),
-                "status_group": csv_safe_cell(task.status_group),
-                "trust_tier": csv_safe_cell(task.trust_tier),
-                "title": csv_safe_cell(task.title),
-                "recommended_action": csv_safe_cell(task.recommended_action),
-                "source_classes": csv_safe_cell(";".join(task.source_classes)),
-            }
-        )
-    return buffer.getvalue()
+    from hardwise.workbench.server_io import _task_csv_response
+
+    return bytes(_task_csv_response(context).body).decode("utf-8")
 
 
 def _annotations(context: WorkbenchContext) -> str:
-    lines = [
-        "# Hardwise EDA annotation export",
-        "# format: refdes,status_group,task_id,title,recommended_action",
-    ]
-    for task in build_review_tasks(context):
-        lines.append(
-            ",".join(
-                [
-                    _annotation_cell(task.refdes),
-                    _annotation_cell(task.status_group),
-                    _annotation_cell(task.id),
-                    _annotation_cell(task.title),
-                    _annotation_cell(task.recommended_action),
-                ]
-            )
-        )
-    return "\n".join(lines) + "\n"
+    from hardwise.workbench.server_io import _annotations_response
 
-
-def _annotation_cell(value: object) -> str:
-    return str(value).replace("\n", " ").replace(",", "；")
+    return bytes(_annotations_response(context).body).decode("utf-8")
 
 
 def _inline_spa_shell(snapshot: dict[str, object], *, project_name: str) -> str:
@@ -180,7 +131,7 @@ def _inline_script(html: str, snapshot: dict[str, object]) -> str:
         "<script>\n"
         f"window.{SNAPSHOT_GLOBAL} = {snapshot_json};\n"
         "</script>\n"
-        "<script type=\"module\">\n"
+        '<script type="module">\n'
         f"{js}\n"
         "</script>"
     )

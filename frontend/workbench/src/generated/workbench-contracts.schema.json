@@ -1342,8 +1342,11 @@
           "title": "Lanes",
           "type": "array"
         },
+        "original_delivery": {
+          "$ref": "#/$defs/OriginalDelivery"
+        },
         "schema_version": {
-          "default": "hardwise.evidence_package.v1",
+          "default": "hardwise.evidence_package.v2",
           "title": "Schema Version",
           "type": "string"
         },
@@ -1354,15 +1357,20 @@
         },
         "signoff_readiness": {
           "$ref": "#/$defs/SignoffReadiness"
+        },
+        "source_audit": {
+          "$ref": "#/$defs/SourceAudit"
         }
       },
       "required": [
         "electrical_verdict",
         "guardrails",
         "lanes",
+        "original_delivery",
         "schema_version",
         "scope",
-        "signoff_readiness"
+        "signoff_readiness",
+        "source_audit"
       ],
       "title": "EvidencePackageSummary",
       "type": "object"
@@ -1719,6 +1727,61 @@
         "summary"
       ],
       "title": "NetCheckView",
+      "type": "object"
+    },
+    "OriginalDelivery": {
+      "properties": {
+        "attached_tokens": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Attached Tokens",
+          "type": "array"
+        },
+        "cited_tokens": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Cited Tokens",
+          "type": "array"
+        },
+        "export_allowed": {
+          "default": true,
+          "title": "Export Allowed",
+          "type": "boolean"
+        },
+        "missing_tokens": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Tokens",
+          "type": "array"
+        },
+        "reason": {
+          "default": "旧报告未记录原文随附状态；不能据此判断原文已随包附带。",
+          "title": "Reason",
+          "type": "string"
+        },
+        "status": {
+          "default": "unknown",
+          "enum": [
+            "not_attached",
+            "no_pdf_citations",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "attached_tokens",
+        "cited_tokens",
+        "export_allowed",
+        "missing_tokens",
+        "reason",
+        "status"
+      ],
+      "title": "OriginalDelivery",
       "type": "object"
     },
     "PinTableSummary": {
@@ -3382,7 +3445,7 @@
       "type": "object"
     },
     "SignoffReadiness": {
-      "description": "Whether L1 evidence can be reproduced from the exported local package.",
+      "description": "Deprecated compatibility field; never certifies signoff or original delivery.",
       "properties": {
         "affected_tasks": {
           "default": 0,
@@ -3427,6 +3490,67 @@
         "status"
       ],
       "title": "SignoffReadiness",
+      "type": "object"
+    },
+    "SourceAudit": {
+      "properties": {
+        "locally_present_tokens": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Locally Present Tokens",
+          "type": "array"
+        },
+        "missing_tokens": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Tokens",
+          "type": "array"
+        },
+        "observed_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observed At"
+        },
+        "reason": {
+          "default": "旧报告未记录来源核对结果，需重新核查。",
+          "title": "Reason",
+          "type": "string"
+        },
+        "status": {
+          "default": "unknown",
+          "enum": [
+            "observed",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "unchecked_tokens": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Unchecked Tokens",
+          "type": "array"
+        }
+      },
+      "required": [
+        "locally_present_tokens",
+        "missing_tokens",
+        "observed_at",
+        "reason",
+        "status",
+        "unchecked_tokens"
+      ],
+      "title": "SourceAudit",
       "type": "object"
     },
     "VoltageFact": {

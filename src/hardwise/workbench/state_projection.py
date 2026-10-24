@@ -81,6 +81,10 @@ def build_workbench_state(
     queue.sort(key=lambda item: (_status_rank(item.status_group), sort_refdes_key(item.refdes)))
     evidence_package = build_evidence_package_summary(context)
     evidence_package.signoff_readiness = build_signoff_readiness(list(review_tasks))
+    assert context.projection.evidence_summary is not None
+    evidence_package.source_audit, evidence_package.original_delivery = (
+        context.projection.evidence_summary
+    )
 
     return WorkbenchState(
         assessment_coverage=context.index.assessment_coverage,

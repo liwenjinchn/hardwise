@@ -12,6 +12,7 @@ from fastapi.responses import Response
 
 from hardwise.csv_safety import csv_safe_cell
 from hardwise.workbench.context import WorkbenchContext
+from hardwise.workbench.evidence_delivery import evidence_axes
 from hardwise.workbench.view_model import ReviewTask, build_review_tasks
 
 
@@ -52,10 +53,19 @@ def _task_csv_response(
             "derived_from_task_id",
             "signoff_evidence_ready",
             "missing_local_sources",
+            "source_audit_status",
+            "source_audit_observed_at",
+            "source_audit_unchecked_tokens",
+            "original_delivery_status",
+            "missing_original_tokens",
+            "export_allowed",
         ],
     )
     writer.writeheader()
     for task in tasks if tasks is not None else build_review_tasks(context):
+        audit, delivery = evidence_axes(
+            [task], observed_at=context.projection.source_audit_observed_at
+        )
         decision = task.review_decision
         missing_sources = _missing_local_sources(task)
         writer.writerow(
@@ -71,8 +81,14 @@ def _task_csv_response(
                 "review_reason": csv_safe_cell(decision.reason if decision else ""),
                 "review_updated_at": csv_safe_cell(decision.updated_at if decision else ""),
                 "derived_from_task_id": csv_safe_cell(task.derived_from_task_id or ""),
-                "signoff_evidence_ready": csv_safe_cell(str(not missing_sources).lower()),
+                "signoff_evidence_ready": csv_safe_cell("false"),
                 "missing_local_sources": csv_safe_cell(";".join(missing_sources)),
+                "source_audit_status": audit.status,
+                "source_audit_observed_at": audit.observed_at,
+                "source_audit_unchecked_tokens": csv_safe_cell(";".join(audit.unchecked_tokens)),
+                "original_delivery_status": delivery.status,
+                "missing_original_tokens": csv_safe_cell(";".join(delivery.missing_tokens)),
+                "export_allowed": "true",
             }
         )
     return Response(
@@ -89,9 +105,12 @@ def _annotations_response(
 ) -> Response:
     lines = [
         "# Hardwise EDA annotation export",
-        "# format: refdes,status_group,task_id,title,recommended_action,review_status,review_reason,signoff_evidence_ready,missing_local_sources",
+        "# format: refdes,status_group,task_id,title,recommended_action,review_status,review_reason,signoff_evidence_ready,missing_local_sources,source_audit_status,source_audit_observed_at,source_audit_unchecked_tokens,original_delivery_status,missing_original_tokens,export_allowed",
     ]
     for task in tasks if tasks is not None else build_review_tasks(context):
+        audit, delivery = evidence_axes(
+            [task], observed_at=context.projection.source_audit_observed_at
+        )
         decision = task.review_decision
         missing_sources = _missing_local_sources(task)
         lines.append(
@@ -104,8 +123,14 @@ def _annotations_response(
                     _annotation_cell(task.recommended_action),
                     _annotation_cell(decision.status if decision else "open"),
                     _annotation_cell(decision.reason if decision else ""),
-                    _annotation_cell(str(not missing_sources).lower()),
+                    _annotation_cell("false"),
                     _annotation_cell(";".join(missing_sources)),
+                    _annotation_cell(audit.status),
+                    _annotation_cell(audit.observed_at),
+                    _annotation_cell(";".join(audit.unchecked_tokens)),
+                    _annotation_cell(delivery.status),
+                    _annotation_cell(";".join(delivery.missing_tokens)),
+                    "true",
                 ]
             )
         )

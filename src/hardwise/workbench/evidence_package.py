@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Literal
 from pydantic import BaseModel, Field
 
 from hardwise.documents.cache import APPROVED_REVIEW_STATUSES
+from hardwise.workbench.evidence_delivery import OriginalDelivery, SourceAudit
 
 if TYPE_CHECKING:
     from hardwise.workbench.context import WorkbenchContext
@@ -44,7 +45,7 @@ class EvidencePackageLane(BaseModel):
 
 
 class SignoffReadiness(BaseModel):
-    """Whether L1 evidence can be reproduced from the exported local package."""
+    """Deprecated compatibility field; never certifies signoff or original delivery."""
 
     status: Literal["ready", "blocked"]
     signoff_ready: bool
@@ -57,15 +58,17 @@ class SignoffReadiness(BaseModel):
 class EvidencePackageSummary(BaseModel):
     """Six evidence lanes that are intentionally not collapsed into one score."""
 
-    schema_version: str = "hardwise.evidence_package.v1"
+    schema_version: str = "hardwise.evidence_package.v2"
     scope: str = "input_evidence_completeness"
     electrical_verdict: Literal["not_applicable"] = "not_applicable"
     lanes: list[EvidencePackageLane]
+    source_audit: SourceAudit = Field(default_factory=SourceAudit)
+    original_delivery: OriginalDelivery = Field(default_factory=OriginalDelivery)
     signoff_readiness: SignoffReadiness = Field(
         default_factory=lambda: SignoffReadiness(
-            status="ready",
-            signoff_ready=True,
-            reason="No L1 task cites a missing local source.",
+            status="blocked",
+            signoff_ready=False,
+            reason="Deprecated: consult source_audit and original_delivery; signoff is not assessed.",
         )
     )
     guardrails: list[str] = Field(
@@ -99,7 +102,7 @@ def build_evidence_package_summary(context: WorkbenchContext) -> EvidencePackage
 
 
 def build_signoff_readiness(tasks: list[ReviewTask]) -> SignoffReadiness:
-    """Gate handoff reproducibility without changing electrical verdicts."""
+    """Retain L1 missing-source counters without certifying handoff or signoff."""
 
     affected: set[str] = set()
     tokens: set[str] = set()
@@ -125,13 +128,13 @@ def build_signoff_readiness(tasks: list[ReviewTask]) -> SignoffReadiness:
             missing_tokens=ordered,
             reason=(
                 "L1 findings cite datasheet/profile tokens whose local source is absent; "
-                "electrical verdicts remain unchanged, but the handoff package is not reproducible."
+                "electrical verdicts remain unchanged. Consult source_audit and original_delivery; signoff is not assessed."
             ),
         )
     return SignoffReadiness(
-        status="ready",
-        signoff_ready=True,
-        reason="Every L1 evidence token is reproducible from an available local or design source.",
+        status="blocked",
+        signoff_ready=False,
+        reason="No missing L1 local paths observed; this does not verify contents or attach originals. Signoff is not assessed.",
     )
 
 

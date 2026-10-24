@@ -33,6 +33,22 @@ export interface EvidencePackageSummary {
   scope: string;
   electrical_verdict: "not_applicable";
   lanes: EvidencePackageLane[];
+  source_audit: {
+    status: "observed" | "unknown";
+    observed_at: string | null;
+    missing_tokens: string[];
+    locally_present_tokens: string[];
+    unchecked_tokens: string[];
+    reason: string;
+  };
+  original_delivery: {
+    status: "not_attached" | "no_pdf_citations" | "unknown";
+    cited_tokens: string[];
+    attached_tokens: string[];
+    missing_tokens: string[];
+    export_allowed: boolean;
+    reason: string;
+  };
   signoff_readiness: SignoffReadiness;
   guardrails: string[];
 }
@@ -430,6 +446,8 @@ export interface ComponentDetail {
 }
 
 export interface ReviewPrepPacket {
+  source_audit: EvidencePackageSummary["source_audit"];
+  original_delivery: EvidencePackageSummary["original_delivery"];
   schema_version: string;
   project: WorkbenchProject;
   scope: string;

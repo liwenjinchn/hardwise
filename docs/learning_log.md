@@ -5559,3 +5559,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Experiment: four child processes build a public L78 context after a BOM newline byte change, then exit41/42/43/44 at the exact source-rename/catalog-INSERT/commit boundaries. No production failpoint was introduced; hooks are child-only test wrappers. Source directories are subsequently removed before reopening from owned snapshots.
 - Result: before commit, old head/bytes survive including hot-journal rollback; after commit, complete new bytes/head survive and the previous source remains referenced. Managed ID and selected local-pin waiver/Chinese reason preserve. review_state/events/runs/heads unchanged by the source save itself. Post-crash complete backup includes only committed IDs, never leftover staging/orphans. All four cases pass, no runtime patch warranted.
 - Takeaway: a crash test must distinguish last-known-good versus committed-new, check actual source bytes after removing originals, and prove orphan exclusion. This does not establish automatic deletion safety, arbitrary timing/power-loss or target OS acceptance.
+
+
+### 2026-10-24 — Local existence does not establish offline original delivery
+
+- Symptom: a synthetic non-PDF placeholder at a cited path could make the old readiness flag true even though standalone HTML contained no original PDF bytes. The old green readiness layout also implied success after the fields changed.
+- Root cause: local source availability, content verification, human approval and actual delivery were collapsed into one readiness boolean. The offline CSV/annotation implementation independently omitted newer live-export fields.
+- Fix: evidence-packagev2 separates timestamped source observations from attached-original status, includes passing-check PDF citations, reports missing originals without blocking export, and defaults unrecorded legacy axes to unknown. Source observations remain captured for the context; fresh contexts observe removal. Offline CSV/annotations now reuse the live serialization helpers. Neutral cards replace the old green score-like block.
+- Takeaway: existence tests establish availability only. Never promote local file existence or profile excerpts into content verification, human approval, original delivery, or signoff readiness.

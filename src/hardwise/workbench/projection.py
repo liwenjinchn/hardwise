@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from threading import Lock
 from types import MappingProxyType
 from typing import TYPE_CHECKING
 
 from hardwise.bom.types import sort_refdes_key
+from hardwise.guards.evidence_class import classify_evidence_tokens
+from hardwise.workbench.evidence_delivery import SourceAudit, OriginalDelivery, evidence_axes
 from hardwise.ir.types import Component
 from hardwise.validation.component_groups import ProjectComponentGroup
 from hardwise.validation.project_index import ProjectValidationRow
@@ -31,6 +34,8 @@ class WorkbenchProjectionIndex:
     validated_count: int
     manual_count: int
     validation_totals: Mapping[str, int]
+    evidence_summary: tuple[SourceAudit, OriginalDelivery] | None = field(default=None, init=False)
+    source_audit_observed_at: str | None = field(default=None, init=False)
     _review_tasks: tuple[ReviewTask, ...] | None = field(
         default=None,
         init=False,
@@ -106,7 +111,20 @@ class WorkbenchProjectionIndex:
             tasks = self._review_tasks
             tasks_by_refdes = self._tasks_by_refdes
             if tasks is None or tasks_by_refdes is None:
+                self.source_audit_observed_at = datetime.now(timezone.utc).isoformat()
                 tasks = tuple(builder())
+                tokens = [
+                    token
+                    for row in self.rows_by_refdes.values()
+                    if row.validation
+                    for check in [*row.validation.pin_results, *row.validation.component_checks]
+                    for token in check.evidence
+                ]
+                self.evidence_summary = evidence_axes(
+                    list(tasks),
+                    observed_at=self.source_audit_observed_at,
+                    extra_evidence=classify_evidence_tokens(tokens),
+                )
                 grouped: dict[str, list[ReviewTask]] = {}
                 for task in tasks:
                     grouped.setdefault(task.refdes, []).append(task)

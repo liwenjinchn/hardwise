@@ -573,7 +573,7 @@ def test_workbench_component_prep_packet_json_and_markdown_are_safe(tmp_path: Pa
 
         assert json_response.status_code == 200
         packet = json_response.json()
-        assert packet["schema_version"] == "hardwise.prep_packet.v1"
+        assert packet["schema_version"] == "hardwise.prep_packet.v2"
         assert packet["component"]["refdes"] == "U8"
         assert packet["component"]["tasks"][0]["stable_key"]
         assert {task["kind"] for task in packet["tasks"]} >= {"component_check"}

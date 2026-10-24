@@ -10,6 +10,7 @@ from hardwise.ir.voltage import VoltageFactsDocument
 from hardwise.validation.assessment import Assessment, CheckCoverage
 
 from hardwise.workbench.evidence_package import EvidencePackageSummary
+from hardwise.workbench.evidence_delivery import SourceAudit, OriginalDelivery
 from hardwise.workbench.review_decisions import ReviewDecisionSummary, ReviewDecisionView
 
 StatusGroup = Literal["error", "warn", "pass", "manual"]
@@ -421,7 +422,9 @@ class ComponentDetail(BaseModel):
 class ReviewPrepPacket(BaseModel):
     """One component's review-prep packet for export and human handoff."""
 
-    schema_version: str = "hardwise.prep_packet.v1"
+    schema_version: str = "hardwise.prep_packet.v2"
+    source_audit: SourceAudit = Field(default_factory=SourceAudit)
+    original_delivery: OriginalDelivery = Field(default_factory=OriginalDelivery)
     project: WorkbenchProject
     scope: str = "schematic_review_prep"
     component: ComponentDetail

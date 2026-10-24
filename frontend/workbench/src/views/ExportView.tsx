@@ -33,7 +33,8 @@ export function ExportView({ state }: { state: WorkbenchState }) {
           raw_task_counts: payload.task_counts,
           grouped_review_workload: payload.review_groups.length,
           review_decisions: payload.review_decisions,
-          signoff_readiness: payload.evidence_package.signoff_readiness,
+          source_audit: payload.evidence_package.source_audit,
+          original_delivery: payload.evidence_package.original_delivery,
           note: "预览仅显示交接摘要；下载保留完整 JSON、原始任务和 evidence chain。"
         }, null, 2));
       } else {

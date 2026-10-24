@@ -182,14 +182,26 @@ export type StatusLabel3 = string;
 export type Summary3 = string;
 export type TrustBoundary = string;
 export type Lanes = EvidencePackageLane[];
+export type AttachedTokens = string[];
+export type CitedTokens = string[];
+export type ExportAllowed = boolean;
+export type MissingTokens = string[];
+export type Reason6 = string;
+export type Status12 = "not_attached" | "no_pdf_citations" | "unknown";
 export type SchemaVersion = string;
 export type Scope = string;
 export type AffectedTasks = number;
 export type MissingLocalSources = number;
-export type MissingTokens = string[];
-export type Reason6 = string;
+export type MissingTokens1 = string[];
+export type Reason7 = string;
 export type SignoffReady = boolean;
-export type Status12 = "ready" | "blocked";
+export type Status13 = "ready" | "blocked";
+export type LocallyPresentTokens = string[];
+export type MissingTokens2 = string[];
+export type ObservedAt = string | null;
+export type Reason8 = string;
+export type Status14 = "observed" | "unknown";
+export type UncheckedTokens = string[];
 export type Ok = boolean;
 export type AcceptedFindings = number;
 export type AcceptedRefdes = string[];
@@ -198,14 +210,14 @@ export type AffectedRefdesList = string[];
 export type Message = string;
 export type Net1 = string | null;
 export type PinNumber1 = string | null;
-export type Reason7 = string;
+export type Reason9 = string;
 export type Refdes3 = string | null;
 export type RuleId = string;
 export type Rejected = RejectedPinTableFindingView[];
 export type RejectedFindings = number;
 export type RejectedUnknownRefdes = string[];
 export type Source4 = string | null;
-export type Status13 = "loaded" | "not_configured";
+export type Status15 = "loaded" | "not_configured";
 export type BomSource = string;
 export type GeneratedAt = string;
 export type Name1 = string;
@@ -220,7 +232,7 @@ export type Note = string | null;
 export type Path1 = string;
 export type Required = boolean;
 export type Sha256 = string | null;
-export type Status14 = string;
+export type Status16 = string;
 export type Artifacts = ReviewPackageArtifactView[];
 export type HashMismatch = number;
 export type ManualGapCount = number;
@@ -230,7 +242,7 @@ export type PackageStatus = "not_configured" | "complete" | "optional_gap" | "mi
 export type Present = number;
 export type RecommendedAction2 = string;
 export type Source5 = string | null;
-export type Status15 = "loaded" | "not_configured";
+export type Status17 = "loaded" | "not_configured";
 export type StatusGroup5 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel4 = string;
 export type Total2 = number;
@@ -298,9 +310,9 @@ export type Scope2 = "pin" | "component" | "net";
 export type Version = string;
 export type RuleVersions = EmittedRuleVersion[];
 export type SchemaVersion2 = "hardwise.run_provenance.v1";
-export type Reason8 = string;
+export type Reason10 = string;
 export type RunId2 = string;
-export type Status16 = "recorded" | "not_recorded";
+export type Status18 = "recorded" | "not_recorded";
 export type Id3 = string;
 export type Name4 = string;
 export type ProjectId2 = string;
@@ -328,7 +340,7 @@ export type Check1 = string;
 export type Evidence4 = EvidenceView[];
 export type NetName = string;
 export type Nodes = string[];
-export type Status17 = string;
+export type Status19 = string;
 export type StatusGroup6 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel5 = string;
 export type Summary4 = string;
@@ -347,7 +359,7 @@ export type ProfilePath = string | null;
 export type ProfileStatus = string;
 export type Refdes4 = string;
 export type RiskHintCount = number;
-export type Status18 = string;
+export type Status20 = string;
 export type StatusGroup7 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel6 = string;
 export type Subtitle = string;
@@ -390,7 +402,7 @@ export type AcceptedExternalCount = number;
 export type Count1 = number;
 export type ExternalStatus = string;
 export type Count2 = number;
-export type Reason9 = string;
+export type Reason11 = string;
 export type Rejected1 = RejectedRiskHintSummary[];
 export type RejectedExternalCount = number;
 export type WrappedRefdesCount1 = number;
@@ -720,9 +732,11 @@ export interface EvidencePackageSummary {
   electrical_verdict: ElectricalVerdict;
   guardrails: Guardrails;
   lanes: Lanes;
+  original_delivery: OriginalDelivery;
   schema_version: SchemaVersion;
   scope: Scope;
   signoff_readiness: SignoffReadiness;
+  source_audit: SourceAudit;
 }
 /**
  * One independent evidence input or deterministic coverage lane.
@@ -750,16 +764,32 @@ export interface EvidencePackageMetric {
   unit: Unit;
   value: Value2;
 }
+export interface OriginalDelivery {
+  attached_tokens: AttachedTokens;
+  cited_tokens: CitedTokens;
+  export_allowed: ExportAllowed;
+  missing_tokens: MissingTokens;
+  reason: Reason6;
+  status: Status12;
+}
 /**
- * Whether L1 evidence can be reproduced from the exported local package.
+ * Deprecated compatibility field; never certifies signoff or original delivery.
  */
 export interface SignoffReadiness {
   affected_tasks: AffectedTasks;
   missing_local_sources: MissingLocalSources;
-  missing_tokens: MissingTokens;
-  reason: Reason6;
+  missing_tokens: MissingTokens1;
+  reason: Reason7;
   signoff_ready: SignoffReady;
-  status: Status12;
+  status: Status13;
+}
+export interface SourceAudit {
+  locally_present_tokens: LocallyPresentTokens;
+  missing_tokens: MissingTokens2;
+  observed_at: ObservedAt;
+  reason: Reason8;
+  status: Status14;
+  unchecked_tokens: UncheckedTokens;
 }
 /**
  * Capture pin-table intake status shown beside first-class imports.
@@ -774,7 +804,7 @@ export interface PinTableSummary {
   rejected_findings: RejectedFindings;
   rejected_unknown_refdes: RejectedUnknownRefdes;
   source: Source4;
-  status: Status13;
+  status: Status15;
 }
 export interface Checks1 {
   [k: string]: number;
@@ -786,7 +816,7 @@ export interface RejectedPinTableFindingView {
   message: Message;
   net: Net1;
   pin_number: PinNumber1;
-  reason: Reason7;
+  reason: Reason9;
   refdes: Refdes3;
   rule_id: RuleId;
 }
@@ -815,7 +845,7 @@ export interface ReviewPackageSummary {
   present: Present;
   recommended_action: RecommendedAction2;
   source: Source5;
-  status: Status15;
+  status: Status17;
   status_group: StatusGroup5;
   status_label: StatusLabel4;
   total: Total2;
@@ -831,7 +861,7 @@ export interface ReviewPackageArtifactView {
   path: Path1;
   required: Required;
   sha256: Sha256;
-  status: Status14;
+  status: Status16;
 }
 /**
  * Count summary for the current workbench run.
@@ -889,9 +919,9 @@ export interface RunProvenanceResponse {
   created_at: CreatedAt1;
   project_id: ProjectId1;
   provenance: RunProvenance | null;
-  reason: Reason8;
+  reason: Reason10;
   run_id: RunId2;
-  status: Status16;
+  status: Status18;
 }
 export interface RunProvenance {
   emitted_records: EmittedRecords;
@@ -1012,7 +1042,7 @@ export interface NetCheckView {
   evidence: Evidence4;
   net_name: NetName;
   nodes: Nodes;
-  status: Status17;
+  status: Status19;
   status_group: StatusGroup6;
   status_label: StatusLabel5;
   summary: Summary4;
@@ -1036,7 +1066,7 @@ export interface ReviewQueueItem {
   profile_status: ProfileStatus;
   refdes: Refdes4;
   risk_hint_count: RiskHintCount;
-  status: Status18;
+  status: Status20;
   status_group: StatusGroup7;
   status_label: StatusLabel6;
   subtitle: Subtitle;
@@ -1100,7 +1130,7 @@ export interface RiskHintsView {
  */
 export interface RejectedRiskHintSummary {
   count: Count2;
-  reason: Reason9;
+  reason: Reason11;
 }
 /**
  * Backward-compatible compact risk-hints summary.

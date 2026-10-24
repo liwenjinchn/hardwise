@@ -62,32 +62,34 @@ export function EvidencePackageDashboard({
         ))}
       </div>
 
-      <section
-        className={`signoff-readiness ${summary.signoff_readiness.status}`}
-        aria-label="签核证据就绪状态"
-      >
+      <section className="evidence-delivery" aria-label="来源核对和原文随附状态">
         <div>
-          <span className="eyebrow">Sign-off evidence readiness</span>
-          <strong>
-            {summary.signoff_readiness.signoff_ready
-              ? "交付证据可复核"
-              : "交付签核被证据缺口阻塞"}
-          </strong>
+        <strong>来源核对 · {summary.source_audit?.status === "observed" ? "生成时观察" : "未记录"}</strong>
+        <p>{summary.source_audit?.reason ?? "旧报告未记录来源核对结果，需重新核查。"}</p>
+        {summary.source_audit?.observed_at && <p>核对时间：{summary.source_audit.observed_at}</p>}
+        <p>本机缺失引用 {summary.source_audit?.missing_tokens.length ?? "未知"}；待核查引用 {summary.source_audit?.unchecked_tokens.length ?? "未知"}</p>
+        {summary.source_audit && !!(summary.source_audit.missing_tokens.length + summary.source_audit.unchecked_tokens.length) && <details>
+          <summary>来源缺失及待核查项</summary>
+          <ul>{summary.source_audit.missing_tokens.map(token => <li key={token}>本机缺失：<code>{token}</code></li>)}
+          {summary.source_audit.unchecked_tokens.map(token => <li key={token}>待核查：<code>{token}</code></li>)}</ul>
+        </details>}
         </div>
-        <p>{summary.signoff_readiness.reason}</p>
-        {!summary.signoff_readiness.signoff_ready && (
-          <span>
-            影响 {summary.signoff_readiness.affected_tasks} 条 L1 任务；缺少 {summary.signoff_readiness.missing_local_sources} 个本地来源
-          </span>
-        )}
+        <div>
+        <strong>原文随附 · {summary.original_delivery?.status === "not_attached" ? "未附带 PDF 原文" : summary.original_delivery?.status === "no_pdf_citations" ? "当前无 PDF 引用" : "未记录"}</strong>
+        <p>{summary.original_delivery?.reason ?? "旧报告未记录原文随附状态，不能判断原文已随包附带。"}</p>
+        {!!summary.original_delivery?.missing_tokens.length && <details>
+          <summary>缺少原文：{summary.original_delivery.missing_tokens.length} 个引用，需另行核查</summary>
+          <ul>{summary.original_delivery.missing_tokens.map(token => <li key={token}><code>{token}</code></li>)}</ul>
+        </details>}
+        <p>允许导出；来源观察不证明内容、版本或人工审核，不能据此签核。</p>
+        </div>
       </section>
 
       <footer className="evidence-package-guardrail">
         <ShieldCheck size={17} aria-hidden="true" />
         <p>
           <strong>Trust boundary</strong>
-          Lane status 只描述输入证据覆盖；PASS/WARN/ERROR 仍只来自确定性验证。签核 gate
-          只判断交付包能否复核，不重写电气结论。
+          Lane status 只描述输入证据覆盖；PASS/WARN/ERROR 仍只来自确定性验证。来源核对与原文随附分别记录，不重写电气结论。
         </p>
       </footer>
     </section>

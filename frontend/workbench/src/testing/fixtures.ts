@@ -355,6 +355,14 @@ export function makeEvidencePackage(
         metrics: []
       })
     ],
+    source_audit: {
+      status: "unknown", observed_at: null, missing_tokens: [], locally_present_tokens: [],
+      unchecked_tokens: [], reason: "旧报告未记录来源核对结果，需重新核查。"
+    },
+    original_delivery: {
+      status: "unknown", cited_tokens: [], attached_tokens: [], missing_tokens: [],
+      export_allowed: true, reason: "旧报告未记录原文随附状态。"
+    },
     signoff_readiness: {
       status: "ready",
       signoff_ready: true,
