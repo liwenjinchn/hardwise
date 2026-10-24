@@ -355,7 +355,7 @@ COPILOT_SCRIPT = """
     }
     pending.remove();
     const answer = response.answer || '';
-    const node = addMessage('assistant', answer);
+    const node = addMessage('assistant', 'AI 解释 · 参数和推断未经逐项核验，不改变确定性结果或人工决定。\\n\\n' + answer);
     renderTrace(node, response);
     history.push({role: 'assistant', content: answer});
   };

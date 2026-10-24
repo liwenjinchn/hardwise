@@ -25,11 +25,13 @@ from hardwise.guards.evidence_class import (
 # negative lookbehind for an ASCII word char (not `\b`) is deliberate: Python's
 # `\w` is Unicode, so `\b` would miss a token glued to Chinese prose
 # (`电感不足datasheet:…`) that the JS renderer — whose `\w` is ASCII — still chips.
-_CITED_TOKEN_PATTERN = re.compile(r"(?<![A-Za-z0-9_])(?:datasheet|doc):[^\s,;，。；：、)）]+")
+_CITED_TOKEN_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_])(?:(?:datasheet|doc):[^\s,;，。；：、)）`]+|EV-[A-Z0-9_-]+)"
+)
 
 
 def cited_evidence_tokens(text: str) -> list[str]:
-    """Return `datasheet:`/`doc:` source tokens echoed in free model prose.
+    """Return source tokens echoed in free model prose, including inline code.
 
     Order-preserving and de-duplicated. These are the tokens the Copilot panel
     styles as evidence chips, so they are the surface that misleads a reviewer

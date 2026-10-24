@@ -141,7 +141,7 @@ def _build_runner(
     return runner, client
 
 
-def test_runner_text_only_returns_text() -> None:
+def test_runner_text_only_withholds_unverified_model_text() -> None:
     runner, client = _build_runner(
         [FakeResponse(content=[FakeTextBlock(text="U3 是 LM7805 稳压器")])]
     )
@@ -149,7 +149,9 @@ def test_runner_text_only_returns_text() -> None:
     # LM7805 matches the refdes regex shape but is U3's verified part number
     # (registry value), so the guard passes it through (guards/refdes.py +
     # learning_log 2026-05-30). A genuinely unknown refdes would still wrap.
-    assert result.text == "U3 是 LM7805 稳压器"
+    assert "没有获得可用的工具结果" in result.text
+    assert "LM7805" not in result.text
+    assert result.response_kind == "insufficient_evidence"
     assert result.text_wrapped == 0
     assert result.tool_calls == []
     assert result.iterations == 1
@@ -423,9 +425,12 @@ def test_runner_token_accounting_sums_across_iterations() -> None:
 
 def test_runner_guards_chinese_and_long_refdes_in_final_model_text() -> None:
     runner, _ = _build_runner(
-        [FakeResponse(content=[FakeTextBlock(text="检查U999以及U10000，U3使用DDR4接口。")])]
+        [
+            FakeResponse(content=[FakeToolUseBlock("lookup", "get_component", {"refdes": "U3"})]),
+            FakeResponse(content=[FakeTextBlock(text="检查U999以及U10000，U3使用DDR4接口。")]),
+        ]
     )
     result = runner.run("核对这些对象")
     assert result.text == "检查⟨?U999⟩以及⟨?U10000⟩，U3使用DDR4接口。"
     assert result.text_wrapped == 2
-    assert result.tool_calls == []
+    assert result.tool_calls[0].has_result

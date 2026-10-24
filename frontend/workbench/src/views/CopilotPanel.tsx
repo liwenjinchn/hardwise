@@ -3,6 +3,7 @@ import { Bot, MessageSquare, ShieldCheck } from "lucide-react";
 import { askCopilot } from "../api";
 import { TrustBadge } from "../components/ui";
 import { sourceLabel } from "../lib/format";
+import { ChatBoundary } from "./ChatBoundary";
 import type { ChatMessage, ChatResponse, WorkbenchState } from "../types";
 
 type MessageBlock =
@@ -59,8 +60,8 @@ export function CopilotPanel({
               <div className="msg ai">
                 <div className="mavatar"><Bot size={17} /></div>
                 <div className="mbody">
-                  <div className="mname">Hardwise Copilot <TrustBadge tier="l1" /></div>
-                  <RichMessageText text="我只基于当前 netlist、规则结果和 evidence token 回答。无法锚定的 refdes 会被 Refdes Guard 包裹。" />
+                  <div className="mname">Hardwise Copilot</div>
+                  <RichMessageText text="我会查询当前网表和检查结果。回答是待核验的 AI 解释；正式结果请查看确定性检查。无法锚定的位号会被标记。" />
                 </div>
               </div>
             )}
@@ -76,6 +77,7 @@ export function CopilotPanel({
                   <div className="mname">
                     {message.role === "assistant" ? "Hardwise Copilot" : "You"}
                   </div>
+                  {message.response && <ChatBoundary response={message.response} />}
                   <RichMessageText
                     text={message.content}
                     unsupportedTokens={message.response?.unsupported_evidence_tokens}
@@ -106,7 +108,7 @@ export function CopilotPanel({
             <button type="submit" disabled={busy}>{busy ? "处理中" : "发送"}</button>
           </div>
           <div className="cop-disclaimer">
-            <ShieldCheck size={13} /> 回答必须被 netlist、规则或引用来源锚定；不可验证的问题会被标注。
+            <ShieldCheck size={13} /> 工具记录可追溯来源；来源 token 匹配不代表参数和适用条件已核验。
           </div>
         </form>
       </div>
@@ -300,23 +302,24 @@ function tableCells(line: string): string[] {
 function renderInline(text: string, unsupported?: Set<string>) {
   const parts = text.split(/(`[^`]+`|\b(?:datasheet|doc):[^\s,;，。；：、)）]+|EV-[A-Z0-9_-]+)/g);
   return parts.filter(Boolean).map((part, index) => {
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return <code key={`${part}-${index}`}>{part.slice(1, -1)}</code>;
-    }
-    if (/^(?:datasheet|doc):|^EV-[A-Z0-9_-]+/.test(part)) {
-      if (unsupported?.has(part)) {
+    const inCode = part.startsWith("`") && part.endsWith("`");
+    const token = inCode ? part.slice(1, -1) : part;
+    const unverified = unsupported?.has(token) || (inCode && [...(unsupported ?? [])].some((item) => token.includes(item)));
+    if (unverified || /^(?:datasheet|doc):|^EV-[A-Z0-9_-]+/.test(token)) {
+      if (unverified) {
         return (
           <code
             className="evidence-inline unverified"
             title="未验证引用：本回合工具未产出该来源 token"
             key={`${part}-${index}`}
           >
-            {part} ⚠︎
+            {token} ⚠︎
           </code>
         );
       }
-      return <code className="evidence-inline" key={`${part}-${index}`}>{part}</code>;
+      return <code className="evidence-inline" title="来源标识；参数和适用条件仍需核验。" key={`${part}-${index}`}>{token}</code>;
     }
+    if (inCode) return <code key={`${part}-${index}`}>{token}</code>;
     return renderEmphasis(part, index);
   });
 }

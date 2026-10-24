@@ -248,6 +248,12 @@
           "title": "Answer",
           "type": "string"
         },
+        "claim_verification": {
+          "const": "unverified",
+          "default": "unverified",
+          "title": "Claim Verification",
+          "type": "string"
+        },
         "datasheet_search_enabled": {
           "default": false,
           "title": "Datasheet Search Enabled",
@@ -260,6 +266,16 @@
             "snapshot"
           ],
           "title": "Mode",
+          "type": "string"
+        },
+        "response_kind": {
+          "default": "insufficient_evidence",
+          "enum": [
+            "model_explanation",
+            "insufficient_evidence",
+            "offline_notice"
+          ],
+          "title": "Response Kind",
           "type": "string"
         },
         "selected_refdes": {
@@ -303,8 +319,10 @@
       },
       "required": [
         "answer",
+        "claim_verification",
         "datasheet_search_enabled",
         "mode",
+        "response_kind",
         "selected_refdes",
         "suggestions",
         "trace",

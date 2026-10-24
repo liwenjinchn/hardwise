@@ -51,6 +51,7 @@ test("copilot wraps unknown refdes U999 as ⟨?U999⟩", async ({ page }) => {
   await expect(page.locator(".msg.ai .mtext").last()).toContainText("⟨?U999⟩", {
     timeout: 30_000
   });
+  await expect(page.locator(".msg.ai .cop-disclaimer").last()).toContainText("参数和推断未经逐项核验");
 });
 
 test("prep packet preview opens for Q12", async ({ page }) => {

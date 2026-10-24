@@ -6,6 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from hardwise.agent.output_boundary import ResponseKind
 from hardwise.guards.evidence_class import EvidenceClassification
 from hardwise.trust import TrustTier
 
@@ -46,6 +47,8 @@ class ChatResponse(BaseModel):
     """Answer returned to the Copilot panel."""
 
     answer: str
+    response_kind: ResponseKind = "insufficient_evidence"
+    claim_verification: Literal["unverified"] = "unverified"
     mode: ChatMode
     selected_refdes: str | None = None
     trace: list[EvidenceTrace] = Field(default_factory=list)

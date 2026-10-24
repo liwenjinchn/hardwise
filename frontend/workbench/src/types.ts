@@ -582,6 +582,8 @@ export interface ChatRequest {
 
 export interface ChatResponse {
   answer: string;
+  response_kind: "model_explanation" | "insufficient_evidence" | "offline_notice";
+  claim_verification: "unverified";
   mode: "fake" | "real" | "snapshot";
   selected_refdes: string | null;
   trace: EvidenceTrace[];

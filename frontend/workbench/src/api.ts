@@ -131,6 +131,8 @@ export function askCopilot(
     if (fallback) return Promise.resolve(fallback);
     return Promise.resolve({
       answer: "这个离线演示只包含已审计的快照问题。请切换到 live workbench 提问更多问题。",
+      response_kind: "offline_notice",
+      claim_verification: "unverified",
       mode: "snapshot",
       selected_refdes: selectedRefdes,
       trace: [],

@@ -108,7 +108,10 @@ def _build_runner(script: list[FakeResponse]) -> tuple[Runner, FakeAnthropic]:
 def test_final_assistant_text_wraps_unverified_refdes() -> None:
     """RunResult.text — user-visible — must have unverified refdes wrapped."""
     runner, _ = _build_runner(
-        [FakeResponse(content=[FakeTextBlock(text="U3 是真的，但 U999 是模型瞎编的")])]
+        [
+            FakeResponse(content=[FakeToolUseBlock("lookup", "get_component", {"refdes": "U3"})]),
+            FakeResponse(content=[FakeTextBlock(text="U3 是真的，但 U999 是模型瞎编的")]),
+        ]
     )
     result = runner.run("U999 是什么?")
 

@@ -6,6 +6,7 @@ import os
 from threading import RLock
 from typing import Any
 
+from hardwise.agent.output_boundary import constrain_model_answer
 from hardwise.agent.prompts import WORKBENCH_SYSTEM_PROMPT
 from hardwise.agent.router import ModelRouter, Tier
 from hardwise.agent.runner import RunResult, Runner, ToolCallTrace
@@ -24,7 +25,6 @@ from hardwise.workbench.chat_fake_model import (
     C5_L2_SNAPSHOT_QUESTION,
     FakeWorkbenchAnthropic,
     _AuditedL78SnapshotCollection,
-    _row_evidence,
     _runner_prompt,
     _sanitize_chat_copy,
     _trace_refdes,
@@ -91,6 +91,7 @@ class WorkbenchChatService:
         clean_answer, wrapped = sanitize_text(answer, self.context.registry)
         return ChatResponse(
             answer=clean_answer,
+            response_kind="offline_notice",
             mode=self.mode,
             selected_refdes=selected,
             wrapped_count=wrapped,
@@ -102,8 +103,12 @@ class WorkbenchChatService:
         traces = [self._trace_from_runner_trace(trace) for trace in result.tool_calls]
         wrapped_count = result.text_wrapped + sum(trace.wrapped for trace in result.tool_calls)
         verified_tokens = {token for trace in traces for token in trace.evidence}
+        answer, response_kind = constrain_model_answer(
+            result.text, has_tool_result=any(trace.has_result for trace in result.tool_calls)
+        )
         return ChatResponse(
-            answer=result.text,
+            answer=answer,
+            response_kind=response_kind,
             mode=self.mode,
             selected_refdes=selected,
             trace=traces,
@@ -116,8 +121,8 @@ class WorkbenchChatService:
     def _trace_from_runner_trace(self, trace: ToolCallTrace) -> EvidenceTrace:
         refdes = _trace_refdes(trace)
         row = self._row_for_refdes(refdes)
-        evidence = trace.evidence or _row_evidence(row)
-        status = row.status if row is not None else None
+        evidence = trace.evidence
+        status = row.status if row is not None and trace.has_result else None
         trust_tier = trace.trust_tier
         live_tokens = evidence if trace.name == "search_datasheet" else []
         return EvidenceTrace(

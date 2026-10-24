@@ -242,6 +242,14 @@
   font-size: 11px;
 }
 
+.message-boundary {
+  justify-content: flex-start;
+  margin: 0 0 8px;
+  color: var(--ink-2);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .cop-side {
   overflow-y: auto;
   padding: 16px;

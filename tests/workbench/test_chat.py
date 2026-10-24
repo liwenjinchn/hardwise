@@ -351,7 +351,8 @@ def test_fake_chat_document_tool_fails_closed_without_index() -> None:
             ChatRequest(question="这个 U12 有公开资料吗?", selected_refdes="U12")
         )
 
-        assert "没有配置公开资料索引" in response.answer
+        assert "没有获得可用的工具结果" in response.answer
+        assert response.response_kind == "insufficient_evidence"
         assert [trace.tool for trace in response.trace] == ["get_component_documents"]
         assert response.trace[0].summary == "status=not_configured"
         assert response.trace[0].trust_tier == "l3"

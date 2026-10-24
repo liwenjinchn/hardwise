@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { CopilotPanel, RichMessageText, TraceDetails } from "./CopilotPanel";
+import { ChatBoundary } from "./ChatBoundary";
+import type { ChatResponse } from "../types";
 import { ExportView } from "./ExportView";
 import { FindingsView } from "./FindingsView";
 import { Header } from "./Header";
@@ -216,11 +218,11 @@ describe("CopilotPanel", () => {
     const html = renderToStaticMarkup(
       <CopilotPanel state={makeState()} selectedRefdes="U8" />
     );
-    expect(html).toContain("Refdes Guard 包裹");
+    expect(html).toContain("回答是待核验的 AI 解释");
     expect(html).toContain("这个 U8 为什么是 ERROR/WARN?");
     expect(html).toContain("板上有没有 U999?");
     expect(html).toContain("Trust tiers");
-    expect(html).toContain("回答必须被 netlist、规则或引用来源锚定");
+    expect(html).toContain("来源 token 匹配不代表参数和适用条件已核验");
   });
 
   it("renders structured assistant text with lists and evidence tokens", () => {
@@ -260,7 +262,8 @@ describe("CopilotPanel", () => {
     expect(html).toContain("evidence-inline unverified");
     expect(html).toContain("datasheet:ghost.pdf#p9");
     // the backed token keeps the plain authoritative chip, not the unverified one
-    expect(html).toContain('class="evidence-inline">datasheet:real.pdf#p4');
+    expect(html).toContain('class="evidence-inline"');
+    expect(html).toContain("参数和适用条件仍需核验");
   });
 
   it("keeps tool trace collapsed by default", () => {
@@ -268,6 +271,8 @@ describe("CopilotPanel", () => {
       <TraceDetails
         response={{
           answer: "ok",
+          response_kind: "model_explanation",
+          claim_verification: "unverified",
           mode: "real",
           selected_refdes: "U8",
           trace: [
@@ -673,4 +678,33 @@ describe("EvidenceColumn", () => {
     expect(html).toContain("EV-EXT");
     expect(html).toContain("unanchored_refdes × 1");
   });
+});
+
+
+describe("chat output boundary", () => {
+  it.each([
+    ["model_explanation", "参数和推断未经逐项核验"],
+    ["insufficient_evidence", "本回合未产生新的检查结论"],
+    ["offline_notice", "离线快照提示"]
+  ] as const)("shows %s without inheriting L1", (kind, label) => {
+    const html = renderToStaticMarkup(<ChatBoundary response={{ response_kind: kind } as ChatResponse} />);
+    expect(html).toContain(label);
+    expect(html).not.toContain("L1");
+  });
+
+  it("treats old chat snapshots as unverified explanations", () => {
+    const html = renderToStaticMarkup(<ChatBoundary response={{} as ChatResponse} />);
+    expect(html).toContain("参数和推断未经逐项核验");
+  });
+
+  it("marks unsupported references inside inline code", () => {
+    const html = renderToStaticMarkup(<RichMessageText text="依据 `datasheet:ghost.pdf#p9` 和 `EV-FAKE`" unsupportedTokens={["datasheet:ghost.pdf#p9", "EV-FAKE"]} />);
+    expect(html.match(/evidence-inline unverified/g)).toHaveLength(2);
+  });
+});
+
+
+it("does not let a multi-token code span hide an unsupported citation", () => {
+  const html = renderToStaticMarkup(<RichMessageText text="`datasheet:real.pdf#p1 和 datasheet:ghost.pdf#p9`" unsupportedTokens={["datasheet:ghost.pdf#p9"]} />);
+  expect(html).toContain("evidence-inline unverified");
 });

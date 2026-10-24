@@ -91,9 +91,7 @@ def test_cited_evidence_tokens_dedupes_preserving_order() -> None:
 def test_cited_evidence_tokens_matches_token_glued_to_cjk() -> None:
     # Model prose often glues a token directly to Chinese text with no space;
     # the guard must still detect it (Python `\b` would not — see pattern note).
-    assert cited_evidence_tokens("电感不足datasheet:xl1509.pdf#p8") == [
-        "datasheet:xl1509.pdf#p8"
-    ]
+    assert cited_evidence_tokens("电感不足datasheet:xl1509.pdf#p8") == ["datasheet:xl1509.pdf#p8"]
 
 
 def test_cited_evidence_tokens_ignores_embedded_prefix() -> None:
@@ -110,3 +108,16 @@ def test_unsupported_evidence_tokens_flags_unbacked_prose_token() -> None:
 def test_unsupported_evidence_tokens_empty_when_all_backed() -> None:
     text = "见 datasheet:l78.pdf#p4。"
     assert unsupported_evidence_tokens(text, ["datasheet:l78.pdf#p4"]) == []
+
+
+def test_inline_code_and_event_tokens_still_require_tool_provenance():
+    text = "引用 `datasheet:real.pdf#p4`、`datasheet:ghost.pdf#p9` 与 EV-FAKE。"
+    assert cited_evidence_tokens(text) == [
+        "datasheet:real.pdf#p4",
+        "datasheet:ghost.pdf#p9",
+        "EV-FAKE",
+    ]
+    assert unsupported_evidence_tokens(text, ["datasheet:real.pdf#p4"]) == [
+        "datasheet:ghost.pdf#p9",
+        "EV-FAKE",
+    ]

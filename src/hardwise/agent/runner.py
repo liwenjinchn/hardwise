@@ -49,6 +49,7 @@ from hardwise.agent.grounding import (
     evidence_tokens_from_datasheet_hits,
     trust_tier_for_datasheet_search,
 )
+from hardwise.agent.output_boundary import ResponseKind, constrain_model_answer, usable_tool_payload
 from hardwise.agent.prompts import build_system_blocks
 from hardwise.agent.router import ModelRouter, Tier
 from hardwise.agent.tools import (
@@ -88,7 +89,8 @@ class ToolCallTrace:
     The `input` and `output_summary` fields are user-visible *copies* that have
     been passed through the refdes guard — unverified refdes are wrapped as
     `⟨?XXX⟩`. The raw payload returned to the model is kept separately and never
-    sanitized (preserving the tool-fact channel invariant).
+    sanitized (preserving the tool-fact channel invariant). `has_result` is set
+    only from a dispatched server tool payload, never from model prose.
     """
 
     name: str
@@ -97,6 +99,7 @@ class ToolCallTrace:
     wrapped: int = 0
     evidence: list[str] = field(default_factory=list)
     trust_tier: TrustTier | None = None
+    has_result: bool = False
 
 
 @dataclass
@@ -104,7 +107,8 @@ class RunResult:
     """Outcome of one Runner.run() invocation.
 
     `text` is the final assistant message after refdes-guard sanitization
-    (user-visible). `text_wrapped` counts unverified refdes that were wrapped
+    and the no-tool output boundary (user-visible). Even model_explanation is
+    unverified prose and cannot create a formal assessment. `text_wrapped` counts unverified refdes that were wrapped
     in `text`; per-trace wraps live on each `ToolCallTrace.wrapped`.
     """
 
@@ -117,6 +121,7 @@ class RunResult:
     cache_read_tokens: int = 0
     stopped_at_cap: bool = False
     text_wrapped: int = 0
+    response_kind: ResponseKind = "insufficient_evidence"
 
 
 class Runner:
@@ -184,7 +189,9 @@ class Runner:
             if not tool_uses:
                 raw_text = self._extract_text(response.content)
                 sanitized, wrapped = sanitize_text(raw_text, self.registry)
-                result.text = sanitized
+                result.text, result.response_kind = constrain_model_answer(
+                    sanitized, has_tool_result=any(trace.has_result for trace in result.tool_calls)
+                )
                 result.text_wrapped = wrapped
                 result.iterations = iteration
                 return result
@@ -375,7 +382,14 @@ class Runner:
                 "tool_use_id": tool_use.id,
                 "content": payload,
             },
-            self._build_trace(name, args, summary, evidence=evidence, trust_tier=trust_tier),
+            self._build_trace(
+                name,
+                args,
+                summary,
+                evidence=evidence,
+                trust_tier=trust_tier,
+                has_result=usable_tool_payload(json.loads(payload)),
+            ),
         )
 
     def _build_trace(
@@ -386,6 +400,7 @@ class Runner:
         *,
         evidence: list[str] | None = None,
         trust_tier: TrustTier | None = None,
+        has_result: bool = False,
     ) -> ToolCallTrace:
         """Assemble a user-visible ToolCallTrace from raw tool inputs/output.
 
@@ -402,6 +417,7 @@ class Runner:
             wrapped=w_args + w_sum,
             evidence=evidence or [],
             trust_tier=trust_tier,
+            has_result=has_result,
         )
 
     @staticmethod

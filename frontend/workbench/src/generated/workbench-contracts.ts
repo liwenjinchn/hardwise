@@ -6,8 +6,10 @@ export type History = ChatMessage[];
 export type Question = string;
 export type SelectedRefdes = string | null;
 export type Answer = string;
+export type ClaimVerification = "unverified";
 export type DatasheetSearchEnabled = boolean;
 export type Mode = "fake" | "real" | "snapshot";
+export type ResponseKind = "model_explanation" | "insufficient_evidence" | "offline_notice";
 export type SelectedRefdes1 = string | null;
 export type Suggestions = string[];
 export type Evidence = string[];
@@ -373,8 +375,10 @@ export interface ChatMessage {
  */
 export interface ChatResponse {
   answer: Answer;
+  claim_verification: ClaimVerification;
   datasheet_search_enabled: DatasheetSearchEnabled;
   mode: Mode;
+  response_kind: ResponseKind;
   selected_refdes: SelectedRefdes1;
   suggestions: Suggestions;
   trace: Trace;
