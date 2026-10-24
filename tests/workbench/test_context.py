@@ -99,7 +99,6 @@ def test_build_workbench_context_populates_relational_store_from_registry() -> N
             "Q2",
             "Q12",
             "U1",
-            "U12",
             "U3",
             "U8",
         }
@@ -111,7 +110,6 @@ def test_build_workbench_context_populates_relational_store_from_registry() -> N
             "Q2",
             "Q12",
             "U1",
-            "U12",
             "U3",
             "U8",
         }
@@ -269,11 +267,11 @@ def test_workbench_state_exposes_spa_queue_and_risk_hint_details(tmp_path: Path)
         assert payload["summary"] == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 22,
-            "manual": 3,
+            "validated": 21,
+            "manual": 4,
             "pass_count": 1,
             "warn_count": 0,
-            "error_count": 4,
+            "error_count": 3,
             "unknown_count": 17,
             "not_applicable_count": 0,
         }
@@ -356,11 +354,11 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
         assert payload["summary"] == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 22,
-            "manual": 3,
+            "validated": 21,
+            "manual": 4,
             "pass_count": 1,
             "warn_count": 0,
-            "error_count": 4,
+            "error_count": 3,
             "unknown_count": 17,
             "not_applicable_count": 0,
         }
@@ -435,11 +433,11 @@ def test_workbench_state_surfaces_document_candidate_confirmation_tasks(
         assert payload["summary"] == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 22,
-            "manual": 3,
+            "validated": 21,
+            "manual": 4,
             "pass_count": 1,
             "warn_count": 0,
-            "error_count": 4,
+            "error_count": 3,
             "unknown_count": 17,
             "not_applicable_count": 0,
         }
@@ -635,11 +633,11 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
         assert packet["summary"] == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 22,
-            "manual": 3,
+            "validated": 21,
+            "manual": 4,
             "pass_count": 1,
             "warn_count": 0,
-            "error_count": 4,
+            "error_count": 3,
             "unknown_count": 17,
             "not_applicable_count": 0,
         }
@@ -1033,11 +1031,11 @@ def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
         assert response.json()["summary"] == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 22,
-            "manual": 3,
+            "validated": 21,
+            "manual": 4,
             "pass_count": 1,
             "warn_count": 0,
-            "error_count": 4,
+            "error_count": 3,
             "unknown_count": 17,
             "not_applicable_count": 0,
         }

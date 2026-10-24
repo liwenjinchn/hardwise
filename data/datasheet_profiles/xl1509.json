@@ -1,18 +1,16 @@
 {
   "part_number": "XL1509-12E1",
-  "review_status": "ready",
+  "review_status": "needs_review",
   "abs_max": {
-    "vin": 45.0,
-    "on_off": 45.0
+    "vin": 45.0
   },
   "recommended": {
     "topology_family": "buck",
     "vin_min": 4.5,
     "vin_max": 40.0,
     "fixed_output_voltage": 12.0,
-    "inductor_min_uh": 68.0,
-    "inductor_max_uh": 150.0,
-    "freewheel_diode_type": "schottky"
+    "freewheel_diode_type": "schottky",
+    "inductor_requires_operating_conditions": true
   },
   "pin_function": {
     "1": "VIN (supply input)",
@@ -52,7 +50,7 @@
       "limits": {},
       "recommended_topology": [
         "Connect to the inductor and freewheel Schottky diode.",
-        "Use an inductor in the profile recommended range."
+        "Inductor selection requires the output variant, maximum input voltage and load current; do not use a global minimum."
       ],
       "evidence": [
         "datasheet:xl1509.pdf#p2",
@@ -83,16 +81,13 @@
       "number": "4",
       "name": "ON/OFF",
       "category": "enable",
-      "function": "Enable control pin.",
-      "limits": {
-        "abs_max_voltage": 45.0
-      },
+      "function": "Active-low enable. Absolute DC range is -0.3 V to VIN, not a fixed 45 V maximum.",
+      "limits": {},
       "recommended_topology": [
         "Drive low to enable; keep the control voltage within VIN limits."
       ],
       "evidence": [
-        "datasheet:xl1509.pdf#p2",
-        "datasheet:xl1509.pdf#p5"
+        "datasheet:xl1509.pdf#p4"
       ]
     },
     {
@@ -155,6 +150,32 @@
     "recommended.fixed_output_voltage": "datasheet:xl1509.pdf#p5"
   },
   "extracted_at": "2026-05-27T00:00:00+00:00",
-  "extracted_model": "deterministic-xl1509-v3.3",
-  "schema_version": "v2"
+  "extracted_model": "source-audit-correction-awaiting-independent-review",
+  "schema_version": "v3",
+  "voltage_relations": [
+    {
+      "target_pin": "4",
+      "supply_pin": "1",
+      "ground_pin": "5",
+      "minimum_voltage": -0.3,
+      "evidence": "datasheet:xl1509.pdf#p4",
+      "source_url": "https://www.xlsemi.com/datasheet/XL1509-EN.pdf",
+      "document_revision": "Rev 2.6",
+      "document_sha256": "d0226589787aa1ec629f0a1365aec4e017799ae79594891fa48f7733b4c1ebc2",
+      "page": 4,
+      "required_package": "SOP8"
+    },
+    {
+      "target_pin": "3",
+      "supply_pin": "1",
+      "ground_pin": "5",
+      "minimum_voltage": -0.3,
+      "evidence": "datasheet:xl1509.pdf#p4",
+      "source_url": "https://www.xlsemi.com/datasheet/XL1509-EN.pdf",
+      "document_revision": "Rev 2.6",
+      "document_sha256": "d0226589787aa1ec629f0a1365aec4e017799ae79594891fa48f7733b4c1ebc2",
+      "page": 4,
+      "required_package": "SOP8"
+    }
+  ]
 }

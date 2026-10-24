@@ -115,6 +115,15 @@ def _validate_buck_inductor(
             summary=summary,
             evidence=evidence,
         )
+    if profile.recommended.get("inductor_requires_operating_conditions"):
+        return ComponentValidation(
+            check="buck_inductor",
+            result="FAIL" if path_status == "ERROR" else "UNKNOWN",
+            severity="ERROR" if path_status == "ERROR" else "INFO",
+            refdes=inductor.refdes,
+            summary=f"电感 {inductor.refdes} 为 {inductance:g} uH；选值取决于输出版本、最大输入电压及负载。当前未确认完整工况，不套用全局电感阈值。{path_summary}",
+            evidence=evidence,
+        )
     if min_uh is None and max_uh is None:
         summary = (
             f"Inductor {inductor.refdes} value {inductance:g} uH is present; "

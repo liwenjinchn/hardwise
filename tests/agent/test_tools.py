@@ -287,12 +287,12 @@ def test_summarize_project_topology_returns_bounded_fact_inventory() -> None:
         assert result.component_count == 25
         assert result.net_count == 21
         assert result.bom_matched == 25
-        assert result.validated_count == 22
-        assert result.manual_count == 3
+        assert result.validated_count == 21
+        assert result.manual_count == 4
         assert result.validation_totals == {
             "PASS": 1,
             "WARN": 0,
-            "ERROR": 4,
+            "ERROR": 3,
             "UNKNOWN": 17,
             "NOT_APPLICABLE": 0,
         }

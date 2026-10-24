@@ -9,6 +9,8 @@ from typing import Literal, Union
 
 from pydantic import BaseModel, Field
 
+from hardwise.ir.profile_conditions import PinVoltageRelation
+
 ProfileValue = Union[bool, float, str]
 
 
@@ -35,6 +37,7 @@ class DatasheetProfile(BaseModel):
     recommended: dict[str, ProfileValue] = Field(default_factory=dict)
     pin_function: dict[str, str] = Field(default_factory=dict)
     pins: list[PinProfile] = Field(default_factory=list)
+    voltage_relations: list[PinVoltageRelation] = Field(default_factory=list)
     evidence: dict[str, str] = Field(default_factory=dict)
     extracted_at: str
     extracted_model: str

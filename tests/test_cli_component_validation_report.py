@@ -57,12 +57,12 @@ def test_report_component_validation_writes_xl1509_dcdc_errors(tmp_path: Path) -
 
     assert result.exit_code == 0, result.output
     assert "component-validation:" in result.output
-    assert "(ERROR, PASS/WARN/ERROR=8/0/0, UNKNOWN/NOT_APPLICABLE=0/0)" in result.output
+    assert "(UNKNOWN, PASS/WARN/ERROR=0/0/0, UNKNOWN/NOT_APPLICABLE=8/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
     assert "# Hardwise 器件验证报告 - U12" in md
-    assert "| 综合判定 | ERROR |" in md
-    assert "| 器件级检查 PASS/WARN/ERROR | 0 / 0 / 2 |" in md
+    assert "| 综合判定 | UNKNOWN |" in md
+    assert "| 器件级检查 PASS/WARN/ERROR | 0 / 0 / 0 |" in md
     assert "引脚检查汇总" in md
     assert "器件基本信息" in md
     assert "型号核对" in md
@@ -76,7 +76,8 @@ def test_report_component_validation_writes_xl1509_dcdc_errors(tmp_path: Path) -
     assert "D5（1N4007W）" in md
     assert "不是肖特基类型" in md
     assert "电感 L1 为 6.8 uH" in md
-    assert "低于器件档案下限 68 uH" in md
+    assert "不套用全局电感阈值" in md
+    assert "低于器件档案下限 68 uH" not in md
 
 
 def test_report_component_validation_writes_eg2132_gate_driver_errors(

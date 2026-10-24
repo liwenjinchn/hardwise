@@ -113,7 +113,7 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert ".table-section{max-width:100%;overflow:auto}" in html
     assert 'class="left-stack" aria-label="器件与验证摘要"' in html
     assert html.index('aria-label="验证"') < html.index('aria-label="器件"')
-    assert "验证完成 · PASS/WARN/ERROR=1/0/1" in html
+    assert "验证完成 · PASS/WARN/ERROR=1/0/0" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert '<article class="panel active" data-panel="U12">' in html
@@ -140,7 +140,7 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert "data-detail-tab" not in html
     assert "data-detail-tab-panel" not in html
     assert 'status pass">PASS' in html
-    assert 'status error">ERROR' in html
+    assert 'status pending">UNKNOWN' in html
     assert "下载报告" in html
     assert "1. 型号核对" in html
     assert "2. 引脚检查汇总" in html

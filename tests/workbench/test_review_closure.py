@@ -29,12 +29,13 @@ def test_state_exposes_signoff_gate_dual_axis_and_grouped_noise(
     with TestClient(create_workbench_app(_context(), DummyChatService())) as client:  # type: ignore[arg-type]
         state = client.get("/api/workbench/state").json()
 
-    assert state["summary"]["error_count"] == 4
+    assert state["summary"]["error_count"] == 3
     readiness = state["evidence_package"]["signoff_readiness"]
     assert readiness["status"] == "blocked"
     assert readiness["signoff_ready"] is False
     assert readiness["affected_tasks"] > 0
-    assert "datasheet:xl1509.pdf#p8" in readiness["missing_tokens"]
+    assert "datasheet:xl1509.pdf#p8" not in readiness["missing_tokens"]
+    assert "datasheet:eg2132.pdf#p8" in readiness["missing_tokens"]
 
     u1 = next(item for item in state["queue"] if item["refdes"] == "U1")
     assert u1["deterministic_status_group"] == "pass"

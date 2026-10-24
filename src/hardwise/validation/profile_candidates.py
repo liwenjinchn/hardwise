@@ -73,7 +73,13 @@ def suggest_profile_candidates(
 ) -> ProfileCandidateReport:
     """Generate profile candidates for each refdes in a schematic BOM."""
 
-    profiles = _load_profiles(profiles_dir)
+    all_profiles = _load_profiles(profiles_dir, include_unreviewed=True)
+    profiles = [
+        (path, profile) for path, profile in all_profiles if profile.review_status == "ready"
+    ]
+    quarantined = _profiles_by_part_number(
+        [(path, profile) for path, profile in all_profiles if profile.review_status != "ready"]
+    )
     by_part = _profiles_by_part_number(profiles)
     candidates = [
         candidate
@@ -85,6 +91,11 @@ def suggest_profile_candidates(
             design=design,
         )
     ]
+    for candidate in candidates:
+        blocked = quarantined.get(_normalize_identity(candidate.identity), [])
+        if candidate.match_status == "no_result" and blocked:
+            candidate.reason = "器件档案已隔离，等待工程复核；不参与确定性判定。"
+            candidate.candidates = blocked
     return ProfileCandidateReport(
         project=project or bom.source_file.stem,
         bom_file=bom.source_file,
@@ -224,7 +235,9 @@ def _candidate(
     )
 
 
-def _load_profiles(profiles_dir: Path) -> list[tuple[Path, DatasheetProfile]]:
+def _load_profiles(
+    profiles_dir: Path, *, include_unreviewed: bool = False
+) -> list[tuple[Path, DatasheetProfile]]:
     if not profiles_dir.exists() or not profiles_dir.is_dir():
         raise ProfileCandidateError(f"profile directory not found: {profiles_dir}")
     paths = sorted(profiles_dir.glob("*.json"))
@@ -235,7 +248,7 @@ def _load_profiles(profiles_dir: Path) -> list[tuple[Path, DatasheetProfile]]:
     for path in paths:
         try:
             profile = DatasheetProfile.load(path)
-            if profile.review_status == "ready":
+            if include_unreviewed or profile.review_status == "ready":
                 profiles.append((path, profile))
         except Exception as exc:
             raise ProfileCandidateError(

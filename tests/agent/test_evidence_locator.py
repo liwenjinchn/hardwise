@@ -78,12 +78,9 @@ def test_locate_component_evidence_finds_enable_pin_without_vector_search() -> N
             LocateComponentEvidenceInput(refdes="U12", topic="enable", limit=8),
         )
 
-        assert result.status == "found"
-        assert any(hit.pin_number == "4" and hit.pin_name == "ON/OFF" for hit in result.hits)
-        assert {token for hit in result.hits for token in hit.evidence} >= {
-            "datasheet:xl1509.pdf#p2",
-            "datasheet:xl1509.pdf#p5",
-        }
+        assert result.status == "no_profile"
+        assert result.hits == []
+        assert "U12" not in context.validation_targets
     finally:
         context.session.close()
 

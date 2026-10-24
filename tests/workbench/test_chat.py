@@ -91,10 +91,10 @@ def test_fake_chat_drives_real_runner_validation_tool() -> None:
     try:
         service = WorkbenchChatService(context, mode="fake")
 
-        response = service.ask(ChatRequest(question="这个器件为什么 ERROR?", selected_refdes="U12"))
+        response = service.ask(ChatRequest(question="这个器件为什么 ERROR?", selected_refdes="U3"))
 
         assert response.mode == "fake"
-        assert "U12" in response.answer
+        assert "U3" in response.answer
         assert response.trace
         assert response.trace[0].tool == "run_component_validation"
         assert response.trace[0].status == "ERROR"
@@ -207,13 +207,13 @@ def test_fake_chat_reports_datasheet_search_unavailable_and_uses_validation() ->
 
         response = service.ask(
             ChatRequest(
-                question="datasheet 里 U12 的绝对最大额定值是什么?",
-                selected_refdes="U12",
+                question="datasheet 里 U3 的绝对最大额定值是什么?",
+                selected_refdes="U3",
             )
         )
 
         assert "没有配置向量数据手册搜索" in response.answer
-        assert "U12" in response.answer
+        assert "U3" in response.answer
         assert [trace.tool for trace in response.trace] == [
             "search_datasheet",
             "run_component_validation",
@@ -307,9 +307,9 @@ def test_fake_chat_summarizes_project_topology() -> None:
         assert "拓扑摘要只基于解析后的原理图/netlist" in response.answer
         assert "25 个器件" in response.answer
         assert "21 条网络" in response.answer
-        assert "已验证 22 个" in response.answer
-        assert "待人工补档案 3 个" in response.answer
-        assert "PASS/WARN/ERROR=1/0/4" in response.answer
+        assert "已验证 21 个" in response.answer
+        assert "待人工补档案 4 个" in response.answer
+        assert "PASS/WARN/ERROR=1/0/3" in response.answer
         assert "首个器件档案缺口: RES-10K" in response.answer
         assert response.trace
         assert response.trace[0].tool == "summarize_project_topology"

@@ -5,6 +5,7 @@ from __future__ import annotations
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.pins import validate_pin
+from hardwise.validation.profile_conditions import validate_voltage_relations
 from hardwise.validation.types import ComponentValidation, ValidationReport
 
 
@@ -15,9 +16,22 @@ def validate_component_against_profile(
 ) -> ValidationReport:
     """Validate one component's schematic pins against a structured pin profile."""
 
+    relation_targets = {relation.target_pin for relation in profile.voltage_relations}
     results = [validate_pin(component, pin_profile, design) for pin_profile in profile.pins]
+    results = [
+        item.model_copy(
+            update={
+                "result": "UNKNOWN",
+                "summary": "此引脚的电压约束由独立关系式检查评估；连接不能证明电压合规。",
+            }
+        )
+        if item.pin_number in relation_targets and item.result == "PASS"
+        else item
+        for item in results
+    ]
     component_checks = [
         *_validate_profile_review_status(component, profile),
+        *validate_voltage_relations(component, profile, design),
         *_validate_component_topology(component, profile, design),
     ]
     if profile.review_status != "ready":

@@ -24,14 +24,15 @@ def test_suggest_profile_candidates_matches_mixed_regulators() -> None:
     report = suggest_profile_candidates(bom, Path("data/datasheet_profiles"))
 
     assert report.counts_by_status == {
-        "matched": 4,
-        "no_result": 6,
+        "matched": 3,
+        "no_result": 7,
         "ambiguous": 0,
         "manual_needed": 0,
     }
     matches = {candidate.refdes: candidate for candidate in report.candidates}
     assert matches["U1"].profile == Path("data/datasheet_profiles/l78.json")
-    assert matches["U12"].profile == Path("data/datasheet_profiles/xl1509.json")
+    assert matches["U12"].profile is None
+    assert matches["U12"].match_status == "no_result"
     assert matches["Q12"].profile == Path("data/datasheet_profiles/ss8050.json")
     assert matches["D5"].profile == Path("data/datasheet_profiles/1n4007w.json")
 
@@ -314,8 +315,8 @@ def test_render_profile_candidate_manifest_can_emit_v35_manifest_shape() -> None
     assert "unmatched:" not in text
     assert "refdes: U1" in text
     assert "profile: data/datasheet_profiles/l78.json" in text
-    assert "refdes: U12" in text
-    assert "profile: data/datasheet_profiles/xl1509.json" in text
+    assert "refdes: U12" not in text
+    assert "profile: data/datasheet_profiles/xl1509.json" not in text
 
 
 def test_suggest_profile_candidates_rejects_missing_profile_dir() -> None:

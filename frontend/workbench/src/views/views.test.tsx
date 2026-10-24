@@ -169,7 +169,7 @@ describe("ParseView", () => {
     expect(html).toContain("25 个器件进入注册表");
     expect(html).toContain("读取 Capture 引脚表");
     expect(html).toContain("未加载 Capture 引脚表 CSV");
-    expect(html).toContain("PASS/WARN/ERROR=1/0/4");
+    expect(html).toContain("PASS/WARN/ERROR=1/0/3");
     expect(html).toContain("待补资料 / 不适用");
     expect(html).toContain("17/0");
     expect(html).toContain("1 个任务已排队");

@@ -43,9 +43,9 @@ def test_evidence_package_keeps_six_coverage_lanes_separate(tmp_path: Path) -> N
         assert _metric(lanes["netlist"], "components") == (25, None, "components")
         assert _metric(lanes["bom"], "matched_refdes") == (25, 25, "refdes")
         assert lanes["bom"].status == "present"
-        assert _metric(lanes["validation"], "ready_profiles") == (9, 25, "components")
+        assert _metric(lanes["validation"], "ready_profiles") == (8, 25, "components")
         assert _metric(lanes["validation"], "validated_components") == (
-            22,
+            21,
             25,
             "components",
         )
@@ -68,11 +68,11 @@ def test_evidence_package_keeps_six_coverage_lanes_separate(tmp_path: Path) -> N
         assert state.summary.model_dump() == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 22,
-            "manual": 3,
+            "validated": 21,
+            "manual": 4,
             "pass_count": 1,
             "warn_count": 0,
-            "error_count": 4,
+            "error_count": 3,
             "unknown_count": 17,
             "not_applicable_count": 0,
         }
@@ -152,7 +152,7 @@ def test_profile_coverage_ignores_bom_only_refdes(tmp_path: Path) -> None:
                 datasheet_search_enabled=False,
             ).evidence_package.lanes
         }
-        assert _metric(lanes["validation"], "ready_profiles") == (9, 25, "components")
+        assert _metric(lanes["validation"], "ready_profiles") == (8, 25, "components")
         assert _metric(lanes["bom"], "bom_only_refdes") == (1, None, "refdes")
         assert _metric(lanes["bom"], "quantity_mismatches") == (
             0,
@@ -226,8 +226,8 @@ def test_three_source_pilot_reduces_but_does_not_clear_signoff_gate(
 
         assert (before.status, before.affected_tasks, before.missing_local_sources) == (
             "blocked",
-            16,
-            11,
+            14,
+            9,
         )
         assert (after.status, after.affected_tasks, after.missing_local_sources) == (
             "blocked",

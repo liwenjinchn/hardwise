@@ -5235,3 +5235,33 @@ through rollups, tools, UI badges or analytics. Verify these boundaries with
 urgent UNKNOWN, warning FAIL, historical PASS/WARN, unreviewed profiles and human
 waivers. Typed DERIVED output does not independently validate its engineering
 premises; input authority and profile conditions remain separate work.
+
+
+## 2026-10-24 — Relative limits and conditional recommendations need different models
+
+**Symptom**
+
+XL1509's EN limit was stored as a fixed 45 V; its application inductor values
+were flattened into a global 68–150 uH range. A valid conditional 33 uH choice
+could therefore be rejected while EN above VIN could pass.
+
+**Root cause**
+
+Scalar dictionaries lost pin-to-supply relationships and operating conditions.
+The existing READY label did not prove field-by-field correctness.
+
+**Fix**
+
+Add explicit pin/supply/ground relationships evaluated from confirmed envelopes;
+retain source revision/hash/page and exact package/identity conditions. Remove
+the wrong global inductor bound, require operating conditions, and quarantine
+the actual profile pending independent review. Show quarantine in the import
+queue rather than silently treating it as a usable profile. Tests distinguish
+candidate evaluation, formal quarantined results and raw topology faults.
+
+**Takeaway**
+
+Application recommendations are not absolute ratings. Correct source extraction
+and working evaluator tests are separate from independent approval. Never restore
+READY merely to retain old fixture counts; preserve explicit evidence of reduced
+trusted scope and the exact conditions that remain unimplemented.

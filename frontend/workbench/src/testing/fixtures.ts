@@ -141,11 +141,11 @@ export function makeSummary(overrides: Partial<WorkbenchSummary> = {}): Workbenc
   return {
     components: 25,
     bom_matched: 24,
-    validated: 22,
-    manual: 3,
+    validated: 21,
+    manual: 4,
     pass_count: 1,
     warn_count: 0,
-    error_count: 4,
+    error_count: 3,
     unknown_count: 17,
     not_applicable_count: 0,
     ...overrides

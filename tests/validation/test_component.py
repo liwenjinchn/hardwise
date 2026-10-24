@@ -312,27 +312,15 @@ def test_validate_xl1509_fixture_reports_dcdc_peripheral_errors() -> None:
     design = _xl1509_design()
     report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
-    assert report.status == "ERROR"
-    assert report.counts_by_status == {
-        "PASS": 8,
-        "WARN": 0,
-        "ERROR": 0,
-        "UNKNOWN": 0,
-        "NOT_APPLICABLE": 0,
-    }
-    assert report.component_counts_by_status == {
-        "PASS": 0,
-        "WARN": 0,
-        "ERROR": 2,
-        "UNKNOWN": 0,
-        "NOT_APPLICABLE": 0,
-    }
+    assert report.status == "UNKNOWN"
+    assert report.needs_review
+    assert all(item.result == "UNKNOWN" for item in [*report.pin_results, *report.component_checks])
 
     summaries = "\n".join(check.summary for check in report.component_checks)
     assert "D5 (1N4007W)" in summaries
     assert "not a Schottky-style diode family" in summaries
-    assert "L1 is 6.8 uH" in summaries
-    assert "below the profile minimum 68 uH" in summaries
+    assert "电感 L1 为 6.8 uH" in summaries
+    assert "不套用全局电感阈值" in summaries
 
 
 def test_validate_xl1509_nominal_buck_topology_has_no_error() -> None:
@@ -343,14 +331,9 @@ def test_validate_xl1509_nominal_buck_topology_has_no_error() -> None:
 
     report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
-    assert report.status == "PASS"
-    assert report.component_counts_by_status == {
-        "PASS": 2,
-        "WARN": 0,
-        "ERROR": 0,
-        "UNKNOWN": 0,
-        "NOT_APPLICABLE": 0,
-    }
+    assert report.status == "UNKNOWN"
+    assert report.needs_review
+    assert all(item.result == "UNKNOWN" for item in [*report.pin_results, *report.component_checks])
 
 
 def test_validate_xl1509_inductor_must_return_to_fixed_output_rail() -> None:
@@ -376,8 +359,9 @@ def test_validate_xl1509_inductor_must_return_to_fixed_output_rail() -> None:
     report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
     inductor = next(check for check in report.component_checks if check.check == "buck_inductor")
-    assert report.status == "ERROR"
-    assert inductor.status == "ERROR"
+    assert report.status == "UNKNOWN"
+    assert report.needs_review
+    assert inductor.status == "UNKNOWN"
     assert "does not return to the fixed output rail" in inductor.summary
 
 
@@ -408,8 +392,9 @@ def test_validate_xl1509_freewheel_diode_must_return_to_ground() -> None:
     diode = next(
         check for check in report.component_checks if check.check == "buck_freewheel_diode"
     )
-    assert report.status == "ERROR"
-    assert diode.status == "ERROR"
+    assert report.status == "UNKNOWN"
+    assert report.needs_review
+    assert diode.status == "UNKNOWN"
     assert "recognized ground return" in diode.summary
 
 
@@ -439,8 +424,9 @@ def test_validate_xl1509_missing_output_inductor_errors() -> None:
     report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
     inductor = next(check for check in report.component_checks if check.check == "buck_inductor")
-    assert report.status == "ERROR"
-    assert inductor.status == "ERROR"
+    assert report.status == "UNKNOWN"
+    assert report.needs_review
+    assert inductor.status == "UNKNOWN"
     assert "does not connect to an inductor" in inductor.summary
 
 
@@ -480,8 +466,9 @@ def test_validate_xl1509_feedback_wrong_voltage_errors() -> None:
     report = validate_component_against_profile(u12, _xl1509_profile(), design)
 
     feedback = next(pin for pin in report.pin_results if pin.pin_name == "FEEDBACK")
-    assert report.status == "ERROR"
-    assert feedback.status == "ERROR"
+    assert report.status == "UNKNOWN"
+    assert report.needs_review
+    assert feedback.status == "UNKNOWN"
     assert "differs from fixed output 12 V" in feedback.summary
 
 
