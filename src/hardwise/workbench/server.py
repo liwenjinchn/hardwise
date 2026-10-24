@@ -528,6 +528,9 @@ def create_workbench_app(
                     raise HTTPException(status_code=422, detail=f"rerun failed: {exc}") from exc
             try:
                 start_review_run(next_context)
+            except ReviewConflictError as exc:
+                close_workbench_context(next_context)
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
             except (sqlite3.Error, OSError, ValueError) as exc:
                 close_workbench_context(next_context)
                 raise HTTPException(

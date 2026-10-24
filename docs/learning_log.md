@@ -5358,3 +5358,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Additional UI check: the Findings page's fixed four-column minimum widths produced real horizontal scrolling at the browser viewport. Added container-responsive rows and included Findings in both existing 1440/760 E2E overflow loops; no color/type system redesign. Durable reviewer updates now also carry the caller's run ID, so an old browser cannot reapply a decision to a newer run merely because its finding key survives.
 
 - Read-side review summaries are also bound to the leased source-project ID; an old-context response cannot borrow the newly active project's decision counts/run ID. A missed initialization during a text replacement was caught by Ruff, corrected with a targeted patch, and followed by the final passing regression rather than counted as verification.
+
+
+### 2026-10-24 — Distinguish stale journal ownership from malformed input
+
+- Symptom: a second service advances the shared journal; the first service rejects its subsequent decision with HTTP 400 and rerun with 503.
+- Cause: revision mismatch raised plain ValueError although the API already handled ReviewConflictError as 409. Rerun also grouped all ValueError failures into storage unavailability.
+- Fix: raise the typed conflict at the transaction boundary and handle it before the rerun storage catch; close the unactivated candidate context. A two-app API regression checks 409, unchanged active run/task decisions, and intact latest writer/history. No automatic retry of an old human decision.
+- Test correction: the restart helper ignored its durable=False argument, so both nominal memory/file import rollback cases used SQLite. The helper now actually selects memory mode, and both branches pass. Test mode labels need matching construction, not just parametrization.

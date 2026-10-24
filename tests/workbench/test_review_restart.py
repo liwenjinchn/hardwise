@@ -48,7 +48,10 @@ def _app(root, durable=True):
         voltage_facts=root / "facts.json",
     )
     return create_workbench_app(
-        context, LocalOnlyChat(), auto_datasheet_candidates=False, review_db=root / "review.sqlite"
+        context,
+        LocalOnlyChat(),
+        auto_datasheet_candidates=False,
+        review_db=root / "review.sqlite" if durable else None,
     )
 
 
@@ -153,6 +156,34 @@ def test_live_rerun_marks_changed_facts_without_waiting_for_restart(tmp_path):
             ]["status"]
             == "needs_review"
         )
+
+
+def test_old_service_reports_conflict_and_preserves_current_writer(tmp_path):
+    _inputs(tmp_path)
+    with TestClient(_app(tmp_path)) as old:
+        original = old.get("/api/workbench/state").json()
+        with TestClient(_app(tmp_path)) as current:
+            task = _waive(current)
+            committed = current.get("/api/workbench/state").json()
+            history = current.get("/api/workbench/review-decisions/history").json()
+            response = old.put(
+                "/api/workbench/review-decisions",
+                json={
+                    "stable_keys": [task["stable_key"]],
+                    "status": "resolved",
+                    "reason": "Stale service must not replace the waiver",
+                    "expected_run_id": original["review_decisions"]["run_id"],
+                },
+            )
+            assert response.status_code == 409, response.text
+            assert "another process" in response.json()["detail"]
+            response = old.post("/api/workbench/rerun")
+            assert response.status_code == 409, response.text
+            old_state = old.get("/api/workbench/state").json()
+            assert old_state["review_tasks"] == original["review_tasks"]
+            assert old_state["review_decisions"]["run_id"] == original["review_decisions"]["run_id"]
+            assert current.get("/api/workbench/state").json() == committed
+            assert current.get("/api/workbench/review-decisions/history").json() == history
 
 
 def test_explicit_rule_version_changes_the_review_fingerprint(tmp_path):

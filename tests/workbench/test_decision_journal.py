@@ -6,6 +6,7 @@ import sqlite3
 import subprocess
 import sys
 import pytest
+from hardwise.workbench.decision_journal import ReviewConflictError
 from hardwise.workbench.review_decisions import ReviewDecisionStore, ReviewDecisionRequest
 
 
@@ -72,7 +73,7 @@ def test_stale_process_cannot_overwrite_a_newer_writer(tmp_path):
     first = _store(path)
     second = _store(path)
     _decide(second, ("b",))
-    with pytest.raises(ValueError, match="another process"):
+    with pytest.raises(ReviewConflictError, match="another process"):
         _decide(first)
     assert _store(path).summary(["a", "b"]).waived == 1
 

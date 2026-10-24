@@ -83,7 +83,9 @@ class DecisionJournal:
                 "SELECT revision FROM review_heads WHERE project=?", (project,)
             ).fetchone()
             if (row[0] if row else 0) != expected_revision:
-                raise ValueError("review journal changed in another process; restart before saving")
+                raise ReviewConflictError(
+                    "review journal changed in another process; restart before saving"
+                )
             db.execute("DELETE FROM review_state WHERE project=?", (project,))
             db.executemany(
                 "INSERT INTO review_state VALUES(?,?,?)",
