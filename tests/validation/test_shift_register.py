@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
@@ -38,37 +40,7 @@ def _design_from_text(tmp_path: Path, netlist: str):
 
 
 def _nominal_netlist() -> str:
-    return """$PACKAGES
-  ! 'TSSOP16' ! 74LV165PW ; U1 U2 U3
-  ! 'R0402' ! 33R ; RCLK1 RCLK2 RCLK3 RCE1 RCE2 RCE3 RCHAIN1 RCHAIN2
-$NETS
-  'P3V3' ; U1.16, U2.16, U3.16
-  'GND' ; U1.8, U2.8, U3.8, RCE1.1, RCE2.1, RCE3.1
-  'LOAD' ; U1.1, U2.1, U3.1
-  'CLK' ; RCLK1.1, RCLK2.1, RCLK3.1
-  'CLK_U1' ; U1.2, RCLK1.2
-  'CLK_U2' ; U2.2, RCLK2.2
-  'CLK_U3' ; U3.2, RCLK3.2
-  'CE_U1' ; U1.15, RCE1.2
-  'CE_U2' ; U2.15, RCE2.2
-  'CE_U3' ; U3.15, RCE3.2
-  'NC' ; U1.7, U2.7, U3.7
-  'DS_FIRST' ; U1.10
-  'OUT0' ; U1.9, RCHAIN1.1
-  'OUT0_R' ; RCHAIN1.2, U2.10
-  'OUT1' ; U2.9, RCHAIN2.1
-  'OUT1_R' ; RCHAIN2.2, U3.10
-  'OUT2' ; U3.9
-  'D0' ; U1.11, U2.11, U3.11
-  'D1' ; U1.12, U2.12, U3.12
-  'D2' ; U1.13, U2.13, U3.13
-  'D3' ; U1.14, U2.14, U3.14
-  'D4' ; U1.3, U2.3, U3.3
-  'D5' ; U1.4, U2.4, U3.4
-  'D6' ; U1.5, U2.5, U3.5
-  'D7' ; U1.6, U2.6, U3.6
-$END
-"""
+    return Path("tests/fixtures/allegro/shift_register_chain.net").read_text()
 
 
 def test_74lv165_profile_matches_public_pinout() -> None:
@@ -95,19 +67,22 @@ def test_shift_register_chain_passes_through_series_resistors(tmp_path: Path) ->
     assert "U2" in checks["shift_register_serial_chain"].summary
 
 
-def test_shift_register_terminal_stage_is_allowed(tmp_path: Path) -> None:
-    design = _design_from_text(tmp_path, _nominal_netlist())
+@pytest.mark.parametrize("name", ["OUT2", "OUT0", "OUT999", "DATA_RETURN", "GPIO_OUT12_END"])
+def test_output_without_peer_does_not_prove_terminal_stage(tmp_path: Path, name: str) -> None:
+    design = _design_from_text(tmp_path, _nominal_netlist().replace("'OUT2'", repr(name)))
     report = validate_component_against_profile(design.components["U3"], _profile(), design)
 
     chain = next(
         check for check in report.component_checks if check.check == "shift_register_serial_chain"
     )
     assert report.status == "UNKNOWN"
-    assert chain.status == "PASS"
-    assert "terminal stage" in chain.summary
+    assert chain.status == "UNKNOWN"
+    assert chain.rule_version == "2"
+    assert chain.needs_review
+    assert "terminal stage is unconfirmed" in chain.summary
 
 
-def test_shift_register_broken_middle_cascade_errors(tmp_path: Path) -> None:
+def test_disconnected_candidate_without_declared_chain_is_unknown(tmp_path: Path) -> None:
     netlist = _nominal_netlist().replace(
         "  'OUT0_R' ; RCHAIN1.2, U2.10\n",
         "  'OUT0_R' ; RCHAIN1.2\n  'BROKEN_DS' ; U2.10\n",
@@ -118,6 +93,24 @@ def test_shift_register_broken_middle_cascade_errors(tmp_path: Path) -> None:
     chain = next(
         check for check in report.component_checks if check.check == "shift_register_serial_chain"
     )
-    assert report.status == "ERROR"
-    assert chain.status == "ERROR"
+    assert report.status == "UNKNOWN"
+    assert chain.status == "UNKNOWN"
     assert "does not reach another DS input" in chain.summary
+
+
+@pytest.mark.parametrize("name", ["OUT999", "DATA_RETURN"])
+def test_connected_peer_pass_does_not_depend_on_output_number(tmp_path, name):
+    design = _design_from_text(tmp_path, _nominal_netlist().replace("'OUT0'", repr(name)))
+    report = validate_component_against_profile(design.components["U1"], _profile(), design)
+    chain = next(c for c in report.component_checks if c.check == "shift_register_serial_chain")
+    assert chain.result == "PASS"
+    assert chain.rule_version == "2"
+    assert "U2" in chain.summary
+    assert "timing" in chain.summary
+
+
+def test_missing_serial_output_remains_connection_failure(tmp_path):
+    design = _design_from_text(tmp_path, _nominal_netlist().replace("  'OUT2' ; U3.9\n", ""))
+    report = validate_component_against_profile(design.components["U3"], _profile(), design)
+    chain = next(c for c in report.component_checks if c.check == "shift_register_serial_chain")
+    assert (chain.result, chain.severity, chain.rule_version) == ("FAIL", "ERROR", "2")

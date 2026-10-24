@@ -5366,3 +5366,12 @@ trusted scope and the exact conditions that remain unimplemented.
 - Cause: revision mismatch raised plain ValueError although the API already handled ReviewConflictError as 409. Rerun also grouped all ValueError failures into storage unavailability.
 - Fix: raise the typed conflict at the transaction boundary and handle it before the rerun storage catch; close the unactivated candidate context. A two-app API regression checks 409, unchanged active run/task decisions, and intact latest writer/history. No automatic retry of an old human decision.
 - Test correction: the restart helper ignored its durable=False argument, so both nominal memory/file import rollback cases used SQLite. The helper now actually selects memory mode, and both branches pass. Test mode labels need matching construction, not just parametrization.
+
+
+### 2026-10-24 — Shift-chain net suffixes are not design intent
+
+- Symptom: highest `OUT<number>` silently certified a terminal stage; a lower number without a downstream DS produced FAIL. Renaming a net changed a conclusion without changing connectivity.
+- Cause: `_chain_index` and `_max_chain_index` inferred intended order from labels. The former broken-middle regression encoded that same assumption rather than an independently declared chain requirement.
+- Fix: remove index parsing. No downstream DS plus no intended-chain contract yields UNKNOWN/needs_review; missing/unconnected output retains FAIL; actual same-profile DS reachability retains a narrowly worded connectivity PASS. Bump the serial-chain producer version to 2 so previous decisions cannot silently apply across changed rule semantics. Full graph/receiver/timing assertions remain unmodeled.
+- Evidence: five no-peer names, two connected-peer rename cases, disconnected candidate and missing-output tests; four actual API import/rerun/export cases. Published existing hand-authored synthetic chain as netlist/BOM fixtures for reuse; no enterprise inputs or new profile approval. Initial rule subset 9 failed/2 passed; final unit+API subset 15 passed.
+- Test implementation: importing a test module failed in an isolated workbench run; shared fixture files avoid test-module import-order dependence. The API CheckView exposes subject/summary, not a name key; corrected that assertion before acceptance.

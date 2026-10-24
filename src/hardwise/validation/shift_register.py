@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from hardwise.validation.assessment import result_for_attention, severity_for_attention
 
-import re
-
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.control_scope import observe_control_scope
@@ -137,27 +135,23 @@ def _validate_serial_chain(
             "shift_register_serial_chain",
             "PASS",
             component,
-            (f"Serial output {output_pin.net} cascades to DS pin on {', '.join(next_peers)}."),
+            (
+                f"Serial output {output_pin.net} reaches DS pin on {', '.join(next_peers)} "
+                "in the parsed topology; this connection check does not assess timing, "
+                "signal integrity or complete-chain operation."
+            ),
             evidence,
         )
 
-    own_index = _chain_index(output_pin.net)
-    max_index = _max_chain_index(profile, design)
-    if own_index is not None and max_index is not None and own_index == max_index:
-        return _check(
-            "shift_register_serial_chain",
-            "PASS",
-            component,
-            f"Serial output {output_pin.net} is the terminal stage of the proven chain.",
-            evidence,
-        )
-
-    status = "WARN" if own_index is None else "ERROR"
     return _check(
         "shift_register_serial_chain",
-        status,
+        "UNKNOWN",
         component,
-        f"Serial output {output_pin.net} does not reach another DS input in the parsed topology.",
+        (
+            f"Serial output {output_pin.net} does not reach another DS input in the parsed "
+            "topology; terminal stage is unconfirmed. No intended chain or receiver is "
+            "declared; net names do not establish order or correctness."
+        ),
         evidence,
     )
 
@@ -253,33 +247,6 @@ def _reachable_nets_through_one_resistor(
     return reachable
 
 
-def _max_chain_index(profile: DatasheetProfile, design: Design) -> int | None:
-    output_pin_number = _profile_pin(profile, "serial_output_pin", "9")
-    indexes = [
-        _chain_index(pin.net or "")
-        for component in design.components.values()
-        if _normalize(component.part_number or component.value) in _profile_identities(profile)
-        for pin in [component.pin_by_number(output_pin_number)]
-        if pin is not None
-    ]
-    found = [index for index in indexes if index is not None]
-    return max(found) if found else None
-
-
-def _profile_identities(profile: DatasheetProfile) -> set[str]:
-    return {
-        _normalize(profile.part_number),
-        *[_normalize(alias) for alias in profile.part_number_aliases],
-    }
-
-
-def _chain_index(net_name: str) -> int | None:
-    match = re.search(r"OUT(\d+)", net_name.upper())
-    if match is None:
-        return None
-    return int(match.group(1))
-
-
 def _profile_pin(profile: DatasheetProfile, key: str, default: str) -> str:
     value = profile.recommended.get(key)
     return str(value) if value else default
@@ -308,4 +275,6 @@ def _check(
         refdes=component.refdes,
         summary=summary,
         evidence=evidence,
+        rule_version="2" if name == "shift_register_serial_chain" else "1",
+        needs_review=status == "UNKNOWN",
     )
