@@ -212,6 +212,12 @@ def inspect_bom_match(
     typer.echo(f"design-only refdes: {len(report.design_only_refdes)}")
     typer.echo(f"duplicate bom refdes: {len(report.duplicate_bom_refdes)}")
     typer.echo(f"quantity mismatches: {len(report.quantity_mismatches)}")
+    typer.echo(f"quantity column conflicts: {len(report.quantity_column_conflicts)}")
+    if report.quantity_column_conflicts:
+        from hardwise.bom.quantity_fields import describe_quantity_conflict
+
+        for conflict in report.quantity_column_conflicts[:limit]:
+            typer.echo(describe_quantity_conflict(conflict))
     typer.echo(f"status: {'clean refdes match' if report.is_clean else 'mismatch found'}")
 
     _echo_refdes_sample("bom-only", report.bom_only_refdes, limit)
@@ -415,6 +421,8 @@ def _bom_report_mismatch_count(report) -> int:
         + len(report.design_only_refdes)
         + len(report.duplicate_bom_refdes)
         + len(report.quantity_mismatches)
+        + len(report.quantity_column_conflicts)
+        + len(report.identity_conflicts)
     )
 
 

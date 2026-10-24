@@ -163,4 +163,6 @@ def _mismatch_count(report: BomMatchReport) -> int:
         + len(report.design_only_refdes)
         + len(report.duplicate_bom_refdes)
         + len(report.quantity_mismatches)
+        + len(report.quantity_column_conflicts)
+        + len(report.identity_conflicts)
     )

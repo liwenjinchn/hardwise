@@ -19,7 +19,15 @@ IDENTITY_FIELDS = {
 
 def identity_dimension(name: str) -> str | None:
     key = re.sub(r"[\s_/-]+", "", name).casefold()
-    return next((dimension for dimension, names in IDENTITY_FIELDS.items() if key in names), None)
+    legacy_key = re.sub(r"[^a-z0-9]+", "_", name.strip().lower()).strip("_").replace("_", "")
+    return next(
+        (
+            dimension
+            for dimension, names in IDENTITY_FIELDS.items()
+            if key in names or legacy_key in names
+        ),
+        None,
+    )
 
 
 def identity_columns(fields: list[BomSourceField], dimension: str) -> list[BomSourceField]:

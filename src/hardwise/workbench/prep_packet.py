@@ -210,6 +210,20 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
         "## Review Focus Areas",
         "",
     ]
+    if packet.evidence_package.bom_quantity_conflicts:
+        from hardwise.bom.quantity_fields import describe_quantity_conflict
+
+        lines.extend(
+            [
+                "### BOM 数量列冲突（不改变独立电气判定）",
+                "",
+                *[
+                    describe_quantity_conflict(item)
+                    for item in packet.evidence_package.bom_quantity_conflicts
+                ],
+                "",
+            ]
+        )
     if packet.focus_areas:
         lines.extend(["| Area | Refdes | Tasks | Priority | Summary |", "|---|---:|---:|---|---|"])
         for area in packet.focus_areas:

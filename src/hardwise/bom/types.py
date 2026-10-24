@@ -105,6 +105,16 @@ class BomQuantityMismatch(BaseModel):
     source_line: int
 
 
+class BomQuantityColumnConflict(BaseModel):
+    """Unresolved table quantity declarations, separate from component identity."""
+
+    item_number: str | None = None
+    refdes_list: list[str] = Field(default_factory=list)
+    source_file: Path
+    source_line: int
+    source_fields: list[BomSourceField]
+
+
 class BomMatchReport(BaseModel):
     """Result of joining a BOM to a schematic ``Design`` by refdes."""
 
@@ -119,6 +129,7 @@ class BomMatchReport(BaseModel):
     design_only_refdes: list[str] = Field(default_factory=list)
     duplicate_bom_refdes: list[str] = Field(default_factory=list)
     quantity_mismatches: list[BomQuantityMismatch] = Field(default_factory=list)
+    quantity_column_conflicts: list[BomQuantityColumnConflict] = Field(default_factory=list)
     rows_by_refdes: dict[str, BomRow] = Field(default_factory=dict)
     conflicting_rows: dict[str, list[BomRow]] = Field(default_factory=dict)
     identity_conflicts: dict[str, str] = Field(default_factory=dict)
@@ -132,6 +143,7 @@ class BomMatchReport(BaseModel):
             or self.duplicate_bom_refdes
             or self.quantity_mismatches
             or self.identity_conflicts
+            or self.quantity_column_conflicts
         )
 
 

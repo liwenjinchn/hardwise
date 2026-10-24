@@ -91,6 +91,7 @@ def test_old_package_does_not_infer_originals_from_ready_flag():
             "signoff_readiness": {"status": "ready", "signoff_ready": True, "reason": "legacy"},
         }
     )
+    assert legacy.bom_quantity_conflicts is None
     assert legacy.source_audit.status == "unknown"
     assert legacy.original_delivery.status == "unknown"
     assert legacy.original_delivery.attached_tokens == []

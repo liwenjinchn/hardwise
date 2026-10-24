@@ -45,10 +45,12 @@ describe("EvidencePackageDashboard", () => {
     expect(html).toContain("允许导出");
     expect(html).not.toContain("交付证据可复核");
     const legacy = { ...summary };
+    delete (legacy as Partial<typeof summary>).bom_quantity_conflicts;
     delete (legacy as Partial<typeof summary>).source_audit;
     delete (legacy as Partial<typeof summary>).original_delivery;
     const oldHtml = renderToStaticMarkup(<EvidencePackageDashboard summary={legacy} />);
     expect(oldHtml).toContain("旧报告未记录原文随附状态");
+    expect(oldHtml).toContain("当前报告未记录数量列核对结果");
     expect(oldHtml).not.toContain("交付证据可复核");
   });
 

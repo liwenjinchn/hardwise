@@ -1,3 +1,4 @@
+import { BomQuantityWarnings } from "../../components/BomQuantityWarnings";
 import { AssessmentBadges } from "../../components/ui";
 import { useEffect, useState } from "react";
 import { Bot, Download, FileSearch, Layers3, Loader2 } from "lucide-react";
@@ -113,6 +114,7 @@ export function DetailColumn({
           <InfoCell label="原始任务" value={`${detail.task_counts.total} 条`} />
         </div>
         {detail.match_reason && <p className="scope-note">{formatSummary(detail.match_reason)}</p>}
+        <BomQuantityWarnings conflicts={detail.bom?.quantity_column_conflict ? [detail.bom.quantity_column_conflict] : []} />
         <DocumentCoverageSection document={detail.document} />
         <section className="prep-actions" aria-label="评审准备包">
           <div>

@@ -281,3 +281,49 @@ test("white import exposes every competing identity column and clears the block 
   const repaired = await (await request.get("/api/workbench/state")).json();
   expect(repaired.review_tasks.some((task: { check: string }) => task.check === "bom_identity_conflict")).toBe(false);
 });
+
+test("quantity column warnings preserve an independently passing electrical check", async ({ page, request }, testInfo) => {
+  const bom = (qty: string) => Buffer.from(
+    "Reference,Quantity,Qty,Value,Manufacturer,MPN\n" +
+    `C1,1,${qty},100nF 25V,Fixture,CAP-100N\n` +
+    "U1,1,1,L7805,ST,L7805\nC2,1,1,100nF,Fixture,CAP-100N\n"
+  );
+  const facts = Buffer.from(JSON.stringify({ schema_version: "hardwise.voltage_facts.v1", active_mode: "dc",
+    facts: [{ net: "+12V", minimum: 11, maximum: 13 }, { net: "GND", minimum: 0, maximum: 0 }].map(item => ({
+      ...item, reference_net: "GND", confirmed: true, confirmed_by: "public synthetic author", source: "public quantity example; not measured"
+    })) }));
+  const load = async (qty: string) => {
+    await page.getByRole("button", { name: "导入", exact: true }).click();
+    await page.getByLabel("选择 netlist / PST").setInputFiles(path.resolve("../../tests/fixtures/allegro/l78_regulator.net"));
+    await page.getByLabel("选择 BOM CSV").setInputFiles({ name: "quantity-columns.csv", mimeType: "text/csv", buffer: bom(qty) });
+    await page.getByLabel("选择 已确认电压事实").setInputFiles({ name: "facts.json", mimeType: "application/json", buffer: facts });
+    await page.getByRole("button", { name: "导入并解析" }).click();
+    await expect(queueRow(page, "C1")).toBeVisible();
+  };
+  await openReview(page);
+  await load("1");
+  const before = await (await request.get("/api/workbench/state")).json();
+  expect(before.queue.find((row: { refdes: string }) => row.refdes === "C1").deterministic_status).toBe("PASS");
+  await load("99");
+  await queueRow(page, "C1").click();
+  await expect(page.getByRole("region", { name: "BOM 数量列冲突" })).toContainText("Qty=99");
+  const current = await (await request.get("/api/workbench/state")).json();
+  expect(current.summary).toEqual(before.summary);
+  expect(current.evidence_package.bom_quantity_conflicts).toHaveLength(1);
+  expect(current.evidence_package.lanes.find((lane: { id: string }) => lane.id === "bom").status_label).toBe("quantity gaps");
+  await page.screenshot({ path: testInfo.outputPath("quantity-detail-white.png"), animations: "disabled" });
+  await page.getByRole("button", { name: "导出", exact: true }).click();
+  const warning = page.getByRole("region", { name: "BOM 数量列冲突" });
+  await expect(warning).toContainText("Quantity=1");
+  await expect(warning).toContainText("Qty=99");
+  await warning.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("quantity-columns-white.png"), animations: "disabled" });
+  await page.setViewportSize({ width: 760, height: 900 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await warning.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("quantity-columns-narrow.png"), animations: "disabled" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await load("1");
+  const repaired = await (await request.get("/api/workbench/state")).json();
+  expect(repaired.evidence_package.bom_quantity_conflicts).toEqual([]);
+});

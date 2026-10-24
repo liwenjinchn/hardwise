@@ -120,6 +120,80 @@
       "title": "Assessment",
       "type": "object"
     },
+    "BomQuantityColumnConflict": {
+      "description": "Unresolved table quantity declarations, separate from component identity.",
+      "properties": {
+        "item_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Item Number"
+        },
+        "refdes_list": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Refdes List",
+          "type": "array"
+        },
+        "source_fields": {
+          "items": {
+            "$ref": "#/$defs/BomSourceField"
+          },
+          "title": "Source Fields",
+          "type": "array"
+        },
+        "source_file": {
+          "format": "path",
+          "title": "Source File",
+          "type": "string"
+        },
+        "source_line": {
+          "title": "Source Line",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "item_number",
+        "refdes_list",
+        "source_fields",
+        "source_file",
+        "source_line"
+      ],
+      "title": "BomQuantityColumnConflict",
+      "type": "object"
+    },
+    "BomSourceField": {
+      "description": "One original table cell; ordinal preserves repeated column names.",
+      "properties": {
+        "column": {
+          "minimum": 1,
+          "title": "Column",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "column",
+        "name",
+        "value"
+      ],
+      "title": "BomSourceField",
+      "type": "object"
+    },
     "BomView": {
       "description": "BOM identity shown in detail and prep packet views.",
       "properties": {
@@ -150,6 +224,17 @@
           "title": "Part Number",
           "type": "string"
         },
+        "quantity_column_conflict": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BomQuantityColumnConflict"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "source": {
           "default": "",
           "title": "Source",
@@ -178,6 +263,7 @@
         "item_number",
         "manufacturer",
         "part_number",
+        "quantity_column_conflict",
         "source",
         "source_line",
         "value"
@@ -1322,6 +1408,21 @@
     "EvidencePackageSummary": {
       "description": "Six evidence lanes that are intentionally not collapsed into one score.",
       "properties": {
+        "bom_quantity_conflicts": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/BomQuantityColumnConflict"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bom Quantity Conflicts"
+        },
         "electrical_verdict": {
           "const": "not_applicable",
           "default": "not_applicable",
@@ -1363,6 +1464,7 @@
         }
       },
       "required": [
+        "bom_quantity_conflicts",
         "electrical_verdict",
         "guardrails",
         "lanes",

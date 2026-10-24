@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Literal
 from pydantic import BaseModel, Field
 
 from hardwise.documents.cache import APPROVED_REVIEW_STATUSES
+from hardwise.bom.types import BomQuantityColumnConflict
 from hardwise.workbench.evidence_delivery import OriginalDelivery, SourceAudit
 
 if TYPE_CHECKING:
@@ -62,6 +63,7 @@ class EvidencePackageSummary(BaseModel):
     scope: str = "input_evidence_completeness"
     electrical_verdict: Literal["not_applicable"] = "not_applicable"
     lanes: list[EvidencePackageLane]
+    bom_quantity_conflicts: list[BomQuantityColumnConflict] | None = None
     source_audit: SourceAudit = Field(default_factory=SourceAudit)
     original_delivery: OriginalDelivery = Field(default_factory=OriginalDelivery)
     signoff_readiness: SignoffReadiness = Field(
@@ -90,6 +92,7 @@ def build_evidence_package_summary(context: WorkbenchContext) -> EvidencePackage
     )
 
     return EvidencePackageSummary(
+        bom_quantity_conflicts=context.bom_report.quantity_column_conflicts,
         lanes=[
             _netlist_lane(context),
             _bom_lane(context),
@@ -97,7 +100,7 @@ def build_evidence_package_summary(context: WorkbenchContext) -> EvidencePackage
             _document_lane(context),
             build_pin_table_lane(context),
             build_review_package_lane(context),
-        ]
+        ],
     )
 
 
@@ -164,8 +167,22 @@ def _bom_lane(context: WorkbenchContext) -> EvidencePackageLane:
         status, group, label = "present", "pass", "registry clean"
         action = "Keep the matched BOM export with the review packet."
     elif matched:
-        status, group, label = "partial", "warn", "identity gaps"
-        action = "Resolve BOM-only, design-only, duplicate, declared MPN conflicts, and quantity mismatches."
+        identity_gap = bool(
+            report.bom_only_refdes
+            or report.design_only_refdes
+            or report.duplicate_bom_refdes
+            or report.identity_conflicts
+        )
+        status, group, label = (
+            "partial",
+            "warn",
+            "identity gaps" if identity_gap else "quantity gaps",
+        )
+        action = (
+            "Resolve BOM-only, design-only, duplicate, declared identity conflicts, and quantity mismatches."
+            if identity_gap
+            else "Resolve BOM quantity declarations and grouped refdes counts; identity matches remain available."
+        )
     else:
         status, group, label = "gap", "manual", "unmatched"
         action = "Provide a BOM whose refdes match the parsed registry."
@@ -214,8 +231,21 @@ def _bom_lane(context: WorkbenchContext) -> EvidencePackageLane:
             *(
                 [
                     _metric(
+                        "quantity_column_conflicts",
+                        "Quantity column conflicts",
+                        len(report.quantity_column_conflicts),
+                        None,
+                        "BOM items",
+                    )
+                ]
+                if report.quantity_column_conflicts
+                else []
+            ),
+            *(
+                [
+                    _metric(
                         "identity_conflicts",
-                        "Declared MPN conflicts",
+                        "Identity conflicts",
                         len(report.identity_conflicts),
                         None,
                         "refdes",

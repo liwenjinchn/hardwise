@@ -13,6 +13,7 @@ from fastapi.responses import Response
 from hardwise.csv_safety import csv_safe_cell
 from hardwise.workbench.context import WorkbenchContext
 from hardwise.workbench.evidence_delivery import evidence_axes
+from hardwise.bom.quantity_fields import describe_quantity_conflict
 from hardwise.workbench.view_model import ReviewTask, build_review_tasks
 
 
@@ -59,6 +60,7 @@ def _task_csv_response(
             "original_delivery_status",
             "missing_original_tokens",
             "export_allowed",
+            "bom_quantity_conflict",
         ],
     )
     writer.writeheader()
@@ -89,6 +91,7 @@ def _task_csv_response(
                 "original_delivery_status": delivery.status,
                 "missing_original_tokens": csv_safe_cell(";".join(delivery.missing_tokens)),
                 "export_allowed": "true",
+                "bom_quantity_conflict": csv_safe_cell(_quantity_conflict(context, task.refdes)),
             }
         )
     return Response(
@@ -105,7 +108,7 @@ def _annotations_response(
 ) -> Response:
     lines = [
         "# Hardwise EDA annotation export",
-        "# format: refdes,status_group,task_id,title,recommended_action,review_status,review_reason,signoff_evidence_ready,missing_local_sources,source_audit_status,source_audit_observed_at,source_audit_unchecked_tokens,original_delivery_status,missing_original_tokens,export_allowed",
+        "# format: refdes,status_group,task_id,title,recommended_action,review_status,review_reason,signoff_evidence_ready,missing_local_sources,source_audit_status,source_audit_observed_at,source_audit_unchecked_tokens,original_delivery_status,missing_original_tokens,export_allowed,bom_quantity_conflict",
     ]
     for task in tasks if tasks is not None else build_review_tasks(context):
         audit, delivery = evidence_axes(
@@ -131,6 +134,7 @@ def _annotations_response(
                     _annotation_cell(delivery.status),
                     _annotation_cell(";".join(delivery.missing_tokens)),
                     "true",
+                    _annotation_cell(_quantity_conflict(context, task.refdes)),
                 ]
             )
         )
@@ -153,4 +157,12 @@ def _missing_local_sources(task: ReviewTask) -> list[str]:
             for evidence in chain.evidence
             if evidence.audit_status == "missing_local_source"
         }
+    )
+
+
+def _quantity_conflict(context, refdes):
+    return "; ".join(
+        describe_quantity_conflict(item)
+        for item in context.bom_report.quantity_column_conflicts
+        if refdes in item.refdes_list
     )

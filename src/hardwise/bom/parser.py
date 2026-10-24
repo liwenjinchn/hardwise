@@ -13,6 +13,7 @@ from xml.etree import ElementTree
 from hardwise.bom.types import Bom, BomItem, BomParseError, split_refdes
 from hardwise.bom.source_fields import delimited_source_fields, table_source_fields
 from hardwise.bom.identity_fields import identity_value
+from hardwise.bom.quantity_fields import read_quantity_columns, parse_quantity
 
 _XLSX_MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 _XLSX_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -79,7 +80,6 @@ def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]
     refdes_field = _find_field(fields, ["reference", "references", "refdes", "designator"])
     if refdes_field is None:
         raise BomParseError(f"{path}: missing Reference/refdes column")
-    quantity_field = _find_field(fields, ["quantity", "qty"])
     value_field = _find_field(fields, ["value", "part"])
     description_field = _find_field(fields, ["description", "desc"])
 
@@ -93,8 +93,8 @@ def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]
         previous_end = reader.line_num
         raw_refdes = row.get(refdes_field, "") or ""
         refdes_list = split_refdes(raw_refdes)
-        quantity = _parse_quantity(row.get(quantity_field, "") or "", path, line_no)
         source_fields = next(original_fields)
+        quantity = read_quantity_columns(source_fields, path, line_no)
         items.append(
             BomItem(
                 item_number=str(len(items) + 1),
@@ -121,7 +121,6 @@ def _parse_xlsx_bom(path: Path) -> list[BomItem]:
     rows = _read_first_xlsx_sheet(path)
     header_index, fields = _find_xlsx_header(rows, path)
     refdes_index = fields["位号"]
-    quantity_index = fields.get("数量")
     value_index = fields.get("名称")
     item_number_index = fields.get("编号") or fields.get("序号")
 
@@ -133,14 +132,10 @@ def _parse_xlsx_bom(path: Path) -> list[BomItem]:
         refdes_list = split_refdes(raw_refdes)
         if not refdes_list:
             continue
-        quantity = (
-            _parse_quantity(_xlsx_cell(row, quantity_index), path, row_index)
-            if quantity_index is not None
-            else None
-        )
+        source_fields = table_source_fields(rows[header_index], row)
+        quantity = read_quantity_columns(source_fields, path, row_index)
         value = _blank_to_none(_xlsx_cell(row, value_index))
         item_number = _blank_to_none(_xlsx_cell(row, item_number_index))
-        source_fields = table_source_fields(rows[header_index], row)
         items.append(
             BomItem(
                 item_number=item_number,
@@ -300,14 +295,7 @@ def _tab_cells(line: str, min_len: int) -> list[str]:
 
 
 def _parse_quantity(value: str, path: Path, line_no: int) -> int | None:
-    value = value.strip()
-    if not value:
-        return None
-    if re.fullmatch(r"\d+\.0+", value):
-        value = value.split(".", 1)[0]
-    if not value.isdigit():
-        raise BomParseError(f"{path}:{line_no}: invalid BOM quantity {value!r}")
-    return int(value)
+    return parse_quantity(value, path, line_no)
 
 
 def _normalize_header(value: str) -> str:

@@ -355,6 +355,7 @@ export function makeEvidencePackage(
         metrics: []
       })
     ],
+    bom_quantity_conflicts: [],
     source_audit: {
       status: "unknown", observed_at: null, missing_tokens: [], locally_present_tokens: [],
       unchecked_tokens: [], reason: "旧报告未记录来源核对结果，需重新核查。"
@@ -480,6 +481,7 @@ export function makeDetail(overrides: Partial<ComponentDetail> = {}): ComponentD
     tasks: [makeTask()],
     task_counts: makeTaskCounts(),
     bom: {
+      quantity_column_conflict: null,
       value: "STM32F103",
       part_number: "STM32F103C8T6",
       manufacturer: "ST",

@@ -1,5 +1,5 @@
 export type { ReviewHistoryPage } from "./generated/workbench-contracts";
-import type { RunProvenance } from "./generated/workbench-contracts";
+import type { BomQuantityColumnConflict, RunProvenance } from "./generated/workbench-contracts";
 
 export type StatusGroup = "error" | "warn" | "pass" | "manual";
 export type TrustTier = "l1" | "l2" | "l3";
@@ -33,6 +33,7 @@ export interface EvidencePackageSummary {
   scope: string;
   electrical_verdict: "not_applicable";
   lanes: EvidencePackageLane[];
+  bom_quantity_conflicts: BomQuantityColumnConflict[] | null;
   source_audit: {
     status: "observed" | "unknown";
     observed_at: string | null;
@@ -331,6 +332,7 @@ export interface RiskHintsSummary {
 }
 
 export interface BomView {
+  quantity_column_conflict: BomQuantityColumnConflict | null;
   value: string;
   part_number: string;
   manufacturer: string;

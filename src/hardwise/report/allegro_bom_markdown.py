@@ -48,6 +48,7 @@ def render(
     lines.append(f"| Design-only refdes | {len(match_report.design_only_refdes)} |")
     lines.append(f"| Duplicate BOM refdes | {len(match_report.duplicate_bom_refdes)} |")
     lines.append(f"| Quantity mismatches | {len(match_report.quantity_mismatches)} |")
+    lines.append(f"| Quantity column conflicts | {len(match_report.quantity_column_conflicts)} |")
     lines.append(f"| Generated at | {generated_at} |")
     lines.append("")
 
@@ -115,7 +116,7 @@ def _render_bom_item_groups(bom: Bom, report: BomMatchReport) -> list[str]:
     for item in bom.items:
         status = _bom_item_status(item, report, quantity_mismatch_lines)
         lines.append(
-            f"| {item.item_number or '-'} | {item.quantity or '-'} | "
+            f"| {item.item_number or '-'} | {item.quantity if item.quantity is not None else '-'} | "
             f"{len(item.refdes_list)} | {status} | {_escape_pipe(item.value or '-')} | "
             f"{_escape_pipe(item.part_number or '-')} | {_escape_pipe(item.manufacturer or '-')} | "
             f"{_escape_pipe(_refdes_sample(item.refdes_list, limit=12))} | "
@@ -154,6 +155,17 @@ def _render_mismatches(bom: Bom, report: BomMatchReport) -> list[str]:
         lines.append(", ".join(report.duplicate_bom_refdes))
         lines.append("")
 
+    if report.quantity_column_conflicts:
+        from hardwise.bom.quantity_fields import describe_quantity_conflict
+
+        lines.extend(
+            [
+                "### Quantity Column Conflicts",
+                "",
+                *[describe_quantity_conflict(item) for item in report.quantity_column_conflicts],
+                "",
+            ]
+        )
     if report.quantity_mismatches:
         lines.append("### Quantity Mismatches")
         lines.append("")
@@ -175,7 +187,7 @@ def _render_mismatches(bom: Bom, report: BomMatchReport) -> list[str]:
         for item in bom.non_refdes_items:
             source = _bom_source(item.source_file, item.source_line)
             lines.append(
-                f"| {item.item_number or '-'} | {item.quantity or '-'} | "
+                f"| {item.item_number or '-'} | {item.quantity if item.quantity is not None else '-'} | "
                 f"{_escape_pipe(item.value or '-')} | {source} |"
             )
         lines.append("")
@@ -201,7 +213,9 @@ def _render_component_summary(
         match = _component_match_status(component.refdes, report, duplicate_refdes)
         value = row.value if row and row.value else component.value or "-"
         part_number = row.part_number if row and row.part_number else component.part_number or "-"
-        manufacturer = row.manufacturer if row and row.manufacturer else component.manufacturer or "-"
+        manufacturer = (
+            row.manufacturer if row and row.manufacturer else component.manufacturer or "-"
+        )
         package = component.package or "-"
         nets = _component_nets(component, limit=net_limit)
         bom_source = _row_source(row)
@@ -247,6 +261,11 @@ def _bom_item_status(
     if not item.refdes_list:
         return "non-refdes"
     refs = set(item.refdes_list)
+    if any(
+        (entry.item_number, entry.source_line) == (item.item_number, item.source_line)
+        for entry in report.quantity_column_conflicts
+    ):
+        return "quantity-column-conflict"
     if (item.item_number, item.source_line) in quantity_mismatch_lines:
         return "quantity-mismatch"
     if refs & set(report.duplicate_bom_refdes):

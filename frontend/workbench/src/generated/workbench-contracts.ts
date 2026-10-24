@@ -45,9 +45,17 @@ export type Description = string;
 export type ItemNumber = string | null;
 export type Manufacturer = string;
 export type PartNumber = string;
-export type Source = string;
-export type SourceLine = number | null;
+export type ItemNumber1 = string | null;
+export type RefdesList = string[];
+export type Column = number;
+export type Name = string;
 export type Value = string;
+export type SourceFields = BomSourceField[];
+export type SourceFile = string;
+export type SourceLine = number;
+export type Source = string;
+export type SourceLine1 = number | null;
+export type Value1 = string;
 export type AuditStatus1 = string;
 export type Label = string;
 export type LocalSource1 = string | null;
@@ -110,7 +118,7 @@ export type PartNumber1 = string;
 export type ElectricalType = string;
 export type Evidence3 = EvidenceView[];
 export type IsNc = boolean;
-export type Name = string;
+export type Name1 = string;
 export type Net = string | null;
 export type Number = string;
 export type Status6 = string | null;
@@ -162,7 +170,8 @@ export type Title4 = string;
 export type TrustTier3 = "l1" | "l2" | "l3";
 export type Tasks = ReviewTask[];
 export type TrustTier4 = "l1" | "l2" | "l3";
-export type Value1 = string;
+export type Value2 = string;
+export type BomQuantityConflicts = BomQuantityColumnConflict[] | null;
 export type ElectricalVerdict = "not_applicable";
 export type Guardrails = string[];
 export type Id1 = "netlist" | "bom" | "validation" | "documents" | "pin_table" | "review_package";
@@ -171,7 +180,7 @@ export type Key = string;
 export type Label2 = string;
 export type Total1 = number | null;
 export type Unit = string;
-export type Value2 = number;
+export type Value3 = number;
 export type Metrics = EvidencePackageMetric[];
 export type RecommendedAction1 = string;
 export type Source3 = string | null;
@@ -220,14 +229,14 @@ export type Source4 = string | null;
 export type Status15 = "loaded" | "not_configured";
 export type BomSource = string;
 export type GeneratedAt = string;
-export type Name1 = string;
+export type Name2 = string;
 export type NetlistSource = string;
 export type NetlistType = string;
 export type ProfilesDir = string;
 export type Scope1 = string;
 export type ExpectedSha256 = string | null;
 export type Kind2 = string;
-export type Name2 = string;
+export type Name3 = string;
 export type Note = string | null;
 export type Path1 = string;
 export type Required = boolean;
@@ -295,7 +304,7 @@ export type Profiles = ProfileModelSnapshot[];
 export type PythonVersion = string;
 export type RawInputsArchived = false;
 export type EmittedCount = number;
-export type Name3 = string;
+export type Name4 = string;
 export type Scope2 = "pin" | "component" | "net";
 export type Version = string;
 export type RuleVersions = EmittedRuleVersion[];
@@ -319,7 +328,7 @@ export type ProjectId2 = string;
 export type RunId3 = string;
 export type Total5 = number;
 export type Id3 = string;
-export type Name4 = string;
+export type Name5 = string;
 export type ProjectId3 = string;
 export type Snapshot = string;
 export type Projects = SavedProjectView[];
@@ -373,7 +382,7 @@ export type TaskIds = string[];
 export type Title5 = string;
 export type TopTaskId = string | null;
 export type TrustTier5 = "l1" | "l2" | "l3";
-export type Value3 = string;
+export type Value4 = string;
 export type Queue = ReviewQueueItem[];
 export type Accepted = number;
 export type HistoryCount = number;
@@ -528,7 +537,7 @@ export interface ComponentDetail {
   task_counts: ComponentTaskCounts;
   tasks: Tasks;
   trust_tier: TrustTier4;
-  value: Value1;
+  value: Value2;
 }
 /**
  * Canonical check contract; old status-only records cannot certify a result.
@@ -553,8 +562,27 @@ export interface BomView {
   item_number: ItemNumber;
   manufacturer: Manufacturer;
   part_number: PartNumber;
+  quantity_column_conflict: BomQuantityColumnConflict | null;
   source: Source;
+  source_line: SourceLine1;
+  value: Value1;
+}
+/**
+ * Unresolved table quantity declarations, separate from component identity.
+ */
+export interface BomQuantityColumnConflict {
+  item_number: ItemNumber1;
+  refdes_list: RefdesList;
+  source_fields: SourceFields;
+  source_file: SourceFile;
   source_line: SourceLine;
+}
+/**
+ * One original table cell; ordinal preserves repeated column names.
+ */
+export interface BomSourceField {
+  column: Column;
+  name: Name;
   value: Value;
 }
 /**
@@ -646,7 +674,7 @@ export interface PinView {
   electrical_type: ElectricalType;
   evidence: Evidence3;
   is_nc: IsNc;
-  name: Name;
+  name: Name1;
   net: Net;
   number: Number;
   status: Status6;
@@ -735,6 +763,7 @@ export interface ImportResponse {
  * Six evidence lanes that are intentionally not collapsed into one score.
  */
 export interface EvidencePackageSummary {
+  bom_quantity_conflicts: BomQuantityConflicts;
   electrical_verdict: ElectricalVerdict;
   guardrails: Guardrails;
   lanes: Lanes;
@@ -768,7 +797,7 @@ export interface EvidencePackageMetric {
   label: Label2;
   total: Total1;
   unit: Unit;
-  value: Value2;
+  value: Value3;
 }
 export interface OriginalDelivery {
   attached_tokens: AttachedTokens;
@@ -832,7 +861,7 @@ export interface RejectedPinTableFindingView {
 export interface WorkbenchProject {
   bom_source: BomSource;
   generated_at: GeneratedAt;
-  name: Name1;
+  name: Name2;
   netlist_source: NetlistSource;
   netlist_type: NetlistType;
   profiles_dir: ProfilesDir;
@@ -862,7 +891,7 @@ export interface ReviewPackageSummary {
 export interface ReviewPackageArtifactView {
   expected_sha256: ExpectedSha256;
   kind: Kind2;
-  name: Name2;
+  name: Name3;
   note: Note;
   path: Path1;
   required: Required;
@@ -963,7 +992,7 @@ export interface Values {
 }
 export interface EmittedRuleVersion {
   emitted_count: EmittedCount;
-  name: Name3;
+  name: Name4;
   scope: Scope2;
   version: Version;
 }
@@ -989,7 +1018,7 @@ export interface ReviewHistoryPage {
 }
 export interface SavedProjectView {
   id: Id3;
-  name: Name4;
+  name: Name5;
   project_id: ProjectId3;
   snapshot: Snapshot;
 }
@@ -1093,7 +1122,7 @@ export interface ReviewQueueItem {
   title: Title5;
   top_task_id: TopTaskId;
   trust_tier: TrustTier5;
-  value: Value3;
+  value: Value4;
 }
 /**
  * Workflow counts kept separate from electrical task counts.

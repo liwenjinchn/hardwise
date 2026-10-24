@@ -147,6 +147,17 @@ def render_review_prep_packet_markdown(packet: ReviewPrepPacket) -> str:
             "- Export allowed; signoff is not assessed.",
         ]
     )
+    if component.bom and component.bom.quantity_column_conflict:
+        from hardwise.bom.quantity_fields import describe_quantity_conflict
+
+        lines.extend(
+            [
+                "",
+                "## BOM 数量列冲突",
+                "",
+                describe_quantity_conflict(component.bom.quantity_column_conflict),
+            ]
+        )
     lines.extend(["", "## Evidence Tokens"])
     if packet.evidence:
         for evidence in packet.evidence:
@@ -357,6 +368,14 @@ def _bom_view(context: WorkbenchContext, refdes: str) -> BomView | None:
     if row is None:
         return None
     return BomView(
+        quantity_column_conflict=next(
+            (
+                item
+                for item in context.bom_report.quantity_column_conflicts
+                if refdes in item.refdes_list
+            ),
+            None,
+        ),
         value=row.value or "",
         part_number=row.part_number or "",
         manufacturer=row.manufacturer or "",

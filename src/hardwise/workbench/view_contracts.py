@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from hardwise.ir.voltage import VoltageFactsDocument
+from hardwise.bom.types import BomQuantityColumnConflict
 from hardwise.validation.assessment import Assessment, CheckCoverage
 
 from hardwise.workbench.evidence_package import EvidencePackageSummary
@@ -236,6 +237,7 @@ class BomView(BaseModel):
     manufacturer: str = ""
     description: str = ""
     source: str = ""
+    quantity_column_conflict: BomQuantityColumnConflict | None = None
     item_number: str | None = None
     source_line: int | None = None
 

@@ -120,3 +120,16 @@ def test_standalone_profile_candidates_cannot_bypass_column_conflicts(
     assert candidate.match_status == "ambiguous"
     assert candidate.profile is None
     assert "column4" in candidate.reason and "column5" in candidate.reason
+
+
+def test_legacy_punctuated_mpn_header_still_participates_in_conflict_detection(tmp_path):
+    path = tmp_path / "public.csv"
+    _write(path, ["MPN.", "Manufacturer Part Number"], ["L7812", "L7805"])
+    bom = parse_bom(path)
+    assert bom.rows[0].part_number is None
+    design = Design(
+        components={"U1": Component(refdes="U1")},
+        project_path=tmp_path,
+        source_eda="allegro_netlist",
+    )
+    assert "U1" in match_bom_to_design(bom, design).identity_conflicts

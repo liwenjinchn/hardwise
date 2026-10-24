@@ -1,3 +1,4 @@
+import { BomQuantityWarnings } from "./BomQuantityWarnings";
 import {
   BookOpenCheck,
   Database,
@@ -62,6 +63,8 @@ export function EvidencePackageDashboard({
         ))}
       </div>
 
+      {!Array.isArray(summary.bom_quantity_conflicts) && <p className="scope-note">当前报告未记录数量列核对结果，不能据此判断数量一致。</p>}
+      <BomQuantityWarnings conflicts={summary.bom_quantity_conflicts ?? []} />
       <section className="evidence-delivery" aria-label="来源核对和原文随附状态">
         <div>
         <strong>来源核对 · {summary.source_audit?.status === "observed" ? "生成时观察" : "未记录"}</strong>

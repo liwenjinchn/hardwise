@@ -11,6 +11,7 @@ from hardwise.bom.conflicts import (
 from hardwise.bom.types import Bom, BomMatchReport, BomQuantityMismatch, BomRow, sort_refdes_key
 from hardwise.ir.types import Design
 from hardwise.bom.source_fields import RATING_SOURCES, preserved_rating_sources
+from hardwise.bom.quantity_fields import quantity_conflict
 
 
 def match_bom_to_design(bom: Bom, design: Design) -> BomMatchReport:
@@ -66,6 +67,9 @@ def match_bom_to_design(bom: Bom, design: Design) -> BomMatchReport:
         design_only_refdes=sorted(design_refdes - bom_refdes, key=sort_refdes_key),
         duplicate_bom_refdes=duplicate_refdes,
         quantity_mismatches=quantity_mismatches,
+        quantity_column_conflicts=[
+            conflict for item in bom.items if (conflict := quantity_conflict(item))
+        ],
         rows_by_refdes=rows_by_refdes,
         conflicting_rows={
             ref: grouped[ref]
@@ -106,6 +110,7 @@ def apply_bom_to_design(design: Design, report: BomMatchReport) -> Design:
         rating_sources = preserved_rating_sources(row)
         if rating_sources is not None:
             properties[RATING_SOURCES] = rating_sources
+        properties.pop("BOM_ITEM_QUANTITY", None)
         if row.item_quantity is not None:
             properties["BOM_ITEM_QUANTITY"] = str(row.item_quantity)
 
