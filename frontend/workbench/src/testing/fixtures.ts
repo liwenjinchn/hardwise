@@ -371,6 +371,7 @@ export function makeEvidencePackage(
 
 export function makeState(overrides: Partial<WorkbenchState> = {}): WorkbenchState {
   return {
+    voltage_facts: { schema_version: "hardwise.voltage_facts.v1", active_mode: "dc", facts: [] },
     project: makeProject(),
     summary: makeSummary(),
     capabilities: makeCapabilities(),

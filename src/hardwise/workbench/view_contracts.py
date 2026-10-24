@@ -6,6 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from hardwise.ir.voltage import VoltageFactsDocument
+
 from hardwise.workbench.evidence_package import EvidencePackageSummary
 from hardwise.workbench.review_decisions import ReviewDecisionSummary, ReviewDecisionView
 
@@ -420,6 +422,8 @@ class ReviewPrepPacket(BaseModel):
 
 class WorkbenchState(BaseModel):
     """Top-level SPA state returned by ``/api/workbench/state``."""
+
+    voltage_facts: VoltageFactsDocument = Field(default_factory=VoltageFactsDocument)
 
     project: WorkbenchProject
     summary: WorkbenchSummary

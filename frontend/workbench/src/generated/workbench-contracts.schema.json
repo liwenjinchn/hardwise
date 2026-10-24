@@ -2543,6 +2543,131 @@
       "title": "SignoffReadiness",
       "type": "object"
     },
+    "VoltageFact": {
+      "additionalProperties": false,
+      "description": "One user-supplied DC envelope relative to an identified reference net.",
+      "properties": {
+        "confirmed": {
+          "default": false,
+          "title": "Confirmed",
+          "type": "boolean"
+        },
+        "confirmed_by": {
+          "default": "",
+          "title": "Confirmed By",
+          "type": "string"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        },
+        "mode": {
+          "default": "dc",
+          "minLength": 1,
+          "title": "Mode",
+          "type": "string"
+        },
+        "net": {
+          "minLength": 1,
+          "title": "Net",
+          "type": "string"
+        },
+        "reference_net": {
+          "minLength": 1,
+          "title": "Reference Net",
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "typical": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Typical"
+        },
+        "unit": {
+          "const": "V",
+          "default": "V",
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "confirmed",
+        "confirmed_by",
+        "maximum",
+        "minimum",
+        "mode",
+        "net",
+        "reference_net",
+        "source",
+        "typical",
+        "unit"
+      ],
+      "title": "VoltageFact",
+      "type": "object"
+    },
+    "VoltageFactsDocument": {
+      "additionalProperties": false,
+      "description": "Portable project input, validated atomically before replacing active state.",
+      "properties": {
+        "active_mode": {
+          "default": "dc",
+          "minLength": 1,
+          "title": "Active Mode",
+          "type": "string"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/VoltageFact"
+          },
+          "title": "Facts",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "hardwise.voltage_facts.v1",
+          "default": "hardwise.voltage_facts.v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "active_mode",
+        "facts",
+        "schema_version"
+      ],
+      "title": "VoltageFactsDocument",
+      "type": "object"
+    },
     "WorkbenchCapabilities": {
       "description": "Feature flags surfaced to the SPA.",
       "properties": {
@@ -2715,6 +2840,9 @@
         },
         "task_counts": {
           "$ref": "#/$defs/ReviewTaskCounts"
+        },
+        "voltage_facts": {
+          "$ref": "#/$defs/VoltageFactsDocument"
         }
       },
       "required": [
@@ -2732,7 +2860,8 @@
         "risk_hints",
         "selected_refdes",
         "summary",
-        "task_counts"
+        "task_counts",
+        "voltage_facts"
       ],
       "title": "WorkbenchState",
       "type": "object"

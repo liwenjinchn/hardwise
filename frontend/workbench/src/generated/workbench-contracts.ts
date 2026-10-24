@@ -308,6 +308,19 @@ export type Count3 = number;
 export type ExternalStatus1 = string;
 export type RejectedExternalCount1 = number;
 export type SelectedRefdes3 = string | null;
+export type ActiveMode = string;
+export type Confirmed = boolean;
+export type ConfirmedBy = string;
+export type Maximum = number | null;
+export type Minimum = number | null;
+export type Mode1 = string;
+export type Net2 = string;
+export type ReferenceNet = string;
+export type Source6 = string;
+export type Typical = number | null;
+export type Unit1 = "V";
+export type Facts = VoltageFact[];
+export type SchemaVersion1 = "hardwise.voltage_facts.v1";
 
 export interface WorkbenchContracts {
   chat_request: ChatRequest;
@@ -743,6 +756,7 @@ export interface WorkbenchState {
   selected_refdes: SelectedRefdes3;
   summary: WorkbenchSummary;
   task_counts: ReviewTaskCounts;
+  voltage_facts: VoltageFactsDocument;
 }
 /**
  * Feature flags surfaced to the SPA.
@@ -856,4 +870,27 @@ export interface RiskHintsSummary {
   count: Count3;
   external_status: ExternalStatus1;
   rejected_external_count: RejectedExternalCount1;
+}
+/**
+ * Portable project input, validated atomically before replacing active state.
+ */
+export interface VoltageFactsDocument {
+  active_mode: ActiveMode;
+  facts: Facts;
+  schema_version: SchemaVersion1;
+}
+/**
+ * One user-supplied DC envelope relative to an identified reference net.
+ */
+export interface VoltageFact {
+  confirmed: Confirmed;
+  confirmed_by: ConfirmedBy;
+  maximum: Maximum;
+  minimum: Minimum;
+  mode: Mode1;
+  net: Net2;
+  reference_net: ReferenceNet;
+  source: Source6;
+  typical: Typical;
+  unit: Unit1;
 }

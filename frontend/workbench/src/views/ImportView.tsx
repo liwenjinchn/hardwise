@@ -24,6 +24,7 @@ export function ImportView({
   const [documentIndex, setDocumentIndex] = useState<File | null>(null);
   const [pinTable, setPinTable] = useState<File | null>(null);
   const [reviewPackage, setReviewPackage] = useState<File | null>(null);
+  const [voltageFacts, setVoltageFacts] = useState<File | null>(null);
   const [riskHints, setRiskHints] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -43,7 +44,8 @@ export function ImportView({
         documentIndex,
         pinTable,
         reviewPackage,
-        riskHints
+        riskHints,
+        voltageFacts
       });
       onImported(result);
     } catch (err) {
@@ -128,12 +130,33 @@ export function ImportView({
           accept=".json"
           onPick={setRiskHints}
         />
+        <UploadSlot
+          icon={<FileJson size={20} />}
+          label="已确认电压事实"
+          detail="可选；记录电压范围、参考地、工况、来源与确认人。未提供时，耐压和功耗保持未知。"
+          status="optional"
+          file={voltageFacts}
+          accept=".json"
+          onPick={setVoltageFacts}
+        />
         {error && <p className="form-error" role="alert">{error}</p>}
         <button className="primary-action" type="submit" disabled={busy}>
           {busy ? <Loader2 className="spin" size={16} /> : <Play size={16} />}
           {busy ? "正在导入" : "导入并解析"}
         </button>
       </form>
+      <section className="current-snapshot" aria-label="当前电压确认记录">
+        <strong>电压事实 · 工况 {state.voltage_facts.active_mode}</strong>
+        <p>仅用于已支持的电容耐压和电阻 DC 功耗检查；网名与旧电压提示不能作为确认。</p>
+        {state.voltage_facts.facts.length === 0 ? <p>尚未提供电压确认记录。</p> :
+          state.voltage_facts.facts.map((fact) => (
+            <p key={`${fact.net}-${fact.mode}`}>
+              {fact.net}：{fact.minimum ?? "未知"} 至 {fact.maximum ?? "未知"} V；
+              典型值 {fact.typical ?? "未知"} V；参考 {fact.reference_net}；工况 {fact.mode}；
+              {fact.confirmed ? `已确认（${fact.confirmed_by}）` : "未确认"}；来源 {fact.source}
+            </p>
+          ))}
+      </section>
       <div className="current-snapshot">
         <span className="eyebrow">当前工作台</span>
         <strong>{state.summary.components} components</strong>

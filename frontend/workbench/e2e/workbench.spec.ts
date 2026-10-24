@@ -111,6 +111,25 @@ test("import page can reload the built-in demo files", async ({ page }) => {
   await expect(page.locator(".queue-list .queue-row").first()).toBeVisible({ timeout: 30_000 });
 });
 
+test("confirmed DC input produces a bipolar stress error and survives rerun", async ({ page }) => {
+  await openReview(page);
+  await page.getByRole("button", { name: "导入" }).click();
+  const fixture = path.resolve("../../tests/fixtures/allegro/bipolar_dc");
+  await page.getByLabel("选择 netlist / PST").setInputFiles(path.join(fixture, "design.net"));
+  await page.getByLabel("选择 BOM CSV").setInputFiles(path.join(fixture, "bom.csv"));
+  await page.getByLabel("选择 已确认电压事实").setInputFiles(path.join(fixture, "voltage_facts.json"));
+  await page.getByRole("button", { name: "导入并解析" }).click();
+  await expect(queueRow(page, "C1")).toBeVisible({ timeout: 30_000 });
+  await expect(queueRow(page, "C1")).toHaveClass(/error/);
+  await expect(queueRow(page, "C1")).toContainText("24 V");
+  await page.getByRole("button", { name: "问题清单" }).click();
+  await page.getByRole("button", { name: "重新运行确定性检查" }).click();
+  await page.getByRole("button", { name: "导入" }).click();
+  await expect(page.getByLabel("当前电压确认记录")).toContainText("synthetic fixture author");
+  await expect(page.getByLabel("当前电压确认记录")).toContainText("P12");
+  await expect(page.getByLabel("当前电压确认记录")).toContainText("N12");
+});
+
 for (const viewport of [
   { width: 1440, height: 900 },
   { width: 760, height: 900 }

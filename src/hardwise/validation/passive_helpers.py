@@ -6,12 +6,11 @@ import re
 from typing import Literal
 
 from hardwise.bom.types import BomRow
-from hardwise.ir.types import Component, Design
+from hardwise.ir.types import Component
 from hardwise.validation.passive_contracts import (
     FAMILY_LABELS as _FAMILY_LABELS,
 )
 from hardwise.validation.passive_contracts import PassiveFamily
-from hardwise.validation.pins import voltage_for_net
 from hardwise.validation.types import ComponentValidation, PinValidation
 from hardwise.validation.value_parsing import ParsedCurrentRating
 
@@ -137,14 +136,3 @@ def _current_rating_token_check(
         summary=summary,
         evidence=evidence,
     )
-
-
-def _known_pin_voltages(component: Component, design: Design) -> list[tuple[str, float]]:
-    known: list[tuple[str, float]] = []
-    for pin in component.pins:
-        if not pin.net:
-            continue
-        voltage = voltage_for_net(pin.net, design)
-        if voltage is not None:
-            known.append((pin.net, voltage))
-    return known

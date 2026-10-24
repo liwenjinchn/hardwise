@@ -151,6 +151,7 @@ export function askCopilot(
 }
 
 export function importWorkbench(files: {
+  voltageFacts?: File | null;
   netlist: File;
   bom?: File | null;
   documentIndex?: File | null;
@@ -167,6 +168,7 @@ export function importWorkbench(files: {
   if (files.documentIndex) body.append("document_index_csv", files.documentIndex);
   if (files.pinTable) body.append("pin_table_csv", files.pinTable);
   if (files.reviewPackage) body.append("review_package", files.reviewPackage);
+  if (files.voltageFacts) body.append("voltage_facts_json", files.voltageFacts);
   if (files.riskHints) body.append("risk_hints_json", files.riskHints);
   return requestJson<ImportResponse>("/api/workbench/import", {
     method: "POST",

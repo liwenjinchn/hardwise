@@ -5,10 +5,10 @@ from __future__ import annotations
 from hardwise.ir.types import Component, Design
 from hardwise.validation.passive_helpers import (
     _current_rating_token_check,
-    _known_pin_voltages,
     _package_check,
     _value_check,
 )
+from hardwise.validation.voltage_facts import terminal_dc_stress
 from hardwise.validation.topology import parse_inductance_uh
 from hardwise.validation.types import ComponentValidation
 from hardwise.validation.value_parsing import (
@@ -143,30 +143,27 @@ def _capacitor_voltage_margin(
             evidence=evidence,
         )
 
-    voltages = _known_pin_voltages(component, design)
-    if len(component.pins) != 2 or len(voltages) != 2:
+    stress = terminal_dc_stress(component, design)
+    evidence = [*evidence, *stress.evidence]
+    if stress.maximum_delta is None:
         return ComponentValidation(
             check="capacitor_voltage_margin",
             status="UNKNOWN",
             refdes=component.refdes,
-            summary=(
-                "Capacitor voltage margin cannot be checked without two terminal voltages; "
-                "missing terminal data is not a passing comparison."
-            ),
+            summary=(f"Capacitor voltage margin cannot be checked: {stress.reason}."),
             evidence=evidence,
         )
 
-    dc_stress = abs(voltages[0][1] - voltages[1][1])
+    dc_stress = stress.maximum_delta
     if rated_voltage < dc_stress:
         return ComponentValidation(
             check="capacitor_voltage_margin",
             status="ERROR",
             refdes=component.refdes,
             summary=(
-                f"Capacitor rated voltage {rated_voltage:g} V is below inferred "
+                f"Capacitor rated voltage {rated_voltage:g} V is below confirmed "
                 f"terminal-to-terminal DC voltage {dc_stress:g} V "
-                "(net-name/metadata inference; reference domains and transient stress "
-                "are not verified)."
+                f"({stress.reason})."
             ),
             evidence=evidence,
         )
@@ -175,10 +172,9 @@ def _capacitor_voltage_margin(
         status="PASS",
         refdes=component.refdes,
         summary=(
-            f"Capacitor rated voltage {rated_voltage:g} V is not below inferred "
+            f"Capacitor rated voltage {rated_voltage:g} V is not below confirmed "
             f"terminal-to-terminal DC voltage {dc_stress:g} V "
-            "(net-name/metadata inference; reference domains and transient stress "
-            "are not verified)."
+            f"({stress.reason})."
         ),
         evidence=evidence,
     )
@@ -200,31 +196,28 @@ def _resistor_power_check(
             evidence=evidence,
         )
 
-    voltages = _known_pin_voltages(component, design)
-    if len(component.pins) != 2 or len(voltages) != 2:
+    stress = terminal_dc_stress(component, design)
+    evidence = [*evidence, *stress.evidence]
+    if stress.maximum_delta is None:
         return ComponentValidation(
             check="resistor_power_estimate",
             status="UNKNOWN",
             refdes=component.refdes,
-            summary=(
-                "Resistor power cannot be estimated without two terminal voltages; "
-                "missing terminal data is not a passing comparison."
-            ),
+            summary=(f"Resistor power cannot be estimated: {stress.reason}."),
             evidence=evidence,
         )
 
-    terminal_voltages = sorted(voltage for _, voltage in voltages)
-    delta = abs(terminal_voltages[-1] - terminal_voltages[0])
+    delta = stress.maximum_delta
     if resistance.ohms == 0:
         return ComponentValidation(
             check="resistor_power_estimate",
-            status="WARN" if delta else "PASS",
+            status="WARN" if delta else "UNKNOWN",
             refdes=component.refdes,
             summary=(
-                f"Zero-ohm link bridges distinct inferred rails ({terminal_voltages[0]:g} V to "
-                f"{terminal_voltages[-1]:g} V); confirm this is an intended stuffing option."
+                f"Zero-ohm link may bridge a confirmed DC difference up to {delta:g} V; "
+                "confirm current and intended stuffing option."
                 if delta
-                else "Zero-ohm link connects terminals with the same inferred voltage."
+                else "Zero-ohm link has zero confirmed DC difference; current and power margin remain unknown."
             ),
             evidence=evidence,
         )
@@ -237,7 +230,7 @@ def _resistor_power_check(
             refdes=component.refdes,
             summary=(
                 f"Estimated resistor power {power:g} W from {delta:g} V across "
-                f"{resistance.token} exceeds parsed rating {power_rating:g} W."
+                f"{resistance.token} exceeds parsed rating {power_rating:g} W; {stress.reason}."
             ),
             evidence=evidence,
         )
@@ -253,7 +246,7 @@ def _resistor_power_check(
         refdes=component.refdes,
         summary=(
             f"Estimated resistor power {power:g} W from {delta:g} V across "
-            f"{resistance.token}; {rating_text}."
+            f"{resistance.token}; {rating_text}; {stress.reason}."
         ),
         evidence=evidence,
     )

@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from hardwise.ir.types import Component, Design, Pin
+from hardwise.ir.voltage import VoltageFact
 from hardwise.validation.generic_passive import validate_generic_passive
 
 
@@ -20,6 +21,21 @@ def _validate(tmp_path: Path, family: str, value: str, nets: list[str | None]):
     )
     design = Design(project_path=tmp_path, source_eda="allegro_netlist")
     design.components[component.refdes] = component
+    fixture_potentials = {"+12V": 12.0, "-12V": -12.0, "+10V": 10.0, "GND": 0.0}
+    design.voltage_facts.facts = [
+        VoltageFact(
+            net=net,
+            reference_net="GND",
+            minimum=fixture_potentials[net],
+            maximum=fixture_potentials[net],
+            source="Synthetic DC test specification",
+            confirmed=True,
+            confirmed_by="test fixture author",
+        )
+        for net in dict.fromkeys(nets)
+        if net in fixture_potentials
+    ]
+
     report = validate_generic_passive(component, None, design, family)
     check_name = "capacitor_voltage_margin" if family == "capacitor" else "resistor_power_estimate"
     return next(check for check in report.component_checks if check.check == check_name)
@@ -68,4 +84,5 @@ def test_resistor_equal_terminal_potentials_are_evaluable(tmp_path: Path) -> Non
 
 def test_zero_ohm_same_potential_does_not_divide_by_zero(tmp_path: Path) -> None:
     check = _validate(tmp_path, "resistor", "0R", ["GND", "GND"])
-    assert check.status == "PASS"
+    assert check.status == "UNKNOWN"
+    assert "current and power margin remain unknown" in check.summary

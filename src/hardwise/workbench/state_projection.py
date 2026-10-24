@@ -81,6 +81,7 @@ def build_workbench_state(
     evidence_package.signoff_readiness = build_signoff_readiness(list(review_tasks))
 
     return WorkbenchState(
+        voltage_facts=context.design.voltage_facts,
         project=_project_view(context),
         summary=WorkbenchSummary(
             components=context.index.components_in_design,

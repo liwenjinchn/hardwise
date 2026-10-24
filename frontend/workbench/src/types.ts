@@ -355,6 +355,7 @@ export interface DatasheetCandidateSearchView {
 }
 
 export interface WorkbenchState {
+  voltage_facts: import("./generated/workbench-contracts").VoltageFactsDocument;
   project: WorkbenchProject;
   summary: WorkbenchSummary;
   capabilities: WorkbenchCapabilities;

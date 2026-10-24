@@ -1,0 +1,30 @@
+{
+  "schema_version": "hardwise.voltage_facts.v1",
+  "active_mode": "dc",
+  "facts": [
+    {
+      "net": "VCC_3V3",
+      "reference_net": "GND",
+      "mode": "dc",
+      "unit": "V",
+      "minimum": 3.3,
+      "typical": 3.3,
+      "maximum": 3.3,
+      "source": "Synthetic PST fixture DC specification; arithmetic regression only, not physical measurements",
+      "confirmed": true,
+      "confirmed_by": "Hardwise synthetic fixture author"
+    },
+    {
+      "net": "GND",
+      "reference_net": "GND",
+      "mode": "dc",
+      "unit": "V",
+      "minimum": 0,
+      "typical": 0,
+      "maximum": 0,
+      "source": "Synthetic PST fixture DC specification; arithmetic regression only, not physical measurements",
+      "confirmed": true,
+      "confirmed_by": "Hardwise synthetic fixture author"
+    }
+  ]
+}

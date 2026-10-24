@@ -139,6 +139,29 @@ describe("ImportView", () => {
   });
 });
 
+describe("Voltage facts input", () => {
+  it("shows missing confirmation and the supported passive-check scope", () => {
+    const html = renderToStaticMarkup(<ImportView state={makeState()} onImported={() => {}} />);
+    expect(html).toContain("已确认电压事实");
+    expect(html).toContain("尚未提供电压确认记录");
+    expect(html).toContain("电容耐压和电阻 DC 功耗");
+  });
+
+  it("displays supplied source, reference, range, mode and confirmation", () => {
+    const state = makeState({ voltage_facts: {
+      schema_version: "hardwise.voltage_facts.v1", active_mode: "dc", facts: [{
+        net: "P12", reference_net: "GND", mode: "dc", unit: "V",
+        minimum: 11, typical: 12, maximum: 13,
+        source: "Public synthetic specification", confirmed: true, confirmed_by: "fixture author"
+      }]
+    }});
+    const html = renderToStaticMarkup(<ImportView state={state} onImported={() => {}} />);
+    for (const text of ["P12", "GND", "fixture author", "Public synthetic specification", "11", "13"]) {
+      expect(html).toContain(text);
+    }
+  });
+});
+
 describe("ParseView", () => {
   it("renders the four parse steps from the live summary", () => {
     const html = renderToStaticMarkup(<ParseView state={makeState()} parseResult={null} />);

@@ -333,6 +333,7 @@ def create_workbench_app(
         document_index_csv: UploadFile | None = File(None),
         pin_table_csv: UploadFile | None = File(None),
         risk_hints_json: UploadFile | None = File(None),
+        voltage_facts_json: UploadFile | None = File(None),
         review_package: UploadFile | None = File(None),
     ) -> ImportResponse:
         import_dir = Path(tempfile.mkdtemp(prefix="hardwise-workbench-import-"))
@@ -365,7 +366,13 @@ def create_workbench_app(
                 if review_package
                 else None
             )
+            voltage_facts_path = (
+                _save_upload(voltage_facts_json, import_dir, fallback_name="voltage_facts.json")
+                if voltage_facts_json
+                else None
+            )
             next_context = build_workbench_context(
+                voltage_facts=voltage_facts_path,
                 netlist_path=netlist_path,
                 bom_path=bom_path,
                 profiles=profiles,
@@ -472,6 +479,7 @@ def create_workbench_app(
                         else None
                     ),
                     pin_table=context.pin_table_path,
+                    voltage_facts=context.voltage_facts_path,
                 )
             except Exception as exc:
                 raise HTTPException(status_code=422, detail=f"rerun failed: {exc}") from exc

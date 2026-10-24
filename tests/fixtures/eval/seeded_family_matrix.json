@@ -3,7 +3,7 @@
   "cases": [
     {
       "name": "capacitor_low_voltage",
-      "description": "Lower C1 rated-voltage token below the inferred 3.3 V rail.",
+      "description": "Lower C1 rated-voltage token below the explicit synthetic 3.3 V DC specification.",
       "family": "capacitor",
       "fixture_name": "passive_pst",
       "netlist": "$fixture",
@@ -15,7 +15,8 @@
         "kind": "component",
         "check": "capacitor_voltage_margin",
         "status": "ERROR"
-      }
+      },
+      "voltage_facts": "pst_dc_voltage_facts.json"
     },
     {
       "name": "capacitor_unparseable_value",
@@ -31,7 +32,8 @@
         "kind": "component",
         "check": "capacitor_value_parse",
         "status": "WARN"
-      }
+      },
+      "voltage_facts": "pst_dc_voltage_facts.json"
     },
     {
       "name": "resistor_package_conflict",
@@ -47,11 +49,12 @@
         "kind": "component",
         "check": "resistor_package_presence",
         "status": "WARN"
-      }
+      },
+      "voltage_facts": "pst_dc_voltage_facts.json"
     },
     {
       "name": "mosfet_vgs_over_abs_max",
-      "description": "Raise Q1 gate rail from 10 V to 25 V above its ±20 V Vgs limit.",
+      "description": "Raise Q1 gate rail from 10 V to 25 V above its \u00b120 V Vgs limit.",
       "family": "mosfet",
       "fixture_name": "mosfet",
       "netlist": "irf540n_mosfet.net",

@@ -7,6 +7,7 @@ from pathlib import Path
 from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
+from hardwise.ir.voltage import VoltageFact
 from hardwise.validation import generic_passive, value_parsing
 from hardwise.validation.generic_passive import validate_generic_passive
 from hardwise.validation.value_parsing import (
@@ -30,6 +31,22 @@ def _design_from_text(tmp_path: Path, netlist: str, bom_text: str):
     bom = parse_bom(bom_path)
     design = build_design_from_netlist(registry)
     report = match_bom_to_design(bom, design)
+    # Synthetic fixture specification, not confirmation inferred by production code.
+    fixture_potentials = {"P3V3": 3.3, "P12V": 12.0, "P5V": 5.0, "P1V8": 1.8, "GND": 0.0}
+    design.voltage_facts.facts = [
+        VoltageFact(
+            net=net,
+            reference_net="GND",
+            minimum=value,
+            maximum=value,
+            source="Synthetic passive test specification",
+            confirmed=True,
+            confirmed_by="test fixture author",
+        )
+        for net, value in fixture_potentials.items()
+        if net in design.nets
+    ]
+
     return apply_bom_to_design(design, report), bom, report
 
 
@@ -111,7 +128,7 @@ C1,1,0.1uF 6.3V,Fixture,GW_CAPACITOR
     )
     assert validation.status == "ERROR"
     assert margin.status == "ERROR"
-    assert "below inferred terminal-to-terminal DC voltage 12 V" in margin.summary
+    assert "below confirmed terminal-to-terminal DC voltage 12 V" in margin.summary
 
 
 def test_generic_resistor_zero_ohm_bridge_warns(tmp_path: Path) -> None:
@@ -138,7 +155,7 @@ R1,1,0R 5%,Fixture,GW_RESISTOR
     )
     assert validation.status == "WARN"
     assert power.status == "WARN"
-    assert "Zero-ohm link bridges distinct inferred rails" in power.summary
+    assert "Zero-ohm link may bridge a confirmed DC difference" in power.summary
 
 
 def test_generic_inductor_validates_value_without_topology_claims(tmp_path: Path) -> None:

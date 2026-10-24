@@ -5173,3 +5173,33 @@ No findings is not evidence of completed checks. Verify summaries and per-object
 labels together; count missing assessment separately from engineering warnings.
 This five-status compatibility step does not establish confirmed rail authority,
 complete rule coverage, or independent result/severity/evidence/reviewer axes.
+
+
+## 2026-10-24 — DC voltage premises must be explicit
+
+**Symptom**
+
+Passive arithmetic still treated net names/voltage_hint as confirmed potentials.
+The seeded capacitor regression also depended on an inferred 3.3 V premise.
+A user-facing HTML sample opened the legacy dark UI rather than the light SPA.
+
+**Root cause**
+
+A scalar had no source, confirmation, mode, range or reference-domain contract.
+The seeded matrix did not declare electrical premises. `design-validator-ui`
+retains a separate legacy renderer unless `--ai-snapshot` is selected.
+
+**Fix**
+
+Introduce strict explicit voltage facts and require paired confirmed ranges for
+passive DC stress. Keep unknown domains/typical-only inputs UNKNOWN. Add primary
+CLI/upload/rerun/export support and an explicit synthetic evaluation sidecar.
+Render user-facing samples with the current light React snapshot and inspect
+that actual output; retain legacy rendering for compatibility.
+
+**Takeaway**
+
+Correct subtraction does not establish its input authority. Tests must declare
+synthetic premises instead of accidentally relying on production guesses.
+Other profile families and stored-decision dependency invalidation are still
+open; do not extrapolate this passive-only result to whole-product correctness.

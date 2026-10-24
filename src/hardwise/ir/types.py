@@ -19,6 +19,8 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from hardwise.ir.voltage import VoltageFactsDocument
+
 from hardwise.checklist.finding import Finding
 from hardwise.ir.profile import DatasheetProfile
 
@@ -117,6 +119,7 @@ class Design(BaseModel):
     nets: dict[str, Net] = Field(default_factory=dict)
     project_path: Path
     source_eda: SourceEda
+    voltage_facts: VoltageFactsDocument = Field(default_factory=VoltageFactsDocument)
 
     @property
     def refdes_set(self) -> set[str]:

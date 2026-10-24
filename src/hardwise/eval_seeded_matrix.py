@@ -54,6 +54,7 @@ class SeededDefectCaseSpec(BaseModel):
     fixture_name: str
     netlist: str
     bom: str | None = None
+    voltage_facts: str | None = None
     mutation_target: MutationTarget
     mutation_old: str
     mutation_new: str
@@ -72,12 +73,14 @@ class SeededFixture:
     name: str
     netlist: Path
     bom: Path | None = None
+    voltage_facts: Path | None = None
 
 
 @dataclass(frozen=True)
 class SeededWorkspace:
     netlist: Path
     bom: Path
+    voltage_facts: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -113,6 +116,7 @@ def load_seeded_cases(
                 name=spec.fixture_name,
                 netlist=(fixture if spec.netlist == "$fixture" else fixtures_root / spec.netlist),
                 bom=fixtures_root / spec.bom if spec.bom is not None else None,
+                voltage_facts=fixtures_root / spec.voltage_facts if spec.voltage_facts else None,
             ),
             mutate=partial(
                 _apply_mutation,
@@ -134,7 +138,9 @@ def materialize_seeded_fixture(source: SeededFixture, target: Path) -> SeededWor
         bom = _write_base_bom(target) if source.bom is None else target / source.bom.name
         if source.bom is not None:
             shutil.copy2(source.bom, bom)
-        return SeededWorkspace(netlist=target, bom=bom)
+        return SeededWorkspace(
+            netlist=target, bom=bom, voltage_facts=_copy_voltage_facts(source, target)
+        )
 
     target.mkdir(parents=True)
     netlist = target / source.netlist.name
@@ -143,7 +149,17 @@ def materialize_seeded_fixture(source: SeededFixture, target: Path) -> SeededWor
         raise ValueError(f"{source.netlist}: paired BOM is required for file fixtures")
     bom = target / source.bom.name
     shutil.copy2(source.bom, bom)
-    return SeededWorkspace(netlist=netlist, bom=bom)
+    return SeededWorkspace(
+        netlist=netlist, bom=bom, voltage_facts=_copy_voltage_facts(source, target)
+    )
+
+
+def _copy_voltage_facts(source: SeededFixture, target: Path) -> Path | None:
+    if source.voltage_facts is None:
+        return None
+    destination = target / "voltage_facts.json"
+    shutil.copy2(source.voltage_facts, destination)
+    return destination
 
 
 def _write_base_bom(project: Path) -> Path:

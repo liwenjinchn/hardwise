@@ -25,6 +25,10 @@ def register_design_validator_commands(app: typer.Typer) -> None:
                 "BOM candidates are auto-selected from an Allegro/PST project directory."
             ),
         ),
+        voltage_facts: Path | None = typer.Option(
+            None, "--voltage-facts",
+            help="Explicit confirmed DC voltage envelopes JSON; net names are candidates only for passive stress checks.",
+        ),
         profiles: Path = typer.Option(
             Path("data/datasheet_profiles"),
             "--profiles",
@@ -113,6 +117,7 @@ def register_design_validator_commands(app: typer.Typer) -> None:
                 risk_hints_json=risk_hints_json,
                 review_package_manifest=review_package_manifest,
                 pin_table=pin_table,
+                voltage_facts=voltage_facts,
             )
         except ProfileCandidateError as e:
             typer.echo(f"error: profile candidate generation failed: {e}", err=True)

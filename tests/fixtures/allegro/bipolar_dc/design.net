@@ -1,0 +1,8 @@
+$PACKAGES
+ ! 'C0402' ! 1uF 16V ; C1
+ ! 'R0402' ! 1K 1/4W ; R1
+$NETS
+ 'P12' ; C1.1
+ 'N12' ; C1.2
+ 'GND' ; R1.1 R1.2
+$END

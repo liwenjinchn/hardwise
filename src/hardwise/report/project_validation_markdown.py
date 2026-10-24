@@ -54,6 +54,30 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
         lines.append("No net-level findings.")
     lines.append("")
 
+    lines.extend(
+        [
+            "## DC voltage facts",
+            "",
+            f"Active mode: {_escape_pipe(index.voltage_facts.active_mode)}. "
+            "Applies to supported passive DC stress checks only; no transient/ripple signoff.",
+            "",
+            "| Net | Min / Typical / Max (V) | Reference | Mode | Confirmed by | Source |",
+            "|---|---|---|---|---|---|",
+        ]
+    )
+    for fact in index.voltage_facts.facts:
+        lines.append(
+            f"| {_escape_pipe(fact.net)} | {fact.minimum} / {fact.typical} / {fact.maximum} | "
+            f"{_escape_pipe(fact.reference_net)} | {_escape_pipe(fact.mode)} | "
+            f"{_escape_pipe(fact.confirmed_by) if fact.confirmed else 'UNCONFIRMED'} | "
+            f"{_escape_pipe(fact.source)} |"
+        )
+    if not index.voltage_facts.facts:
+        lines.append(
+            "No confirmed voltage input; net-name candidates cannot pass passive stress checks."
+        )
+    lines.append("")
+
     lines.append("## Validated Components")
     lines.append("")
     lines.append(

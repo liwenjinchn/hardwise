@@ -29,6 +29,7 @@ class SeededDefectCaseResult(BaseModel):
     description: str
     family: str = "unclassified"
     fixture: str = ""
+    voltage_facts: str | None = None
     detected: bool
     expected: SeededFindingSignature
     new_issues: list[SeededFindingSignature] = Field(default_factory=list)
@@ -80,22 +81,26 @@ def run_seeded_defect_benchmark(
     cases = load_seeded_cases(fixture=fixture, fixtures_root=fixtures_root, matrix=matrix)
     with tempfile.TemporaryDirectory(prefix="hardwise-seeded-defects-") as tmp:
         tmp_root = Path(tmp)
-        baselines: dict[tuple[Path, Path | None], set[tuple[str, str, str, str]]] = {}
+        baselines: dict[tuple[Path, Path | None, Path | None], set[tuple[str, str, str, str]]] = {}
         results: list[SeededDefectCaseResult] = []
         for case in cases:
-            baseline_key = (case.fixture.netlist, case.fixture.bom)
+            baseline_key = (case.fixture.netlist, case.fixture.bom, case.fixture.voltage_facts)
             baseline = baselines.get(baseline_key)
             if baseline is None:
                 clean = materialize_seeded_fixture(
                     case.fixture,
                     tmp_root / f"clean-{len(baselines)}-{case.fixture.name}",
                 )
-                baseline = _issue_keys(_run_validation(clean.netlist, clean.bom, profiles))
+                baseline = _issue_keys(
+                    _run_validation(clean.netlist, clean.bom, profiles, clean.voltage_facts)
+                )
                 baselines[baseline_key] = baseline
 
             workspace = materialize_seeded_fixture(case.fixture, tmp_root / case.name)
             case.mutate(workspace)
-            issues = _run_validation(workspace.netlist, workspace.bom, profiles)
+            issues = _run_validation(
+                workspace.netlist, workspace.bom, profiles, workspace.voltage_facts
+            )
             new_issues = [issue for issue in issues if issue.key not in baseline]
             detected = case.expected.key in {issue.key for issue in new_issues}
             false_positives = [issue for issue in new_issues if issue.key != case.expected.key]
@@ -105,6 +110,9 @@ def run_seeded_defect_benchmark(
                     description=case.description,
                     family=case.family,
                     fixture=str(case.fixture.netlist),
+                    voltage_facts=str(case.fixture.voltage_facts)
+                    if case.fixture.voltage_facts
+                    else None,
                     detected=detected,
                     expected=case.expected,
                     new_issues=new_issues,
@@ -136,12 +144,15 @@ def write_seeded_defect_summary(summary: SeededDefectSummary, output: Path) -> N
     )
 
 
-def _run_validation(project: Path, bom: Path, profiles: Path) -> list[SeededFindingSignature]:
+def _run_validation(
+    project: Path, bom: Path, profiles: Path, voltage_facts: Path | None = None
+) -> list[SeededFindingSignature]:
     context = build_workbench_context(
         netlist_path=project,
         bom_path=bom,
         profiles=profiles,
         generated_at="2026-01-01T00:00:00+00:00",
+        voltage_facts=voltage_facts,
     )
     try:
         issues: list[SeededFindingSignature] = []

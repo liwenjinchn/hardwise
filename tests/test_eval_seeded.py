@@ -34,6 +34,8 @@ def test_seeded_defect_benchmark_reports_recall_and_false_positives() -> None:
         "buck_inductor_output_grounded",
     }
     assert all(case.detected for case in summary.cases)
+    capacitor = next(case for case in summary.cases if case.name == "capacitor_low_voltage")
+    assert capacitor.voltage_facts == "tests/fixtures/allegro/pst_dc_voltage_facts.json"
     assert all(case.false_positives == [] for case in summary.cases)
     assert all(case.new_issues == [case.expected] for case in summary.cases)
 

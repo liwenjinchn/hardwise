@@ -10,6 +10,7 @@ from hardwise.bom.types import Bom, BomMatchReport, sort_refdes_key
 from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Design
+from hardwise.ir.voltage import VoltageFactsDocument
 from hardwise.path_display import display_path
 from hardwise.validation.component import validate_component_against_profile
 from hardwise.validation.component_groups import ProjectComponentGroup, build_component_groups
@@ -75,6 +76,7 @@ class ProjectValidationIndex(BaseModel):
     rows: list[ProjectValidationRow] = Field(default_factory=list)
     component_groups: list[ProjectComponentGroup] = Field(default_factory=list)
     net_checks: list[NetValidation] = Field(default_factory=list)
+    voltage_facts: VoltageFactsDocument = Field(default_factory=VoltageFactsDocument)
 
     @property
     def validated_rows(self) -> list[ProjectValidationRow]:
@@ -175,6 +177,7 @@ def build_project_validation_index(
     )
 
     return ProjectValidationIndex(
+        voltage_facts=design.voltage_facts,
         project_name=project_name,
         generated_at=generated_at,
         netlist_source=display_path(netlist_source) or "",
@@ -186,9 +189,7 @@ def build_project_validation_index(
         rows=rows,
         component_groups=component_groups,
         net_checks=validate_design_nets(design, source_label=Path(netlist_source).name)
-        + validate_net_naming(
-            design, policy=naming_policy, source_label=Path(netlist_source).name
-        ),
+        + validate_net_naming(design, policy=naming_policy, source_label=Path(netlist_source).name),
     )
 
 

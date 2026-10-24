@@ -1,0 +1,33 @@
+{
+  "schema_version": "hardwise.voltage_facts.v1",
+  "active_mode": "dc",
+  "facts": [
+    {
+      "net": "P12",
+      "reference_net": "GND",
+      "minimum": 12,
+      "maximum": 12,
+      "source": "Public synthetic bipolar DC fixture",
+      "confirmed": true,
+      "confirmed_by": "synthetic fixture author"
+    },
+    {
+      "net": "N12",
+      "reference_net": "GND",
+      "minimum": -12,
+      "maximum": -12,
+      "source": "Public synthetic bipolar DC fixture",
+      "confirmed": true,
+      "confirmed_by": "synthetic fixture author"
+    },
+    {
+      "net": "GND",
+      "reference_net": "GND",
+      "minimum": 0,
+      "maximum": 0,
+      "source": "Public synthetic bipolar DC fixture",
+      "confirmed": true,
+      "confirmed_by": "synthetic fixture author"
+    }
+  ]
+}

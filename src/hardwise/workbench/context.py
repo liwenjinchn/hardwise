@@ -21,6 +21,7 @@ from hardwise.ir.types import Design
 from hardwise.project_inputs import ResolvedBomInput, project_name_for_inputs, resolve_bom_input
 from hardwise.review_package import ReviewPackageReport, load_review_package_manifest
 from hardwise.store.relational import create_store, populate_from_registry
+from hardwise.validation.voltage_facts import load_voltage_facts
 from hardwise.validation import suggest_profile_candidates
 from hardwise.validation.profile_candidates import ProfileCandidateReport
 from hardwise.validation.project_index import (
@@ -69,6 +70,7 @@ class WorkbenchContext:
     netlist_type: str
     generated_at: str
     property_count: int
+    voltage_facts_path: Path | None = None
     projection: WorkbenchProjectionIndex = field(init=False, repr=False, compare=False)
     agent_lock: Any = field(default_factory=RLock, init=False, repr=False, compare=False)
 
@@ -146,6 +148,7 @@ def build_workbench_context(
     review_package_manifest: Path | None = None,
     pin_table: Path | None = None,
     generated_at: str | None = None,
+    voltage_facts: Path | None = None,
 ) -> WorkbenchContext:
     """Build shared deterministic workbench state from Allegro/PST inputs."""
 
@@ -158,6 +161,8 @@ def build_workbench_context(
     bom = resolved_bom.bom
     bom_report = resolved_bom.bom_report
     design = apply_bom_to_design(design, bom_report)
+    if voltage_facts is not None:
+        load_voltage_facts(voltage_facts, design)
     try:
         risk_hints = (
             load_risk_hint_report(risk_hints_json, design)
@@ -227,6 +232,7 @@ def build_workbench_context(
             netlist_type=input_type,
             generated_at=timestamp,
             property_count=property_count,
+            voltage_facts_path=voltage_facts,
         )
     except Exception:
         session.close()
