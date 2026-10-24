@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from hardwise.ir.profile import DatasheetProfile, PinProfile
 from hardwise.ir.types import Component, Design, Pin
+from hardwise.validation.family_pin import family_pin_check
 from hardwise.validation.pins import is_ground_net, voltage_for_net
 from hardwise.validation.topology import components_on_net
 from hardwise.validation.types import ComponentValidation
@@ -34,45 +35,8 @@ def _validate_supply(
     name: str,
     design: Design,
 ) -> ComponentValidation:
-    pin_profile = _pin_profile_by_name(profile, name)
-    pin = _pin_by_profile_name(component, profile, name)
-    evidence = _profile_evidence(profile, f"recommended.{name.lower().replace('/', '_')}")
-    if pin is None or not pin.net:
-        return ComponentValidation(
-            check=f"mcu_{_slug(name)}_rail",
-            result="FAIL",
-            severity="ERROR",
-            summary=f"MCU {name} supply pin is missing or has no connected net.",
-            evidence=evidence,
-        )
-
-    voltage = voltage_for_net(pin.net, design)
-    nominal = _float_limit(pin_profile, "nominal_voltage") if pin_profile else None
-    if voltage is None:
-        return ComponentValidation(
-            check=f"mcu_{_slug(name)}_rail",
-            result="UNKNOWN",
-            severity="WARNING",
-            refdes=component.refdes,
-            summary=f"MCU {name} rail voltage on net {pin.net} cannot be inferred.",
-            evidence=evidence,
-        )
-    if nominal is not None and abs(voltage - nominal) > 0.2:
-        return ComponentValidation(
-            check=f"mcu_{_slug(name)}_rail",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=f"MCU {name} net {pin.net} is {voltage:g} V, expected {nominal:g} V.",
-            evidence=evidence,
-        )
-    return ComponentValidation(
-        check=f"mcu_{_slug(name)}_rail",
-        result="PASS",
-        severity="INFO",
-        refdes=component.refdes,
-        summary=f"MCU {name} net {pin.net} is a valid {voltage:g} V rail.",
-        evidence=evidence,
+    return family_pin_check(
+        component, profile, _pin_profile_by_name(profile, name), design, f"mcu_{_slug(name)}_rail"
     )
 
 
@@ -254,15 +218,6 @@ def _pin_by_profile_name(
 
 def _pin_profile_by_name(profile: DatasheetProfile, name: str) -> PinProfile | None:
     return next((pin for pin in profile.pins if pin.name.upper() == name.upper()), None)
-
-
-def _float_limit(pin_profile: PinProfile | None, key: str) -> float | None:
-    if pin_profile is None:
-        return None
-    value = pin_profile.limits.get(key)
-    if isinstance(value, (int, float)):
-        return float(value)
-    return None
 
 
 def _has_resistor_to_voltage(design: Design, net_name: str, voltage: float) -> bool:

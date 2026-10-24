@@ -5313,3 +5313,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: the helper sliced through the remainder of the HTML when there was no next panel, so JavaScript template attributes were counted as rendered panel sections.
 - Fix: bound extraction at that panel's closing `</article>` after checking the renderer has no nested article panels. Keep all expected section assertions.
 - Takeaway: source-string UI helpers need an explicit component boundary; a changed initial selection should not alter the meaning of another panel's assertions. A separate frontend parse-summary assertion also needed the verified new 0 PASS count after its summary fixture changed.
+
+
+### 2026-10-24 — Family supply summaries bypassed confirmed pin rules
+
+- Symptom: after generic pin voltage migration, MCU, I2C mux and connector component checks still used net-name point voltages. A family card could PASS while its own supply pin was UNKNOWN. MCU also retained a hardcoded nominal ±0.2 V window; connector ground checks still rejected unfamiliar labels.
+- Root cause: duplicated family supply comparators were independent of the canonical pin assessment path. Duplicate top-level recommendation fields could bypass missing/invalid pin-field limits and sources.
+- Fix: a small family-pin adapter preserves the existing check identity and all independent assessment fields while reusing resolved reference pins, confirmed intervals, declared pin bounds and pin evidence. Callers require the expected pin category; a supply check cannot use ground connectivity as numeric proof. Ground connectivity explicitly covers connection only. Family recommendation violations now inherit WARNING rather than becoming an absolute-rating ERROR.
+- Takeaway: fixing shared pin checks is insufficient if component summaries independently recompute an older conclusion. API regressions compare the complete pin/family assessment, rerun, and exported non-PASS tasks. The API's state JSON is not the CLI validation-index JSON: it has review_tasks, not rows, and individual PASS checks create no review task. Do not claim export coverage from a guessed schema.

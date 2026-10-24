@@ -767,7 +767,7 @@ def test_validate_stm32_wrong_vdd_voltage_errors() -> None:
 
     vdd = next(check for check in report.component_checks if check.check == "mcu_vdd_vdda_rail")
     assert vdd.status == "ERROR"
-    assert "expected 3.3 V" in vdd.summary
+    assert "abs_max_voltage=4 V" in vdd.summary
 
 
 def test_validate_stm32_floating_nrst_errors() -> None:

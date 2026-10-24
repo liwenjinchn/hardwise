@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Pin
-from hardwise.validation.pins import voltage_for_net
+from hardwise.validation.family_pin import family_pin_check
 from hardwise.validation.types import ComponentValidation
 
 
@@ -26,54 +26,8 @@ def _validate_supply(
     profile: DatasheetProfile,
     design: Design,
 ) -> ComponentValidation:
-    evidence = _profile_evidence(profile, "recommended.vdd")
-    pin = _pin_by_profile_name(component, profile, "VDD")
-    if pin is None or not pin.net:
-        return ComponentValidation(
-            check="i2c_mux_vdd",
-            result="FAIL",
-            severity="ERROR",
-            summary="I2C mux VDD pin is missing or has no connected net.",
-            evidence=evidence,
-        )
-    voltage = voltage_for_net(pin.net, design)
-    vdd_min = _float_recommended(profile, "vdd_min")
-    vdd_max = _float_recommended(profile, "vdd_max")
-    if voltage is None:
-        return ComponentValidation(
-            check="i2c_mux_vdd",
-            result="UNKNOWN",
-            severity="WARNING",
-            refdes=component.refdes,
-            summary=f"I2C mux VDD net {pin.net} voltage cannot be inferred deterministically.",
-            evidence=evidence,
-        )
-    if vdd_min is not None and voltage < vdd_min:
-        return ComponentValidation(
-            check="i2c_mux_vdd",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=f"I2C mux VDD is {voltage:g} V, below profile minimum {vdd_min:g} V.",
-            evidence=evidence,
-        )
-    if vdd_max is not None and voltage > vdd_max:
-        return ComponentValidation(
-            check="i2c_mux_vdd",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=f"I2C mux VDD is {voltage:g} V, above profile maximum {vdd_max:g} V.",
-            evidence=evidence,
-        )
-    return ComponentValidation(
-        check="i2c_mux_vdd",
-        result="PASS",
-        severity="INFO",
-        refdes=component.refdes,
-        summary=f"I2C mux VDD net {pin.net} is within the profile supply range.",
-        evidence=evidence,
-    )
+    pin_profile = next((p for p in profile.pins if p.name.upper() == "VDD"), None)
+    return family_pin_check(component, profile, pin_profile, design, "i2c_mux_vdd")
 
 
 def _validate_upstream_bus(component: Component, profile: DatasheetProfile) -> ComponentValidation:
@@ -183,13 +137,6 @@ def _net(pin: Pin | None) -> str | None:
 
 def _normalize_pin_name(value: str) -> str:
     return "".join(ch for ch in value.upper() if ch.isalnum())
-
-
-def _float_recommended(profile: DatasheetProfile, key: str) -> float | None:
-    value = profile.recommended.get(key)
-    if isinstance(value, (int, float)):
-        return float(value)
-    return None
 
 
 def _profile_evidence(profile: DatasheetProfile, key: str) -> list[str]:

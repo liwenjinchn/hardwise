@@ -135,8 +135,8 @@ R_SIG8,10K,0805,Signal 8 resistor
     assert "not connected" in signal_4_checks[0].summary
 
 
-def test_connector_ground_not_gnd(connector_profile, tmp_path):
-    """ERROR: Ground pin connected to non-ground net."""
+def test_connector_ground_name_does_not_establish_reference(connector_profile, tmp_path):
+    """An unfamiliar net label establishes connection, not ground equivalence."""
     netlist_content = """$PACKAGES
   ! 'CONN_2X5' ! CONN_2X5 ; J1
   ! 'R0805' ! 10K ; R_PULLUP
@@ -185,10 +185,10 @@ R_SIG8,10K,0805,Signal 8 resistor
     component = design.components["J1"]
     results = validate_component_against_profile(component, connector_profile, design)
 
-    assert results.status == "ERROR"
+    assert results.status == "UNKNOWN"
     ground_checks = [
         c for c in results.component_checks if c.check == "connector_ground_connectivity"
     ]
     assert len(ground_checks) == 1
-    assert ground_checks[0].status == "ERROR"
-    assert "non-ground net" in ground_checks[0].summary
+    assert ground_checks[0].status == "PASS"
+    assert "这里只确认连接" in ground_checks[0].summary

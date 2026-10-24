@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from hardwise.ir.profile import DatasheetProfile, PinProfile
+from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
-from hardwise.validation.pins import is_ground_net, voltage_for_net
+from hardwise.validation.family_pin import family_pin_check
 from hardwise.validation.types import ComponentValidation
 
 
@@ -23,7 +23,7 @@ def validate_connector(
     for pin_profile in power_pins:
         checks.append(_validate_power_pin(component, profile, pin_profile.number, design))
     for pin_profile in ground_pins:
-        checks.append(_validate_ground_pin(component, profile, pin_profile.number))
+        checks.append(_validate_ground_pin(component, profile, pin_profile.number, design))
     for pin_profile in signal_pins:
         checks.append(_validate_signal_pin(component, profile, pin_profile.number))
     return checks
@@ -35,61 +35,8 @@ def _validate_power_pin(
     pin_number: str,
     design: Design,
 ) -> ComponentValidation:
-    evidence = _pin_evidence(profile, pin_number)
-    pin = component.pin_by_number(pin_number)
-    if pin is None or not pin.net:
-        return ComponentValidation(
-            check="connector_power_voltage",
-            result="FAIL",
-            severity="ERROR",
-            summary=f"Connector power pin {pin_number} is not connected.",
-            evidence=evidence,
-        )
-    voltage = voltage_for_net(pin.net, design)
-    if voltage is None:
-        return ComponentValidation(
-            check="connector_power_voltage",
-            result="UNKNOWN",
-            severity="WARNING",
-            refdes=component.refdes,
-            summary=f"Connector power net {pin.net} voltage cannot be inferred.",
-            evidence=evidence,
-        )
-
-    pin_profile = profile.pin_by_number(pin_number)
-    min_voltage = _float_limit(pin_profile, "recommended_voltage_min")
-    max_voltage = _float_limit(pin_profile, "recommended_voltage_max")
-    if min_voltage is not None and voltage < min_voltage:
-        return ComponentValidation(
-            check="connector_power_voltage",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=(
-                f"Connector power net {pin.net} is {voltage:g} V, "
-                f"below profile minimum {min_voltage:g} V."
-            ),
-            evidence=evidence,
-        )
-    if max_voltage is not None and voltage > max_voltage:
-        return ComponentValidation(
-            check="connector_power_voltage",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=(
-                f"Connector power net {pin.net} is {voltage:g} V, "
-                f"above profile maximum {max_voltage:g} V."
-            ),
-            evidence=evidence,
-        )
-    return ComponentValidation(
-        check="connector_power_voltage",
-        result="PASS",
-        severity="INFO",
-        refdes=component.refdes,
-        summary=f"Connector power net {pin.net} is within the profile voltage range.",
-        evidence=evidence,
+    return family_pin_check(
+        component, profile, profile.pin_by_number(pin_number), design, "connector_power_voltage"
     )
 
 
@@ -97,33 +44,15 @@ def _validate_ground_pin(
     component: Component,
     profile: DatasheetProfile,
     pin_number: str,
+    design: Design,
 ) -> ComponentValidation:
-    evidence = _pin_evidence(profile, pin_number)
-    pin = component.pin_by_number(pin_number)
-    if pin is None or not pin.net:
-        return ComponentValidation(
-            check="connector_ground_connectivity",
-            result="FAIL",
-            severity="ERROR",
-            summary=f"Connector ground pin {pin_number} is not connected.",
-            evidence=evidence,
-        )
-    if not is_ground_net(pin.net):
-        return ComponentValidation(
-            check="connector_ground_connectivity",
-            result="FAIL",
-            severity="ERROR",
-            refdes=component.refdes,
-            summary=f"Connector ground pin {pin_number} is connected to non-ground net {pin.net}.",
-            evidence=evidence,
-        )
-    return ComponentValidation(
-        check="connector_ground_connectivity",
-        result="PASS",
-        severity="INFO",
-        refdes=component.refdes,
-        summary=f"Connector ground pin {pin_number} is connected to {pin.net}.",
-        evidence=evidence,
+    return family_pin_check(
+        component,
+        profile,
+        profile.pin_by_number(pin_number),
+        design,
+        "connector_ground_connectivity",
+        category="ground",
     )
 
 
@@ -158,12 +87,3 @@ def _pin_evidence(profile: DatasheetProfile, pin_number: str) -> list[str]:
         return [token]
     pin = profile.pin_by_number(pin_number)
     return list(pin.evidence) if pin else []
-
-
-def _float_limit(pin: PinProfile | None, key: str) -> float | None:
-    if pin is None:
-        return None
-    value = pin.limits.get(key)
-    if isinstance(value, (int, float)):
-        return float(value)
-    return None
