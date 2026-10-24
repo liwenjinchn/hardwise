@@ -160,9 +160,13 @@ def render(
             <div class="card"><span>PASS 引脚</span><strong>{status_counts["PASS"]}</strong></div>
             <div class="card"><span>WARN 引脚</span><strong>{status_counts["WARN"]}</strong></div>
             <div class="card"><span>ERROR 引脚</span><strong>{status_counts["ERROR"]}</strong></div>
+            <div class="card"><span>UNKNOWN 引脚</span><strong>{status_counts["UNKNOWN"]}</strong></div>
+            <div class="card"><span>NOT_APPLICABLE 引脚</span><strong>{status_counts["NOT_APPLICABLE"]}</strong></div>
             <div class="card"><span>PASS 检查</span><strong>{component_counts["PASS"]}</strong></div>
             <div class="card"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
             <div class="card"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
+    <div class="card"><span>UNKNOWN 检查</span><strong>{component_counts["UNKNOWN"]}</strong></div>
+    <div class="card"><span>NOT_APPLICABLE 检查</span><strong>{component_counts["NOT_APPLICABLE"]}</strong></div>
           </div>
           <div class="tabs">
             <input checked class="tab-input" id="tab-report" name="tab" type="radio">

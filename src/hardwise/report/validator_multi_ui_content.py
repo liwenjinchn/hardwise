@@ -214,6 +214,8 @@ def _summary_content(validation: ValidationReport) -> str:
             if check.status != "PASS"
         ],
     ]
+    if not validation.pin_results and not validation.component_checks:
+        issues = ["未评估：没有可执行的检查，未产生通过结论。"]
     if not issues:
         return "<p>未发现确定性引脚或外围/拓扑问题。</p>"
     return "<ul>" + "".join(f"<li>{escape(issue)}</li>" for issue in issues) + "</ul>"

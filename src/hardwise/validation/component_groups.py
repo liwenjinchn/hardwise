@@ -152,6 +152,10 @@ def _aggregate_validation_status(
         return "ERROR"
     if "WARN" in statuses:
         return "WARN"
+    if "UNKNOWN" in statuses:
+        return "UNKNOWN"
+    if len(statuses) == len(refdes_list) and set(statuses) == {"NOT_APPLICABLE"}:
+        return "NOT_APPLICABLE"
     if len(statuses) == len(refdes_list) and set(statuses) == {"PASS"}:
         return "PASS"
     return "mixed"

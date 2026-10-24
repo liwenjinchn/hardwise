@@ -26,7 +26,7 @@ from hardwise.validation.types import ValidationReport
 
 
 def _zero_counts() -> dict[str, int]:
-    return {"PASS": 0, "WARN": 0, "ERROR": 0}
+    return {"PASS": 0, "WARN": 0, "ERROR": 0, "UNKNOWN": 0, "NOT_APPLICABLE": 0}
 
 
 class ProjectValidationRow(BaseModel):

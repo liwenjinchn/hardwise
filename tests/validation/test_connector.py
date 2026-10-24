@@ -32,8 +32,20 @@ def test_connector_nominal_all_pass(connector_profile, connector_design):
     results = validate_component_against_profile(component, connector_profile, connector_design)
 
     assert results.status == "PASS"
-    assert results.counts_by_status == {"PASS": 10, "WARN": 0, "ERROR": 0}
-    assert results.component_counts_by_status == {"PASS": 10, "WARN": 0, "ERROR": 0}
+    assert results.counts_by_status == {
+        "PASS": 10,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
+    assert results.component_counts_by_status == {
+        "PASS": 10,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
 
     # Check specific validations
     check_names = {c.check for c in results.component_checks}
@@ -53,7 +65,13 @@ def test_connector_routes_by_family_without_mpn_fallback(
 
     results = validate_component_against_profile(component, profile, connector_design)
 
-    assert results.component_counts_by_status == {"PASS": 10, "WARN": 0, "ERROR": 0}
+    assert results.component_counts_by_status == {
+        "PASS": 10,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
 
 
 def test_connector_floating_signal(connector_profile, tmp_path):

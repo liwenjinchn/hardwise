@@ -96,6 +96,8 @@ def render_project_workbench(
           <div class="metric pass"><span>PASS</span><strong>{counts["PASS"]}</strong></div>
           <div class="metric warn"><span>WARN</span><strong>{counts["WARN"]}</strong></div>
           <div class="metric error"><span>ERROR</span><strong>{counts["ERROR"]}</strong></div>
+          <div class="metric pending"><span>UNKNOWN</span><strong>{counts["UNKNOWN"]}</strong></div>
+          <div class="metric pending"><span>NOT_APPLICABLE</span><strong>{counts["NOT_APPLICABLE"]}</strong></div>
         </div>
       </header>
       <section class="workspace">
@@ -106,7 +108,7 @@ def render_project_workbench(
                 <h2>验证</h2>
                 <span class="pill">{_verify_pill(ordered)}</span>
               </div>
-              <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
+              <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]} · UNKNOWN/NOT_APPLICABLE={counts["UNKNOWN"]}/{counts["NOT_APPLICABLE"]}</p>
             </div>
             <div class="verified-list">{_verify_list(ordered, active_refdes, index)}</div>
           </aside>

@@ -117,7 +117,7 @@ def _rated_voltage_check(
 ) -> ComponentValidation:
     return ComponentValidation(
         check="capacitor_rated_voltage_parse",
-        status="PASS" if rated_voltage is not None else "WARN",
+        status="PASS" if rated_voltage is not None else "UNKNOWN",
         refdes=component.refdes,
         summary=(
             f"Capacitor rated voltage {rated_voltage:g} V was parsed from '{value}'."
@@ -137,7 +137,7 @@ def _capacitor_voltage_margin(
     if rated_voltage is None:
         return ComponentValidation(
             check="capacitor_voltage_margin",
-            status="WARN",
+            status="UNKNOWN",
             refdes=component.refdes,
             summary="Capacitor voltage margin cannot be checked because rated voltage is missing.",
             evidence=evidence,
@@ -147,7 +147,7 @@ def _capacitor_voltage_margin(
     if len(component.pins) != 2 or len(voltages) != 2:
         return ComponentValidation(
             check="capacitor_voltage_margin",
-            status="WARN",
+            status="UNKNOWN",
             refdes=component.refdes,
             summary=(
                 "Capacitor voltage margin cannot be checked without two terminal voltages; "
@@ -194,7 +194,7 @@ def _resistor_power_check(
     if resistance is None:
         return ComponentValidation(
             check="resistor_power_estimate",
-            status="WARN",
+            status="UNKNOWN",
             refdes=component.refdes,
             summary="Resistor power cannot be estimated because resistance is missing.",
             evidence=evidence,
@@ -204,7 +204,7 @@ def _resistor_power_check(
     if len(component.pins) != 2 or len(voltages) != 2:
         return ComponentValidation(
             check="resistor_power_estimate",
-            status="WARN",
+            status="UNKNOWN",
             refdes=component.refdes,
             summary=(
                 "Resistor power cannot be estimated without two terminal voltages; "
@@ -249,7 +249,7 @@ def _resistor_power_check(
     )
     return ComponentValidation(
         check="resistor_power_estimate",
-        status="PASS" if power_rating is not None else "WARN",
+        status="PASS" if power_rating is not None else "UNKNOWN",
         refdes=component.refdes,
         summary=(
             f"Estimated resistor power {power:g} W from {delta:g} V across "

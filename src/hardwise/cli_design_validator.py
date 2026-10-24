@@ -215,7 +215,7 @@ def register_design_validator_commands(app: typer.Typer) -> None:
             f"({context.index.components_in_design} components, "
             f"validated={len(context.index.validated_rows)}, "
             f"bom_rows_matched={context.index.bom_matched}, "
-            f"PASS/WARN/ERROR={totals['PASS']}/{totals['WARN']}/{totals['ERROR']}, "
+            f"PASS/WARN/ERROR={totals['PASS']}/{totals['WARN']}/{totals['ERROR']}, UNKNOWN/NOT_APPLICABLE={totals['UNKNOWN']}/{totals['NOT_APPLICABLE']}, "
             f"manual={len(context.index.manual_rows)})"
         )
         if index_output is not None:

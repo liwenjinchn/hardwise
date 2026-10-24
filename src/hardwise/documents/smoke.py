@@ -37,6 +37,8 @@ class DocumentCandidateSmokeSummary(BaseModel):
     pass_count: int
     warn_count: int
     error_count: int
+    unknown_count: int = 0
+    not_applicable_count: int = 0
     candidate_rows: int
     candidate_document_status: dict[str, int]
     candidate_review_status: dict[str, int]
@@ -56,7 +58,8 @@ class DocumentCandidateSmokeSummary(BaseModel):
             f"needs_review={self.candidate_needs_review}, "
             f"no_result={self.candidate_document_status.get('no_result', 0)}, "
             f"queue={self.workbench_document_candidate_tasks}, "
-            f"PASS/WARN/ERROR={self.pass_count}/{self.warn_count}/{self.error_count}"
+            f"PASS/WARN/ERROR={self.pass_count}/{self.warn_count}/{self.error_count}, "
+            f"UNKNOWN/NOT_APPLICABLE={self.unknown_count}/{self.not_applicable_count}"
         )
 
 
@@ -141,6 +144,8 @@ def run_document_candidate_smoke(
         pass_count=totals["PASS"],
         warn_count=totals["WARN"],
         error_count=totals["ERROR"],
+        unknown_count=totals["UNKNOWN"],
+        not_applicable_count=totals["NOT_APPLICABLE"],
         candidate_rows=len(report.candidates),
         candidate_document_status=dict(candidate_document_status),
         candidate_review_status=dict(candidate_review_status),
@@ -155,6 +160,8 @@ def run_document_candidate_smoke(
             state.summary.pass_count == totals["PASS"]
             and state.summary.warn_count == totals["WARN"]
             and state.summary.error_count == totals["ERROR"]
+            and state.summary.unknown_count == totals["UNKNOWN"]
+            and state.summary.not_applicable_count == totals["NOT_APPLICABLE"]
         ),
     )
 

@@ -123,6 +123,8 @@ def _validation_section(summary: TrustDashboardSummary) -> str:
         {_card("PASS", coverage.pass_warn_error.get("PASS", 0), "component verdicts")}
         {_card("WARN", coverage.pass_warn_error.get("WARN", 0), "component verdicts")}
         {_card("ERROR", coverage.pass_warn_error.get("ERROR", 0), "component verdicts")}
+        {_card("UNKNOWN", coverage.pass_warn_error.get("UNKNOWN", 0), "unassessed components")}
+        {_card("NOT_APPLICABLE", coverage.pass_warn_error.get("NOT_APPLICABLE", 0), "inapplicable checks")}
       </div>
       <div class="split">
         {_bar_table("Match Status", coverage.match_status_counts)}

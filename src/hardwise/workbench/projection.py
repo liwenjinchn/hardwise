@@ -65,7 +65,7 @@ class WorkbenchProjectionIndex:
             risk_hints_by_refdes.setdefault(hint.refdes, []).append(hint)
         frozen_risk_hints = {refdes: tuple(hints) for refdes, hints in risk_hints_by_refdes.items()}
 
-        totals = {"PASS": 0, "WARN": 0, "ERROR": 0}
+        totals = {"PASS": 0, "WARN": 0, "ERROR": 0, "UNKNOWN": 0, "NOT_APPLICABLE": 0}
         validated_count = 0
         for row in context.index.rows:
             if row.validation is None:

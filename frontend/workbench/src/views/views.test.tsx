@@ -146,7 +146,9 @@ describe("ParseView", () => {
     expect(html).toContain("25 个器件进入注册表");
     expect(html).toContain("读取 Capture 引脚表");
     expect(html).toContain("未加载 Capture 引脚表 CSV");
-    expect(html).toContain("PASS/WARN/ERROR=5/13/4");
+    expect(html).toContain("PASS/WARN/ERROR=2/4/4");
+    expect(html).toContain("待补资料 / 不适用");
+    expect(html).toContain("12/0");
     expect(html).toContain("1 个任务已排队");
   });
 
@@ -380,6 +382,8 @@ describe("TaskQueueColumn", () => {
       makeQueueItem({
         refdes: "U12",
         status_group: "pass",
+        deterministic_status: "PASS",
+        deterministic_status_group: "pass",
         task_count: 0,
         top_task_id: null,
         pin_table_task_count: 2
@@ -397,6 +401,22 @@ describe("TaskQueueColumn", () => {
     expect(html).toContain("引脚表 × 2");
     expect(html).toContain("通过");
     expect(html).toContain("cleared");
+  });
+
+  it.each(["UNKNOWN", "NOT_APPLICABLE"])("does not label %s without tasks as passed", (status) => {
+    const items = [makeQueueItem({
+      deterministic_status: status,
+      deterministic_status_group: "manual",
+      status_group: "manual",
+      task_count: 0,
+      top_task_id: null
+    })];
+    const html = renderToStaticMarkup(
+      <TaskQueueColumn {...baseProps} items={items} allItems={items} selectedRefdes={null} />
+    );
+    expect(html).not.toContain('<b>通过</b>');
+    expect(html).not.toContain('cleared');
+    expect(html).toContain(status === "UNKNOWN" ? "待补资料 / 未评估" : "不适用");
   });
 
   it("shows a document badge only when an index status exists", () => {

@@ -21,6 +21,8 @@ describe("statusGroup", () => {
     expect(statusGroup("ERROR")).toBe("error");
     expect(statusGroup("WARN")).toBe("warn");
     expect(statusGroup("PASS")).toBe("pass");
+    expect(statusGroup("UNKNOWN")).toBe("manual");
+    expect(statusGroup("NOT_APPLICABLE")).toBe("manual");
     expect(statusGroup("manual_needed")).toBe("manual");
     expect(statusGroup("anything-else")).toBe("manual");
   });
@@ -45,6 +47,8 @@ describe("statusLabelFromRaw", () => {
 describe("pinStatusLabel", () => {
   it("uses the curated Chinese labels for known statuses", () => {
     expect(pinStatusLabel("ERROR")).toBe("必须修");
+    expect(pinStatusLabel("UNKNOWN")).toBe("待补资料 / 未评估");
+    expect(pinStatusLabel("NOT_APPLICABLE")).toBe("不适用");
     expect(pinStatusLabel("bom_missing")).toBe("BOM 缺失");
     expect(pinStatusLabel("profile_missing")).toBe("待补档案");
   });

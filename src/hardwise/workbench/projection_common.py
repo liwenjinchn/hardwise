@@ -156,8 +156,8 @@ def _trust_for_row(row: ProjectValidationRow | None) -> TrustTier:
 def _issue_count(validation: ValidationReport | None) -> int:
     if validation is None:
         return 0
-    return sum(item.status != "PASS" for item in validation.pin_results) + sum(
-        item.status != "PASS" for item in validation.component_checks
+    return sum(item.status not in {"PASS", "NOT_APPLICABLE"} for item in validation.pin_results) + sum(
+        item.status not in {"PASS", "NOT_APPLICABLE"} for item in validation.component_checks
     )
 
 

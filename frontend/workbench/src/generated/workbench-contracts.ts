@@ -221,7 +221,9 @@ export type BomMatched = number;
 export type Components = number;
 export type ErrorCount = number;
 export type Manual1 = number;
+export type NotApplicableCount = number;
 export type PassCount1 = number;
+export type UnknownCount = number;
 export type Validated = number;
 export type WarnCount = number;
 export type Error1 = number;
@@ -706,7 +708,9 @@ export interface WorkbenchSummary {
   components: Components;
   error_count: ErrorCount;
   manual: Manual1;
+  not_applicable_count: NotApplicableCount;
   pass_count: PassCount1;
+  unknown_count: UnknownCount;
   validated: Validated;
   warn_count: WarnCount;
 }

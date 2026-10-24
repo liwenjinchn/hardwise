@@ -5,6 +5,7 @@ import {
   documentStatusGroup,
   documentStatusLabel,
   formatSummary,
+  pinStatusLabel,
   queueSubtitle
 } from "../../lib/format";
 import type { ReviewQueueItem, StatusGroup } from "../../types";
@@ -78,7 +79,7 @@ export function TaskQueueColumn(props: {
               <span className="row-badges">
                 <StatusBadge
                   group={item.deterministic_status_group}
-                  label={`电气 ${attentionLabel(item.deterministic_status_group)}`}
+                  label={`电气 ${item.deterministic_status_group === "manual" ? pinStatusLabel(item.deterministic_status) : attentionLabel(item.deterministic_status_group)}`}
                 />
                 {item.status_group !== item.deterministic_status_group && (
                   <StatusBadge group={item.status_group} label="证据待确认" />
@@ -96,8 +97,8 @@ export function TaskQueueColumn(props: {
               </span>
             </span>
             <span className="queue-side">
-              <b>{item.task_count > 0 ? `${item.task_count} 项` : "通过"}</b>
-              <small>{item.top_task_id ?? "cleared"}</small>
+              <b>{item.task_count > 0 ? `${item.task_count} 项` : pinStatusLabel(item.deterministic_status)}</b>
+              <small>{item.top_task_id ?? (item.deterministic_status === "PASS" ? "cleared" : "—")}</small>
             </span>
           </button>
         ))}

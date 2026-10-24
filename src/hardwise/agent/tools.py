@@ -37,6 +37,7 @@ from hardwise.agent.evidence_locator import EVIDENCE_LOCATOR_TOOL_DEFINITIONS
 from hardwise.agent.topology_tools import TOPOLOGY_TOOL_DEFINITIONS
 from hardwise.store.relational import query_components, query_nc_pins
 from hardwise.store.vector import query_chunks
+from hardwise.validation.types import PinValidationStatus, VALIDATION_STATUSES
 
 # ─────────────────────────── Common output shapes ──────────────────────────
 
@@ -266,7 +267,7 @@ class ValidationCheckSummary(BaseModel):
     """One check row (pin or component-level) flattened for the agent reply."""
 
     check: str
-    status: Literal["PASS", "WARN", "ERROR"]
+    status: PinValidationStatus
     summary: str
     evidence: list[str] = Field(default_factory=list)
 
@@ -277,7 +278,7 @@ class ValidationRan(BaseModel):
     status: Literal["validated"] = "validated"
     refdes: str
     profile_part_number: str
-    overall: Literal["PASS", "WARN", "ERROR"]
+    overall: PinValidationStatus
     counts: dict[str, int]
     checks: list[ValidationCheckSummary] = Field(default_factory=list)
 
@@ -349,7 +350,7 @@ def run_component_validation(
     ]
     pin_counts = report.counts_by_status
     comp_counts = report.component_counts_by_status
-    counts = {k: pin_counts[k] + comp_counts[k] for k in ("PASS", "WARN", "ERROR")}
+    counts = {k: pin_counts[k] + comp_counts[k] for k in VALIDATION_STATUSES}
     return ValidationRan(
         refdes=refdes,
         profile_part_number=report.profile_part_number,
@@ -404,7 +405,7 @@ TOOL_DEFINITIONS: list[dict] = [
         "name": "run_component_validation",
         "description": (
             "Run the deterministic family validator for one component by exact refdes "
-            "(e.g. 'Q1'). Returns structured pin/topology PASS/WARN/ERROR rows with "
+            "(e.g. 'Q1'). Returns structured pin/topology PASS/WARN/ERROR/UNKNOWN/NOT_APPLICABLE rows with "
             "evidence tokens — use this whenever asked whether a component is wired "
             "correctly, instead of reasoning about electrical limits yourself. On a "
             "refdes with no assigned profile, returns 'no_profile' (manual review); on "

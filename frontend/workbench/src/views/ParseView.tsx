@@ -37,6 +37,7 @@ export function ParseView({
         : "未加载 review-package manifest"
     ],
     ["运行确定性验证", `PASS/WARN/ERROR=${summary.pass_count}/${summary.warn_count}/${summary.error_count}`],
+    ["待补资料 / 不适用", `${summary.unknown_count}/${summary.not_applicable_count}`],
     ["生成 finding", `${parseResult?.task_counts.total ?? state.task_counts.total} 个任务已排队`]
   ];
   return (

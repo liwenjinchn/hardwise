@@ -131,8 +131,8 @@ def buck_diode_path_result(diode: Component, switch_net: str) -> tuple[str, str]
 def worst_status(*statuses: str) -> str:
     """Return the worst validation status in ERROR > WARN > PASS order."""
 
-    order = {"PASS": 0, "WARN": 1, "ERROR": 2}
-    return max(statuses, key=lambda status: order[status])
+    order = {"NOT_APPLICABLE": 0, "PASS": 1, "UNKNOWN": 2, "WARN": 3, "ERROR": 4}
+    return max(statuses, key=lambda status: order[status]) if statuses else "UNKNOWN"
 
 
 def _component_nets(component: Component) -> set[str]:

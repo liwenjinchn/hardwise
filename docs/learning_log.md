@@ -5141,3 +5141,35 @@ A relative stress needs both endpoints. This patch fixes arithmetic and skipped
 PASS cases, not the authority of net-name voltage guesses. Confirmed reference
 domains, operating ranges and independent UNKNOWN states remain product gates;
 DC checks do not establish transient, ripple or polarity safety.
+
+
+## 2026-10-24 — Unknown assessment must survive every projection
+
+**Symptom**
+
+The interrupted status migration left the frontend parse test expecting obsolete
+three-status totals. The queue also called any zero-task row passed, including
+inapplicable rows. Local contract generation could not import the editable package.
+
+**Root cause**
+
+The old model conflated completed checks and skipped checks, while several UI
+fallbacks inferred success from absence of findings. Contract export changes cwd
+to the repository root, so a frontend-relative PYTHONPATH resolves incorrectly.
+The underlying editable-install issue is still unconfirmed.
+
+**Fix**
+
+Carry UNKNOWN/NOT_APPLICABLE and their counts through models, tools, projections,
+exports and generated contracts. Return UNKNOWN for empty check sets; show the
+actual status on zero-task rows. Verify frontend export/build and E2E using the
+absolute checkout src directory in PYTHONPATH. Preserve WARN rather than guessing
+its historical meaning. Record the first E2E page-load timeout separately from
+the passing unchanged full rerun.
+
+**Takeaway**
+
+No findings is not evidence of completed checks. Verify summaries and per-object
+labels together; count missing assessment separately from engineering warnings.
+This five-status compatibility step does not establish confirmed rail authority,
+complete rule coverage, or independent result/severity/evidence/reviewer axes.

@@ -63,9 +63,10 @@ export function Header({
         </div>
         <div className="mini-stats" aria-label="当前审查摘要">
           <Metric label="器件" value={summary.components} />
-          <Metric label="已验证" value={summary.validated} />
+          <Metric label="验证报告" value={summary.validated} />
           <Metric label="ERROR 器件" value={summary.error_count} tone="error" />
           <Metric label="WARN 器件" value={summary.warn_count} tone="warn" />
+          <Metric label="待补资料" value={summary.unknown_count} />
         </div>
         <div className="capability-strip" aria-label="工作台能力">
           {capabilityText.slice(0, 3).map((item) => (

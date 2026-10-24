@@ -140,6 +140,7 @@ export function ImportView({
         <p>
           已验证 {state.summary.validated}，PASS/WARN/ERROR=
           {state.summary.pass_count}/{state.summary.warn_count}/{state.summary.error_count}，
+          UNKNOWN/NOT_APPLICABLE={state.summary.unknown_count}/{state.summary.not_applicable_count}，
           manual={state.summary.manual}
         </p>
         <div className="snapshot-assets" aria-label="导入资产状态">

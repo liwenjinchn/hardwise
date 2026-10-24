@@ -33,6 +33,8 @@ export function pinStatusLabel(status: string): string {
     ERROR: "必须修",
     WARN: "看证据",
     PASS: "通过",
+    UNKNOWN: "待补资料 / 未评估",
+    NOT_APPLICABLE: "不适用",
     manual_needed: "人工判断",
     profile_missing: "待补档案",
     bom_missing: "BOM 缺失"

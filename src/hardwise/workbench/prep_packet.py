@@ -163,6 +163,7 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
         f"| Validated | {summary.validated} |",
         f"| Manual | {summary.manual} |",
         f"| PASS / WARN / ERROR | {summary.pass_count} / {summary.warn_count} / {summary.error_count} |",
+        f"| UNKNOWN / NOT_APPLICABLE | {summary.unknown_count} / {summary.not_applicable_count} |",
         f"| Review tasks | {packet.task_counts.total} |",
         *(
             [

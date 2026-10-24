@@ -56,12 +56,19 @@ def render(
     lines.append(
         f"| 引脚 PASS/WARN/ERROR | {counts['PASS']} / {counts['WARN']} / {counts['ERROR']} |"
     )
+    lines.append(
+        f"| 引脚 UNKNOWN/NOT_APPLICABLE | {counts['UNKNOWN']} / {counts['NOT_APPLICABLE']} |"
+    )
     if report.component_checks:
         component_counts = report.component_counts_by_status
         lines.append(
             "| 器件级检查 PASS/WARN/ERROR | "
             f"{component_counts['PASS']} / {component_counts['WARN']} / {component_counts['ERROR']} |"
         )
+    component_counts = report.component_counts_by_status
+    lines.append(
+        f"| 器件级检查 UNKNOWN/NOT_APPLICABLE | {component_counts['UNKNOWN']} / {component_counts['NOT_APPLICABLE']} |"
+    )
     lines.append("| 范围 | 单器件原理图引脚与外围/拓扑验证 |")
     lines.append("")
     lines.append(
@@ -122,7 +129,8 @@ def _render_model_check(report: ValidationReport) -> list[str]:
     is_generic = report.profile_part_number.startswith("GENERIC_")
     status = (
         "PASS"
-        if is_generic or (report.part_number or report.component_value) == report.profile_part_number
+        if is_generic
+        or (report.part_number or report.component_value) == report.profile_part_number
         else "WARN"
     )
     note = (
@@ -268,15 +276,15 @@ def _render_evidence_details(
     if not profile.evidence:
         lines.append("| - | - |")
     for key, token in sorted(profile.evidence.items()):
-        lines.append(
-            f"| {_escape_pipe(profile_claim_label(key))} | {_evidence_cell([token])} |"
-        )
+        lines.append(f"| {_escape_pipe(profile_claim_label(key))} | {_evidence_cell([token])} |")
     lines.append("")
 
     if profile_has_thermal_or_package_evidence(profile):
         lines.append("只有结构化器件档案已经带有来源 token 时，才展示热/封装相关行。")
     else:
-        lines.append("这个器件没有档案级热/封装来源 token；Hardwise 不会在当前切片中推断缺失的热或封装事实。")
+        lines.append(
+            "这个器件没有档案级热/封装来源 token；Hardwise 不会在当前切片中推断缺失的热或封装事实。"
+        )
     lines.append("")
     return lines
 
@@ -312,7 +320,8 @@ def _format_mapping(values: dict[str, ProfileValue]) -> str:
     if not values:
         return "-"
     return ", ".join(
-        f"{limit_label(key)}={_format_profile_value(value)}" for key, value in sorted(values.items())
+        f"{limit_label(key)}={_format_profile_value(value)}"
+        for key, value in sorted(values.items())
     )
 
 

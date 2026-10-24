@@ -22,7 +22,7 @@ First patch prevents skipped passive checks from producing PASS within the exist
 | Task | Status | Evidence / next work |
 |---|---|---|
 | T01 Baseline and counterexamples | In progress | Differential capacitor and missing-data regressions first; XL1509/output/lifecycle cases still to add |
-| T02 Cross-surface result contract | Planned | Target defined above; implementation and migration tests pending |
+| T02 Cross-surface result contract | In progress | UNKNOWN/NOT_APPLICABLE now round-trip across model, tools, SPA and exports; independent result/severity/evidence/reviewer axes and legacy provenance migration still pending |
 | T03 Profile conditions and reviewed subset | Planned | XL1509 examples in original audit; independent field review pending |
 | T04 Confirmed rail/reference facts and BOM conflicts | Planned | Do not promote network names or voltage_hint to reviewed facts |
 | T05 Passive rule correctness | In progress | Two-terminal delta and missing-data handling; ranges/domains still pending |
@@ -46,3 +46,16 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - CLI HTML, Markdown and JSON were generated and the rendered HTML counts inspected. Existing XL1509 limitations remain; the generated report is a development artifact, not a product acceptance report.
 - Local editable-package discovery was inconsistent after uv synchronization (ModuleNotFoundError during collection). Explicit PYTHONPATH to this checkout's src was used for the verified run and E2E server. Packaging root cause is not established; target-machine install remains an open gate.
 - Next: implement independent UNKNOWN and empty-check semantics across all output surfaces; then replace heuristic rail authority with confirmed voltage/reference-domain facts. This package does not close M0 or M1.
+
+
+### Second implementation package — 2026-10-24
+
+- Resumed the interrupted status migration in the existing checkout; retained legacy WARN meaning. Added UNKNOWN and NOT_APPLICABLE throughout validation counts, agent tool schemas, API summaries, generated TypeScript, SPA, static HTML, Markdown/JSON and trust-dashboard aggregation.
+- Empty check sets return UNKNOWN. PASS plus UNKNOWN returns UNKNOWN; ERROR and WARN retain attention priority. Only inapplicable checks return NOT_APPLICABLE. Neither UNKNOWN nor NOT_APPLICABLE creates a cleared task or increases PASS totals.
+- Missing passive ratings/terminal inputs now produce UNKNOWN instead of the first package's temporary WARN. Public fixture: 25 components, 22 with reports, 3 profile gaps; component statuses **PASS 2 / WARN 4 / ERROR 4 / UNKNOWN 12 / NOT_APPLICABLE 0**. These are component rollups, not complete per-rule coverage or expert-reviewed accuracy.
+- Fixed an additional SPA queue fallback that labeled every zero-task row as passed; labels now follow actual deterministic status. Added regressions for empty sets, mixed outcomes, JSON round-trips, legacy WARN, unknown manual tasks, offline export and inapplicable zero-task rows.
+- Full regression: `PYTHONPATH=src uv run pytest -q`: **786 passed, 7 deselected**, 25.03 s. `uv run ruff check .` and `git diff --check`: passed.
+- Frontend: `npm run test:unit`: **72 passed**. Build, contract drift check and TypeScript check passed with this checkout's absolute src path in PYTHONPATH. E2E: **8 passed**, 18.0 s, real backend with fake AI. An initial run had 7 passes and one page-load timeout; an unchanged full rerun passed. Cause of the initial timeout is not established.
+- Ran `hardwise design-validator-ui` on the public fixture, generated HTML/Markdown/JSON and inspected the rendered HTML: UNKNOWN 12 is visible alongside PASS 2, WARN 4, ERROR 4 and NOT_APPLICABLE 0.
+- Compatibility: validation index sidecar now declares `hardwise.validation_index.v2`; new summary counters default to zero for old callers. This is an intermediate five-status wire contract, not the final independent result/severity/evidence/reviewer model. It does not re-certify historical PASS records or migrate saved reviewer provenance.
+- Remaining gates: confirmed rail/reference-domain facts, voltage ranges, reviewed profile conditions, formal AI output boundaries, restart persistence/fingerprints, real Windows/Cadence export and independent peer evaluation. No live model or physical target environment was used; M0/M1 remain open.

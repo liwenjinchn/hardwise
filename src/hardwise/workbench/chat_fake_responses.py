@@ -120,7 +120,7 @@ def _summarize_topology_payload(question: str, payload: dict[str, Any]) -> str:
             "Topology summary is schematic/netlist-only: "
             f"{payload.get('component_count')} components, {payload.get('net_count')} nets, "
             f"validated={payload.get('validated_count')}, manual={payload.get('manual_count')}, "
-            f"PASS/WARN/ERROR={totals.get('PASS', 0)}/{totals.get('WARN', 0)}/{totals.get('ERROR', 0)}. "
+            f"PASS/WARN/ERROR={totals.get('PASS', 0)}/{totals.get('WARN', 0)}/{totals.get('ERROR', 0)}, UNKNOWN/NOT_APPLICABLE={totals.get('UNKNOWN', 0)}/{totals.get('NOT_APPLICABLE', 0)}. "
             f"Power-like nets: {power}. Interface-like nets: {interface}. Control-like nets: {control}. "
             f"First profile gap: {first_gap.get('identity', '-')} ({first_gap.get('refdes_count', 0)} refs)."
         )
@@ -128,7 +128,7 @@ def _summarize_topology_payload(question: str, payload: dict[str, Any]) -> str:
         "拓扑摘要只基于解析后的原理图/netlist："
         f"{payload.get('component_count')} 个器件，{payload.get('net_count')} 条网络，"
         f"已验证 {payload.get('validated_count')} 个，待人工补档案 {payload.get('manual_count')} 个，"
-        f"PASS/WARN/ERROR={totals.get('PASS', 0)}/{totals.get('WARN', 0)}/{totals.get('ERROR', 0)}。"
+        f"PASS/WARN/ERROR={totals.get('PASS', 0)}/{totals.get('WARN', 0)}/{totals.get('ERROR', 0)}, UNKNOWN/NOT_APPLICABLE={totals.get('UNKNOWN', 0)}/{totals.get('NOT_APPLICABLE', 0)}。"
         f"电源类网络: {power}。接口类网络: {interface}。控制类网络: {control}。"
         f"首个器件档案缺口: {first_gap.get('identity', '-')}（{first_gap.get('refdes_count', 0)} 个位号）。"
     )

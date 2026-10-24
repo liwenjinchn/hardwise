@@ -61,6 +61,8 @@ export interface WorkbenchSummary {
   pass_count: number;
   warn_count: number;
   error_count: number;
+  unknown_count: number;
+  not_applicable_count: number;
 }
 
 export interface WorkbenchCapabilities {

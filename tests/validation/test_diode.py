@@ -68,9 +68,7 @@ def mbra210lt3g_profile() -> DatasheetProfile:
 @pytest.fixture
 def controller_power_stage_design():
     """Load mixed controller power-stage fixture."""
-    netlist = parse_allegro_netlist(
-        Path("tests/fixtures/allegro/mixed_controller_power_stage.net")
-    )
+    netlist = parse_allegro_netlist(Path("tests/fixtures/allegro/mixed_controller_power_stage.net"))
     bom = parse_bom(Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"))
     design = build_design_from_netlist(netlist)
     return apply_bom_to_design(design, match_bom_to_design(bom, design))
@@ -91,8 +89,20 @@ def test_ss34_nominal_all_pass(diode_profile, diode_design):
     results = validate_component_against_profile(component, diode_profile, diode_design)
 
     assert results.status == "PASS"
-    assert results.counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
-    assert results.component_counts_by_status == {"PASS": 3, "WARN": 0, "ERROR": 0}
+    assert results.counts_by_status == {
+        "PASS": 2,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
+    assert results.component_counts_by_status == {
+        "PASS": 3,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
 
     # Check specific validations
     check_names = {c.check for c in results.component_checks}
@@ -108,7 +118,13 @@ def test_ss34_routes_by_family_without_mpn_fallback(diode_profile, diode_design)
 
     results = validate_component_against_profile(component, profile, diode_design)
 
-    assert results.component_counts_by_status == {"PASS": 3, "WARN": 0, "ERROR": 0}
+    assert results.component_counts_by_status == {
+        "PASS": 3,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
 
 
 def test_ltst_c190kgkt_pinout_matches_public_pin_diagram(led_profile):
@@ -158,8 +174,20 @@ D21,1,BAS316,Nexperia,BAS316
     results = validate_component_against_profile(design.components["D21"], bas316_profile, design)
 
     assert results.status == "PASS"
-    assert results.counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
-    assert results.component_counts_by_status == {"PASS": 3, "WARN": 0, "ERROR": 0}
+    assert results.counts_by_status == {
+        "PASS": 2,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
+    assert results.component_counts_by_status == {
+        "PASS": 3,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     reverse = next(
         check for check in results.component_checks if check.check == "diode_reverse_voltage"
     )
@@ -328,10 +356,7 @@ def test_mbra210lt3g_profile_matches_public_onsemi_limits(mbra210lt3g_profile):
         ("1", "Cathode"),
         ("2", "Anode"),
     ]
-    assert (
-        mbra210lt3g_profile.evidence["pin_function.1"]
-        == "datasheet:mbra210lt3-d.pdf#p5"
-    )
+    assert mbra210lt3g_profile.evidence["pin_function.1"] == "datasheet:mbra210lt3-d.pdf#p5"
 
 
 def test_mixed_controller_diode_profiles_warn_without_topology_claim(
@@ -354,8 +379,20 @@ def test_mixed_controller_diode_profiles_warn_without_topology_claim(
         summaries = " ".join(check.summary for check in results.component_checks)
 
         assert results.status == "WARN"
-        assert results.counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
-        assert results.component_counts_by_status == {"PASS": 2, "WARN": 1, "ERROR": 0}
+        assert results.counts_by_status == {
+            "PASS": 2,
+            "WARN": 0,
+            "ERROR": 0,
+            "UNKNOWN": 0,
+            "NOT_APPLICABLE": 0,
+        }
+        assert results.component_counts_by_status == {
+            "PASS": 2,
+            "WARN": 1,
+            "ERROR": 0,
+            "UNKNOWN": 0,
+            "NOT_APPLICABLE": 0,
+        }
         assert checks["diode_cathode_connectivity"].status == "PASS"
         assert checks["diode_anode_connectivity"].status == "PASS"
         assert checks["diode_reverse_voltage"].status == "WARN"
@@ -384,8 +421,20 @@ D20,1,SMBJ24CA,Littelfuse,SMBJ24CA
     results = validate_component_against_profile(design.components["D20"], tvs_profile, design)
 
     assert results.status == "PASS"
-    assert results.counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
-    assert results.component_counts_by_status == {"PASS": 3, "WARN": 0, "ERROR": 0}
+    assert results.counts_by_status == {
+        "PASS": 2,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
+    assert results.component_counts_by_status == {
+        "PASS": 3,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     standoff = next(
         check for check in results.component_checks if check.check == "tvs_working_standoff"
     )
@@ -439,8 +488,20 @@ RLED,1,330,Fixture,RES-330
     results = validate_component_against_profile(design.components["D10"], led_profile, design)
 
     assert results.status == "PASS"
-    assert results.counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
-    assert results.component_counts_by_status == {"PASS": 5, "WARN": 0, "ERROR": 0}
+    assert results.counts_by_status == {
+        "PASS": 2,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
+    assert results.component_counts_by_status == {
+        "PASS": 5,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     checks = {check.check: check for check in results.component_checks}
     assert checks["led_indicator_polarity"].status == "PASS"
     assert checks["led_current_limit"].status == "PASS"

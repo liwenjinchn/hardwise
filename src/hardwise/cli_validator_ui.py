@@ -80,7 +80,7 @@ def register_validator_ui_commands(app: typer.Typer) -> None:
             f"validator-ui: {output} "
             f"({len(design.components)} components, selected={validation_report.refdes}, "
             f"{validation_report.status}, "
-            f"PASS/WARN/ERROR={counts['PASS']}/{counts['WARN']}/{counts['ERROR']})"
+            f"PASS/WARN/ERROR={counts['PASS']}/{counts['WARN']}/{counts['ERROR']}, UNKNOWN/NOT_APPLICABLE={counts['UNKNOWN']}/{counts['NOT_APPLICABLE']})"
         )
 
     @app.command(name="report-validator-ui-batch")
@@ -182,12 +182,16 @@ def register_validator_ui_commands(app: typer.Typer) -> None:
             "PASS": sum(item.validation.status == "PASS" for item in validation_results),
             "WARN": sum(item.validation.status == "WARN" for item in validation_results),
             "ERROR": sum(item.validation.status == "ERROR" for item in validation_results),
+            "UNKNOWN": sum(item.validation.status == "UNKNOWN" for item in validation_results),
+            "NOT_APPLICABLE": sum(
+                item.validation.status == "NOT_APPLICABLE" for item in validation_results
+            ),
         }
         target_names = ",".join(item.validation.refdes for item in validation_results)
         typer.echo(
             f"validator-ui-batch: {output} "
             f"({len(design.components)} components, validated={target_names}, "
-            f"PASS/WARN/ERROR={status_counts['PASS']}/{status_counts['WARN']}/{status_counts['ERROR']})"
+            f"PASS/WARN/ERROR={status_counts['PASS']}/{status_counts['WARN']}/{status_counts['ERROR']}, UNKNOWN/NOT_APPLICABLE={status_counts['UNKNOWN']}/{status_counts['NOT_APPLICABLE']})"
         )
 
 

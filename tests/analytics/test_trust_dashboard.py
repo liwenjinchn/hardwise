@@ -29,7 +29,13 @@ def test_trust_dashboard_summary_derives_metrics(tmp_path: Path) -> None:
     assert summary.validation_coverage.validated_components == 2
     assert summary.validation_coverage.manual_components == 1
     assert summary.validation_coverage.coverage_percent == 66.7
-    assert summary.validation_coverage.pass_warn_error == {"PASS": 1, "WARN": 0, "ERROR": 1}
+    assert summary.validation_coverage.pass_warn_error == {
+        "PASS": 1,
+        "WARN": 0,
+        "ERROR": 1,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     assert summary.validation_coverage.document_status_counts == {
         "matched": 1,
         "no_result": 1,
@@ -163,7 +169,7 @@ def _write_validation_index(path: Path) -> Path:
                 "components_in_design": 3,
                 "bom_matched": 3,
                 "scope": "Static schematic-side design validator.",
-                "totals": {"PASS": 1, "WARN": 0, "ERROR": 1},
+                "totals": {"PASS": 1, "WARN": 0, "ERROR": 1, "UNKNOWN": 0, "NOT_APPLICABLE": 0},
                 "rows": [
                     {"refdes": "U1", "match_status": "matched", "validation": {"status": "PASS"}},
                     {"refdes": "U2", "match_status": "matched", "validation": {"status": "ERROR"}},

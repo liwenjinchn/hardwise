@@ -135,7 +135,7 @@ def _write_validation_index(path: Path) -> Path:
                 "components_in_design": 2,
                 "bom_matched": 2,
                 "scope": "Static schematic-side design validator.",
-                "totals": {"PASS": 1, "WARN": 0, "ERROR": 0},
+                "totals": {"PASS": 1, "WARN": 0, "ERROR": 0, "UNKNOWN": 0, "NOT_APPLICABLE": 0},
                 "rows": [
                     {"refdes": "U1", "match_status": "matched", "validation": {"status": "PASS"}},
                     {"refdes": "U2", "match_status": "manual_needed", "validation": None},

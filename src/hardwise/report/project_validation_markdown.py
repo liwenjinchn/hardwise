@@ -33,6 +33,7 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
     lines.append(
         f"| PASS / WARN / ERROR | {totals['PASS']} / {totals['WARN']} / {totals['ERROR']} |"
     )
+    lines.append(f"| UNKNOWN / NOT_APPLICABLE | {totals['UNKNOWN']} / {totals['NOT_APPLICABLE']} |")
     lines.append(f"| Scope | {SCOPE} |")
     lines.append(f"| Generated at | {index.generated_at} |")
     lines.append("")
@@ -55,7 +56,9 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
 
     lines.append("## Validated Components")
     lines.append("")
-    lines.append("| Refdes | BOM value | MPN | Profile | Status | Pin PASS/WARN/ERROR |")
+    lines.append(
+        "| Refdes | BOM value | MPN | Profile | Status | Pin PASS/WARN/ERROR/UNKNOWN/NOT_APPLICABLE |"
+    )
     lines.append("|---|---|---|---|---|---:|")
     for row in index.validated_rows:
         report = row.validation
@@ -64,7 +67,7 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
             f"| {row.refdes} | {_escape_pipe(row.bom_value or '-')} | "
             f"{_escape_pipe(row.part_number or '-')} | "
             f"`{row.profile_path or report.profile_part_number}` | "
-            f"{report.status} | {counts['PASS']} / {counts['WARN']} / {counts['ERROR']} |"  # type: ignore[union-attr]
+            f"{report.status} | {counts['PASS']} / {counts['WARN']} / {counts['ERROR']} / {counts['UNKNOWN']} / {counts['NOT_APPLICABLE']} |"  # type: ignore[union-attr]
         )
     if not index.validated_rows:
         lines.append("| - | - | - | - | - | 0 / 0 / 0 |")
@@ -133,6 +136,7 @@ def write_json(index: ProjectValidationIndex, output: Path) -> None:
     """Write a JSON sidecar for the design-validator UI."""
 
     payload = index.model_dump(mode="json")
+    payload["schema_version"] = "hardwise.validation_index.v2"
     payload["scope"] = SCOPE
     payload["totals"] = index.totals
     payload["profile_gap_groups"] = [

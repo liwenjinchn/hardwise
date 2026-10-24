@@ -161,9 +161,7 @@ def _load_validation_index(path: Path | None) -> ValidationCoverage:
         pass_warn_error=totals,
         match_status_counts=dict(
             Counter(
-                str(row.get("match_status") or "unknown")
-                for row in rows
-                if isinstance(row, dict)
+                str(row.get("match_status") or "unknown") for row in rows if isinstance(row, dict)
             )
         ),
         document_status_counts=dict(
@@ -180,12 +178,17 @@ def _load_validation_index(path: Path | None) -> ValidationCoverage:
 def _pass_warn_error(payload: dict[str, Any], rows: list[Any]) -> dict[str, int]:
     totals = payload.get("totals")
     if isinstance(totals, dict):
-        return {key: _int(totals.get(key)) for key in ("PASS", "WARN", "ERROR")}
+        return {
+            key: _int(totals.get(key))
+            for key in ("PASS", "WARN", "ERROR", "UNKNOWN", "NOT_APPLICABLE")
+        }
     counts: Counter[str] = Counter()
     for row in rows:
         if isinstance(row, dict) and isinstance(row.get("validation"), dict):
             counts[str(row["validation"].get("status") or "unknown")] += 1
-    return {key: counts.get(key, 0) for key in ("PASS", "WARN", "ERROR")}
+    return {
+        key: counts.get(key, 0) for key in ("PASS", "WARN", "ERROR", "UNKNOWN", "NOT_APPLICABLE")
+    }
 
 
 def _list(value: Any) -> list[Any]:

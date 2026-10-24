@@ -424,7 +424,7 @@ def report_component_validation(
     typer.echo(
         f"component-validation: {output} "
         f"({validation_report.status}, "
-        f"PASS/WARN/ERROR={counts['PASS']}/{counts['WARN']}/{counts['ERROR']})"
+        f"PASS/WARN/ERROR={counts['PASS']}/{counts['WARN']}/{counts['ERROR']}, UNKNOWN/NOT_APPLICABLE={counts['UNKNOWN']}/{counts['NOT_APPLICABLE']})"
     )
 
 

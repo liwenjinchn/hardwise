@@ -176,7 +176,13 @@ R_LOAD,1,1K,Fixture,RES-1K
     results = validate_component_against_profile(design.components["Q10"], mmbt3904_profile, design)
 
     assert results.status == "PASS"
-    assert results.component_counts_by_status == {"PASS": 5, "WARN": 0, "ERROR": 0}
+    assert results.component_counts_by_status == {
+        "PASS": 5,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     checks = {c.check: c for c in results.component_checks}
     assert checks["bjt_vebo_rating"].evidence == ["datasheet:mmbt3904lt1-d.pdf#p1"]
     assert "base 0.7 V - emitter 0 V" in checks["bjt_vebo_rating"].summary
@@ -214,7 +220,9 @@ def test_ss8050_controller_stage_moves_to_l1_and_flags_missing_emitter() -> None
         ("2", "Base", "+24V_EN", "PASS"),
         ("3", "Collector", "GND", "PASS"),
     ]
-    emitter = next(check for check in results.component_checks if check.check == "bjt_emitter_connectivity")
+    emitter = next(
+        check for check in results.component_checks if check.check == "bjt_emitter_connectivity"
+    )
     assert emitter.status == "ERROR"
     assert "emitter pin is not connected" in emitter.summary
 

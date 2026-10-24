@@ -243,6 +243,7 @@ def document_candidate_smoke(
         f"rows_with_url={summary.candidate_rows_with_url}, "
         f"queue={summary.workbench_document_candidate_tasks}, "
         f"PASS/WARN/ERROR={summary.pass_count}/{summary.warn_count}/{summary.error_count}, "
+        f"UNKNOWN/NOT_APPLICABLE={summary.unknown_count}/{summary.not_applicable_count}, "
         f"unchanged={summary.pass_warn_error_unchanged})"
     )
 

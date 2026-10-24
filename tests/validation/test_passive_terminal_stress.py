@@ -43,19 +43,19 @@ def test_capacitor_common_mode_is_not_terminal_stress(tmp_path: Path) -> None:
 )
 def test_capacitor_incomplete_terminal_data_never_passes(tmp_path: Path, nets) -> None:
     check = _validate(tmp_path, "capacitor", "1uF 16V", nets)
-    assert check.status == "WARN"
+    assert check.status == "UNKNOWN"
     assert "cannot be checked" in check.summary
 
 
 @pytest.mark.parametrize("nets", [["+12V", "SIGNAL"], ["SIGNAL_A", "SIGNAL_B"]])
 def test_resistor_missing_terminal_data_never_passes(tmp_path: Path, nets) -> None:
     check = _validate(tmp_path, "resistor", "1K 1/4W", nets)
-    assert check.status == "WARN"
+    assert check.status == "UNKNOWN"
 
 
 def test_resistor_missing_power_rating_never_passes(tmp_path: Path) -> None:
     check = _validate(tmp_path, "resistor", "1K", ["+12V", "GND"])
-    assert check.status == "WARN"
+    assert check.status == "UNKNOWN"
     assert "0.144 W" in check.summary
     assert "rating" in check.summary
 

@@ -58,6 +58,20 @@ def _build_review_tasks_uncached(context: WorkbenchContext) -> list[ReviewTask]:
             tasks.extend(finding_tasks)
         elif validation.status == "PASS":
             tasks.append(_cleared_task(row, validation))
+        elif validation.status == "UNKNOWN":
+            tasks.append(
+                _task(
+                    refdes=row.refdes,
+                    kind="unassessed",
+                    check="validation_scope",
+                    status="UNKNOWN",
+                    trust_tier="l3",
+                    title="未评估：没有可执行的检查",
+                    body="当前检查集为空；没有产生任何通过结论。",
+                    recommended_action="补充适用的检查模型后重新评估。",
+                    chain=[],
+                )
+            )
 
     for hint in context.risk_hints.accepted:
         tasks.append(_risk_hint_task(hint))
@@ -107,7 +121,7 @@ def _component_check_tasks(
 ) -> list[ReviewTask]:
     tasks: list[ReviewTask] = []
     for check in validation.component_checks:
-        if check.status == "PASS":
+        if check.status in {"PASS", "NOT_APPLICABLE"}:
             continue
         evidence = _evidence_views(check.evidence, "l1")
         tasks.append(
@@ -161,7 +175,7 @@ def _component_check_tasks(
 def _pin_check_tasks(row: ProjectValidationRow, validation: ValidationReport) -> list[ReviewTask]:
     tasks: list[ReviewTask] = []
     for pin in validation.pin_results:
-        if pin.status == "PASS":
+        if pin.status in {"PASS", "NOT_APPLICABLE"}:
             continue
         evidence = _evidence_views(pin.evidence, "l1")
         title = f"引脚 {pin.pin_number} · {validation_summary_label(pin.summary)}"
@@ -360,6 +374,8 @@ def _cleared_task(row: ProjectValidationRow, validation: ValidationReport) -> Re
 
 def _recommended_action(status: str, summary: str) -> str:
     clean = validation_summary_label(summary)
+    if status == "UNKNOWN":
+        return f"补充输入事实或检查模型后重新评估：{clean}"
     if status == "ERROR":
         return f"进入 Layout handoff 前处理：{clean}"
     if status == "WARN":

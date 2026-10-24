@@ -2756,8 +2756,18 @@
           "title": "Manual",
           "type": "integer"
         },
+        "not_applicable_count": {
+          "default": 0,
+          "title": "Not Applicable Count",
+          "type": "integer"
+        },
         "pass_count": {
           "title": "Pass Count",
+          "type": "integer"
+        },
+        "unknown_count": {
+          "default": 0,
+          "title": "Unknown Count",
           "type": "integer"
         },
         "validated": {
@@ -2774,7 +2784,9 @@
         "components",
         "error_count",
         "manual",
+        "not_applicable_count",
         "pass_count",
+        "unknown_count",
         "validated",
         "warn_count"
       ],

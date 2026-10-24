@@ -90,6 +90,8 @@ def build_workbench_state(
             pass_count=totals["PASS"],
             warn_count=totals["WARN"],
             error_count=totals["ERROR"],
+            unknown_count=totals["UNKNOWN"],
+            not_applicable_count=totals["NOT_APPLICABLE"],
         ),
         capabilities=WorkbenchCapabilities(
             datasheet_search_enabled=datasheet_search_enabled,
@@ -198,12 +200,24 @@ def _queue_title(
         if row and row.reason:
             return reason_label(row.reason)
         return "待补器件档案或人工确认"
-    failed = [check.summary for check in validation.component_checks if check.status != "PASS"]
+    failed = [
+        check.summary
+        for check in validation.component_checks
+        if check.status not in {"PASS", "NOT_APPLICABLE"}
+    ]
     if failed:
         return validation_summary_label(failed[0])
-    failed_pins = [pin.summary for pin in validation.pin_results if pin.status != "PASS"]
+    failed_pins = [
+        pin.summary
+        for pin in validation.pin_results
+        if pin.status not in {"PASS", "NOT_APPLICABLE"}
+    ]
     if failed_pins:
         return validation_summary_label(failed_pins[0])
+    if validation.status == "UNKNOWN":
+        return f"{component.refdes} 未评估：没有可执行的检查"
+    if validation.status == "NOT_APPLICABLE":
+        return f"{component.refdes} 当前检查不适用"
     return f"{component.refdes} 已通过当前确定性检查"
 
 

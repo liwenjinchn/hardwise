@@ -82,6 +82,8 @@ def render(
           <div class="metric pass"><span>PASS</span><strong>{counts["PASS"]}</strong></div>
           <div class="metric warn"><span>WARN</span><strong>{counts["WARN"]}</strong></div>
           <div class="metric error"><span>ERROR</span><strong>{counts["ERROR"]}</strong></div>
+          <div class="metric pending"><span>UNKNOWN</span><strong>{counts["UNKNOWN"]}</strong></div>
+          <div class="metric pending"><span>NOT_APPLICABLE</span><strong>{counts["NOT_APPLICABLE"]}</strong></div>
         </div>
       </header>
       <section class="workspace">
@@ -92,7 +94,7 @@ def render(
                 <h2>验证</h2>
                 <span class="pill">验证完成</span>
               </div>
-              <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]}</p>
+              <p class="source">验证完成 · PASS/WARN/ERROR={counts["PASS"]}/{counts["WARN"]}/{counts["ERROR"]} · UNKNOWN/NOT_APPLICABLE={counts["UNKNOWN"]}/{counts["NOT_APPLICABLE"]}</p>
             </div>
             <div class="verified-list">{_validated_cards(ordered, active_refdes)}</div>
           </aside>
@@ -120,7 +122,7 @@ def render(
 
 
 def _issue_first(results: list[ValidatorUiResult]) -> list[ValidatorUiResult]:
-    rank = {"ERROR": 0, "WARN": 1, "PASS": 2}
+    rank = {"ERROR": 0, "WARN": 1, "UNKNOWN": 2, "PASS": 3, "NOT_APPLICABLE": 4}
     return sorted(results, key=lambda item: (rank[item.validation.status], item.validation.refdes))
 
 
@@ -129,6 +131,8 @@ def _status_counts(results: list[ValidatorUiResult]) -> dict[str, int]:
         "PASS": sum(item.validation.status == "PASS" for item in results),
         "WARN": sum(item.validation.status == "WARN" for item in results),
         "ERROR": sum(item.validation.status == "ERROR" for item in results),
+        "UNKNOWN": sum(item.validation.status == "UNKNOWN" for item in results),
+        "NOT_APPLICABLE": sum(item.validation.status == "NOT_APPLICABLE" for item in results),
     }
 
 
@@ -187,6 +191,8 @@ def _validated_cards(results: list[ValidatorUiResult], active_refdes: str) -> st
 
 
 def _issue_list(checks: list[ComponentValidation]) -> str:
+    if not checks:
+        return '<p class="device-meta">外围/拓扑未评估：没有可执行检查。</p>'
     issues = [check for check in checks if check.status != "PASS"]
     if not issues:
         return '<p class="device-meta">未发现确定性外围/拓扑问题。</p>'
@@ -245,9 +251,13 @@ def _detail_panel(
     <div class="kpi"><span>PASS 引脚</span><strong>{counts["PASS"]}</strong></div>
     <div class="kpi"><span>WARN 引脚</span><strong>{counts["WARN"]}</strong></div>
     <div class="kpi"><span>ERROR 引脚</span><strong>{counts["ERROR"]}</strong></div>
+    <div class="kpi"><span>UNKNOWN 引脚</span><strong>{counts["UNKNOWN"]}</strong></div>
+    <div class="kpi"><span>NOT_APPLICABLE 引脚</span><strong>{counts["NOT_APPLICABLE"]}</strong></div>
     <div class="kpi"><span>PASS 检查</span><strong>{component_counts["PASS"]}</strong></div>
     <div class="kpi"><span>WARN 检查</span><strong>{component_counts["WARN"]}</strong></div>
     <div class="kpi"><span>ERROR 检查</span><strong>{component_counts["ERROR"]}</strong></div>
+    <div class="kpi"><span>UNKNOWN 检查</span><strong>{component_counts["UNKNOWN"]}</strong></div>
+    <div class="kpi"><span>NOT_APPLICABLE 检查</span><strong>{component_counts["NOT_APPLICABLE"]}</strong></div>
   </div>
   {section_model_check(component, validation)}
   {section_pin_summary(component, validation, item.profile)}

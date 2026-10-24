@@ -2,11 +2,21 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from collections.abc import Iterable
+from typing import Literal, get_args
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
-PinValidationStatus = Literal["PASS", "WARN", "ERROR"]
+PinValidationStatus = Literal["PASS", "WARN", "ERROR", "UNKNOWN", "NOT_APPLICABLE"]
+VALIDATION_STATUSES: tuple[PinValidationStatus, ...] = get_args(PinValidationStatus)
+
+
+def status_counts(statuses: Iterable[PinValidationStatus]) -> dict[PinValidationStatus, int]:
+    """Count every wire status, including unassessed and inapplicable checks."""
+    counts: dict[PinValidationStatus, int] = dict.fromkeys(VALIDATION_STATUSES, 0)
+    for status in statuses:
+        counts[status] += 1
+    return counts
 
 
 class PinValidation(BaseModel):
@@ -41,6 +51,7 @@ class ValidationReport(BaseModel):
     pin_results: list[PinValidation] = Field(default_factory=list)
     component_checks: list[ComponentValidation] = Field(default_factory=list)
 
+    @computed_field
     @property
     def status(self) -> PinValidationStatus:
         """Roll up pin and component-level status to component status."""
@@ -53,24 +64,22 @@ class ValidationReport(BaseModel):
             return "ERROR"
         if "WARN" in statuses:
             return "WARN"
-        return "PASS"
+        if not statuses or "UNKNOWN" in statuses:
+            return "UNKNOWN"
+        if "PASS" in statuses:
+            return "PASS"
+        return "NOT_APPLICABLE"
 
+    @computed_field
     @property
     def counts_by_status(self) -> dict[PinValidationStatus, int]:
         """Return pin-result counts for all known statuses."""
 
-        return {
-            "PASS": sum(pin.status == "PASS" for pin in self.pin_results),
-            "WARN": sum(pin.status == "WARN" for pin in self.pin_results),
-            "ERROR": sum(pin.status == "ERROR" for pin in self.pin_results),
-        }
+        return status_counts(pin.status for pin in self.pin_results)
 
+    @computed_field
     @property
     def component_counts_by_status(self) -> dict[PinValidationStatus, int]:
         """Return component-check counts for all known statuses."""
 
-        return {
-            "PASS": sum(check.status == "PASS" for check in self.component_checks),
-            "WARN": sum(check.status == "WARN" for check in self.component_checks),
-            "ERROR": sum(check.status == "ERROR" for check in self.component_checks),
-        }
+        return status_counts(check.status for check in self.component_checks)

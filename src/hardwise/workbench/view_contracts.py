@@ -35,6 +35,8 @@ class WorkbenchSummary(BaseModel):
     pass_count: int
     warn_count: int
     error_count: int
+    unknown_count: int = 0
+    not_applicable_count: int = 0
 
 
 class WorkbenchCapabilities(BaseModel):

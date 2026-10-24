@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 STATUS_LABELS = {
+    "UNKNOWN": "待补资料 / 未评估",
+    "NOT_APPLICABLE": "不适用",
     "matched": "已匹配",
     "no_result": "无本地档案",
     "manual_needed": "需人工确认",
@@ -275,6 +277,8 @@ PROFILE_VALUE_LABELS = {
 }
 
 REVIEW_STATUS_LABELS = {
+    "UNKNOWN": "待补资料 / 未评估",
+    "NOT_APPLICABLE": "不适用",
     "ready": "已审定",
     "needs_review": "待复核",
     "draft": "草稿",

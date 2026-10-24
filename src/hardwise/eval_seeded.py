@@ -149,7 +149,7 @@ def _run_validation(project: Path, bom: Path, profiles: Path) -> list[SeededFind
             if row.validation is None:
                 continue
             for pin in row.validation.pin_results:
-                if pin.status != "PASS":
+                if pin.status in {"WARN", "ERROR"}:
                     issues.append(
                         SeededFindingSignature(
                             refdes=row.refdes,
@@ -159,7 +159,7 @@ def _run_validation(project: Path, bom: Path, profiles: Path) -> list[SeededFind
                         )
                     )
             for check in row.validation.component_checks:
-                if check.status != "PASS":
+                if check.status in {"WARN", "ERROR"}:
                     issues.append(
                         SeededFindingSignature(
                             refdes=check.refdes or row.refdes,

@@ -71,8 +71,10 @@ def test_evidence_package_keeps_six_coverage_lanes_separate(tmp_path: Path) -> N
             "validated": 22,
             "manual": 3,
             "pass_count": 2,
-            "warn_count": 16,
+            "warn_count": 4,
             "error_count": 4,
+            "unknown_count": 12,
+            "not_applicable_count": 0,
         }
 
         packet = build_project_review_prep_packet(context)

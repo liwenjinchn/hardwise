@@ -205,7 +205,13 @@ def test_motor_sensor_analog_ic_profiles_pass_basic_pin_validation() -> None:
         categories = {result.category for result in report.pin_results}
 
         assert report.status == "PASS"
-        assert report.counts_by_status == {"PASS": len(profile.pins), "WARN": 0, "ERROR": 0}
+        assert report.counts_by_status == {
+            "PASS": len(profile.pins),
+            "WARN": 0,
+            "ERROR": 0,
+            "UNKNOWN": 0,
+            "NOT_APPLICABLE": 0,
+        }
         assert report.component_checks == []
         assert {"analog_input", "analog_output", "power_input"} & categories
 
@@ -228,7 +234,13 @@ def test_validate_component_against_profile_passes_nominal_l78() -> None:
     report = validate_component_against_profile(component, _profile(), _design(component))
 
     assert report.status == "PASS"
-    assert report.counts_by_status == {"PASS": 3, "WARN": 0, "ERROR": 0}
+    assert report.counts_by_status == {
+        "PASS": 3,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     assert [pin.status for pin in report.pin_results] == ["PASS", "PASS", "PASS"]
     assert report.pin_results[0].net == "+12V"
     assert "within the structured profile limits" in report.pin_results[0].summary
@@ -240,9 +252,17 @@ def test_needs_review_profile_adds_component_warning() -> None:
 
     report = validate_component_against_profile(component, profile, _design(component))
 
-    review = next(check for check in report.component_checks if check.check == "profile_review_status")
+    review = next(
+        check for check in report.component_checks if check.check == "profile_review_status"
+    )
     assert report.status == "WARN"
-    assert report.component_counts_by_status == {"PASS": 0, "WARN": 1, "ERROR": 0}
+    assert report.component_counts_by_status == {
+        "PASS": 0,
+        "WARN": 1,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     assert review.status == "WARN"
     assert "needs_review" in review.summary
 
@@ -291,8 +311,20 @@ def test_validate_xl1509_fixture_reports_dcdc_peripheral_errors() -> None:
     report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
     assert report.status == "ERROR"
-    assert report.counts_by_status == {"PASS": 8, "WARN": 0, "ERROR": 0}
-    assert report.component_counts_by_status == {"PASS": 0, "WARN": 0, "ERROR": 2}
+    assert report.counts_by_status == {
+        "PASS": 8,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
+    assert report.component_counts_by_status == {
+        "PASS": 0,
+        "WARN": 0,
+        "ERROR": 2,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
 
     summaries = "\n".join(check.summary for check in report.component_checks)
     assert "D5 (1N4007W)" in summaries
@@ -310,7 +342,13 @@ def test_validate_xl1509_nominal_buck_topology_has_no_error() -> None:
     report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
     assert report.status == "PASS"
-    assert report.component_counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
+    assert report.component_counts_by_status == {
+        "PASS": 2,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
 
 
 def test_validate_xl1509_inductor_must_return_to_fixed_output_rail() -> None:
@@ -365,7 +403,9 @@ def test_validate_xl1509_freewheel_diode_must_return_to_ground() -> None:
 
     report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
-    diode = next(check for check in report.component_checks if check.check == "buck_freewheel_diode")
+    diode = next(
+        check for check in report.component_checks if check.check == "buck_freewheel_diode"
+    )
     assert report.status == "ERROR"
     assert diode.status == "ERROR"
     assert "recognized ground return" in diode.summary
@@ -379,7 +419,9 @@ def test_validate_xl1509_bas_small_signal_diode_warns_not_schottky_pass() -> Non
 
     report = validate_component_against_profile(design.components["U12"], _xl1509_profile(), design)
 
-    diode = next(check for check in report.component_checks if check.check == "buck_freewheel_diode")
+    diode = next(
+        check for check in report.component_checks if check.check == "buck_freewheel_diode"
+    )
     assert report.status == "WARN"
     assert diode.status == "WARN"
     assert "cannot be classified deterministically" in diode.summary
@@ -448,8 +490,20 @@ def test_validate_mpq8626_sync_buck_topology_passes() -> None:
     )
 
     assert report.status == "PASS"
-    assert report.counts_by_status == {"PASS": 14, "WARN": 0, "ERROR": 0}
-    assert report.component_counts_by_status == {"PASS": 2, "WARN": 0, "ERROR": 0}
+    assert report.counts_by_status == {
+        "PASS": 14,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
+    assert report.component_counts_by_status == {
+        "PASS": 2,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     summaries = "\n".join(check.summary for check in report.component_checks)
     assert "Inductor PL1 value 1.5 uH is present" in summaries
     assert "no external freewheel diode is required" in summaries
@@ -462,8 +516,20 @@ def test_validate_pca9548a_i2c_mux_topology_passes() -> None:
     )
 
     assert report.status == "PASS"
-    assert report.counts_by_status == {"PASS": 24, "WARN": 0, "ERROR": 0}
-    assert report.component_counts_by_status == {"PASS": 4, "WARN": 0, "ERROR": 0}
+    assert report.counts_by_status == {
+        "PASS": 24,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
+    assert report.component_counts_by_status == {
+        "PASS": 4,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     summaries = "\n".join(check.summary for check in report.component_checks)
     assert "upstream SCL/SDA are connected" in summaries
     assert "2 connected, 6 unused/NC" in summaries
@@ -527,8 +593,16 @@ def test_validate_eg2132_nominal_topology_has_no_component_error() -> None:
 
     report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
 
-    vs = next(check for check in report.component_checks if check.check == "gate_driver_vs_switch_node")
-    assert report.component_counts_by_status == {"PASS": 7, "WARN": 0, "ERROR": 0}
+    vs = next(
+        check for check in report.component_checks if check.check == "gate_driver_vs_switch_node"
+    )
+    assert report.component_counts_by_status == {
+        "PASS": 7,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     assert all(check.status != "ERROR" for check in report.component_checks)
     assert "pin role is not proven" in vs.summary
 
@@ -671,7 +745,13 @@ def test_validate_stm32_nominal_debug_topology_has_no_component_error() -> None:
 
     report = validate_component_against_profile(design.components["U8"], _stm32_profile(), design)
 
-    assert report.component_counts_by_status == {"PASS": 8, "WARN": 0, "ERROR": 0}
+    assert report.component_counts_by_status == {
+        "PASS": 8,
+        "WARN": 0,
+        "ERROR": 0,
+        "UNKNOWN": 0,
+        "NOT_APPLICABLE": 0,
+    }
     assert report.status == "PASS"
 
 
