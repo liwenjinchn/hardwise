@@ -145,9 +145,12 @@ export type Kind1 = string;
 export type PinNumber = string | null;
 export type RecommendedAction = string;
 export type Refdes2 = string;
+export type CurrentFingerprint = string | null;
+export type Fingerprint = string | null;
+export type PreviousStatus = ("open" | "accepted" | "waived" | "resolved") | null;
 export type Reason5 = string;
 export type StableKey = string;
-export type Status9 = "open" | "accepted" | "waived" | "resolved";
+export type Status9 = "open" | "accepted" | "waived" | "resolved" | "needs_review";
 export type UpdatedAt = string;
 export type SourceClasses = string[];
 export type StableKey1 = string;
@@ -299,9 +302,14 @@ export type TrustTier5 = "l1" | "l2" | "l3";
 export type Value3 = string;
 export type Queue = ReviewQueueItem[];
 export type Accepted = number;
+export type HistoryCount = number;
+export type NeedsReview1 = number;
 export type Open = number;
+export type ProjectId = string | null;
 export type Resolved = number;
+export type RunId = string | null;
 export type StaleRemovedOnRerun = number;
+export type Storage = "memory" | "local_file";
 export type TotalTasks = number;
 export type Waived = number;
 export type AffectedRefdes1 = string[];
@@ -622,6 +630,9 @@ export interface ReviewTask {
  * One human workflow decision keyed by a stable finding key.
  */
 export interface ReviewDecisionView {
+  current_fingerprint: CurrentFingerprint;
+  fingerprint: Fingerprint;
+  previous_status: PreviousStatus;
   reason: Reason5;
   stable_key: StableKey;
   status: Status9;
@@ -888,9 +899,14 @@ export interface ReviewQueueItem {
  */
 export interface ReviewDecisionSummary {
   accepted: Accepted;
+  history_count: HistoryCount;
+  needs_review: NeedsReview1;
   open: Open;
+  project_id: ProjectId;
   resolved: Resolved;
+  run_id: RunId;
   stale_removed_on_rerun: StaleRemovedOnRerun;
+  storage: Storage;
   total_tasks: TotalTasks;
   waived: Waived;
 }

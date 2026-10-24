@@ -148,7 +148,7 @@ for (const viewport of [
   test(`no horizontal overflow at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await openReview(page);
-    for (const view of ["审查", "导入", "导出"]) {
+    for (const view of ["审查", "导入", "问题清单", "导出"]) {
       await page.getByRole("button", { name: view }).click();
       const overflow = await page.evaluate(() => {
         const root = document.documentElement;

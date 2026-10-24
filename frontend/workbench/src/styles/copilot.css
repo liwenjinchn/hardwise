@@ -510,3 +510,30 @@
 .spin {
   animation: spin .9s linear infinite;
 }
+
+.finding-status-stack details {
+  max-width: 220px;
+  overflow-wrap: anywhere;
+}
+
+.findings-heading {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.findings-list {
+  min-width: 0;
+  container-type: inline-size;
+}
+
+@container (max-width: 1050px) {
+  .finding-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .finding-row > input,
+  .finding-actions {
+    grid-column: 1 / -1;
+  }
+}

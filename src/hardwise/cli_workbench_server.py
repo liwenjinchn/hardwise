@@ -24,8 +24,14 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
             ),
         ),
         voltage_facts: Path | None = typer.Option(
-            None, "--voltage-facts",
+            None,
+            "--voltage-facts",
             help="Explicit confirmed DC voltage envelopes JSON; net names are candidates only for passive stress checks.",
+        ),
+        review_db: Path | None = typer.Option(
+            None,
+            "--review-db",
+            help="Optional local SQLite reviewer journal; retain source inputs for restart recovery.",
         ),
         profiles: Path = typer.Option(
             Path("data/datasheet_profiles"),
@@ -198,5 +204,6 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
             pin_table=pin_table,
             review_package_manifest=review_package_manifest,
             auto_datasheet_candidates=auto_datasheet_candidates,
+            review_db=review_db,
         )
         uvicorn.run(app_obj, host=host, port=port)

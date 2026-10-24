@@ -19,7 +19,8 @@ describe("review closure API", () => {
     await updateReviewDecision({
       stableKeys: ["component_check|U12|buck_inductor|-|L1"],
       status: "waived",
-      reason: "fixture defect retained"
+      reason: "fixture defect retained",
+      expectedRunId: "current-run"
     });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -28,7 +29,8 @@ describe("review closure API", () => {
     expect(JSON.parse(String(init.body))).toEqual({
       stable_keys: ["component_check|U12|buck_inductor|-|L1"],
       status: "waived",
-      reason: "fixture defect retained"
+      reason: "fixture defect retained",
+      expected_run_id: "current-run"
     });
   });
 

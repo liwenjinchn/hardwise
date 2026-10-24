@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import copy
 import shutil
+import sqlite3
 import tempfile
 from contextlib import asynccontextmanager
 from pathlib import Path
+from threading import RLock
 from typing import Literal
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
@@ -63,6 +65,8 @@ from hardwise.workbench.profile_promotion import (
     build_profile_promotion_packet,
     render_profile_promotion_packet_markdown,
 )
+from hardwise.workbench.decision_fingerprints import review_fingerprints, review_project_key
+from hardwise.workbench.decision_journal import ReviewConflictError
 from hardwise.workbench.review_decisions import (
     ReviewDecisionRequest,
     ReviewDecisionStore,
@@ -87,11 +91,30 @@ def create_workbench_app(
     pin_table: Path | None = None,
     review_package_manifest: Path | None = None,
     auto_datasheet_candidates: bool = True,
+    review_db: Path | None = None,
 ) -> FastAPI:
     """Create the local live workbench app."""
 
     context_manager = WorkbenchContextManager(context)
-    review_decisions = ReviewDecisionStore()
+    review_decisions = ReviewDecisionStore(review_db)
+    review_workflow_lock = RLock()
+
+    def start_review_run(active_context):
+        tasks = build_review_tasks(active_context)
+        return review_decisions.begin_run(
+            review_project_key(active_context),
+            review_fingerprints(active_context, tasks),
+            tasks=[task.model_dump(mode="json") for task in tasks],
+        )
+
+    def decisions_for(active_context, tasks):
+        return review_decisions.apply(
+            tasks,
+            fingerprints=review_fingerprints(active_context, tasks),
+            project=review_project_key(active_context),
+        )
+
+    start_review_run(context)
 
     def state_with_decisions(active_context: WorkbenchContext) -> WorkbenchState:
         state = build_workbench_state(
@@ -99,9 +122,10 @@ def create_workbench_app(
             datasheet_search_enabled=chat_service.datasheet_search_enabled,
             datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
         )
-        state.review_tasks = review_decisions.apply(state.review_tasks)
+        state.review_tasks = decisions_for(active_context, state.review_tasks)
         state.review_decisions = review_decisions.summary(
-            [task.stable_key for task in state.review_tasks]
+            [task.stable_key for task in state.review_tasks],
+            project=review_project_key(active_context),
         )
         return state
 
@@ -169,7 +193,7 @@ def create_workbench_app(
                 return JSONResponse(status_code=404, content=detail.model_dump())
             if auto_datasheet_candidates:
                 detail = _attach_auto_datasheet_candidates(context, detail)
-            detail.tasks = review_decisions.apply(detail.tasks)
+            detail.tasks = decisions_for(context, detail.tasks)
             return detail
 
     @app.get("/api/workbench/components/{refdes}/prep-packet")
@@ -181,7 +205,7 @@ def create_workbench_app(
         packet = build_review_prep_packet(context, refdes)
         if isinstance(packet, ComponentMiss):
             return JSONResponse(status_code=404, content=packet.model_dump())
-        packet.tasks = review_decisions.apply(packet.tasks)
+        packet.tasks = decisions_for(context, packet.tasks)
         packet.component.tasks = list(packet.tasks)
         filename_refdes = refdes.upper()
         if format == "markdown":
@@ -233,9 +257,10 @@ def create_workbench_app(
     ) -> Response:
         context = current_context["value"]
         packet = build_project_review_prep_packet(context)
-        packet.priority_tasks = review_decisions.apply(packet.priority_tasks)
+        packet.priority_tasks = decisions_for(context, packet.priority_tasks)
         packet.review_decisions = review_decisions.summary(
-            [task.stable_key for task in build_review_tasks(context)]
+            [task.stable_key for task in build_review_tasks(context)],
+            project=review_project_key(context),
         )
         if format == "markdown":
             return Response(
@@ -391,7 +416,14 @@ def create_workbench_app(
                 datasheet_search_enabled=chat_service.datasheet_search_enabled,
                 datasheet_candidate_lookup_enabled=auto_datasheet_candidates,
             )
-            context_manager.swap(next_context, import_dir=import_dir)
+            with review_workflow_lock:
+                checkpoint = review_decisions.checkpoint()
+                try:
+                    start_review_run(next_context)
+                    context_manager.swap(next_context, import_dir=import_dir)
+                except Exception:
+                    review_decisions.restore_checkpoint(checkpoint)
+                    raise
         except Exception as exc:
             try:
                 close_workbench_context(next_context)
@@ -400,7 +432,6 @@ def create_workbench_app(
             raise HTTPException(status_code=503, detail=f"import activation failed: {exc}") from exc
         if hasattr(chat_service, "context"):
             chat_service.context = next_context
-        review_decisions.reset()
         return ImportResponse(
             ok=True,
             project=state.project,
@@ -428,22 +459,29 @@ def create_workbench_app(
             if format == "csv":
                 return _task_csv_response(
                     context,
-                    tasks=review_decisions.apply(build_review_tasks(context)),
+                    tasks=decisions_for(context, build_review_tasks(context)),
                 )
             return _annotations_response(
                 context,
-                tasks=review_decisions.apply(build_review_tasks(context)),
+                tasks=decisions_for(context, build_review_tasks(context)),
             )
+
+    @app.get("/api/workbench/review-decisions/history")
+    def review_history(limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0)):
+        return {"events": review_decisions.history(limit, offset)}
 
     @app.put("/api/workbench/review-decisions")
     def update_review_decisions(request: ReviewDecisionRequest) -> WorkbenchState:
-        with context_manager.lease() as context:
+        with review_workflow_lock, context_manager.lease() as context:
             tasks = build_review_tasks(context)
             try:
                 review_decisions.update(
                     known_keys=[task.stable_key for task in tasks],
                     request=request,
+                    fingerprints=review_fingerprints(context, tasks),
                 )
+            except ReviewConflictError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
             except ValueError as exc:
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             except KeyError as exc:
@@ -451,44 +489,55 @@ def create_workbench_app(
                     status_code=404,
                     detail=f"unknown stable finding key: {exc.args[0]}",
                 ) from exc
+            except (sqlite3.Error, OSError) as exc:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Review decision was not saved; previous records remain unchanged.",
+                ) from exc
             return state_with_decisions(context)
 
     @app.post("/api/workbench/rerun")
     def rerun_workbench() -> WorkbenchState:
         """Rebuild deterministic truth and reconcile decisions by stable key."""
-
-        with context_manager.lease() as context:
+        with review_workflow_lock:
+            with context_manager.lease() as context:
+                try:
+                    next_context = build_workbench_context(
+                        netlist_path=context.netlist_source,
+                        bom_path=context.bom.source_file,
+                        profiles=Path(context.candidate_report.profiles_dir),
+                        document_index=(
+                            context.document_report.document_index_file
+                            if context.document_report is not None
+                            else None
+                        ),
+                        risk_hints_json=(
+                            Path(context.risk_hints.source_path)
+                            if context.risk_hints.source_path
+                            else None
+                        ),
+                        review_package_manifest=(
+                            Path(context.review_package.source_path)
+                            if context.review_package.source_path
+                            else None
+                        ),
+                        pin_table=context.pin_table_path,
+                        voltage_facts=context.voltage_facts_path,
+                    )
+                except Exception as exc:
+                    raise HTTPException(status_code=422, detail=f"rerun failed: {exc}") from exc
             try:
-                next_context = build_workbench_context(
-                    netlist_path=context.netlist_source,
-                    bom_path=context.bom.source_file,
-                    profiles=Path(context.candidate_report.profiles_dir),
-                    document_index=(
-                        context.document_report.document_index_file
-                        if context.document_report is not None
-                        else None
-                    ),
-                    risk_hints_json=(
-                        Path(context.risk_hints.source_path)
-                        if context.risk_hints.source_path
-                        else None
-                    ),
-                    review_package_manifest=(
-                        Path(context.review_package.source_path)
-                        if context.review_package.source_path
-                        else None
-                    ),
-                    pin_table=context.pin_table_path,
-                    voltage_facts=context.voltage_facts_path,
-                )
-            except Exception as exc:
-                raise HTTPException(status_code=422, detail=f"rerun failed: {exc}") from exc
-        next_tasks = build_review_tasks(next_context)
-        review_decisions.reconcile(task.stable_key for task in next_tasks)
-        context_manager.refresh(next_context)
-        if hasattr(chat_service, "context"):
-            chat_service.context = next_context
-        return state_with_decisions(next_context)
+                start_review_run(next_context)
+            except (sqlite3.Error, OSError, ValueError) as exc:
+                close_workbench_context(next_context)
+                raise HTTPException(
+                    status_code=503,
+                    detail="Rerun review snapshot was not saved; the active run remains unchanged.",
+                ) from exc
+            context_manager.refresh(next_context)
+            if hasattr(chat_service, "context"):
+                chat_service.context = next_context
+            return state_with_decisions(next_context)
 
     @app.post("/api/workbench/chat", response_model=ChatResponse)
     def chat(request: ChatRequest) -> ChatResponse:

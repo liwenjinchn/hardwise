@@ -323,6 +323,23 @@ describe("FindingsView", () => {
   });
 });
 
+describe("review decision recovery", () => {
+  it("shows local persistence, changed-input review and the retained reason", () => {
+    const state = makeState();
+    state.review_tasks[0].review_decision = {
+      stable_key: state.review_tasks[0].stable_key, status: "needs_review", reason: "保留先前工程理由",
+      updated_at: "2026-10-24", previous_status: "waived", fingerprint: "old", current_fingerprint: "new"
+    };
+    const html = renderToStaticMarkup(<FindingsView groups={state.review_groups} tasks={state.review_tasks}
+      reviewSummary={{...state.review_decisions!, storage:"local_file", needs_review:1}}
+      onDecision={async () => {}} onRerun={async () => {}} onOpenTask={() => {}} />);
+    expect(html).toContain("人工决定已保存到本地评审文件");
+    expect(html).toContain("评审 需复核");
+    expect(html).toContain("保留先前工程理由");
+    expect(html).toContain("输入变化需要复核");
+  });
+});
+
 describe("ExportView", () => {
   it("renders finding count, format switches, and prep packet card", () => {
     const html = renderToStaticMarkup(

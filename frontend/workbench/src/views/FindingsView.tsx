@@ -4,6 +4,7 @@ import { StatusBadge } from "../components/ui";
 import { formatSummary } from "../lib/format";
 import type {
   ReviewDecisionStatus,
+  ReviewDecisionSummary,
   ReviewTask,
   ReviewTaskGroup
 } from "../types";
@@ -14,9 +15,11 @@ export function FindingsView({
   tasks,
   onDecision,
   onRerun,
-  onOpenTask
+  onOpenTask,
+  reviewSummary
 }: {
   groups: ReviewTaskGroup[];
+  reviewSummary?: ReviewDecisionSummary | null;
   tasks: ReviewTask[];
   onDecision: (
     stableKeys: string[],
@@ -65,13 +68,20 @@ export function FindingsView({
             当前显示 {groups.length} 个审查组，保留 {tasks.length} 条原始任务用于审计。
             决策由后端保存，不改变确定性 PASS/WARN/ERROR。
           </p>
+            <p role="status">
+              {reviewSummary?.storage === "local_file"
+                ? "人工决定已保存到本地评审文件；恢复时需要保留原输入文件及路径。"
+                : "人工决定仅保存在本次服务中；服务退出后不会自动恢复。"}
+              {reviewSummary?.needs_review ? ` ${reviewSummary.needs_review} 条旧决定因输入变化需要复核，原理由已保留。` : ""}
+            </p>
+            {error && <p className="form-error" role="alert">{error}</p>}
+
         </div>
         <button type="button" onClick={() => void rerun()} disabled={busy !== ""}>
           {busy === "rerun" ? <Loader2 className="spin" size={15} /> : <RotateCcw size={15} />}
           重新运行确定性检查
         </button>
       </div>
-      {error && <p className="form-error" role="alert">{error}</p>}
       <div className="findings-list">
         {groups.map((group) => {
           const groupTasks = group.task_ids
@@ -81,9 +91,9 @@ export function FindingsView({
           const decisionStatuses = new Set(
             groupTasks.map((task) => task.review_decision?.status ?? "open")
           );
-          const decision = decisionStatuses.size === 1
-            ? [...decisionStatuses][0]
-            : "mixed";
+          const decision = decisionStatuses.has("needs_review")
+            ? "needs_review"
+            : decisionStatuses.size === 1 ? [...decisionStatuses][0] : "mixed";
           const reason = reasons[group.id] ?? "";
           return (
             <article className={`finding-row ${group.status_group}`} key={group.id}>
@@ -105,7 +115,15 @@ export function FindingsView({
                   group={group.status_group}
                   label={`${group.axis === "electrical" ? "电气" : "证据"} ${group.status_group.toUpperCase()}`}
                 />
-                <span className="source-badge">评审 {decision}</span>
+                <span className="source-badge">评审 {decision === "needs_review" ? "需复核" : decision}</span>
+                {groupTasks.some((task) => task.review_decision?.reason) && (
+                  <details>
+                    <summary>已有处理理由</summary>
+                    {groupTasks.filter((task) => task.review_decision?.reason).map((task) => (
+                      <p key={task.stable_key}>{task.refdes}：{task.review_decision?.reason}</p>
+                    ))}
+                  </details>
+                )}
               </div>
               <input
                 aria-label={`${group.id} 评审理由`}

@@ -1908,18 +1908,61 @@
           "title": "Accepted",
           "type": "integer"
         },
+        "history_count": {
+          "default": 0,
+          "title": "History Count",
+          "type": "integer"
+        },
+        "needs_review": {
+          "default": 0,
+          "title": "Needs Review",
+          "type": "integer"
+        },
         "open": {
           "title": "Open",
           "type": "integer"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project Id"
         },
         "resolved": {
           "title": "Resolved",
           "type": "integer"
         },
+        "run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run Id"
+        },
         "stale_removed_on_rerun": {
           "default": 0,
           "title": "Stale Removed On Rerun",
           "type": "integer"
+        },
+        "storage": {
+          "default": "memory",
+          "enum": [
+            "memory",
+            "local_file"
+          ],
+          "title": "Storage",
+          "type": "string"
         },
         "total_tasks": {
           "title": "Total Tasks",
@@ -1932,9 +1975,14 @@
       },
       "required": [
         "accepted",
+        "history_count",
+        "needs_review",
         "open",
+        "project_id",
         "resolved",
+        "run_id",
         "stale_removed_on_rerun",
+        "storage",
         "total_tasks",
         "waived"
       ],
@@ -1944,6 +1992,48 @@
     "ReviewDecisionView": {
       "description": "One human workflow decision keyed by a stable finding key.",
       "properties": {
+        "current_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Fingerprint"
+        },
+        "fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fingerprint"
+        },
+        "previous_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "open",
+                "accepted",
+                "waived",
+                "resolved"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous Status"
+        },
         "reason": {
           "title": "Reason",
           "type": "string"
@@ -1957,7 +2047,8 @@
             "open",
             "accepted",
             "waived",
-            "resolved"
+            "resolved",
+            "needs_review"
           ],
           "title": "Status",
           "type": "string"
@@ -1968,6 +2059,9 @@
         }
       },
       "required": [
+        "current_fingerprint",
+        "fingerprint",
+        "previous_status",
         "reason",
         "stable_key",
         "status",

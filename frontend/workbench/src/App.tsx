@@ -150,7 +150,7 @@ function App() {
     status: ReviewDecisionStatus,
     reason: string
   ) => {
-    const payload = await updateReviewDecision({ stableKeys, status, reason });
+    const payload = await updateReviewDecision({ stableKeys, status, reason, expectedRunId: state?.review_decisions?.run_id });
     applyState(payload);
   };
 
@@ -214,6 +214,7 @@ function App() {
       )}
       {view === "findings" && (
         <FindingsView
+          reviewSummary={state.review_decisions}
           groups={state.review_groups}
           tasks={state.review_tasks}
           onDecision={handleReviewDecision}

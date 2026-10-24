@@ -411,6 +411,11 @@ export function makeState(overrides: Partial<WorkbenchState> = {}): WorkbenchSta
       accepted: 0,
       waived: 0,
       resolved: 0,
+      needs_review: 0,
+      storage: "memory",
+      history_count: 0,
+      project_id: null,
+      run_id: null,
       stale_removed_on_rerun: 0
     },
     net_checks: [],

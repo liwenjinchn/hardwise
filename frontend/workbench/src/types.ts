@@ -189,9 +189,12 @@ export type ReviewDecisionStatus = "open" | "accepted" | "waived" | "resolved";
 
 export interface ReviewDecision {
   stable_key: string;
-  status: ReviewDecisionStatus;
+  status: ReviewDecisionStatus | "needs_review";
   reason: string;
   updated_at: string;
+  previous_status: ReviewDecisionStatus | null;
+  fingerprint: string | null;
+  current_fingerprint: string | null;
 }
 
 export interface ReviewDecisionSummary {
@@ -201,6 +204,11 @@ export interface ReviewDecisionSummary {
   waived: number;
   resolved: number;
   stale_removed_on_rerun: number;
+  needs_review: number;
+  storage: "memory" | "local_file";
+  history_count: number;
+  project_id: string | null;
+  run_id: string | null;
 }
 
 export interface ReviewTaskGroup {

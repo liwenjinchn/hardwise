@@ -39,6 +39,9 @@ data/datasheets/*
 
 # Local DB / vector store
 *.db
+*.db-*
+*.sqlite
+*.sqlite-*
 data/chroma/
 
 # Generated reports — local outputs

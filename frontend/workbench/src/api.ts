@@ -39,6 +39,7 @@ export function fetchWorkbenchState(): Promise<WorkbenchState> {
 }
 
 export function updateReviewDecision(input: {
+  expectedRunId?: string | null;
   stableKeys: string[];
   status: ReviewDecisionStatus;
   reason: string;
@@ -51,7 +52,8 @@ export function updateReviewDecision(input: {
     body: JSON.stringify({
       stable_keys: input.stableKeys,
       status: input.status,
-      reason: input.reason
+      reason: input.reason,
+      expected_run_id: input.expectedRunId
     })
   });
 }
