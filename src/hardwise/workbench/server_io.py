@@ -19,7 +19,13 @@ def _save_upload(upload: UploadFile, directory: Path, *, fallback_name: str) -> 
     safe_name = Path(upload.filename or fallback_name).name or fallback_name
     target = directory / safe_name
     upload.file.seek(0)
-    with target.open("wb") as handle:
+    try:
+        handle = target.open("xb")
+    except FileExistsError as exc:
+        raise ValueError(
+            f"duplicate upload filename {safe_name!r}; use distinct filenames for each input"
+        ) from exc
+    with handle:
         shutil.copyfileobj(upload.file, handle)
     return target
 
