@@ -79,15 +79,19 @@ class ManagedInputs:
         if manifest_path.is_symlink():
             raise ValueError("Managed input manifest cannot be a symlink")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(manifest, dict):
+            raise ValueError("Invalid managed input manifest")
         if manifest.get("schema_version") != _VERSION or manifest.get("snapshot_id") != snapshot:
             raise ValueError("Unsupported or mismatched managed input manifest")
-        observed = InputReadManifest.model_validate(manifest["observed"])
-        entries = manifest["entries"]
-        if not entries or len(entries) != len(observed.files):
+        observed = InputReadManifest.model_validate(manifest.get("observed"))
+        entries = manifest.get("entries")
+        if not isinstance(entries, list) or not entries or len(entries) != len(observed.files):
             raise ValueError("Incomplete managed input snapshot")
         allowed = {"manifest.json"}
         for index, (entry, source) in enumerate(zip(entries, observed.files, strict=True)):
-            member = entry["member"]
+            if not isinstance(entry, dict):
+                raise ValueError("Invalid managed source entry")
+            member = entry.get("member")
             if member != f"files/{index:06d}.bin":
                 raise ValueError("Invalid managed input member")
             if {k: v for k, v in entry.items() if k != "member"} != source.model_dump(mode="json"):
@@ -99,9 +103,10 @@ class ManagedInputs:
             if len(data) != source.size_bytes or _sha(data) != source.sha256:
                 raise ValueError(f"Managed source hash mismatch: {member}")
             allowed.add(member)
-        present = {
-            str(p.relative_to(directory).as_posix()) for p in directory.rglob("*") if p.is_file()
-        }
+        paths = list(directory.rglob("*"))
+        if any(path.is_symlink() for path in paths):
+            raise ValueError("Managed snapshot cannot contain symlinks")
+        present = {str(p.relative_to(directory).as_posix()) for p in paths if p.is_file()}
         if present != allowed:
             raise ValueError("Unexpected files in managed input snapshot")
         return manifest

@@ -42,6 +42,8 @@ def _digest(value) -> str:
 
 def review_project_key(context) -> str:
     """Source identity is separate from source contents and finding identity."""
+    if context.managed_project_key:
+        return context.managed_project_key
     return _digest([str(context.netlist_source.resolve()), str(context.bom.source_file.resolve())])
 
 

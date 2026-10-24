@@ -104,3 +104,14 @@ def test_damaged_owned_snapshot_is_rejected(tmp_path, damage):
 def test_invalid_snapshot_id_is_rejected(tmp_path, snapshot):
     with pytest.raises(ValueError, match="identifier"):
         ManagedInputs(tmp_path / "review.sqlite").load(snapshot)
+
+
+@pytest.mark.parametrize("payload", [[], {}, {"schema_version": "hardwise.managed_inputs.v1"}])
+def test_malformed_manifest_is_controlled_error(tmp_path, payload):
+    source = tmp_path / "source"
+    source.write_bytes(b"public")
+    store = ManagedInputs(tmp_path / "review.sqlite")
+    snapshot = store.capture(observed([source]))
+    (store.root / snapshot / "manifest.json").write_text(json.dumps(payload))
+    with pytest.raises(ValueError):
+        store.load(snapshot)

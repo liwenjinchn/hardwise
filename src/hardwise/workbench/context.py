@@ -74,6 +74,8 @@ class WorkbenchContext:
     property_count: int
     voltage_facts_path: Path | None = None
     input_manifest: InputReadManifest | None = None
+    managed_project_key: str | None = None
+    managed_project_id: str | None = None
     projection: WorkbenchProjectionIndex = field(init=False, repr=False, compare=False)
     agent_lock: Any = field(default_factory=RLock, init=False, repr=False, compare=False)
 

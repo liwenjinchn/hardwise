@@ -17,6 +17,7 @@ class DecisionJournal:
         self.path = path.resolve()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
             version = db.execute("PRAGMA user_version").fetchone()[0]
             tables = {
                 r[0]
@@ -25,7 +26,9 @@ class DecisionJournal:
                 )
             }
             expected = {"review_state", "review_events", "review_runs", "review_heads"}
-            if version not in (0, 1) or (tables and tables != expected):
+            if version == 2:
+                expected.add("managed_projects")
+            if version not in (0, 1, 2) or (tables and tables != expected):
                 raise ValueError(
                     "unsupported review journal; preserve the file and select another path"
                 )
@@ -41,7 +44,10 @@ class DecisionJournal:
             db.execute(
                 "CREATE TABLE IF NOT EXISTS review_heads(project TEXT PRIMARY KEY, revision INTEGER NOT NULL)"
             )
-            db.execute("PRAGMA user_version=1")
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS managed_projects(id TEXT PRIMARY KEY, project TEXT UNIQUE NOT NULL, snapshot TEXT NOT NULL, descriptor TEXT NOT NULL)"
+            )
+            db.execute("PRAGMA user_version=2")
 
     @contextmanager
     def connect(self):

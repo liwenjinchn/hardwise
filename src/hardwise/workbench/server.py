@@ -141,6 +141,18 @@ def create_workbench_app(
     app = FastAPI(title="Hardwise Workbench", docs_url=None, redoc_url=None, lifespan=lifespan)
     app.state.workbench_context = context_manager
     current_context = context_manager
+    from hardwise.workbench.managed_project_routes import register_managed_project_routes
+
+    register_managed_project_routes(
+        app,
+        journal=review_db,
+        manager=context_manager,
+        lock=review_workflow_lock,
+        decisions=review_decisions,
+        start_run=start_review_run,
+        state_for=state_with_decisions,
+        chat_service=chat_service,
+    )
 
     @app.middleware("http")
     async def lease_workbench_context(request, call_next):
@@ -566,6 +578,8 @@ def create_workbench_app(
                     )
                 except Exception as exc:
                     raise HTTPException(status_code=422, detail=f"rerun failed: {exc}") from exc
+            next_context.managed_project_key = context.managed_project_key
+            next_context.managed_project_id = context.managed_project_id
             try:
                 start_review_run(next_context)
             except ReviewConflictError as exc:
