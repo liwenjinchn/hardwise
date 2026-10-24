@@ -15,6 +15,10 @@ class DecisionJournal:
 
     def __init__(self, path: Path):
         self.path = path.resolve()
+        if (self.path.parent / ".hardwise-restore-incomplete").exists():
+            raise ValueError(
+                "project restore is incomplete; preserve this directory and restore to a new destination"
+            )
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")

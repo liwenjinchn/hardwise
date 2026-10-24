@@ -45,7 +45,7 @@ The storage primitive alone does not close A09/M2 or the full goal. Every integr
 
 Observed: public L78 source copies removed, journal plus sidecar moved and renamed, new independent process rebuilt the context and recovered a real API waiver with the exact Chinese reason and history count1. This verifies that local pin finding only; full topology dependency precision remains open. Basenames/relative layout are retained during reconstruction, but absent external PDFs are not invented. Invalid descriptor/snapshot validation is before context activation.
 
-Not implemented yet: complete backup archive/restore, crash/power-loss proof spanning directory publication and SQLite, retention/cleanup of unreferenced snapshots. Do not mark A09/M2 complete from these API and source tests.
+Remaining: page archive backup/restore controls, further crash/power-loss proof spanning input publication and SQLite, cleanup of unreferenced snapshots. Complete CLI backup/restore is described below. Do not mark A09/M2 complete from these API and source tests.
 
 ## Direct saved-project startup
 
@@ -66,3 +66,23 @@ The existing Import page now includes Save and reopen. A file-backed live servic
 The catalog and save response have generated Pydantic/TypeScript contracts. Offline HTML makes no project API requests and explains that its report cannot save/open local projects. Memory-mode servers explain --review-db. Saved originals and linked external originals remain different scopes; the panel does not call this a complete backup.
 
 Browser proof: save current public mixed design with a review reason, import L78, open the saved mixed project and recover project identity/reason; catalog outage retry and stale-open rejection. White narrow screenshot at760px inspected with no horizontal overflow. This is an existing live service UI, not an empty-start graphical picker or a complete backup/restore workflow.
+
+## Complete saved-project backup and fresh restore — CLI
+
+```bash
+uv run hardwise backup-projects --review-db /path/review.sqlite --output /path/review-backup.zip
+uv run hardwise restore-projects /path/review-backup.zip --destination /new/path/restored-project
+uv run hardwise serve-workbench --review-db /new/path/restored-project/journal.sqlite --open-project <saved-id> --no-auto-datasheet-candidates
+```
+
+Scope is **saved projects and journal history**. Save the desired current input version first. SQLite's online backup API captures one consistent committed journal while the service may continue running; referenced source snapshots are then copied and revalidated. Successful saves now write descriptorv2 with retained prior source-snapshot references, so repeated saved versions remain in future backups. Descriptorv1 remains readable; previously unreferenced older snapshots cannot be retrospectively certified. SQLite schema staysv2. Older binaries lacking descriptorv2 support cannot open newly saved descriptors; no downgrade support is claimed.
+
+The archive includes a fixed-name journal, its referenced current/retained immutable source snapshots and a versioned file size/SHA256 manifest. It omits orphan/staging snapshots, .env/keys, temporary materializations and external PDFs that were never owned inputs. Journal namespaces without saved sources are listed as source_unowned_project_ids: their history is included, but their original designs are not recoverable from this package. This field must not be presented as a complete source backup for those namespaces. At least one saved project is required.
+
+Restore verifies ZIP member uniqueness (including case collisions), relative paths, supported types, exact manifest/member set, sizes/hashes, SQLite quick_check/schema/catalog and every referenced snapshot. It reconstructs each current saved project before publishing. Rejects encrypted members, symlinks, directories, traversal, unknown versions and extra/missing members. Limits:50,000 payload files,1GiB total expanded content,16MiB manifest. Checksums detect corruption against the manifest; they are not signatures or human engineering approval.
+
+Destination must be new; backup output must be new. Neither operation may write into owned input directories. After validation, restore reserves the destination exclusively and publishes sources before the journal. A restore-incomplete marker blocks all DecisionJournal opens until publication finishes; ordinary failures remove only the newly created destination. A real subprocess _exit after source publication leaves the marker and blocks partial open; restore the original archive into another fresh destination. This is a tested process-interruption boundary, not filesystem/OS power-loss durability certification. Parent staging leftovers after forced exit are not automatically pruned.
+
+Observed real CLI/HTTP experiment: backup from current public demo journal, restore to a fresh directory, then independently start --open-project without source paths/key/fake mode. The three prior history events and original NEEDS_REVIEW reason were retained. Original demo inputs/journal were preserved. Separate tests delete source and journal before restore, retain repeated saved versions, preserve local-pin waived reason, prove a concurrent later save cannot mix into the frozen catalog, reject damaged packages/existing targets and block interrupted restore.
+
+White save/open controls remain; archive backup/restore is currently available through these local commands, not a page upload/download flow. Full A09/M2 requires remaining source-publication/SQLite crash boundaries, all relevant rule-dependency acceptance and target environment proof; do not close the full product goal from these tests.

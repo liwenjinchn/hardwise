@@ -31,10 +31,11 @@ class SavedArguments(BaseModel):
 
 class SavedDescriptor(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    schema_version: Literal["hardwise.managed_project.v1"]
+    schema_version: Literal["hardwise.managed_project.v1", "hardwise.managed_project.v2"]
     arguments: SavedArguments
     sources: dict[str, str]
     name: str = "已保存项目"
+    retained_snapshots: list[str] = []
 
 
 class ManagedProjectMissing(KeyError):
@@ -92,7 +93,7 @@ class ManagedProjects:
         paths.extend(Path(p).absolute() for p in args.values() if p is not None)
         base = Path(os.path.commonpath([str(p.parent) for p in paths]))
         descriptor = dict(
-            schema_version="hardwise.managed_project.v1",
+            schema_version="hardwise.managed_project.v2",
             name=context.project_name,
             arguments={
                 k: str(Path(v).absolute().relative_to(base).as_posix()) if v else None
@@ -114,9 +115,14 @@ class ManagedProjects:
             if not row or row[0] != expected_run_id:
                 raise ReviewConflictError("Review run changed before project save")
             row = db.execute(
-                "SELECT id FROM managed_projects WHERE project=?", (project,)
+                "SELECT id,snapshot,descriptor FROM managed_projects WHERE project=?", (project,)
             ).fetchone()
             identifier = row[0] if row else uuid4().hex
+            if row:
+                previous = SavedDescriptor.model_validate_json(row[2])
+                descriptor["retained_snapshots"] = list(
+                    dict.fromkeys([*previous.retained_snapshots, row[1]])
+                )
             db.execute(
                 "INSERT INTO managed_projects VALUES(?,?,?,?) ON CONFLICT(project) DO UPDATE SET snapshot=excluded.snapshot,descriptor=excluded.descriptor",
                 (identifier, project, snapshot, json.dumps(descriptor, ensure_ascii=False)),
