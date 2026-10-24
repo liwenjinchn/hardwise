@@ -309,7 +309,7 @@ def test_fake_chat_summarizes_project_topology() -> None:
         assert "21 条网络" in response.answer
         assert "已验证 21 个" in response.answer
         assert "待人工补档案 4 个" in response.answer
-        assert "PASS/WARN/ERROR=1/0/3" in response.answer
+        assert "PASS/WARN/ERROR=0/0/3" in response.answer
         assert "首个器件档案缺口: RES-10K" in response.answer
         assert response.trace
         assert response.trace[0].tool == "summarize_project_topology"

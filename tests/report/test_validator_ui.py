@@ -20,8 +20,8 @@ import re
 def _section_order(html: str, refdes: str) -> list[str]:
     """Return the ordered data-section keys within one component panel."""
     start = html.index(f'data-panel="{refdes}"')
-    end = html.find('class="panel', start + 1)
-    panel = html[start:] if end == -1 else html[start:end]
+    end = html.index("</article>", start)
+    panel = html[start:end]
     return re.findall(r'data-section="([^"]+)"', panel)
 
 
@@ -113,10 +113,10 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert ".table-section{max-width:100%;overflow:auto}" in html
     assert 'class="left-stack" aria-label="器件与验证摘要"' in html
     assert html.index('aria-label="验证"') < html.index('aria-label="器件"')
-    assert "验证完成 · PASS/WARN/ERROR=1/0/0" in html
+    assert "验证完成 · PASS/WARN/ERROR=0/0/0" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
-    assert '<article class="panel active" data-panel="U12">' in html
+    assert '<article class="panel active" data-panel="U1">' in html
     # Six numbered top-level sections, fixed order, two validated panels.
     for section in (
         "model-check",

@@ -1,0 +1,24 @@
+{
+  "schema_version": "hardwise.voltage_facts.v1",
+  "active_mode": "dc",
+  "facts": [
+    {
+      "net": "+12V",
+      "reference_net": "GND",
+      "minimum": 11.0,
+      "maximum": 13.0,
+      "source": "public synthetic regulator DC premise; not measured; output tolerance is not certified",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "+5V",
+      "reference_net": "GND",
+      "minimum": 4.9,
+      "maximum": 5.1,
+      "source": "public synthetic regulator DC premise; not measured; output tolerance is not certified",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    }
+  ]
+}

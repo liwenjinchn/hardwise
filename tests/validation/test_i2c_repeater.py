@@ -9,6 +9,7 @@ from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.validation.component import validate_component_against_profile
+from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
 def _profile() -> DatasheetProfile:
@@ -28,7 +29,16 @@ def _design_from_text(tmp_path: Path, netlist: str):
     registry = parse_allegro_netlist(netlist_path)
     bom = parse_bom(bom_path)
     design = build_design_from_netlist(registry)
-    return apply_bom_to_design(design, match_bom_to_design(bom, design))
+    design = apply_bom_to_design(design, match_bom_to_design(bom, design))
+    _confirm(
+        design,
+        {
+            net: value
+            for net, value in {"P1V8": 1.8, "P3V3_STBY": 3.3, "GND": 0.0}.items()
+            if net in design.nets
+        },
+    )
+    return design
 
 
 def _nominal_netlist() -> str:
@@ -78,7 +88,7 @@ def test_i2c_repeater_vccb_below_recommended_warns(tmp_path: Path) -> None:
     assert report.status == "WARN"
     vccb = next(pin for pin in report.pin_results if pin.pin_number == "8")
     assert vccb.status == "WARN"
-    assert "below recommended min 2.2 V" in vccb.summary
+    assert "recommended_voltage_min=2.2 V" in vccb.summary
 
 
 def test_i2c_repeater_swapped_bus_names_warn(tmp_path: Path) -> None:

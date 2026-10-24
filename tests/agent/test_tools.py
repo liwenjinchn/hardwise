@@ -290,10 +290,10 @@ def test_summarize_project_topology_returns_bounded_fact_inventory() -> None:
         assert result.validated_count == 21
         assert result.manual_count == 4
         assert result.validation_totals == {
-            "PASS": 1,
+            "PASS": 0,
             "WARN": 0,
             "ERROR": 3,
-            "UNKNOWN": 17,
+            "UNKNOWN": 18,
             "NOT_APPLICABLE": 0,
         }
         assert any(hit.net_name == "+3V3" for hit in result.power_like_nets)

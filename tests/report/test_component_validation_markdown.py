@@ -46,8 +46,8 @@ def test_render_component_validation_markdown() -> None:
 
     assert "# Hardwise 器件验证报告 - U1" in md
     assert "| 可信度 | L1 deterministic |" in md
-    assert "| 综合判定 | PASS |" in md
-    assert "| 引脚 PASS/WARN/ERROR | 3 / 0 / 0 |" in md
+    assert "| 综合判定 | UNKNOWN |" in md
+    assert "| 引脚 PASS/WARN/ERROR | 1 / 0 / 0 |" in md
     assert "单器件原理图引脚与外围/拓扑验证" in md
     assert "不解析 PCB layout、boardview/板图" in md
     assert "### 引脚一致性" in md
@@ -57,7 +57,7 @@ def test_render_component_validation_markdown() -> None:
     assert "missing_local_source" in md
     assert "`doc:docs.csv#line2` (document_index)" in md
     assert "### 器件档案证据账本" in md
-    assert "| 1 | VI | 电源输入 | +12V | PASS |" in md
+    assert "| 1 | VI | 电源输入 | +12V | UNKNOWN |" in md
     assert "| 1 | VI | 电源输入 | +12V | +12V -> U1-1 |" in md
     assert "`datasheet:l78.pdf#p4`" in md
     assert "power_input" not in md

@@ -269,10 +269,10 @@ def test_workbench_state_exposes_spa_queue_and_risk_hint_details(tmp_path: Path)
             "bom_matched": 25,
             "validated": 21,
             "manual": 4,
-            "pass_count": 1,
+            "pass_count": 0,
             "warn_count": 0,
             "error_count": 3,
-            "unknown_count": 17,
+            "unknown_count": 18,
             "not_applicable_count": 0,
         }
         assert payload["selected_refdes"] == "Q12"
@@ -357,10 +357,10 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
             "bom_matched": 25,
             "validated": 21,
             "manual": 4,
-            "pass_count": 1,
+            "pass_count": 0,
             "warn_count": 0,
             "error_count": 3,
-            "unknown_count": 17,
+            "unknown_count": 18,
             "not_applicable_count": 0,
         }
         assert payload["capabilities"]["pin_table_enabled"] is True
@@ -436,10 +436,10 @@ def test_workbench_state_surfaces_document_candidate_confirmation_tasks(
             "bom_matched": 25,
             "validated": 21,
             "manual": 4,
-            "pass_count": 1,
+            "pass_count": 0,
             "warn_count": 0,
             "error_count": 3,
-            "unknown_count": 17,
+            "unknown_count": 18,
             "not_applicable_count": 0,
         }
         queue_by_refdes = {item["refdes"]: item for item in payload["queue"]}
@@ -636,10 +636,10 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
             "bom_matched": 25,
             "validated": 21,
             "manual": 4,
-            "pass_count": 1,
+            "pass_count": 0,
             "warn_count": 0,
             "error_count": 3,
-            "unknown_count": 17,
+            "unknown_count": 18,
             "not_applicable_count": 0,
         }
         assert packet["queue"][0]["refdes"] == "Q12"
@@ -1034,10 +1034,10 @@ def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
             "bom_matched": 25,
             "validated": 21,
             "manual": 4,
-            "pass_count": 1,
+            "pass_count": 0,
             "warn_count": 0,
             "error_count": 3,
-            "unknown_count": 17,
+            "unknown_count": 18,
             "not_applicable_count": 0,
         }
         imported = response.json()
@@ -1363,7 +1363,7 @@ $END
         assert candidates["U30"].identity_kind == "value_mpn"
         rows = {row.refdes: row for row in context.index.rows}
         assert rows["U13"].validation is not None
-        assert rows["U13"].validation.status == "PASS"
+        assert rows["U13"].validation.status == "UNKNOWN"
     finally:
         context.session.close()
 

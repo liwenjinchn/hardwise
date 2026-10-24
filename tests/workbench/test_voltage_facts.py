@@ -191,3 +191,40 @@ def test_diode_tvs_led_import_rerun_and_export(cathode, expected):
             )
         exported = client.get("/api/workbench/export?format=json").json()
         assert exported["voltage_facts"]["facts"][0]["minimum"] == cathode[0]
+
+
+@pytest.mark.parametrize(
+    "vin, expected", [((11, 13), "PASS"), ((36, 37), "ERROR"), ((24, 26), "UNKNOWN")]
+)
+def test_generic_pin_bounds_import_rerun_export_without_nominal_signoff(vin, expected):
+    root = Path("tests/fixtures/allegro")
+    context = build_workbench_context(
+        netlist_path=root / "l78_regulator.net",
+        bom_path=root / "l78_regulator_bom.csv",
+        profiles=Path("data/datasheet_profiles"),
+    )
+    app = create_workbench_app(context, LocalOnlyChat(), auto_datasheet_candidates=False)
+    facts = json.loads((root / "l78_dc_voltage_facts.json").read_text())
+    facts["facts"][0].update(minimum=vin[0], maximum=vin[1])
+    with TestClient(app) as client:
+        original = client.get("/api/workbench/components/U1").json()
+        assert next(p for p in original["pins"] if p["number"] == "1")["status"] == "UNKNOWN"
+        reply = client.post(
+            "/api/workbench/import",
+            files={
+                "netlist": ("input.net", (root / "l78_regulator.net").read_bytes(), "text/plain"),
+                "bom": ("bom.csv", (root / "l78_regulator_bom.csv").read_bytes(), "text/csv"),
+                "voltage_facts_json": ("voltage.json", json.dumps(facts), "application/json"),
+            },
+        )
+        assert reply.status_code == 200, reply.text
+        detail = client.get("/api/workbench/components/U1").json()
+        pins = {p["number"]: p for p in detail["pins"]}
+        assert pins["1"]["status"] == expected
+        assert pins["1"]["assessment"]["rule_version"] == "2"
+        assert pins["3"]["status"] == "UNKNOWN"  # a typical output value is not a tolerance
+        assert "不使用固定 ±0.2 V" in pins["3"]["summary"]
+        assert client.post("/api/workbench/rerun").status_code == 200
+        assert client.get("/api/workbench/components/U1").json()["pins"] == detail["pins"]
+        export = client.get("/api/workbench/export?format=json").json()
+        assert export["voltage_facts"]["facts"][0]["minimum"] == vin[0]

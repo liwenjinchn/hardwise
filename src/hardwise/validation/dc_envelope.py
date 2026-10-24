@@ -1,4 +1,4 @@
-"""Signed DC differences from two explicitly confirmed, common-domain facts."""
+"""Signed DC differences from declared direct references or common-domain facts."""
 
 from dataclasses import dataclass
 from math import isfinite
@@ -28,6 +28,17 @@ def confirmed_dc_difference(
         for f in (left, right)
         if f is not None
     )
+    if (
+        left
+        and right is None
+        and left.confirmed
+        and left.reference_net == negative.net
+        and left.minimum is not None
+        and left.maximum is not None
+    ):
+        # The input already declares V(positive)-V(negative). This is not a
+        # net-name-derived zero or an assumption that reference domains match.
+        return DCDifference(left.minimum, left.maximum, evidence=evidence)
     if (
         not left
         or not right

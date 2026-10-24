@@ -13,6 +13,7 @@ from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.types import Component, Design, Net, Pin
 from hardwise.validation import validate_component_against_profile
 from hardwise.validation.pins import voltage_for_net
+from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
 def _profile() -> DatasheetProfile:
@@ -190,7 +191,7 @@ def test_analog_ic_profiles_match_public_pinouts(profile_path: str, pinout: dict
     assert [(pin.number, pin.name) for pin in profile.pins] == list(pinout.items())
 
 
-def test_motor_sensor_analog_ic_profiles_pass_basic_pin_validation() -> None:
+def test_motor_sensor_analog_ic_connections_do_not_certify_supply() -> None:
     design = _motor_sensor_controller_design()
     targets = {
         "U20": "data/datasheet_profiles/lmv358.json",
@@ -204,12 +205,16 @@ def test_motor_sensor_analog_ic_profiles_pass_basic_pin_validation() -> None:
         report = validate_component_against_profile(design.components[refdes], profile, design)
         categories = {result.category for result in report.pin_results}
 
-        assert report.status == "PASS"
+        assert report.status == "UNKNOWN"
+        assert all(
+            p.result == ("UNKNOWN" if p.category == "power_input" else "PASS")
+            for p in report.pin_results
+        )
         assert report.counts_by_status == {
-            "PASS": len(profile.pins),
+            "PASS": sum(p.category != "power_input" for p in profile.pins),
             "WARN": 0,
             "ERROR": 0,
-            "UNKNOWN": 0,
+            "UNKNOWN": sum(p.category == "power_input" for p in profile.pins),
             "NOT_APPLICABLE": 0,
         }
         assert report.component_checks == []
@@ -229,21 +234,21 @@ def test_lm393_open_collector_outputs_are_connection_checked() -> None:
     ]
 
 
-def test_validate_component_against_profile_passes_nominal_l78() -> None:
+def test_validate_l78_named_rails_do_not_certify_voltage() -> None:
     component = _component()
     report = validate_component_against_profile(component, _profile(), _design(component))
 
-    assert report.status == "PASS"
+    assert report.status == "UNKNOWN"
     assert report.counts_by_status == {
-        "PASS": 3,
+        "PASS": 1,
         "WARN": 0,
         "ERROR": 0,
-        "UNKNOWN": 0,
+        "UNKNOWN": 2,
         "NOT_APPLICABLE": 0,
     }
-    assert [pin.status for pin in report.pin_results] == ["PASS", "PASS", "PASS"]
+    assert [pin.status for pin in report.pin_results] == ["UNKNOWN", "PASS", "UNKNOWN"]
     assert report.pin_results[0].net == "+12V"
-    assert "within the structured profile limits" in report.pin_results[0].summary
+    assert "网名和 voltage_hint 仅为候选" in report.pin_results[0].summary
 
 
 def test_needs_review_profile_adds_component_warning() -> None:
@@ -269,14 +274,14 @@ def test_needs_review_profile_adds_component_warning() -> None:
     assert "needs_review" in review.summary
 
 
-def test_validate_component_reports_error_for_wrong_ground_net() -> None:
+def test_validate_ground_connection_does_not_assign_potential_by_name() -> None:
     component = _component(gnd_net="+5V")
     report = validate_component_against_profile(component, _profile(), _design(component))
 
-    assert report.status == "ERROR"
+    assert report.status == "UNKNOWN"
     ground = report.pin_results[1]
-    assert ground.status == "ERROR"
-    assert "not connected to a recognized ground net" in ground.summary
+    assert ground.status == "PASS"
+    assert "这里只确认连接" in ground.summary
 
 
 def test_validate_component_warns_when_input_voltage_unknown() -> None:
@@ -286,7 +291,7 @@ def test_validate_component_warns_when_input_voltage_unknown() -> None:
     assert report.status == "UNKNOWN"
     vin = report.pin_results[0]
     assert vin.status == "UNKNOWN"
-    assert "cannot be inferred" in vin.summary
+    assert "网名和 voltage_hint 仅为候选" in vin.summary
 
 
 def test_voltage_for_net_recognizes_ground_alias() -> None:
@@ -448,7 +453,7 @@ def test_validate_xl1509_unknown_diode_type_warns_without_fabricating() -> None:
     assert "cannot be classified deterministically" in diode.summary
 
 
-def test_validate_xl1509_feedback_wrong_voltage_errors() -> None:
+def test_validate_xl1509_feedback_needs_confirmed_bounds() -> None:
     design = _xl1509_design()
     u12 = design.components["U12"]
     pins = [pin.model_copy(update={"net": "+5V"}) if pin.number == "3" else pin for pin in u12.pins]
@@ -469,11 +474,12 @@ def test_validate_xl1509_feedback_wrong_voltage_errors() -> None:
     assert report.status == "UNKNOWN"
     assert report.needs_review
     assert feedback.status == "UNKNOWN"
-    assert "differs from fixed output 12 V" in feedback.summary
+    assert "网名和 voltage_hint 仅为候选" in feedback.summary
 
 
 def test_validate_mpq8626_sync_buck_topology_passes() -> None:
     design = _mpq8626_design()
+    _confirm(design, {"P12V": 12.0, "GND": 0.0})
     report = validate_component_against_profile(
         design.components["U13"], _mpq8626_profile(), design
     )
@@ -500,6 +506,7 @@ def test_validate_mpq8626_sync_buck_topology_passes() -> None:
 
 def test_validate_pca9548a_i2c_mux_topology_passes() -> None:
     design = _pca9548a_design()
+    _confirm(design, {"P3V3_STBY": 3.3, "GND": 0.0})
     report = validate_component_against_profile(
         design.components["U8"], _pca9548a_profile(), design
     )
@@ -732,6 +739,7 @@ def test_validate_stm32_nominal_debug_topology_has_no_component_error() -> None:
     }
     design = _with_component(design.model_copy(update={"nets": nets}), u8)
 
+    _confirm(design, {"+3V3": 3.3, "GND": 0.0})
     report = validate_component_against_profile(design.components["U8"], _stm32_profile(), design)
 
     assert report.component_counts_by_status == {
@@ -754,6 +762,7 @@ def test_validate_stm32_wrong_vdd_voltage_errors() -> None:
         update={"nets": {**design.nets, "+5V": Net(name="+5V", nodes=[("U8", "6")])}}
     )
 
+    _confirm(design, {"+5V": 5.0, "GND": 0.0})
     report = validate_component_against_profile(u8, _stm32_profile(), design)
 
     vdd = next(check for check in report.component_checks if check.check == "mcu_vdd_vdda_rail")

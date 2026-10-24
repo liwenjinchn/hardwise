@@ -38,7 +38,7 @@ def test_state_exposes_signoff_gate_dual_axis_and_grouped_noise(
     assert "datasheet:eg2132.pdf#p8" in readiness["missing_tokens"]
 
     u1 = next(item for item in state["queue"] if item["refdes"] == "U1")
-    assert u1["deterministic_status_group"] == "pass"
+    assert u1["deterministic_status_group"] == "manual"
     assert u1["status_group"] == "manual"
 
     assert len(state["review_groups"]) < len(state["review_tasks"])

@@ -9,6 +9,7 @@ from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.validation.component import validate_component_against_profile
+from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
 @pytest.fixture
@@ -23,7 +24,9 @@ def connector_design():
     netlist = parse_allegro_netlist(Path("tests/fixtures/allegro/connector_2x5.net"))
     bom = parse_bom(Path("tests/fixtures/allegro/connector_2x5_bom.csv"))
     design = build_design_from_netlist(netlist)
-    return apply_bom_to_design(design, match_bom_to_design(bom, design))
+    design = apply_bom_to_design(design, match_bom_to_design(bom, design))
+    _confirm(design, {"+5V": 5.0, "GND": 0.0})
+    return design
 
 
 def test_connector_nominal_all_pass(connector_profile, connector_design):

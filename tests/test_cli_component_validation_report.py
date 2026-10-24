@@ -28,14 +28,14 @@ def test_report_component_validation_writes_report(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert "component-validation:" in result.output
-    assert "(PASS, PASS/WARN/ERROR=3/0/0, UNKNOWN/NOT_APPLICABLE=0/0)" in result.output
+    assert "(UNKNOWN, PASS/WARN/ERROR=1/0/0, UNKNOWN/NOT_APPLICABLE=2/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
     assert "# Hardwise 器件验证报告 - U1" in md
     assert "| 器件 MPN | L7805 |" in md
     assert "引脚一致性" in md
     assert "5. 证据详情" in md
-    assert "| 3 | VO | 电源输出 | +5V | PASS |" in md
+    assert "| 3 | VO | 电源输出 | +5V | UNKNOWN |" in md
 
 
 def test_report_component_validation_writes_xl1509_dcdc_errors(tmp_path: Path) -> None:
@@ -101,7 +101,7 @@ def test_report_component_validation_writes_eg2132_gate_driver_errors(
 
     assert result.exit_code == 0, result.output
     assert "component-validation:" in result.output
-    assert "(ERROR, PASS/WARN/ERROR=8/0/0, UNKNOWN/NOT_APPLICABLE=0/0)" in result.output
+    assert "(ERROR, PASS/WARN/ERROR=7/0/0, UNKNOWN/NOT_APPLICABLE=1/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
     assert "# Hardwise 器件验证报告 - U3" in md
@@ -136,7 +136,7 @@ def test_report_component_validation_writes_stm32_mcu_errors(
 
     assert result.exit_code == 0, result.output
     assert "component-validation:" in result.output
-    assert "(ERROR, PASS/WARN/ERROR=9/0/0, UNKNOWN/NOT_APPLICABLE=0/0)" in result.output
+    assert "(ERROR, PASS/WARN/ERROR=7/0/0, UNKNOWN/NOT_APPLICABLE=2/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
     assert "# Hardwise 器件验证报告 - U8" in md

@@ -77,7 +77,7 @@ def test_report_validator_ui_writes_html(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     assert "validator-ui:" in result.output
     assert (
-        "(3 components, selected=U1, PASS, PASS/WARN/ERROR=3/0/0, UNKNOWN/NOT_APPLICABLE=0/0)"
+        "(3 components, selected=U1, UNKNOWN, PASS/WARN/ERROR=1/0/0, UNKNOWN/NOT_APPLICABLE=2/0)"
         in result.output
     )
 
@@ -144,16 +144,16 @@ def test_report_validator_ui_batch_writes_multiple_validation_details(tmp_path: 
     assert result.exit_code == 0, result.output
     assert "validator-ui-batch:" in result.output
     assert "validated=U1,U12" in result.output
-    assert "PASS/WARN/ERROR=1/0/0" in result.output
+    assert "PASS/WARN/ERROR=0/0/0" in result.output
 
     html = output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
     assert 'class="left-stack" aria-label="器件与验证摘要"' in html
     assert html.index('aria-label="验证"') < html.index('aria-label="器件"')
-    assert "验证完成 · PASS/WARN/ERROR=1/0/0" in html
+    assert "验证完成 · PASS/WARN/ERROR=0/0/0" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
-    assert '<article class="panel active" data-panel="U12">' in html
+    assert '<article class="panel active" data-panel="U1">' in html
     for section in (
         "model-check",
         "pin-summary",
@@ -193,13 +193,13 @@ def test_report_validator_ui_batch_accepts_targets_manifest(tmp_path: Path) -> N
     assert result.exit_code == 0, result.output
     assert "validator-ui-batch:" in result.output
     assert "validated=U1,U12" in result.output
-    assert "PASS/WARN/ERROR=1/0/0" in result.output
+    assert "PASS/WARN/ERROR=0/0/0" in result.output
 
     html = output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
-    assert '<article class="panel active" data-panel="U12">' in html
+    assert '<article class="panel active" data-panel="U1">' in html
     assert 'status pass">PASS' in html
     assert 'status pending">UNKNOWN' in html
     assert "1N4007W" in html
@@ -295,7 +295,7 @@ def test_report_validator_ui_batch_writes_mixed_power_stage_manifest(
     assert result.exit_code == 0, result.output
     assert "validator-ui-batch:" in result.output
     assert "validated=U1,U12,U3" in result.output
-    assert "PASS/WARN/ERROR=1/0/1" in result.output
+    assert "PASS/WARN/ERROR=0/0/1" in result.output
 
     html = output.read_text(encoding="utf-8")
     assert 'data-select-ref="U1"' in html
@@ -330,7 +330,7 @@ def test_report_validator_ui_batch_writes_mixed_controller_manifest(
     assert result.exit_code == 0, result.output
     assert "validator-ui-batch:" in result.output
     assert "validated=U1,U12,U3,U8" in result.output
-    assert "PASS/WARN/ERROR=1/0/2" in result.output
+    assert "PASS/WARN/ERROR=0/0/2" in result.output
 
     html = output.read_text(encoding="utf-8")
     assert 'data-select-ref="U8"' in html
@@ -399,7 +399,7 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     assert "evidence-package: netlist=present,bom=present" in result.output
     assert "electrical_verdict=not_applicable" in result.output
     assert "validated=17" in result.output
-    assert "PASS/WARN/ERROR=1/0/2" in result.output
+    assert "PASS/WARN/ERROR=0/0/2" in result.output
     assert "manual=1" in result.output
 
     html = html_output.read_text(encoding="utf-8")
@@ -420,7 +420,7 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     index_text = index_output.read_text(encoding="utf-8")
     assert "# Hardwise Design Validator - mixed_power_stage" in index_text
     assert "| Validated components | 17 |" in index_text
-    assert "| PASS / WARN / ERROR | 1 / 0 / 2 |" in index_text
+    assert "| PASS / WARN / ERROR | 0 / 0 / 2 |" in index_text
     assert "Static schematic-side design validator" in index_text
     assert "`GENERIC_CAPACITOR`" in index_text
     assert "`GENERIC_RESISTOR`" in index_text
@@ -528,7 +528,7 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
     assert "validated=21" in result.output
-    assert "PASS/WARN/ERROR=1/0/3" in result.output
+    assert "PASS/WARN/ERROR=0/0/3" in result.output
     assert "manual=4" in result.output
 
     html = html_output.read_text(encoding="utf-8")
@@ -560,7 +560,7 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
 
     index_text = index_output.read_text(encoding="utf-8")
     assert "| Validated components | 21 |" in index_text
-    assert "| PASS / WARN / ERROR | 1 / 0 / 3 |" in index_text
+    assert "| PASS / WARN / ERROR | 0 / 0 / 3 |" in index_text
     assert "STM32G030C8T6" in index_text
     assert "JMTK3005A" in index_text
     assert "SS8050" in index_text
@@ -886,7 +886,7 @@ def test_design_validator_ui_matches_mpq8626_power_family_with_public_docs(
     assert result.exit_code == 0, result.output
     assert "document-index: data/document_indexes/power_v1_docs.csv" in result.output
     assert "validated=2" in result.output
-    assert "PASS/WARN/ERROR=1/0/0" in result.output
+    assert "PASS/WARN/ERROR=0/0/0" in result.output
 
     html = html_output.read_text(encoding="utf-8")
     assert "MPQ8626 public MPS product page and datasheet" in html
@@ -1084,7 +1084,7 @@ def test_design_validator_ui_matches_pca9548a_i2c_mux_family_with_public_docs(
 
     assert result.exit_code == 0, result.output
     assert "validated=1" in result.output
-    assert "PASS/WARN/ERROR=1/0/0" in result.output
+    assert "PASS/WARN/ERROR=0/0/0" in result.output
 
     html = html_output.read_text(encoding="utf-8")
     assert "PCA9548A public NXP product page and datasheet" in html

@@ -5298,3 +5298,18 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: heuristic rail values, connectivity, quiescent voltage bounds and device function were treated as one proof. TVS working-standoff values also reused an absolute-maximum display path.
 - Fix: diode reverse/TVS standoff checks use shared confirmed signed DC envelopes and explicit field evidence. TVS separation is an independent exact-net topology check; different ground-like names are not equated. Single-direction TVS checks consume the declared working-standoff field, never the legacy duplicate reverse-absolute field. Positive LED bias proves only voltage direction; nonpositive/crossing bias remains UNKNOWN without intended state. Adjacent resistors are observations/candidates only, with no fabricated current-limit PASS or missing-resistor defect. Explicitly inapplicable checks carry a reason rather than count as PASS.
 - Takeaway: no amount of graph adjacency proves current regulation or surge clamping. Preserve the operating premise and numerical boundary in the result, and keep unsupported function visible. Existing profile values/legacy duplicates still require independent field review; this change does not reapprove them.
+
+
+### 2026-10-24 — Generic pin voltage bounds still inferred authority from names
+
+- Symptom: unconfirmed named rails and empty pin limits could PASS; output/feedback nominal values inherited a fixed ±0.2 V allowance without source support. A ground pin on an unfamiliar name could FAIL solely because of spelling.
+- Root cause: shared pin rules treated point-valued heuristics as operating facts, nominal values as tolerated ranges, and labels as reference-domain evidence. The profile had no resolved reference binding at the generic pin entrypoint.
+- Fix: resolve all profile ground terminals to one exact connected net; evaluate four voltage categories against confirmed finite min/max and explicit declared bounds. Reject conflicting/invalid profile fields for review; preserve UNKNOWN for partial/nominal-only limits. Ground PASS describes connection only. The shared difference reader can consume an explicit direct-relative record when the reference record is absent, without inventing zero potential; it retains conflicting-record guards.
+- Takeaway: distinguish terminal connection, numeric limits, regulator function and logic thresholds. Do not manufacture tolerance or independently approve profile fields through implementation tests. Other family inference paths remain to be migrated.
+
+### 2026-10-24 — Legacy panel test consumed trailing JavaScript
+
+- Symptom: changing report panel order made the last panel's section-order assertion include `${section}`.
+- Root cause: the helper sliced through the remainder of the HTML when there was no next panel, so JavaScript template attributes were counted as rendered panel sections.
+- Fix: bound extraction at that panel's closing `</article>` after checking the renderer has no nested article panels. Keep all expected section assertions.
+- Takeaway: source-string UI helpers need an explicit component boundary; a changed initial selection should not alter the meaning of another panel's assertions. A separate frontend parse-summary assertion also needed the verified new 0 PASS count after its summary fixture changed.

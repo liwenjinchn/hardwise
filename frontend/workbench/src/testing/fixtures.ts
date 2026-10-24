@@ -143,10 +143,10 @@ export function makeSummary(overrides: Partial<WorkbenchSummary> = {}): Workbenc
     bom_matched: 24,
     validated: 21,
     manual: 4,
-    pass_count: 1,
+    pass_count: 0,
     warn_count: 0,
     error_count: 3,
-    unknown_count: 17,
+    unknown_count: 18,
     not_applicable_count: 0,
     ...overrides
   };

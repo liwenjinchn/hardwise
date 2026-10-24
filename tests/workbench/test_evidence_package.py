@@ -70,10 +70,10 @@ def test_evidence_package_keeps_six_coverage_lanes_separate(tmp_path: Path) -> N
             "bom_matched": 25,
             "validated": 21,
             "manual": 4,
-            "pass_count": 1,
+            "pass_count": 0,
             "warn_count": 0,
             "error_count": 3,
-            "unknown_count": 17,
+            "unknown_count": 18,
             "not_applicable_count": 0,
         }
 
@@ -226,12 +226,12 @@ def test_three_source_pilot_reduces_but_does_not_clear_signoff_gate(
 
         assert (before.status, before.affected_tasks, before.missing_local_sources) == (
             "blocked",
-            14,
-            9,
+            18,
+            13,
         )
         assert (after.status, after.affected_tasks, after.missing_local_sources) == (
             "blocked",
-            11,
+            12,
             7,
         )
     finally:

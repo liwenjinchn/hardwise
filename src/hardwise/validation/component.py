@@ -5,6 +5,7 @@ from __future__ import annotations
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.pins import validate_pin
+from hardwise.validation.pin_voltage import profile_reference_pin
 from hardwise.validation.profile_conditions import validate_voltage_relations
 from hardwise.validation.types import ComponentValidation, ValidationReport
 
@@ -17,7 +18,8 @@ def validate_component_against_profile(
     """Validate one component's schematic pins against a structured pin profile."""
 
     relation_targets = {relation.target_pin for relation in profile.voltage_relations}
-    results = [validate_pin(component, pin_profile, design) for pin_profile in profile.pins]
+    reference = profile_reference_pin(component, profile)
+    results = [validate_pin(component, p, design, reference_pin=reference) for p in profile.pins]
     results = [
         item.model_copy(
             update={
