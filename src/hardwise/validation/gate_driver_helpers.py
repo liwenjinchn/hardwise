@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import re
-
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Pin
-from hardwise.validation.pins import voltage_for_net
 from hardwise.validation.topology import components_on_net
 
 
@@ -69,83 +66,11 @@ def components_between_nets(
     return found
 
 
-def bootstrap_diode(design: Design, vb_net: str, vcc_net: str) -> Component | None:
-    """Return a D-prefixed component on the bootstrap supply path."""
-
-    candidates = [
-        component for component in components_on_net(design, vb_net) if component.refdes.startswith("D")
-    ]
-    if not vcc_net:
-        return candidates[0] if candidates else None
-    for diode in candidates:
-        nets = {pin.net for pin in diode.pins if pin.net}
-        if vcc_net in nets:
-            return diode
-    return candidates[0] if candidates else None
-
-
-def bootstrap_required_reverse_voltage(design: Design, switch_node_net: str) -> float | None:
-    """Infer the bootstrap diode reverse-voltage requirement from the high-side rail."""
-
-    voltages: list[float] = []
-    switch_voltage = voltage_for_net(switch_node_net, design)
-    if switch_voltage is not None and switch_voltage > 0:
-        voltages.append(switch_voltage)
-
-    for component in components_on_net(design, switch_node_net):
-        if not component.refdes.startswith("Q"):
-            continue
-        for pin in component.pins:
-            if not pin.net or pin.net == switch_node_net or _looks_like_gate_control_net(pin.net):
-                continue
-            voltage = voltage_for_net(pin.net, design)
-            if voltage is not None and voltage > 0:
-                voltages.append(voltage)
-    return max(voltages) if voltages else None
-
-
-def diode_reverse_voltage_hint(diode: Component) -> float | None:
-    """Return a conservative reverse-voltage hint from obvious diode identities."""
-
-    identity = " ".join(
-        value
-        for value in [
-            diode.part_number,
-            diode.value,
-            diode.properties.get("BOM_DESCRIPTION"),
-        ]
-        if value
-    ).upper()
-    compact = re.sub(r"[^A-Z0-9]", "", identity)
-    if "MBRA210" in compact:
-        return 10.0
-    if any(part in compact for part in ["SS34", "SS36", "MBR360", "MBRS340"]):
-        return 40.0
-    match = re.search(r"(\d{2,3})V", identity)
-    if match:
-        return float(match.group(1))
-    return None
-
-
 def looks_like_logic_input_net(net_name: str) -> bool:
     """Return true for obvious controller/PWM logic net names."""
 
     upper = net_name.upper()
     return any(token in upper for token in ["PWM", "HIN", "LIN", "GPIO", "MCU", "TIM"])
-
-
-def _looks_like_gate_control_net(net_name: str) -> bool:
-    upper = net_name.upper()
-    return any(token in upper for token in ["GATE", "PWM", "HIN", "LIN", "GPIO", "MCU", "TIM"])
-
-
-def float_recommended(profile: DatasheetProfile, key: str) -> float | None:
-    """Return a numeric profile-level recommendation."""
-
-    value = profile.recommended.get(key)
-    if isinstance(value, (int, float)):
-        return float(value)
-    return None
 
 
 def profile_evidence(profile: DatasheetProfile, key: str) -> list[str]:

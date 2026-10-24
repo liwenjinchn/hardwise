@@ -271,8 +271,8 @@ def test_workbench_state_exposes_spa_queue_and_risk_hint_details(tmp_path: Path)
             "manual": 4,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 3,
-            "unknown_count": 18,
+            "error_count": 2,
+            "unknown_count": 19,
             "not_applicable_count": 0,
         }
         assert payload["selected_refdes"] == "Q12"
@@ -359,8 +359,8 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
             "manual": 4,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 3,
-            "unknown_count": 18,
+            "error_count": 2,
+            "unknown_count": 19,
             "not_applicable_count": 0,
         }
         assert payload["capabilities"]["pin_table_enabled"] is True
@@ -438,8 +438,8 @@ def test_workbench_state_surfaces_document_candidate_confirmation_tasks(
             "manual": 4,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 3,
-            "unknown_count": 18,
+            "error_count": 2,
+            "unknown_count": 19,
             "not_applicable_count": 0,
         }
         queue_by_refdes = {item["refdes"]: item for item in payload["queue"]}
@@ -638,8 +638,8 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
             "manual": 4,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 3,
-            "unknown_count": 18,
+            "error_count": 2,
+            "unknown_count": 19,
             "not_applicable_count": 0,
         }
         assert packet["queue"][0]["refdes"] == "Q12"
@@ -1036,8 +1036,8 @@ def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
             "manual": 4,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 3,
-            "unknown_count": 18,
+            "error_count": 2,
+            "unknown_count": 19,
             "not_applicable_count": 0,
         }
         imported = response.json()

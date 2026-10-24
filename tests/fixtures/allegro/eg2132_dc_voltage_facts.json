@@ -1,0 +1,33 @@
+{
+  "schema_version": "hardwise.voltage_facts.v1",
+  "active_mode": "dc",
+  "facts": [
+    {
+      "net": "+12V",
+      "reference_net": "GND",
+      "minimum": 12.0,
+      "maximum": 12.0,
+      "source": "public synthetic floating-supply DC premise; not measured; bootstrap function and transients are unverified",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "VB_U",
+      "reference_net": "GND",
+      "minimum": 36.0,
+      "maximum": 36.0,
+      "source": "public synthetic floating-supply DC premise; not measured; bootstrap function and transients are unverified",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    },
+    {
+      "net": "PHASE_U",
+      "reference_net": "GND",
+      "minimum": 24.0,
+      "maximum": 24.0,
+      "source": "public synthetic floating-supply DC premise; not measured; bootstrap function and transients are unverified",
+      "confirmed": true,
+      "confirmed_by": "fixture author"
+    }
+  ]
+}

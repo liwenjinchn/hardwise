@@ -97,7 +97,7 @@ def test_fake_chat_drives_real_runner_validation_tool() -> None:
         assert "U3" in response.answer
         assert response.trace
         assert response.trace[0].tool == "run_component_validation"
-        assert response.trace[0].status == "ERROR"
+        assert response.trace[0].status == "UNKNOWN"
         assert len(service.client.messages.calls) == 2
     finally:
         context.session.close()
@@ -222,7 +222,7 @@ def test_fake_chat_reports_datasheet_search_unavailable_and_uses_validation() ->
         assert response.trace[0].trust_tier == "l3"
         assert response.trace[0].trust_label == "L3 manual"
         assert response.trace[0].evidence == []
-        assert response.trace[1].status == "ERROR"
+        assert response.trace[1].status == "UNKNOWN"
         assert response.trace[1].trust_tier == "l1"
         assert response.trace[1].trust_label == "L1 deterministic"
         assert {item.source_class for item in response.trace[1].evidence_classification} == {
@@ -310,7 +310,7 @@ def test_fake_chat_summarizes_project_topology() -> None:
         assert "21 条网络" in response.answer
         assert "已验证 21 个" in response.answer
         assert "待人工补档案 4 个" in response.answer
-        assert "PASS/WARN/ERROR=0/0/3" in response.answer
+        assert "PASS/WARN/ERROR=0/0/2" in response.answer
         assert "首个器件档案缺口: RES-10K" in response.answer
         assert response.trace
         assert response.trace[0].tool == "summarize_project_topology"

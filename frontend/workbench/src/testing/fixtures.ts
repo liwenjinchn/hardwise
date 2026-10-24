@@ -145,8 +145,8 @@ export function makeSummary(overrides: Partial<WorkbenchSummary> = {}): Workbenc
     manual: 4,
     pass_count: 0,
     warn_count: 0,
-    error_count: 3,
-    unknown_count: 18,
+    error_count: 2,
+    unknown_count: 19,
     not_applicable_count: 0,
     ...overrides
   };

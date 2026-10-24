@@ -227,7 +227,7 @@ def test_report_validator_ui_batch_writes_eg2132_gate_driver_checks(
     assert result.exit_code == 0, result.output
     assert "validator-ui-batch:" in result.output
     assert "validated=U3" in result.output
-    assert "PASS/WARN/ERROR=0/0/1" in result.output
+    assert "PASS/WARN/ERROR=0/0/0" in result.output
 
     html = output.read_text(encoding="utf-8")
     assert "Hardwise / 原理图检验工具" in html
@@ -236,7 +236,7 @@ def test_report_validator_ui_batch_writes_eg2132_gate_driver_checks(
     assert "外围/拓扑检查" in html
     assert "gate_driver_bootstrap" in html
     assert "MBRA210LT3G" in html
-    assert "低于所需 24 V" in html
+    assert "自举功能未评估" in html
     assert ".brd、boardview/板图、布局、走线、PCB 几何" in html
 
 
@@ -295,13 +295,13 @@ def test_report_validator_ui_batch_writes_mixed_power_stage_manifest(
     assert result.exit_code == 0, result.output
     assert "validator-ui-batch:" in result.output
     assert "validated=U1,U12,U3" in result.output
-    assert "PASS/WARN/ERROR=0/0/1" in result.output
+    assert "PASS/WARN/ERROR=0/0/0" in result.output
 
     html = output.read_text(encoding="utf-8")
     assert 'data-select-ref="U1"' in html
     assert 'data-select-ref="U12"' in html
     assert 'data-select-ref="U3"' in html
-    assert '<article class="panel active" data-panel="U3">' in html
+    assert '<article class="panel active" data-panel="U1">' in html
     assert '<article class="panel" data-panel="U12">' in html
     assert "1N4007W" in html
     assert "6.8 uH" in html
@@ -330,11 +330,11 @@ def test_report_validator_ui_batch_writes_mixed_controller_manifest(
     assert result.exit_code == 0, result.output
     assert "validator-ui-batch:" in result.output
     assert "validated=U1,U12,U3,U8" in result.output
-    assert "PASS/WARN/ERROR=0/0/2" in result.output
+    assert "PASS/WARN/ERROR=0/0/1" in result.output
 
     html = output.read_text(encoding="utf-8")
     assert 'data-select-ref="U8"' in html
-    assert '<article class="panel" data-panel="U8">' in html
+    assert '<article class="panel active" data-panel="U8">' in html
     assert "MCU SWDIO 连接到了 SWCLK，期望连接到 SWDIO" in html
     assert "MCU SWCLK 连接到了 SWDIO，期望连接到 SWCLK" in html
     assert "MBRA210LT3G" in html
@@ -399,7 +399,7 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     assert "evidence-package: netlist=present,bom=present" in result.output
     assert "electrical_verdict=not_applicable" in result.output
     assert "validated=17" in result.output
-    assert "PASS/WARN/ERROR=0/0/2" in result.output
+    assert "PASS/WARN/ERROR=0/0/1" in result.output
     assert "manual=1" in result.output
 
     html = html_output.read_text(encoding="utf-8")
@@ -420,7 +420,7 @@ def test_design_validator_ui_auto_matches_profiles_and_writes_index(
     index_text = index_output.read_text(encoding="utf-8")
     assert "# Hardwise Design Validator - mixed_power_stage" in index_text
     assert "| Validated components | 17 |" in index_text
-    assert "| PASS / WARN / ERROR | 0 / 0 / 2 |" in index_text
+    assert "| PASS / WARN / ERROR | 0 / 0 / 1 |" in index_text
     assert "Static schematic-side design validator" in index_text
     assert "`GENERIC_CAPACITOR`" in index_text
     assert "`GENERIC_RESISTOR`" in index_text
@@ -528,7 +528,7 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
     assert result.exit_code == 0, result.output
     assert "design-validator-ui:" in result.output
     assert "validated=21" in result.output
-    assert "PASS/WARN/ERROR=0/0/3" in result.output
+    assert "PASS/WARN/ERROR=0/0/2" in result.output
     assert "manual=4" in result.output
 
     html = html_output.read_text(encoding="utf-8")
@@ -560,7 +560,7 @@ def test_design_validator_ui_auto_matches_controller_power_stage(
 
     index_text = index_output.read_text(encoding="utf-8")
     assert "| Validated components | 21 |" in index_text
-    assert "| PASS / WARN / ERROR | 0 / 0 / 3 |" in index_text
+    assert "| PASS / WARN / ERROR | 0 / 0 / 2 |" in index_text
     assert "STM32G030C8T6" in index_text
     assert "JMTK3005A" in index_text
     assert "SS8050" in index_text

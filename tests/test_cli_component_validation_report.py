@@ -101,17 +101,17 @@ def test_report_component_validation_writes_eg2132_gate_driver_errors(
 
     assert result.exit_code == 0, result.output
     assert "component-validation:" in result.output
-    assert "(ERROR, PASS/WARN/ERROR=7/0/0, UNKNOWN/NOT_APPLICABLE=1/0)" in result.output
+    assert "(UNKNOWN, PASS/WARN/ERROR=7/0/0, UNKNOWN/NOT_APPLICABLE=1/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
     assert "# Hardwise 器件验证报告 - U3" in md
     assert "| 器件档案 | EG2132 |" in md
-    assert "| 综合判定 | ERROR |" in md
-    assert "| 器件级检查 PASS/WARN/ERROR | 6 / 0 / 1 |" in md
+    assert "| 综合判定 | UNKNOWN |" in md
+    assert "| 器件级检查 PASS/WARN/ERROR | 5 / 0 / 0 |" in md
     assert "栅极驱动自举路径" in md
     assert "MBRA210LT3G" in md
-    assert "低于所需 24 V" in md
-    assert "自举二极管" in md
+    assert "自举功能未评估" in md
+    assert "VB−VS" in md
     assert "datasheet:eg2132.pdf#p6" in md
 
 

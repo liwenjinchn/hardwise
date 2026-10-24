@@ -548,7 +548,7 @@ def test_validate_pca9548a_mismatched_channel_pair_errors() -> None:
     assert "channel(s): 1" in channels.summary
 
 
-def test_validate_eg2132_fixture_reports_bootstrap_diode_error() -> None:
+def test_validate_eg2132_bootstrap_rating_requires_confirmed_inputs() -> None:
     design = _eg2132_design()
 
     report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
@@ -556,11 +556,11 @@ def test_validate_eg2132_fixture_reports_bootstrap_diode_error() -> None:
     bootstrap = next(
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
     )
-    assert report.status == "ERROR"
-    assert bootstrap.status == "ERROR"
+    assert report.status == "UNKNOWN"
+    assert bootstrap.status == "UNKNOWN"
     assert bootstrap.refdes == "D1"
     assert "MBRA210LT3G" in bootstrap.summary
-    assert "below required 24 V" in bootstrap.summary
+    assert "自举功能未评估" in bootstrap.summary
 
 
 def test_eg2132_profile_uses_official_pdf_limits() -> None:
@@ -593,10 +593,10 @@ def test_validate_eg2132_nominal_topology_has_no_component_error() -> None:
         check for check in report.component_checks if check.check == "gate_driver_vs_switch_node"
     )
     assert report.component_counts_by_status == {
-        "PASS": 7,
+        "PASS": 5,
         "WARN": 0,
         "ERROR": 0,
-        "UNKNOWN": 0,
+        "UNKNOWN": 3,
         "NOT_APPLICABLE": 0,
     }
     assert all(check.status != "ERROR" for check in report.component_checks)
@@ -625,7 +625,7 @@ def test_validate_eg2132_bootstrap_diode_warns_without_high_side_voltage() -> No
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
     )
     assert bootstrap.status == "UNKNOWN"
-    assert "cannot be inferred from a switch-node/high-side rail" in bootstrap.summary
+    assert "不从型号猜额定值" in bootstrap.summary
 
 
 def test_validate_eg2132_missing_bootstrap_capacitor_errors() -> None:
@@ -676,24 +676,25 @@ def test_validate_eg2132_unknown_bootstrap_diode_warns_without_fabricating() -> 
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
     )
     assert bootstrap.status == "UNKNOWN"
-    assert "cannot be classified deterministically" in bootstrap.summary
+    assert "未核验二极管身份/极性、耐压" in bootstrap.summary
 
 
 def test_validate_eg2132_vcc_outside_profile_range_errors() -> None:
     design = _eg2132_design()
     u3 = design.components["U3"]
-    pins = [pin.model_copy(update={"net": "+24V"}) if pin.number == "1" else pin for pin in u3.pins]
+    pins = [pin.model_copy(update={"net": "+26V"}) if pin.number == "1" else pin for pin in u3.pins]
     u3 = u3.model_copy(update={"pins": pins})
     design = _with_component(design, u3)
     design = design.model_copy(
-        update={"nets": {**design.nets, "+24V": Net(name="+24V", nodes=[("U3", "1")])}}
+        update={"nets": {**design.nets, "+26V": Net(name="+26V", nodes=[("U3", "1")])}}
     )
 
+    _confirm(design, {"+26V": 26.0, "GND": 0.0})
     report = validate_component_against_profile(u3, _eg2132_profile(), design)
 
     vcc = next(check for check in report.component_checks if check.check == "gate_driver_vcc")
     assert vcc.status == "ERROR"
-    assert "above profile maximum 20 V" in vcc.summary
+    assert "abs_max_voltage=25 V" in vcc.summary
 
 
 def test_validate_eg2132_missing_logic_input_errors() -> None:
