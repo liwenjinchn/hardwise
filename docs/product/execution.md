@@ -26,7 +26,7 @@ First patch prevents skipped passive checks from producing PASS within the exist
 | T03 Profile conditions and reviewed subset | In progress | XL1509 source-audited and quarantined; relative pin/supply schema and confirmed-envelope evaluator added. Full conditional inductor lookup, independent approval and 5–10 profile subset pending |
 | T04 Confirmed rail/reference facts and BOM conflicts | In progress | Explicit per-net DC envelopes accepted by CLI/import; passive checks require confirmed ranges and common reference/mode. Other profile families, graphical confirmation and BOM conflicts pending |
 | T05 Passive rule correctness | In progress | Confirmed interval DC stress, missing-data and reference/mode checks implemented for generic capacitor/resistor rules; profile-family and broader operating-condition gates remain |
-| T06 Constrained formal output | Planned | Agent/tool and refdes counterexamples pending |
+| T06 Constrained formal output | In progress | Chinese/long refdes and strict object-field display regressions added; parameter evidence and zero-tool assertion boundaries pending |
 | T07 Persistence and dependency fingerprints | Planned | Restart/relevant-change gates pending |
 | T08 Import and evidence UX | Planned | Actual target-EDA export and Windows walkthrough pending |
 | T09 Independent evaluation | Planned | Frozen independently reviewed cases pending |
@@ -98,3 +98,12 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - Verification: full `PYTHONPATH=src uv run pytest -q`: **859 passed, 7 deselected**, 22.39 s; `uv run ruff check .` and `git diff --check` pass. Frontend **77** tests and contract/type/build pass. E2E **10 passed**, 18.3 s. Added **21** source-condition/quarantine cases. Public CLI regenerated white React HTML plus Markdown/JSON; live-import model regression and browser screenshot show U12's explicit quarantine message.
 - Browser preview's prior local HTTP process had stopped; verified connection refusal, restarted the local-only output server, then obtained a fresh preview tab after the old error-page tab could not navigate. Fresh page/screenshot confirmed white UI and quarantine reason. No network/security settings changed.
 - Still open: independent engineering approval, 5–10 reviewed profiles, complete operating-condition entry/lookup, remaining family voltage authority, formal AI boundaries, durable review state/fingerprint invalidation and Windows/Cadence/peer gates. This package makes T03 progress but does not close A05/A06 as production acceptance.
+
+
+### Sixth implementation package — 2026-10-24
+
+- Addressed the identity portion of A08 without changing the accepted product direction or the white React frontend. Baseline counterexamples reproduced **8 failed / 19 passed**: Chinese-adjacent identifiers, long numbers, DDR terminology and direct pin exemptions.
+- Refdes scanning now uses ASCII identifier boundaries and unrestricted ASCII digits. Existing complete net/part identifiers are not partially rewritten. Real registry identities remain intact; missing objects receive the existing unverified marker, idempotently.
+- Ordinary DDR2–DDR5 technical words remain readable; explicit object contexts and tool-trace `refdes` fields still require registry membership. Common component-prefix tokens cannot hide behind direct `pin` wording. Raw tool input is not changed by display sanitization.
+- Added **17** cases including an actual Runner final-text regression. Focused guard/Runner suite: **43 passed**. Full `PYTHONPATH=src uv run pytest -q`: **876 passed, 7 deselected**, 21.72 s. Ruff and whitespace validation passed. No frontend implementation or data-contract change, paid model call or physical EDA execution in this package.
+- This does not certify arbitrary designator grammars or semantic correctness of model prose. Verified refdes with fabricated parameters, quoted-property/unit/condition checks and zero-tool sign-off assertions remain open. Formal report generation must continue from structured deterministic records; T06/A08 and M0–M3 remain incomplete.

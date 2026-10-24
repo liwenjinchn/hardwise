@@ -5265,3 +5265,11 @@ Application recommendations are not absolute ratings. Correct source extraction
 and working evaluator tests are separate from independent approval. Never restore
 READY merely to retain old fixture counts; preserve explicit evidence of reduced
 trusted scope and the exact conditions that remain unimplemented.
+
+
+### 2026-10-24 — Chinese prose and long reference designators bypassed the guard
+
+- Symptom: `检查U999是否接地` and `U10000` reached output without an unverified marker; ordinary `DDR4` was instead marked as a missing component. The direct `pin U999` wording also bypassed lookup.
+- Root cause: Unicode word boundaries regard Chinese characters as word characters; the regex capped designator digits at four. The direct pin-name exemption skipped common component prefixes without checking their role. Free-text classification was also reused for explicit tool object fields.
+- Fix: use ASCII identifier boundaries and an uncapped ASCII digit sequence; retain complete net/part identifiers rather than rewriting their substrings. Distinguish DDR2–DDR5 technical words from explicit component contexts, and validate `refdes` display fields independently of prose exemptions. Direct pin wording no longer exempts common component prefixes. Real tool arguments remain unchanged.
+- Takeaway: object identity fields require registry membership; prose heuristics only improve display. Verified object names do not prove asserted parameter values or justify sign-off. This fix does not close the formal-output acceptance gate.

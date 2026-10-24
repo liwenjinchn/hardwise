@@ -419,3 +419,13 @@ def test_runner_token_accounting_sums_across_iterations() -> None:
     assert result.output_tokens == 100
     assert result.cache_creation_tokens == 12
     assert result.cache_read_tokens == 34
+
+
+def test_runner_guards_chinese_and_long_refdes_in_final_model_text() -> None:
+    runner, _ = _build_runner(
+        [FakeResponse(content=[FakeTextBlock(text="检查U999以及U10000，U3使用DDR4接口。")])]
+    )
+    result = runner.run("核对这些对象")
+    assert result.text == "检查⟨?U999⟩以及⟨?U10000⟩，U3使用DDR4接口。"
+    assert result.text_wrapped == 2
+    assert result.tool_calls == []

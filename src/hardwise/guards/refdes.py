@@ -5,8 +5,9 @@ This is the second of two defense layers. The first layer is tool discipline (to
 return `{found: false, ...}` for unknown refdes); this layer regex-scans every output
 text just before it reaches the user.
 
-Pattern `\\b[A-Z]{1,3}\\d{1,4}\\b` catches U23, R10, J5, IC1, BAT1 and similar
-KiCad-style designators. Hits not present in `BoardRegistry.refdes_set` are wrapped.
+ASCII identifier boundaries also catch designators next to Chinese prose and
+allow more than four digits. Missing board objects are wrapped; a small vocabulary
+of technical words is distinguished from explicit component references.
 """
 
 from __future__ import annotations
@@ -17,7 +18,13 @@ from typing import Any
 from hardwise.adapters.base import BoardRegistry
 from hardwise.checklist.finding import Finding
 
-REFDES_PATTERN = re.compile(r"\b[A-Z]{1,3}\d{1,4}\b")
+# Unicode \b treats Chinese characters as word characters, hiding adjacent refdes.
+# Keep ASCII identifier boundaries so embedded net/part tokens are not split.
+REFDES_PATTERN = re.compile(r"(?<![A-Za-z0-9_])[A-Z]{1,3}[0-9]+(?![A-Za-z0-9_])")
+TECHNICAL_WORDS = frozenset({"DDR2", "DDR3", "DDR4", "DDR5"})
+EXPLICIT_OBJECT_CONTEXT = re.compile(
+    r"(?:位号|器件|元件|\brefdes|\bcomponent)\s*[:：]?\s*$", re.IGNORECASE
+)
 COMMON_REFDES_PREFIXES = {
     "R",
     "C",
@@ -62,6 +69,8 @@ def sanitize_text(text: str, registry: BoardRegistry) -> tuple[str, int]:
         if _looks_like_pin_name(text, match.start(), match.end()):
             return token
         if _has_refdes(registry, token):
+            return token
+        if token in TECHNICAL_WORDS and not EXPLICIT_OBJECT_CONTEXT.search(text[: match.start()]):
             return token
         if token in verified_identifiers and not _uses_common_refdes_prefix(token):
             return token
@@ -116,7 +125,7 @@ def _is_already_wrapped(text: str, start: int, end: int) -> bool:
 def _uses_common_refdes_prefix(token: str) -> bool:
     """Return true for refdes-like tokens using normal schematic prefixes."""
 
-    match = re.match(r"([A-Z]{1,3})\d{1,4}\Z", token)
+    match = re.match(r"([A-Z]{1,3})[0-9]+\Z", token)
     return bool(match and match.group(1) in COMMON_REFDES_PREFIXES)
 
 
@@ -128,7 +137,7 @@ def _looks_like_pin_name(text: str, start: int, end: int) -> bool:
 
     direct_prefix = text[max(0, start - 8) : start]
     if re.search(r"\bpin\s*$", direct_prefix, re.IGNORECASE):
-        return True
+        return not _uses_common_refdes_prefix(text[start:end])
 
     # Look backward for the opening paren and forward for the closing paren
     open_paren = text.rfind("(", 0, start)
@@ -160,12 +169,21 @@ def sanitize_args(args: dict, registry: BoardRegistry) -> tuple[dict, int]:
     wrapped_total = 0
     new_args: dict = {}
     for key, value in args.items():
-        if isinstance(value, str):
+        if (
+            key == "refdes"
+            and isinstance(value, str)
+            and value
+            and not _has_refdes(registry, value)
+            and not (value.startswith("⟨?") and value.endswith("⟩"))
+        ):
+            # An explicit object field cannot use prose/pin/identity exemptions.
+            new_value, wrapped = f"⟨?{value}⟩", 1
+        elif isinstance(value, str):
             new_value, wrapped = sanitize_text(value, registry)
-            new_args[key] = new_value
-            wrapped_total += wrapped
         else:
-            new_args[key] = value
+            new_value, wrapped = value, 0
+        new_args[key] = new_value
+        wrapped_total += wrapped
     return new_args, wrapped_total
 
 

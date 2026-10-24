@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from hardwise.adapters.base import BoardRegistry, ComponentRecord
 from hardwise.checklist.finding import Finding
 from hardwise.guards.refdes import sanitize_args, sanitize_finding, sanitize_text
@@ -125,9 +127,7 @@ def test_sanitize_text_does_not_let_pin_parentheses_hide_common_refdes() -> None
 
 def test_sanitize_text_leaves_multi_function_pin_names_untouched() -> None:
     reg = _registry(["U5", "U6"])
-    out, wrapped = sanitize_text(
-        "U5 pin 12 (ICSPC/RB6) and U6 pin 3 (GP4/OSC2)", reg
-    )
+    out, wrapped = sanitize_text("U5 pin 12 (ICSPC/RB6) and U6 pin 3 (GP4/OSC2)", reg)
 
     assert "RB6" in out
     assert "GP4" in out
@@ -138,9 +138,7 @@ def test_sanitize_text_leaves_multi_function_pin_names_untouched() -> None:
 
 def test_sanitize_text_leaves_connector_nc_pin_list_untouched() -> None:
     reg = _registry(["J1"])
-    out, wrapped = sanitize_text(
-        "J1 has 1 NC pins (A4) on a connector-like part", reg
-    )
+    out, wrapped = sanitize_text("J1 has 1 NC pins (A4) on a connector-like part", reg)
 
     assert "A4" in out
     assert "⟨?" not in out
@@ -149,9 +147,7 @@ def test_sanitize_text_leaves_connector_nc_pin_list_untouched() -> None:
 
 def test_sanitize_text_leaves_alphanumeric_pin_numbers_untouched() -> None:
     reg = _registry(["XA1"])
-    out, wrapped = sanitize_text(
-        "XA1 pin A4 (A4) and XA1 pin GND3 (GND) marked NC", reg
-    )
+    out, wrapped = sanitize_text("XA1 pin A4 (A4) and XA1 pin GND3 (GND) marked NC", reg)
 
     assert "A4" in out
     assert "GND3" in out
@@ -215,3 +211,64 @@ def test_sanitize_args_empty_dict() -> None:
     sanitized, wrapped = sanitize_args({}, reg)
     assert sanitized == {}
     assert wrapped == 0
+
+
+@pytest.mark.parametrize("text", ["检查U999是否接地", "请复查U10000。", "U123456 的供电"])
+def test_guard_covers_chinese_adjacency_and_long_numbers(text: str) -> None:
+    out, wrapped = sanitize_text(text, _registry([]))
+    assert wrapped == 1
+    assert "⟨?U" in out
+    assert sanitize_text(out, _registry([])) == (out, 0)
+
+
+def test_guard_preserves_verified_long_refdes_in_chinese() -> None:
+    text = "检查U10000与R12345之间的连接"
+    assert sanitize_text(text, _registry(["U10000", "R12345"])) == (text, 0)
+
+
+@pytest.mark.parametrize("text", ["DDR4 内存接口", "检查DDR4接口", "DDR5 与 DDR3"])
+def test_guard_distinguishes_memory_generation_words(text: str) -> None:
+    assert sanitize_text(text, _registry([])) == (text, 0)
+
+
+@pytest.mark.parametrize("text", ["位号DDR4", "refdes DDR4", "component DDR4"])
+def test_explicit_component_context_does_not_exempt_memory_words(text: str) -> None:
+    out, wrapped = sanitize_text(text, _registry([]))
+    assert "⟨?DDR4⟩" in out
+    assert wrapped == 1
+
+
+def test_ascii_identifiers_are_not_partially_rewritten() -> None:
+    text = "USB3P0_D_P PCIE_TX3P3V abcU999 U999_A U999B"
+    assert sanitize_text(text, _registry([])) == (text, 0)
+
+
+def test_common_refdes_cannot_hide_as_direct_pin_name() -> None:
+    out, wrapped = sanitize_text("U1 pin U999", _registry(["U1"]))
+    assert out == "U1 pin ⟨?U999⟩"
+    assert wrapped == 1
+
+
+def test_finding_object_identity_stays_strict_for_technical_words() -> None:
+    finding = Finding(
+        rule_id="R001",
+        severity="info",
+        refdes="DDR4",
+        message="DDR4 内存",
+        suggested_action="人工复核",
+        evidence_tokens=[],
+    )
+    out, wrapped = sanitize_finding(finding, _registry([]))
+    assert out.refdes == "⟨?DDR4⟩"
+    assert out.message == "DDR4 内存"
+    assert wrapped == 1
+
+
+@pytest.mark.parametrize("identity", ["DDR4", "SOP8", "U10000"])
+def test_explicit_tool_object_does_not_use_prose_exemptions(identity: str) -> None:
+    args = {"refdes": identity, "query": "DDR4 内存"}
+    out, wrapped = sanitize_args(args, _registry([]))
+    assert out == {"refdes": f"⟨?{identity}⟩", "query": "DDR4 内存"}
+    assert wrapped == 1
+    assert args["refdes"] == identity  # the actual tool input remains untouched
+    assert sanitize_args(out, _registry([])) == (out, 0)
