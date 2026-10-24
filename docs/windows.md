@@ -124,3 +124,7 @@ passed for the commit you plan to show.
 ## Pinned public validation capsule
 
 See [validation capsule v1](product/windows-validation-capsule-v1.md) for the fixed-source package, hash verifier, native-Windows commands and manual Cadence record. A macOS smoke result does not close Windows/Cadence acceptance.
+
+## Editable installation troubleshooting
+
+If an otherwise installed package cannot be imported, inspect the actual environment before changing source paths. A local macOS case involved hidden editable `.pth` files skipped by Python; it is not evidence of a Windows defect. The [FAQ](faq.md) records a verified fixed-source `--no-editable` installation route and its rebuild requirements. Keep actual Windows installation/EDA evidence separate.

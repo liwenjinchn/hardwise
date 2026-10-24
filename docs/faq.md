@@ -343,3 +343,17 @@ PST 重复 primitive 定义或同一属性不同字面值会明确拒绝导入�
 ### 上传不同类型的同名文件会怎样？
 
 现在会返回400，说明duplicate upload filename并要求各输入使用不同文件名；不会覆盖先上传的源字节或替换当前评审。旧实现把所有上传放在同一个临时目录中，直接wb写入，会将同名风险提示config.json覆盖成后上传的电压事实config.json，甚至200成功但提示为0。现用独占创建避免覆盖，文件名和原始内容不被自动改写；不同文件名继续正常导入，风险提示与电压事实各有独立路径/哈希。这是输入冲突诊断，尚未实现完整项目保存/打开/搬迁或原始资料归档。
+
+### 已安装但报No module named hardwise，是否一定是源码路径错了？
+
+不一定。本机一次实际诊断中，editable安装的.pth内容和direct_url均正确，但该文件带UF_HIDDEN，当前Python site.addpackage明确跳过隐藏.pth。去掉标记只在同次调用内短暂有效，后续标记再次出现；尚未确定由谁设置，不应宣称永久修复或批量修改机器文件属性。
+
+固定提交复验可使用标准非editable安装，避免依赖该路径文件：
+
+```bash
+uv sync --locked --extra dev --no-editable
+uv run --no-editable hardwise --help
+uv run --no-editable hardwise serve-workbench tests/fixtures/allegro/mixed_controller_power_stage.net tests/fixtures/allegro/mixed_controller_power_stage_bom.csv --no-auto-datasheet-candidates --dry-run
+```
+
+后续uv run也需保留--no-editable，避免切回editable。修改源码后必须重新安装构建（可在sync命令加--reinstall-package hardwise），不要把已安装的旧副本当作最新工作树。开发测试仍可显式PYTHONPATH=src，从当前源码运行；两者证明范围不同。本次隔离环境用已缓存依赖完成macOS锁定安装；多次独立调用的包导入、CLI、无keydry-run、工作台入口与两个JS/CSS资源均成功，白色单文件导出成功。没有Windows/新网络依赖下载或全功能安装验收结论。
