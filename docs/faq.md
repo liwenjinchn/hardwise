@@ -357,3 +357,7 @@ uv run --no-editable hardwise serve-workbench tests/fixtures/allegro/mixed_contr
 ```
 
 后续uv run也需保留--no-editable，避免切回editable。修改源码后必须重新安装构建（可在sync命令加--reinstall-package hardwise），不要把已安装的旧副本当作最新工作树。开发测试仍可显式PYTHONPATH=src，从当前源码运行；两者证明范围不同。本次隔离环境用已缓存依赖完成macOS锁定安装；多次独立调用的包导入、CLI、无keydry-run、工作台入口与两个JS/CSS资源均成功，白色单文件导出成功。没有Windows/新网络依赖下载或全功能安装验收结论。
+
+### 选择SQLite日志＋受管理输入目录后，完整保存恢复完成了吗？
+
+尚未。用户已确认格式方向，实施合同在[managed-project-v1.md](product/managed-project-v1.md)。第一步原始输入快照会按已解析输入的哈希核对原字节，写入日志旁的.inputs目录，全部写完才发布；同名来源分别存放。原路径删除或快照目录搬迁后仍可验证字节；源变化、缺失、损坏、未知格式与非法成员均拒绝。它现在是独立存储基础层，尚未接到页面保存、SQLite项目身份/版本、重开或完整备份恢复，不会自行把上传目录标成可恢复项目。未被读取的外链PDF也不会自动打包。白色前端保持原样，后续在该前端接入完整流程。
