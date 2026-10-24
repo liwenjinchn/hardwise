@@ -116,6 +116,22 @@ class DecisionJournal:
                 )
             ]
 
+    def history_page(self, project: str, limit: int, offset: int) -> dict:
+        """Read the count and page from one committed SQLite snapshot."""
+        with self.connect() as db:
+            db.execute("BEGIN")
+            total = db.execute(
+                "SELECT count(*) FROM review_events WHERE project=?", (project,)
+            ).fetchone()[0]
+            events = [
+                dict(id=seq, run_id=run_id, **json.loads(data))
+                for seq, run_id, data in db.execute(
+                    "SELECT id,run_id,data FROM review_events WHERE project=? ORDER BY id DESC LIMIT ? OFFSET ?",
+                    (project, limit, offset),
+                )
+            ]
+            return {"total": total, "events": events}
+
     def history_count(self, project: str) -> int:
         with self.connect() as db:
             return db.execute(

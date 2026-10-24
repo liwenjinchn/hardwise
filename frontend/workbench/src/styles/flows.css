@@ -11,6 +11,7 @@
 .project-prep-card button,
 .export-controls button,
 .finding-row button,
+.review-history button,
 .chat-form button {
   display: inline-flex;
   align-items: center;
@@ -31,6 +32,7 @@
 .project-prep-card button:hover,
 .export-controls button:hover,
 .finding-row button:hover,
+.review-history button:hover,
 .chat-form button:hover {
   border-color: var(--line-strong);
   background: #fff;

@@ -1,3 +1,5 @@
+export type { ReviewHistoryPage } from "./generated/workbench-contracts";
+
 export type StatusGroup = "error" | "warn" | "pass" | "manual";
 export type TrustTier = "l1" | "l2" | "l3";
 export type EvidenceLaneStatus = "present" | "partial" | "gap" | "not_configured";

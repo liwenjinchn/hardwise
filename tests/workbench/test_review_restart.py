@@ -299,3 +299,78 @@ def test_unknown_dependency_contract_uses_broad_snapshot(tmp_path, future):
         context.design.components["C2"].value = "unrelated synthetic component change"
         assert review_fingerprints(context, [task])[task.stable_key] == local_before
         assert review_fingerprints(context, [unregistered])[task.stable_key] != broad_before
+
+
+@pytest.mark.parametrize("durable", [False, True])
+def test_history_pages_keep_scope_counts_and_original_reason(tmp_path, durable):
+    _inputs(tmp_path)
+    with TestClient(_app(tmp_path, durable)) as client:
+        task = _waive(client)
+        facts = json.loads((tmp_path / "facts.json").read_text())
+        facts["facts"][0].update(minimum=21, maximum=21)
+        (tmp_path / "facts.json").write_text(json.dumps(facts))
+        state = client.post("/api/workbench/rerun").json()
+        project = state["review_decisions"]["project_id"]
+        params = {"limit": 1, "expected_project_id": project}
+        newest = client.get("/api/workbench/review-decisions/history", params=params).json()
+        assert newest["total"] == 2
+        assert newest["project_id"] == project
+        assert newest["run_id"] == state["review_decisions"]["run_id"]
+        assert newest["events"][0]["event"] == "inputs_changed"
+        assert newest["events"][0]["decision"]["previous_status"] == "waived"
+        assert newest["events"][0]["stable_key"] == task["stable_key"]
+        older = client.get(
+            "/api/workbench/review-decisions/history", params={**params, "offset": 1}
+        ).json()
+        assert older["events"][0]["event"] == "human_decision"
+        assert older["events"][0]["decision"]["status"] == "waived"
+        assert older["events"][0]["decision"]["reason"] == newest["events"][0]["decision"]["reason"]
+        empty = client.get(
+            "/api/workbench/review-decisions/history", params={**params, "offset": 2}
+        ).json()
+        assert empty["events"] == [] and empty["total"] == 2
+        stale = client.get(
+            "/api/workbench/review-decisions/history", params={"expected_project_id": "old-project"}
+        )
+        assert stale.status_code == 409
+        assert "events" not in stale.json()
+        for invalid in ({"limit": 0}, {"limit": 1001}, {"offset": -1}):
+            assert (
+                client.get("/api/workbench/review-decisions/history", params=invalid).status_code
+                == 422
+            )
+        response = client.post(
+            "/api/workbench/import",
+            files={
+                "netlist": (
+                    "other.net",
+                    (tmp_path / "l78_regulator.net").read_bytes(),
+                    "text/plain",
+                ),
+                "bom": ("other.csv", (tmp_path / "l78_regulator_bom.csv").read_bytes(), "text/csv"),
+            },
+        )
+        assert response.status_code == 200, response.text
+        active = client.get("/api/workbench/review-decisions/history").json()
+        assert active["project_id"] != project
+        assert active["total"] == 0 and active["events"] == []
+        assert (
+            client.get("/api/workbench/review-decisions/history", params=params).status_code == 409
+        )
+
+
+def test_history_read_failure_is_retryable_without_modifying_decisions(tmp_path, monkeypatch):
+    import sqlite3
+    from hardwise.workbench.decision_journal import DecisionJournal
+
+    _inputs(tmp_path)
+    with TestClient(_app(tmp_path)) as client:
+        _waive(client)
+        state = client.get("/api/workbench/state").json()
+
+        def fail_read(*args):
+            raise sqlite3.OperationalError("synthetic read failure")
+
+        monkeypatch.setattr(DecisionJournal, "history_page", fail_read)
+        assert client.get("/api/workbench/review-decisions/history").status_code == 503
+        assert client.get("/api/workbench/state").json() == state

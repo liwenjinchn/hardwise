@@ -249,6 +249,17 @@ export type Manual2 = number;
 export type PassCount2 = number;
 export type Total3 = number;
 export type Warn1 = number;
+export type CreatedAt = string;
+export type Event = "human_decision" | "inputs_changed" | "disappeared";
+export type Id2 = number;
+export type RunId = string;
+export type StableKey2 = string;
+export type Events = ReviewHistoryEvent[];
+export type Limit = number;
+export type Offset = number;
+export type ProjectId = string;
+export type RunId1 = string;
+export type Total4 = number;
 export type Basis = "emitted_check_records";
 export type Boundary = string;
 export type CompletedChecks = number;
@@ -305,9 +316,9 @@ export type Accepted = number;
 export type HistoryCount = number;
 export type NeedsReview1 = number;
 export type Open = number;
-export type ProjectId = string | null;
+export type ProjectId1 = string | null;
 export type Resolved = number;
-export type RunId = string | null;
+export type RunId2 = string | null;
 export type StaleRemovedOnRerun = number;
 export type Storage = "memory" | "local_file";
 export type TotalTasks = number;
@@ -316,11 +327,11 @@ export type AffectedRefdes1 = string[];
 export type Axis = "electrical" | "evidence";
 export type Check2 = string | null;
 export type DerivedTaskCount = number;
-export type Id2 = string;
+export type Id3 = string;
 export type Identity1 = string;
 export type RawTaskCount = number;
 export type RecommendedAction3 = string;
-export type StableKey2 = string;
+export type StableKey3 = string;
 export type StableKeys = string[];
 export type StatusGroup8 = "error" | "warn" | "pass" | "manual";
 export type TaskIds1 = string[];
@@ -361,6 +372,7 @@ export interface WorkbenchContracts {
   chat_response: ChatResponse;
   component_detail: ComponentDetail;
   import_response: ImportResponse;
+  review_history: ReviewHistoryPage;
   workbench_state: WorkbenchState;
 }
 /**
@@ -795,6 +807,22 @@ export interface ReviewTaskCounts {
   total: Total3;
   warn: Warn1;
 }
+export interface ReviewHistoryPage {
+  events: Events;
+  limit: Limit;
+  offset: Offset;
+  project_id: ProjectId;
+  run_id: RunId1;
+  total: Total4;
+}
+export interface ReviewHistoryEvent {
+  created_at: CreatedAt;
+  decision: ReviewDecisionView;
+  event: Event;
+  id: Id2;
+  run_id: RunId;
+  stable_key: StableKey2;
+}
 /**
  * Top-level SPA state returned by ``/api/workbench/state``.
  */
@@ -902,9 +930,9 @@ export interface ReviewDecisionSummary {
   history_count: HistoryCount;
   needs_review: NeedsReview1;
   open: Open;
-  project_id: ProjectId;
+  project_id: ProjectId1;
   resolved: Resolved;
-  run_id: RunId;
+  run_id: RunId2;
   stale_removed_on_rerun: StaleRemovedOnRerun;
   storage: Storage;
   total_tasks: TotalTasks;
@@ -918,11 +946,11 @@ export interface ReviewTaskGroup {
   axis: Axis;
   check: Check2;
   derived_task_count: DerivedTaskCount;
-  id: Id2;
+  id: Id3;
   identity: Identity1;
   raw_task_count: RawTaskCount;
   recommended_action: RecommendedAction3;
-  stable_key: StableKey2;
+  stable_key: StableKey3;
   stable_keys: StableKeys;
   status_group: StatusGroup8;
   task_ids: TaskIds1;

@@ -9,6 +9,7 @@ from pathlib import Path
 from pydantic import create_model
 
 from hardwise.workbench.api_contracts import ImportResponse
+from hardwise.workbench.review_history import ReviewHistoryPage
 from hardwise.workbench.chat_contracts import ChatRequest, ChatResponse
 from hardwise.workbench.view_model import ComponentDetail, WorkbenchState
 
@@ -36,6 +37,7 @@ def main() -> None:
         workbench_state=(WorkbenchState, ...),
         component_detail=(ComponentDetail, ...),
         import_response=(ImportResponse, ...),
+        review_history=(ReviewHistoryPage, ...),
         chat_request=(ChatRequest, ...),
         chat_response=(ChatResponse, ...),
     )

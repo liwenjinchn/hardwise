@@ -23,6 +23,7 @@ from hardwise.report.copilot_panel import render_copilot_panel
 from hardwise.report.validator_project_ui import render_project_workbench
 from hardwise.workbench.chat import ChatRequest, ChatResponse, WorkbenchChatService, default_refdes
 from hardwise.workbench.api_contracts import ImportResponse
+from hardwise.workbench.review_history import ReviewHistoryPage
 from hardwise.workbench.context import (
     WorkbenchContext,
     build_workbench_context,
@@ -466,9 +467,21 @@ def create_workbench_app(
                 tasks=decisions_for(context, build_review_tasks(context)),
             )
 
-    @app.get("/api/workbench/review-decisions/history")
-    def review_history(limit: int = Query(100, ge=1, le=1000), offset: int = Query(0, ge=0)):
-        return {"events": review_decisions.history(limit, offset)}
+    @app.get("/api/workbench/review-decisions/history", response_model=ReviewHistoryPage)
+    def review_history(
+        limit: int = Query(100, ge=1, le=1000),
+        offset: int = Query(0, ge=0),
+        expected_project_id: str | None = None,
+    ):
+        with review_workflow_lock:
+            try:
+                return review_decisions.history_page(limit, offset, expected_project_id)
+            except ReviewConflictError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
+            except (sqlite3.Error, OSError) as exc:
+                raise HTTPException(
+                    status_code=503, detail="Review history could not be read."
+                ) from exc
 
     @app.put("/api/workbench/review-decisions")
     def update_review_decisions(request: ReviewDecisionRequest) -> WorkbenchState:

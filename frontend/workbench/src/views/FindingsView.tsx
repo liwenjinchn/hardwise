@@ -9,6 +9,7 @@ import type {
   ReviewTaskGroup
 } from "../types";
 import type { ViewId } from "./nav";
+import { ReviewHistory } from "./ReviewHistory";
 
 export function FindingsView({
   groups,
@@ -83,6 +84,8 @@ export function FindingsView({
         </button>
       </div>
       <div className="findings-list">
+        <ReviewHistory projectId={reviewSummary?.project_id ?? null} runId={reviewSummary?.run_id ?? null}
+          historyCount={reviewSummary?.history_count ?? 0} tasks={tasks} />
         {groups.map((group) => {
           const groupTasks = group.task_ids
             .map((taskId) => tasksById.get(taskId))

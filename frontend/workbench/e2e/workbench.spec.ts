@@ -1,6 +1,54 @@
 import { expect, test, type Page } from "@playwright/test";
 import path from "node:path";
 
+test("review history pages retain original reasons and machine totals", async ({ page, request }) => {
+  const original = await (await request.get("/api/workbench/state")).json();
+  const key = original.review_tasks[0].stable_key;
+  for (let i = 1; i <= 21; i++) {
+    const response = await request.put("/api/workbench/review-decisions", { data: {
+      stable_keys: [key], status: "waived", reason: `历史分页理由 ${i}`,
+      expected_run_id: original.review_decisions.run_id
+    }});
+    expect(response.ok()).toBeTruthy();
+  }
+  const updated = await (await request.get("/api/workbench/state")).json();
+  expect(updated.summary).toEqual(original.summary);
+  await openReview(page);
+  await page.getByRole("button", { name: "问题清单" }).click();
+  await page.getByRole("button", { name: "查看处理历史" }).click();
+  const history = page.getByRole("region", { name: "评审处理历史" });
+  await expect(history.locator(".history-event")).toHaveCount(20);
+  await expect(history.locator(".history-event").first()).toContainText("历史分页理由 21");
+  await history.getByRole("button", { name: "下一页历史" }).click();
+  await expect(history.locator(".history-event")).toHaveCount(1);
+  await expect(history).toContainText("历史分页理由 1");
+  await history.getByRole("button", { name: "上一页历史" }).click();
+  await expect(history.locator(".history-event")).toHaveCount(20);
+  await history.locator("summary").first().click();
+  await expect(history).toContainText(key);
+  await expect(history).toContainText(original.review_decisions.run_id);
+  await page.setViewportSize({ width: 760, height: 900 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBeTruthy();
+});
+
+test("history read failure can be retried in the white findings page", async ({ page }) => {
+  let failedOnce = false;
+  await page.route("**/api/workbench/review-decisions/history?*", async route => {
+    if (!failedOnce) {
+      failedOnce = true;
+      await route.fulfill({ status: 503, body: "synthetic history read outage" });
+    } else await route.continue();
+  });
+  await openReview(page);
+  await page.getByRole("button", { name: "问题清单" }).click();
+  await page.getByRole("button", { name: "查看处理历史" }).click();
+  const history = page.getByRole("region", { name: "评审处理历史" });
+  await expect(history.getByRole("alert")).toContainText("synthetic history read outage");
+  await history.getByRole("button", { name: "刷新历史" }).click();
+  await expect(history.getByRole("alert")).toHaveCount(0);
+  await expect(history.locator(".history-events")).toBeVisible();
+});
+
 // Automated replacement for the manual browser smoke checklist in
 // docs/workbench_spa_handoff.md ("Completed Visual / Offline Work").
 

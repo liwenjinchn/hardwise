@@ -2070,6 +2070,93 @@
       "title": "ReviewDecisionView",
       "type": "object"
     },
+    "ReviewHistoryEvent": {
+      "properties": {
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "decision": {
+          "$ref": "#/$defs/ReviewDecisionView"
+        },
+        "event": {
+          "enum": [
+            "human_decision",
+            "inputs_changed",
+            "disappeared"
+          ],
+          "title": "Event",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "integer"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "stable_key": {
+          "title": "Stable Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "created_at",
+        "decision",
+        "event",
+        "id",
+        "run_id",
+        "stable_key"
+      ],
+      "title": "ReviewHistoryEvent",
+      "type": "object"
+    },
+    "ReviewHistoryPage": {
+      "properties": {
+        "events": {
+          "items": {
+            "$ref": "#/$defs/ReviewHistoryEvent"
+          },
+          "title": "Events",
+          "type": "array"
+        },
+        "limit": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "total": {
+          "minimum": 0,
+          "title": "Total",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "events",
+        "limit",
+        "offset",
+        "project_id",
+        "run_id",
+        "total"
+      ],
+      "title": "ReviewHistoryPage",
+      "type": "object"
+    },
     "ReviewPackageArtifactView": {
       "description": "One exported review-package artifact shown as evidence coverage.",
       "properties": {
@@ -3345,6 +3432,9 @@
     "import_response": {
       "$ref": "#/$defs/ImportResponse"
     },
+    "review_history": {
+      "$ref": "#/$defs/ReviewHistoryPage"
+    },
     "workbench_state": {
       "$ref": "#/$defs/WorkbenchState"
     }
@@ -3353,6 +3443,7 @@
     "workbench_state",
     "component_detail",
     "import_response",
+    "review_history",
     "chat_request",
     "chat_response"
   ],

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { importWorkbench, rerunWorkbench, updateReviewDecision } from "./api";
+import { fetchReviewHistory, importWorkbench, rerunWorkbench, updateReviewDecision } from "./api";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -75,5 +75,34 @@ describe("importWorkbench", () => {
     const body = init.body as FormData;
     expect(body.get("netlist")).toBe(netlist);
     expect(body.get("document_index_csv")).toBe(documentIndex);
+  });
+});
+
+
+describe("review history API", () => {
+  it("requests the selected project's bounded page", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ events: [] }), { status: 200 }));
+    vi.stubGlobal("window", {});
+    vi.stubGlobal("fetch", fetchMock);
+    await fetchReviewHistory("project / one", 20);
+    const [url] = fetchMock.mock.calls[0];
+    const query = new URL(String(url), "http://localhost").searchParams;
+    expect(query.get("expected_project_id")).toBe("project / one");
+    expect(query.get("limit")).toBe("20");
+    expect(query.get("offset")).toBe("20");
+  });
+
+  it("does not query the static server for missing offline history", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("window", { __HARDWISE_OFFLINE_SNAPSHOT__: {} });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(fetchReviewHistory("one")).rejects.toThrow("离线快照未包含处理历史");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("preserves a read failure for the retry UI", async () => {
+    vi.stubGlobal("window", {});
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("History temporarily unavailable", { status: 503 })));
+    await expect(fetchReviewHistory("one")).rejects.toThrow("History temporarily unavailable");
   });
 });

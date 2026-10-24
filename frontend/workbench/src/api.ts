@@ -6,6 +6,7 @@ import type {
   ProjectReviewPrepPacket,
   ReviewPrepPacket,
   ReviewDecisionStatus,
+  ReviewHistoryPage,
   WorkbenchOfflineSnapshot,
   WorkbenchState
 } from "./types";
@@ -56,6 +57,14 @@ export function updateReviewDecision(input: {
       expected_run_id: input.expectedRunId
     })
   });
+}
+
+export function fetchReviewHistory(projectId: string, offset = 0): Promise<ReviewHistoryPage> {
+  if (offlineSnapshot()) {
+    return Promise.reject(new Error("离线快照未包含处理历史；请打开本地服务查看。"));
+  }
+  const query = new URLSearchParams({ limit: "20", offset: String(offset), expected_project_id: projectId });
+  return requestJson<ReviewHistoryPage>(`/api/workbench/review-decisions/history?${query}`);
 }
 
 export function rerunWorkbench(): Promise<WorkbenchState> {

@@ -596,3 +596,16 @@
   color: var(--ink-3);
   font-size: 12px;
 }
+
+
+.review-history { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); }
+.history-pages { display: grid; gap: 12px; margin-top: 14px; min-width: 0; }
+.history-pages > button { justify-self: start; }
+.history-pages p, .history-event details { overflow-wrap: anywhere; font-size: 12px; line-height: 1.6; }
+.history-events { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+.history-event { border-top: 1px solid var(--line); padding-top: 12px; min-width: 0; }
+.history-event strong { font-size: 13px; }
+.history-event time { color: var(--ink-3); font-size: 11px; }
+.history-event summary { cursor: pointer; }
+.history-reason { white-space: pre-wrap; }
+.history-pagination { display: flex; gap: 10px; flex-wrap: wrap; }
