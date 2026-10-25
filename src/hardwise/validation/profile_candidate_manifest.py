@@ -21,6 +21,7 @@ def render_manifest(report: Any, *, matched_only: bool = False) -> str:
                     {
                         "refdes": candidate.refdes,
                         "profile": display_path(candidate.profile),
+                        "profile_lifecycle": candidate.profile_lifecycle,
                     }
                     for candidate in matched
                 ],
@@ -50,6 +51,7 @@ def _target_row(candidate: Any) -> dict[str, object]:
     row: dict[str, object] = {
         "refdes": candidate.refdes,
         "profile": display_path(candidate.profile),
+        "profile_lifecycle": candidate.profile_lifecycle,
         "match_status": candidate.match_status,
         "identity": candidate.identity,
         "identity_kind": candidate.identity_kind,

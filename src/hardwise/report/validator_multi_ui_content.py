@@ -56,6 +56,12 @@ def _model_check_content(validation: ValidationReport) -> str:
         if status == "PASS"
         else "BOM/器件身份需要人工对照器件档案确认。"
     )
+    if not is_generic and (
+        validation.profile_lifecycle != "READY"
+        or any(c.check == "profile_review_status" for c in validation.component_checks)
+    ):
+        status = "UNKNOWN"
+        note = "候选型号匹配不构成字段批准；相关检查保持 UNKNOWN。"
     return (
         '<div class="table-section">'
         "<table><thead><tr><th>项目</th><th>BOM/原理图型号</th><th>器件档案型号</th><th>结论</th><th>说明</th></tr></thead><tbody>"
@@ -124,7 +130,7 @@ def _connectivity_content(
             f"<td>{escape(pin.net or '-')}</td>"
             f"<td>{escape(path)}</td>"
             f"<td>{trust_label_html('l1')}</td>"
-            f'<td class="evidence">{_evidence(pin.evidence, validation.refdes)}</td>'
+            f'<td class="evidence">{_evidence(pin.evidence, validation.refdes, validation.reviewed_profile_tokens)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table></div>")
@@ -167,7 +173,7 @@ def _compliance_content(validation: ValidationReport) -> str:
             f'<td><span class="status {_status_class(pin.status)}">{escape(pin.status)}</span></td>'
             f"<td>{trust_label_html('l1')}</td>"
             f"<td>{escape(validation_summary_label(pin.summary))}</td>"
-            f'<td class="evidence">{_evidence(pin.evidence, validation.refdes)}</td>'
+            f'<td class="evidence">{_evidence(pin.evidence, validation.refdes, validation.reviewed_profile_tokens)}</td>'
             "</tr>"
         )
     for check in validation.component_checks:
@@ -178,7 +184,7 @@ def _compliance_content(validation: ValidationReport) -> str:
             f'<td><span class="status {_status_class(check.status)}">{escape(check.status)}</span></td>'
             f"<td>{trust_label_html('l1')}</td>"
             f"<td>{escape(validation_summary_label(check.summary))}</td>"
-            f'<td class="evidence">{_evidence(check.evidence, validation.refdes)}</td>'
+            f'<td class="evidence">{_evidence(check.evidence, validation.refdes, validation.reviewed_profile_tokens)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table>")
@@ -238,9 +244,21 @@ def _scope_content(generated_at: str, profile_path: Path) -> str:
 def _evidence_content(validation: ValidationReport, profile: DatasheetProfile | None) -> str:
     rows = [
         _profile_meta(validation, profile),
-        _profile_fact_table_with_gaps(profile, refdes=validation.refdes),
-        _profile_pin_detail_table(profile, refdes=validation.refdes),
-        _profile_evidence_table(profile, refdes=validation.refdes),
+        _profile_fact_table_with_gaps(
+            profile,
+            refdes=validation.refdes,
+            reviewed_profile_tokens=validation.reviewed_profile_tokens,
+        ),
+        _profile_pin_detail_table(
+            profile,
+            refdes=validation.refdes,
+            reviewed_profile_tokens=validation.reviewed_profile_tokens,
+        ),
+        _profile_evidence_table(
+            profile,
+            refdes=validation.refdes,
+            reviewed_profile_tokens=validation.reviewed_profile_tokens,
+        ),
         _thermal_package_note(profile),
     ]
     return "".join(rows)

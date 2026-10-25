@@ -3,7 +3,8 @@
 The locator is intentionally narrower than ``search_datasheet``. It does not
 search PDFs or infer new electrical facts; it only points to evidence already
 present in reviewed ``DatasheetProfile`` objects, with document-index coverage
-kept as a clearly labeled non-spec fallback.
+kept as a clearly labeled non-spec fallback. Unapproved profiles return
+``unreviewed_profile`` without exposing candidate facts as approved evidence.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from hardwise.bom.types import sort_refdes_key
 from hardwise.documents.types import DocumentMatchReport
 from hardwise.ir.profile import DatasheetProfile, PinProfile, ProfileValue
 from hardwise.ir.types import Component, Design
+from hardwise.validation.profile_approval import approval_reason
 from hardwise.validation.project_index import ProjectValidationIndex, ProjectValidationRow
 
 
@@ -26,6 +28,7 @@ EvidenceLocatorStatus = Literal[
     "found",
     "no_result",
     "no_profile",
+    "unreviewed_profile",
     "not_found",
     "not_configured",
 ]
@@ -93,7 +96,8 @@ EVIDENCE_LOCATOR_TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "pin_function, enable, reset, boot, bootstrap, decoupling, power, or debug. "
             "This is not broad datasheet chat and does not search PDFs. If no reviewed "
             "profile exists, it returns no_profile and may include document-index "
-            "coverage only as a non-spec fallback."
+            "coverage only as a non-spec fallback. An assigned but unapproved or out-of-scope "
+            "profile returns unreviewed_profile with no approved electrical facts."
         ),
         "input_schema": LocateComponentEvidenceInput.model_json_schema(),
     }
@@ -154,6 +158,20 @@ def locate_component_evidence(
                 "document coverage is not electrical proof."
             ),
             hits=hits[: tool_input.limit],
+        )
+
+    review_reason = approval_reason(component, profile)
+    if review_reason:
+        return LocateComponentEvidenceResult(
+            status="unreviewed_profile",
+            found=False,
+            refdes=refdes,
+            topic=tool_input.topic,
+            normalized_topic=normalized_topic,
+            profile_part_number=profile.part_number,
+            document_status=document_status,
+            reason=review_reason + " 仅可提供非规格证明的文档索引。",
+            hits=([document_hit] if document_hit is not None else [])[: tool_input.limit],
         )
 
     hits = [

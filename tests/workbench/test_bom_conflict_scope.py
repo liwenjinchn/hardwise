@@ -121,9 +121,17 @@ def test_ambiguous_peer_blocks_topology_but_keeps_connection_observations(tmp_pa
     )
     try:
         report = next(r.validation for r in context.index.rows if r.refdes == "U1")
-        assert all(c.result == "UNKNOWN" and c.needs_review for c in report.component_checks)
-        assert all("U2" in c.summary and "BOM" in c.summary for c in report.component_checks)
-        assert any(p.result == "PASS" for p in report.pin_results)
+        assert all(
+            c.result == "UNKNOWN" and c.needs_review
+            for c in report.component_checks
+            if c.check != "profile_review_status"
+        )
+        assert all(
+            "U2" in c.summary and "BOM" in c.summary
+            for c in report.component_checks
+            if c.check != "profile_review_status"
+        )
+        assert report.pin_results and all(p.result == "UNKNOWN" for p in report.pin_results)
         assert "U1" in context.validation_targets
         assert "U2" not in context.validation_targets
     finally:

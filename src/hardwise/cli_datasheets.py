@@ -356,7 +356,7 @@ def store_datasheet_profile(
     typer.echo(
         f"datasheet-profile-store: {display_path(db_path)} "
         f"(part={stored.part_number}, aliases={len(stored.part_number_aliases)}, "
-        f"pins={len(stored.pins)}, status={stored.review_status})"
+        f"pins={len(stored.pins)}, legacy_status={stored.review_status}, lifecycle={stored.lifecycle})"
     )
 
 

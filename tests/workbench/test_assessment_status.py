@@ -25,7 +25,7 @@ def test_unknown_is_manual_attention_and_survives_offline_export(tmp_path):
     context = _context()
     try:
         state = build_workbench_state(context, datasheet_search_enabled=False)
-        assert state.summary.unknown_count == 19
+        assert state.summary.unknown_count == 22
         assert sum(context.index.totals.values()) == state.summary.validated
         tasks = [task for task in state.review_tasks if task.refdes == "R1"]
         assert any(task.status == "UNKNOWN" and task.status_group == "manual" for task in tasks)
@@ -40,7 +40,7 @@ def test_unknown_is_manual_attention_and_survives_offline_export(tmp_path):
         resistor = next(row for row in payload["rows"] if row["refdes"] == "R1")
         assert resistor["validation"]["status"] == "UNKNOWN"
         assert resistor["validation"]["component_counts_by_status"]["UNKNOWN"] == 1
-        assert "| UNKNOWN / NOT_APPLICABLE | 19 / 0 |" in render(context.index)
+        assert "| UNKNOWN / NOT_APPLICABLE | 22 / 0 |" in render(context.index)
     finally:
         close_workbench_context(context)
 

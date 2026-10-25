@@ -1,6 +1,8 @@
 """Tests for deterministic single-component validation."""
 
 from __future__ import annotations
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+
 
 from pathlib import Path
 
@@ -202,7 +204,7 @@ def test_motor_sensor_analog_ic_connections_do_not_certify_supply() -> None:
 
     for refdes, profile_path in targets.items():
         profile = DatasheetProfile.load(Path(profile_path))
-        report = validate_component_against_profile(design.components[refdes], profile, design)
+        report = validate_with_synthetic_approval(design.components[refdes], profile, design)
         categories = {result.category for result in report.pin_results}
 
         assert report.status == "UNKNOWN"
@@ -225,7 +227,7 @@ def test_lm393_open_collector_outputs_are_connection_checked() -> None:
     design = _motor_sensor_controller_design()
     profile = DatasheetProfile.load(Path("data/datasheet_profiles/lm393.json"))
 
-    report = validate_component_against_profile(design.components["U21"], profile, design)
+    report = validate_with_synthetic_approval(design.components["U21"], profile, design)
 
     outputs = [pin for pin in report.pin_results if pin.category == "open_collector_output"]
     assert [(pin.pin_number, pin.status, pin.net) for pin in outputs] == [
@@ -236,7 +238,7 @@ def test_lm393_open_collector_outputs_are_connection_checked() -> None:
 
 def test_validate_l78_named_rails_do_not_certify_voltage() -> None:
     component = _component()
-    report = validate_component_against_profile(component, _profile(), _design(component))
+    report = validate_with_synthetic_approval(component, _profile(), _design(component))
 
     assert report.status == "UNKNOWN"
     assert report.counts_by_status == {
@@ -276,7 +278,7 @@ def test_needs_review_profile_adds_component_warning() -> None:
 
 def test_validate_ground_connection_does_not_assign_potential_by_name() -> None:
     component = _component(gnd_net="+5V")
-    report = validate_component_against_profile(component, _profile(), _design(component))
+    report = validate_with_synthetic_approval(component, _profile(), _design(component))
 
     assert report.status == "UNKNOWN"
     ground = report.pin_results[1]
@@ -286,7 +288,7 @@ def test_validate_ground_connection_does_not_assign_potential_by_name() -> None:
 
 def test_validate_component_warns_when_input_voltage_unknown() -> None:
     component = _component(vin_net="VIN_RAW")
-    report = validate_component_against_profile(component, _profile(), _design(component))
+    report = validate_with_synthetic_approval(component, _profile(), _design(component))
 
     assert report.status == "UNKNOWN"
     vin = report.pin_results[0]
@@ -306,7 +308,7 @@ def test_validate_component_errors_when_profiled_pin_missing() -> None:
         value="L7805",
         pins=[Pin(number="1", name="VI", electrical_type="", is_nc=False, net="+12V")],
     )
-    report = validate_component_against_profile(component, _profile(), _design(component))
+    report = validate_with_synthetic_approval(component, _profile(), _design(component))
 
     assert report.status == "ERROR"
     assert report.pin_results[1].status == "ERROR"
@@ -480,9 +482,7 @@ def test_validate_xl1509_feedback_needs_confirmed_bounds() -> None:
 def test_validate_mpq8626_output_role_requires_declared_topology() -> None:
     design = _mpq8626_design()
     _confirm(design, {"P12V": 12.0, "GND": 0.0})
-    report = validate_component_against_profile(
-        design.components["U13"], _mpq8626_profile(), design
-    )
+    report = validate_with_synthetic_approval(design.components["U13"], _mpq8626_profile(), design)
 
     assert report.status == "UNKNOWN"
     assert report.counts_by_status == {
@@ -507,9 +507,7 @@ def test_validate_mpq8626_output_role_requires_declared_topology() -> None:
 def test_validate_pca9548a_i2c_mux_topology_passes() -> None:
     design = _pca9548a_design()
     _confirm(design, {"P3V3_STBY": 3.3, "GND": 0.0})
-    report = validate_component_against_profile(
-        design.components["U8"], _pca9548a_profile(), design
-    )
+    report = validate_with_synthetic_approval(design.components["U8"], _pca9548a_profile(), design)
 
     assert report.status == "PASS"
     assert report.counts_by_status == {
@@ -538,7 +536,7 @@ def test_validate_pca9548a_mismatched_channel_pair_errors() -> None:
     u8 = u8.model_copy(update={"pins": pins})
     design = _with_component(design, u8)
 
-    report = validate_component_against_profile(u8, _pca9548a_profile(), design)
+    report = validate_with_synthetic_approval(u8, _pca9548a_profile(), design)
 
     channels = next(
         check for check in report.component_checks if check.check == "i2c_mux_channel_pairs"
@@ -551,7 +549,7 @@ def test_validate_pca9548a_mismatched_channel_pair_errors() -> None:
 def test_validate_eg2132_bootstrap_rating_requires_confirmed_inputs() -> None:
     design = _eg2132_design()
 
-    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
+    report = validate_with_synthetic_approval(design.components["U3"], _eg2132_profile(), design)
 
     bootstrap = next(
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
@@ -587,7 +585,7 @@ def test_validate_eg2132_nominal_topology_has_no_component_error() -> None:
     d1 = design.components["D1"].model_copy(update={"value": "SS34", "part_number": "SS34"})
     design = _with_component(design, d1)
 
-    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
+    report = validate_with_synthetic_approval(design.components["U3"], _eg2132_profile(), design)
 
     vs = next(
         check for check in report.component_checks if check.check == "gate_driver_vs_switch_node"
@@ -619,7 +617,7 @@ def test_validate_eg2132_bootstrap_diode_warns_without_high_side_voltage() -> No
         design.nets["+24V"].model_copy(update={"nodes": []}),
     )
 
-    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
+    report = validate_with_synthetic_approval(design.components["U3"], _eg2132_profile(), design)
 
     bootstrap = next(
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
@@ -640,7 +638,7 @@ def test_validate_eg2132_missing_bootstrap_capacitor_errors() -> None:
     )
     design = _with_component(design, cboot)
 
-    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
+    report = validate_with_synthetic_approval(design.components["U3"], _eg2132_profile(), design)
 
     bootstrap = next(
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
@@ -654,7 +652,7 @@ def test_validate_eg2132_missing_gate_load_errors() -> None:
     ho_gate_q = design.nets["HO_GATE_Q"].model_copy(update={"nodes": [("R1", "2")]})
     design = design.model_copy(update={"nets": {**design.nets, "HO_GATE_Q": ho_gate_q}})
 
-    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
+    report = validate_with_synthetic_approval(design.components["U3"], _eg2132_profile(), design)
 
     ho = next(
         check for check in report.component_checks if check.check == "gate_driver_ho_gate_load"
@@ -670,7 +668,7 @@ def test_validate_eg2132_unknown_bootstrap_diode_warns_without_fabricating() -> 
     )
     design = _with_component(design, d1)
 
-    report = validate_component_against_profile(design.components["U3"], _eg2132_profile(), design)
+    report = validate_with_synthetic_approval(design.components["U3"], _eg2132_profile(), design)
 
     bootstrap = next(
         check for check in report.component_checks if check.check == "gate_driver_bootstrap"
@@ -690,7 +688,7 @@ def test_validate_eg2132_vcc_outside_profile_range_errors() -> None:
     )
 
     _confirm(design, {"+26V": 26.0, "GND": 0.0})
-    report = validate_component_against_profile(u3, _eg2132_profile(), design)
+    report = validate_with_synthetic_approval(u3, _eg2132_profile(), design)
 
     vcc = next(check for check in report.component_checks if check.check == "gate_driver_vcc")
     assert vcc.status == "ERROR"
@@ -704,7 +702,7 @@ def test_validate_eg2132_missing_logic_input_errors() -> None:
     u3 = u3.model_copy(update={"pins": pins})
     design = _with_component(design, u3)
 
-    report = validate_component_against_profile(u3, _eg2132_profile(), design)
+    report = validate_with_synthetic_approval(u3, _eg2132_profile(), design)
 
     hin = next(check for check in report.component_checks if check.check == "gate_driver_hin")
     assert hin.status == "ERROR"
@@ -714,7 +712,7 @@ def test_validate_eg2132_missing_logic_input_errors() -> None:
 def test_validate_stm32_fixture_reports_swd_swap_error() -> None:
     design = _stm32_design()
 
-    report = validate_component_against_profile(design.components["U8"], _stm32_profile(), design)
+    report = validate_with_synthetic_approval(design.components["U8"], _stm32_profile(), design)
 
     swdio = next(check for check in report.component_checks if check.check == "mcu_swdio")
     swclk = next(check for check in report.component_checks if check.check == "mcu_swclk")
@@ -741,7 +739,7 @@ def test_validate_stm32_nominal_debug_topology_has_no_component_error() -> None:
     design = _with_component(design.model_copy(update={"nets": nets}), u8)
 
     _confirm(design, {"+3V3": 3.3, "GND": 0.0})
-    report = validate_component_against_profile(design.components["U8"], _stm32_profile(), design)
+    report = validate_with_synthetic_approval(design.components["U8"], _stm32_profile(), design)
 
     assert report.component_counts_by_status == {
         "PASS": 6,
@@ -764,7 +762,7 @@ def test_validate_stm32_wrong_vdd_voltage_errors() -> None:
     )
 
     _confirm(design, {"+5V": 5.0, "GND": 0.0})
-    report = validate_component_against_profile(u8, _stm32_profile(), design)
+    report = validate_with_synthetic_approval(u8, _stm32_profile(), design)
 
     vdd = next(check for check in report.component_checks if check.check == "mcu_vdd_vdda_rail")
     assert vdd.status == "ERROR"
@@ -778,7 +776,7 @@ def test_validate_stm32_floating_nrst_errors() -> None:
     u8 = u8.model_copy(update={"pins": pins})
     design = _with_component(design, u8)
 
-    report = validate_component_against_profile(u8, _stm32_profile(), design)
+    report = validate_with_synthetic_approval(u8, _stm32_profile(), design)
 
     nrst = next(check for check in report.component_checks if check.check == "mcu_nrst")
     assert nrst.status == "ERROR"
@@ -792,7 +790,7 @@ def test_validate_stm32_floating_boot0_errors() -> None:
     u8 = u8.model_copy(update={"pins": pins})
     design = _with_component(design, u8)
 
-    report = validate_component_against_profile(u8, _stm32_profile(), design)
+    report = validate_with_synthetic_approval(u8, _stm32_profile(), design)
 
     boot0 = next(check for check in report.component_checks if check.check == "mcu_boot0")
     assert boot0.status == "ERROR"
@@ -814,7 +812,7 @@ def test_validate_stm32_unknown_voltage_and_reset_topology_warn() -> None:
     }
     design = _with_component(design.model_copy(update={"nets": nets}), u8)
 
-    report = validate_component_against_profile(u8, _stm32_profile(), design)
+    report = validate_with_synthetic_approval(u8, _stm32_profile(), design)
 
     vdd = next(check for check in report.component_checks if check.check == "mcu_vdd_vdda_rail")
     nrst = next(check for check in report.component_checks if check.check == "mcu_nrst")

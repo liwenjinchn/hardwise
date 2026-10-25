@@ -13,6 +13,7 @@ from pydantic import BaseModel
 EvidenceSourceClass = Literal[
     "live_retrieved",
     "reviewed_profile",
+    "profile_candidate",
     "document_index",
     "design_source",
     "unknown",
@@ -37,12 +38,13 @@ def classify_evidence_token(
     *,
     live_retrieved_tokens: Iterable[str] | None = None,
     source_roots: Sequence[str | Path] | None = None,
+    reviewed_profile_tokens: Iterable[str] | None = None,
 ) -> EvidenceClassification:
     """Classify one token by provenance origin and local PDF availability."""
 
     value = token.strip()
     live_tokens = set(live_retrieved_tokens or [])
-    source_class = _source_class(value, live_tokens)
+    source_class = _source_class(value, live_tokens, set(reviewed_profile_tokens or []))
     local_source, missing, unchecked = _local_pdf_audit(value, source_roots)
     return EvidenceClassification(
         token=value,
@@ -62,28 +64,33 @@ def classify_evidence_tokens(
     *,
     live_retrieved_tokens: Iterable[str] | None = None,
     source_roots: Sequence[str | Path] | None = None,
+    reviewed_profile_tokens: Iterable[str] | None = None,
 ) -> list[EvidenceClassification]:
     """Classify a sequence of evidence tokens, preserving input order."""
 
     live_tokens = set(live_retrieved_tokens or [])
+    reviewed_profile_tokens = set(reviewed_profile_tokens or [])
     return [
         classify_evidence_token(
             token,
             live_retrieved_tokens=live_tokens,
             source_roots=source_roots,
+            reviewed_profile_tokens=reviewed_profile_tokens,
         )
         for token in tokens
     ]
 
 
-def _source_class(token: str, live_retrieved_tokens: set[str]) -> EvidenceSourceClass:
+def _source_class(
+    token: str, live_retrieved_tokens: set[str], reviewed: set[str]
+) -> EvidenceSourceClass:
     if token in live_retrieved_tokens:
         return "live_retrieved"
     prefix = _token_prefix(token)
     if prefix == "doc":
         return "document_index"
     if prefix in {"datasheet", "pdf", "public_profile", "reviewer_to_confirm"}:
-        return "reviewed_profile"
+        return "reviewed_profile" if token in reviewed else "profile_candidate"
     if prefix in {
         "sch",
         "bom",
@@ -166,6 +173,8 @@ def _reason(
         return "datasheet/pdf token points to a local PDF that is not present"
     if source_class == "live_retrieved":
         return "token came from this turn's search_datasheet retrieval trace"
+    if source_class == "profile_candidate":
+        return "profile source token has no effective field approval for this context"
     if source_class == "reviewed_profile":
         return "token came from reviewed profile or validator evidence, not this turn's retrieval"
     if source_class == "document_index":

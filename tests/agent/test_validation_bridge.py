@@ -24,6 +24,7 @@ from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.validation.voltage_facts import load_voltage_facts
+from tests.profile_review_fixtures import approve_for_algorithm
 
 
 def _mosfet_design():
@@ -32,11 +33,16 @@ def _mosfet_design():
     design = build_design_from_netlist(netlist)
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
     load_voltage_facts(Path("tests/fixtures/allegro/irf540n_dc_voltage_facts.json"), design)
+    design.components["Q1"].manufacturer = "SYNTHETIC-BRIDGE-MANUFACTURER"
     return design
 
 
 def _mosfet_profile() -> DatasheetProfile:
-    return DatasheetProfile.load(Path("data/datasheet_profiles/irf540n.json"))
+    profile = DatasheetProfile.load(Path("data/datasheet_profiles/irf540n.json"))
+    component = _mosfet_design().components["Q1"]
+    return approve_for_algorithm(
+        profile, manufacturer=component.manufacturer, packages=[component.package]
+    )
 
 
 # ─────────────────────────── pure tool function ────────────────────────────

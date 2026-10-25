@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from fastapi.testclient import TestClient
 import pytest
-from hardwise.workbench.context import build_workbench_context
+from tests.profile_review_fixtures import reviewed_context_for_algorithm
 from hardwise.workbench.server import create_workbench_app
 
 
@@ -18,7 +18,7 @@ class LocalOnlyChat:
 def test_actual_floating_supply_import(vb, result):
     root = Path("tests/fixtures/allegro")
     netlist, bom = root / "eg2132_gate_driver.net", root / "eg2132_gate_driver_bom.csv"
-    context = build_workbench_context(
+    context = reviewed_context_for_algorithm(
         netlist_path=netlist, bom_path=bom, profiles=Path("data/datasheet_profiles")
     )
     app = create_workbench_app(context, LocalOnlyChat(), auto_datasheet_candidates=False)
@@ -53,7 +53,7 @@ def test_actual_floating_supply_import(vb, result):
             c for c in detail["checks"] if c["summary"].startswith("VB−VS 已确认直流范围")
         )
         assert floating["assessment"]["result"] == result
-        assert floating["assessment"]["rule_version"] == "2"
+        assert floating["assessment"]["rule_version"] == "2.profile-review1"
         bootstrap = next(c for c in detail["checks"] if "本项自举功能未评估" in c["summary"])
         assert bootstrap["assessment"]["result"] == "UNKNOWN"
         assert client.post("/api/workbench/rerun").status_code == 200

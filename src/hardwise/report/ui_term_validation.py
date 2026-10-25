@@ -10,6 +10,10 @@ from hardwise.report.ui_term_data import GENERIC_PASSIVE_TERM_LABELS, VALIDATION
 def validation_summary_label(summary: str) -> str:
     """Return Chinese display text for common deterministic validation summaries."""
 
+    marker = "候选观察（不构成判定）："
+    if marker in summary:
+        prefix, observation = summary.split(marker, 1)
+        return prefix + marker + validation_summary_label(observation)
     if summary in VALIDATION_SUMMARY_LABELS:
         return VALIDATION_SUMMARY_LABELS[summary]
 

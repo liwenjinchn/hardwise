@@ -23,6 +23,7 @@ def test_classifies_reviewed_profile_when_not_from_live_retrieval(tmp_path: Path
 
     classified = classify_evidence_token(
         "datasheet:l78.pdf#p4",
+        reviewed_profile_tokens=["datasheet:l78.pdf#p4"],
         source_roots=[tmp_path],
     )
 
@@ -50,7 +51,7 @@ def test_flags_missing_local_pdf_as_audit_status(tmp_path: Path) -> None:
         source_roots=[tmp_path],
     )
 
-    assert classified.source_class == "reviewed_profile"
+    assert classified.source_class == "profile_candidate"
     assert classified.audit_status == "missing_local_source"
     assert classified.local_source is None
 

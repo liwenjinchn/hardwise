@@ -245,6 +245,8 @@ class BomView(BaseModel):
 class ProfileView(BaseModel):
     """Profile match metadata for one component."""
 
+    lifecycle: str | None = None
+    legacy_review_status: str | None = None
     status: str = ""
     reason: str = ""
     path: str | None = None

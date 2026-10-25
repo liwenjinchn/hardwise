@@ -108,8 +108,15 @@ def _validation_evidence(validation: ValidationReport | None) -> list[str]:
     ]
 
 
-def _evidence_views(tokens: list[str], trust_tier: TrustTier) -> list[EvidenceView]:
-    return [_evidence_view(item, trust_tier) for item in classify_evidence_tokens(_dedupe(tokens))]
+def _evidence_views(
+    tokens: list[str], trust_tier: TrustTier, reviewed_profile_tokens=()
+) -> list[EvidenceView]:
+    return [
+        _evidence_view(item, trust_tier)
+        for item in classify_evidence_tokens(
+            _dedupe(tokens), reviewed_profile_tokens=reviewed_profile_tokens
+        )
+    ]
 
 
 def _evidence_view(item: EvidenceClassification, trust_tier: TrustTier) -> EvidenceView:
@@ -128,6 +135,7 @@ def _source_label(item: EvidenceClassification) -> str:
     labels = {
         "live_retrieved": "本轮检索",
         "reviewed_profile": "已审档案",
+        "profile_candidate": "未批准档案来源",
         "document_index": "资料索引",
         "design_source": "设计来源",
         "unknown": "未知来源",

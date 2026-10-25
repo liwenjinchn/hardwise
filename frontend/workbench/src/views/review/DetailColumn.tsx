@@ -113,6 +113,11 @@ export function DetailColumn({
           <InfoCell label="档案状态" value={profileStatusLabel(detail.profile?.status || detail.match_status)} />
           <InfoCell label="原始任务" value={`${detail.task_counts.total} 条`} />
         </div>
+        {detail.profile?.path && <section className="scope-note" aria-label="档案批准状态">
+          <strong>有效生命周期：{detail.profile.lifecycle ?? "旧快照未记录，不能据此确认批准"}</strong>
+          <p>旧标签：{detail.profile.legacy_review_status ?? "未记录"}（不构成字段批准）。
+            {detail.profile.lifecycle !== "READY" && " 未批准的相关检查保持 UNKNOWN，原始值与历史保留。"}</p>
+        </section>}
         {detail.match_reason && <p className="scope-note">{formatSummary(detail.match_reason)}</p>}
         <BomQuantityWarnings conflicts={detail.bom?.quantity_column_conflict ? [detail.bom.quantity_column_conflict] : []} />
         <DocumentCoverageSection document={detail.document} />

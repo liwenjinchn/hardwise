@@ -1,12 +1,15 @@
 """Gate supply bounds and bootstrap observations have distinct proof scopes."""
 
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+from hardwise.validation.component import validate_component_against_profile
+
+
 from pathlib import Path
 import pytest
 from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.voltage import VoltageFact
-from hardwise.validation.component import validate_component_against_profile
 
 
 def _case():
@@ -32,13 +35,9 @@ def _fact(design, pin_number, bounds, reference="GND"):
     )
 
 
-def _checks(design, profile):
-    return {
-        c.check: c
-        for c in validate_component_against_profile(
-            design.components["U3"], profile, design
-        ).component_checks
-    }
+def _checks(design, profile, reviewed=True):
+    validate = validate_with_synthetic_approval if reviewed else validate_component_against_profile
+    return {c.check: c for c in validate(design.components["U3"], profile, design).component_checks}
 
 
 def test_gate_supply_name_is_not_confirmed():
@@ -59,7 +58,11 @@ def test_gate_supply_uses_confirmed_range(bounds, result, severity):
     design, profile = _case()
     _fact(design, "1", bounds)
     check = _checks(design, profile)["gate_driver_vcc"]
-    assert (check.result, check.severity, check.rule_version) == (result, severity, "2")
+    assert (check.result, check.severity, check.rule_version) == (
+        result,
+        severity,
+        "2.profile-review1",
+    )
 
 
 @pytest.mark.parametrize("vb,vs,result", [(36, 24, "PASS"), (60, 24, "FAIL"), (24, 36, "UNKNOWN")])
@@ -70,7 +73,7 @@ def test_floating_supply_is_measured_between_actual_pins(vb, vs, result):
     check = _checks(design, profile)["gate_driver_vb_vs_voltage"]
     assert check.result == result
     assert f"[{vb - vs:g}, {vb - vs:g}] V" in check.summary
-    assert check.rule_version == "2"
+    assert check.rule_version == "2.profile-review1"
 
 
 def test_crossing_floating_supply_boundary_is_unknown():
@@ -117,4 +120,9 @@ def test_incomplete_floating_supply_cannot_pass(condition):
         design.voltage_facts.facts[0] = design.voltage_facts.facts[0].model_copy(
             update=changes[condition]
         )
-    assert _checks(design, profile)["gate_driver_vb_vs_voltage"].result == "UNKNOWN"
+    assert (
+        _checks(design, profile, reviewed=condition != "invalid_limit")[
+            "gate_driver_vb_vs_voltage"
+        ].result
+        == "UNKNOWN"
+    )

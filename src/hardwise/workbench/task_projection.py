@@ -106,8 +106,16 @@ def _link_derived_tasks(tasks: list[ReviewTask]) -> list[ReviewTask]:
     linked: list[ReviewTask] = []
     for task in tasks:
         root = None
+        profile_root = by_refdes_check.get((task.refdes, "profile_review_status"))
         root_check = derived_to_root.get(task.check or "")
-        if root_check:
+        if (
+            profile_root is not None
+            and task.id != profile_root.id
+            and task.assessment is not None
+            and task.assessment.rule_version.endswith(".profile-review1")
+        ):
+            root = profile_root
+        elif root_check:
             root = by_refdes_check.get((task.refdes, root_check))
         elif task.check == "diode_reverse_voltage":
             candidate = error_by_subject.get(task.refdes)
@@ -125,7 +133,7 @@ def _component_check_tasks(
     for check in validation.component_checks:
         if check.status in {"PASS", "NOT_APPLICABLE"}:
             continue
-        evidence = _evidence_views(check.evidence, "l1")
+        evidence = _evidence_views(check.evidence, "l1", validation.reviewed_profile_tokens)
         tasks.append(
             _task(
                 refdes=row.refdes,
@@ -180,7 +188,7 @@ def _pin_check_tasks(row: ProjectValidationRow, validation: ValidationReport) ->
     for pin in validation.pin_results:
         if pin.status in {"PASS", "NOT_APPLICABLE"}:
             continue
-        evidence = _evidence_views(pin.evidence, "l1")
+        evidence = _evidence_views(pin.evidence, "l1", validation.reviewed_profile_tokens)
         title = f"引脚 {pin.pin_number} · {validation_summary_label(pin.summary)}"
         tasks.append(
             _task(
@@ -349,7 +357,9 @@ def _pin_table_task(finding: Finding) -> ReviewTask:
 
 
 def _cleared_task(row: ProjectValidationRow, validation: ValidationReport) -> ReviewTask:
-    evidence = _evidence_views(_validation_evidence(validation), "l1")
+    evidence = _evidence_views(
+        _validation_evidence(validation), "l1", validation.reviewed_profile_tokens
+    )
     return _task(
         refdes=row.refdes,
         kind="cleared_summary",

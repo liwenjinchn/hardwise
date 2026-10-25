@@ -1,9 +1,13 @@
+
 """Tests for IRF540N N-channel MOSFET validation.
 
 The load-bearing cases are the high-side ones: they prove Vgs is measured
 gate-to-source, not gate-to-ground. The old validator measured the gate
 against ground and would false-ERROR a healthy bootstrapped high-side gate.
 """
+
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+
 
 from pathlib import Path
 
@@ -13,7 +17,6 @@ from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
-from hardwise.validation.component import validate_component_against_profile
 from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
@@ -47,7 +50,7 @@ def highside_design():
 def test_lowside_nominal_all_pass(mosfet_profile, lowside_design):
     """Low-side FET: Vgs = 10V - 0V = 10V, Vds = 48V - 0V = 48V. All pass."""
     component = lowside_design.components["Q1"]
-    results = validate_component_against_profile(component, mosfet_profile, lowside_design)
+    results = validate_with_synthetic_approval(component, mosfet_profile, lowside_design)
 
     assert results.status == "PASS"
     check_names = {c.check for c in results.component_checks}
@@ -74,7 +77,7 @@ def test_highside_vgs_uses_source_reference(mosfet_profile, highside_design):
     _confirm(highside_design, {"BST_GATE": 58.0})
     _confirm(highside_design, {"+48V": 48.0})
     component = highside_design.components["Q1"]
-    results = validate_component_against_profile(component, mosfet_profile, highside_design)
+    results = validate_with_synthetic_approval(component, mosfet_profile, highside_design)
 
     vgs = next(c for c in results.component_checks if c.check == "mosfet_vgs_rating")
     assert vgs.status == "PASS"
@@ -91,7 +94,7 @@ def test_highside_floating_source_warns_not_errors(mosfet_profile, highside_desi
     ground and emit a false reading.
     """
     component = highside_design.components["Q1"]
-    results = validate_component_against_profile(component, mosfet_profile, highside_design)
+    results = validate_with_synthetic_approval(component, mosfet_profile, highside_design)
 
     vgs = next(c for c in results.component_checks if c.check == "mosfet_vgs_rating")
     assert vgs.status == "UNKNOWN"
@@ -103,7 +106,7 @@ def test_vgs_overvoltage_errors(mosfet_profile, highside_design):
     _confirm(highside_design, {"SW": 0.0})
     _confirm(highside_design, {"BST_GATE": 30.0})
     component = highside_design.components["Q1"]
-    results = validate_component_against_profile(component, mosfet_profile, highside_design)
+    results = validate_with_synthetic_approval(component, mosfet_profile, highside_design)
 
     assert results.status == "ERROR"
     vgs = next(c for c in results.component_checks if c.check == "mosfet_vgs_rating")
@@ -117,7 +120,7 @@ def test_negative_vds_magnitude_over_abs_max_errors(mosfet_profile, highside_des
     _confirm(highside_design, {"SW": 150.0})
     _confirm(highside_design, {"BST_GATE": 160.0})
     component = highside_design.components["Q1"]
-    results = validate_component_against_profile(component, mosfet_profile, highside_design)
+    results = validate_with_synthetic_approval(component, mosfet_profile, highside_design)
 
     vgs = next(c for c in results.component_checks if c.check == "mosfet_vgs_rating")
     vds = next(c for c in results.component_checks if c.check == "mosfet_vds_rating")
@@ -132,7 +135,7 @@ def test_routes_by_family_without_mpn_fallback(mosfet_profile, lowside_design):
     """Family dispatch must not depend on the profile part number."""
     component = lowside_design.components["Q1"]
     profile = mosfet_profile.model_copy(update={"part_number": "GENERIC_NFET"})
-    results = validate_component_against_profile(component, profile, lowside_design)
+    results = validate_with_synthetic_approval(component, profile, lowside_design)
 
     check_names = {c.check for c in results.component_checks}
     assert "mosfet_vgs_rating" in check_names
@@ -161,7 +164,7 @@ R_LOAD,100R,0805,Load resistor
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
     component = design.components["Q1"]
-    results = validate_component_against_profile(component, mosfet_profile, design)
+    results = validate_with_synthetic_approval(component, mosfet_profile, design)
 
     assert results.status == "ERROR"
     gate = next(c for c in results.component_checks if c.check == "mosfet_gate_connectivity")
@@ -203,7 +206,7 @@ Q1,1,LN2312LT1G,LRC,LN2312LT1G
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
     _confirm(design, {"P3V3": 3.3, "P12V": 12.0, "GND": 0.0})
-    results = validate_component_against_profile(design.components["Q1"], profile, design)
+    results = validate_with_synthetic_approval(design.components["Q1"], profile, design)
 
     assert results.status == "PASS"
     assert {check.check for check in results.component_checks} == {
@@ -223,7 +226,7 @@ def test_ln2312lt1g_validation_resolves_schematic_pin_aliases() -> None:
     )
 
     _confirm(design, {"P3V3_GATE": 3.3, "P12V": 12.0, "GND": 0.0})
-    results = validate_component_against_profile(design.components["Q9"], profile, design)
+    results = validate_with_synthetic_approval(design.components["Q9"], profile, design)
 
     assert results.status == "PASS"
     assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in results.pin_results] == [
@@ -276,7 +279,7 @@ Q1,1,L2N7002KLT1G,LRC,L2N7002KLT1G
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
     _confirm(design, {"P3V3": 3.3, "P12V": 12.0, "GND": 0.0})
-    results = validate_component_against_profile(design.components["Q1"], profile, design)
+    results = validate_with_synthetic_approval(design.components["Q1"], profile, design)
 
     assert results.status == "PASS"
     assert {check.check for check in results.component_checks} == {
@@ -344,7 +347,7 @@ Q13,1,PE537BA,NIKO-SEM,PE537BA
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
     _confirm(design, {"P3V3": 3.3, "P12V": 12.0})
-    results = validate_component_against_profile(design.components["Q13"], profile, design)
+    results = validate_with_synthetic_approval(design.components["Q13"], profile, design)
 
     assert results.status == "UNKNOWN"
     assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in results.pin_results] == [
@@ -388,8 +391,8 @@ def test_jmtk3005a_controller_stage_uses_existing_mosfet_rules() -> None:
         "mixed_controller_power_stage_bom.csv",
     )
 
-    q1_results = validate_component_against_profile(design.components["Q1"], profile, design)
-    q2_results = validate_component_against_profile(design.components["Q2"], profile, design)
+    q1_results = validate_with_synthetic_approval(design.components["Q1"], profile, design)
+    q2_results = validate_with_synthetic_approval(design.components["Q2"], profile, design)
 
     assert q1_results.status == "UNKNOWN"
     assert q2_results.status == "UNKNOWN"

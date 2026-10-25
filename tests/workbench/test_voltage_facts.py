@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 import pytest
 
-from hardwise.workbench.context import build_workbench_context
+from tests.profile_review_fixtures import reviewed_context_for_algorithm
 from hardwise.workbench.server import create_workbench_app
 
 NETLIST = """$PACKAGES
@@ -48,7 +48,7 @@ def _app(tmp_path):
     netlist, bom = tmp_path / "input.net", tmp_path / "bom.csv"
     netlist.write_text(NETLIST)
     bom.write_text(BOM)
-    context = build_workbench_context(
+    context = reviewed_context_for_algorithm(
         netlist_path=netlist, bom_path=bom, profiles=Path("data/datasheet_profiles")
     )
     return create_workbench_app(context, LocalOnlyChat(), auto_datasheet_candidates=False)
@@ -109,10 +109,21 @@ def test_invalid_foreign_facts_do_not_replace_active_project(tmp_path):
 @pytest.mark.parametrize(
     "gate, expected", [((58, 58), "PASS"), ((78, 78), "ERROR"), ((67, 69), "UNKNOWN")]
 )
-def test_transistor_facts_import_rerun_and_export(gate, expected):
+def test_transistor_facts_import_rerun_and_export(gate, expected, tmp_path):
     root = Path("tests/fixtures/allegro")
-    netlist, bom = root / "irf540n_highside.net", root / "irf540n_highside_bom.csv"
-    context = build_workbench_context(
+    netlist = root / "irf540n_highside.net"
+    # Explicit fictional manufacturer is part of the trusted algorithm fixture and upload.
+    import csv
+    import io
+
+    rows = list(csv.DictReader((root / "irf540n_highside_bom.csv").read_text().splitlines()))
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=[*rows[0], "Manufacturer"])
+    writer.writeheader()
+    writer.writerows([{**row, "Manufacturer": "SYNTHETIC-API-MANUFACTURER"} for row in rows])
+    bom = tmp_path / "synthetic-reviewed-bom.csv"
+    bom.write_text(buffer.getvalue())
+    context = reviewed_context_for_algorithm(
         netlist_path=netlist, bom_path=bom, profiles=Path("data/datasheet_profiles")
     )
     app = create_workbench_app(context, LocalOnlyChat(), auto_datasheet_candidates=False)
@@ -133,7 +144,7 @@ def test_transistor_facts_import_rerun_and_export(gate, expected):
         detail = client.get("/api/workbench/components/Q1").json()
         check = next(c for c in detail["checks"] if c["summary"].startswith("Vgs "))
         assert check["status"] == expected
-        assert check["assessment"]["rule_version"] == "2"
+        assert check["assessment"]["rule_version"] == "2.profile-review1"
         assert len([e for e in check["evidence"] if e["token"].startswith("voltage_fact:")]) == 2
         assert client.post("/api/workbench/rerun").status_code == 200
         rerun = client.get("/api/workbench/components/Q1").json()
@@ -147,7 +158,7 @@ def test_transistor_facts_import_rerun_and_export(gate, expected):
 )
 def test_diode_tvs_led_import_rerun_and_export(cathode, expected):
     root = Path("tests/fixtures/allegro/diode_dc")
-    context = build_workbench_context(
+    context = reviewed_context_for_algorithm(
         netlist_path=root / "input.net",
         bom_path=root / "bom.csv",
         profiles=Path("data/datasheet_profiles"),
@@ -175,7 +186,7 @@ def test_diode_tvs_led_import_rerun_and_export(cathode, expected):
             c for c in details["D1"]["checks"] if c["summary"].startswith("二极管反向电压 ")
         )
         assert reverse["status"] == expected
-        assert reverse["assessment"]["rule_version"] == "2"
+        assert reverse["assessment"]["rule_version"] == "2.profile-review1"
         standoff = next(
             c for c in details["D2"]["checks"] if c["summary"].startswith("TVS 两端工作电压 ")
         )
@@ -198,7 +209,7 @@ def test_diode_tvs_led_import_rerun_and_export(cathode, expected):
 )
 def test_generic_pin_bounds_import_rerun_export_without_nominal_signoff(vin, expected):
     root = Path("tests/fixtures/allegro")
-    context = build_workbench_context(
+    context = reviewed_context_for_algorithm(
         netlist_path=root / "l78_regulator.net",
         bom_path=root / "l78_regulator_bom.csv",
         profiles=Path("data/datasheet_profiles"),
@@ -221,7 +232,7 @@ def test_generic_pin_bounds_import_rerun_export_without_nominal_signoff(vin, exp
         detail = client.get("/api/workbench/components/U1").json()
         pins = {p["number"]: p for p in detail["pins"]}
         assert pins["1"]["status"] == expected
-        assert pins["1"]["assessment"]["rule_version"] == "2"
+        assert pins["1"]["assessment"]["rule_version"] == "2.profile-review1"
         assert pins["3"]["status"] == "UNKNOWN"  # a typical output value is not a tolerance
         assert "不使用固定 ±0.2 V" in pins["3"]["summary"]
         assert client.post("/api/workbench/rerun").status_code == 200

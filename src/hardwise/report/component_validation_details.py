@@ -40,6 +40,8 @@ class PinConsistency:
     def note(self) -> str:
         if self.status == "PASS":
             return "器件档案引脚与原理图引脚在当前检验范围内一致。"
+        if self.status == "UNKNOWN":
+            return "候选引脚对照，未获适用的字段批准；数量相同不构成通过。"
         details: list[str] = []
         if self.missing_schematic:
             details.append(f"原理图缺少引脚：{', '.join(self.missing_schematic)}")
@@ -55,9 +57,11 @@ def build_pin_consistency(
 ) -> PinConsistency:
     """Compare profile/report pins with parsed schematic pins without changing verdicts."""
 
-    profile_numbers = {pin.number for pin in profile.pins} if profile is not None else {
-        pin.pin_number for pin in report.pin_results
-    }
+    profile_numbers = (
+        {pin.number for pin in profile.pins}
+        if profile is not None
+        else {pin.pin_number for pin in report.pin_results}
+    )
     schematic_numbers = {pin.number for pin in component.pins}
     if profile is not None:
         resolved_schematic = {
@@ -81,6 +85,11 @@ def build_pin_consistency(
         missing = tuple(sorted(profile_numbers - schematic_numbers, key=_pin_sort_key))
         extra = tuple(sorted(schematic_numbers - profile_numbers, key=_pin_sort_key))
     status = "PASS" if not missing and not extra else "WARN"
+    if not report.profile_part_number.startswith("GENERIC_") and (
+        report.profile_lifecycle != "READY"
+        or any(c.check == "profile_review_status" for c in report.component_checks)
+    ):
+        status = "UNKNOWN"
     return PinConsistency(
         status=status,
         profile_pin_count=len(profile_numbers),
@@ -146,7 +155,9 @@ def trust_label_html(tier: TrustTier) -> str:
     return f'<span class="trust trust-{tier}" title="{escape(label)}">{escape(display)}</span>'
 
 
-def evidence_chips_html(tokens: list[str], *, refdes: str | None = None) -> str:
+def evidence_chips_html(
+    tokens: list[str], *, refdes: str | None = None, reviewed_profile_tokens=()
+) -> str:
     """Render copyable/searchable source tokens as compact HTML chips."""
 
     if not tokens:
@@ -155,7 +166,9 @@ def evidence_chips_html(tokens: list[str], *, refdes: str | None = None) -> str:
     for token in tokens:
         source = token.split(":", 1)[0] if ":" in token else "source"
         href = _evidence_href(token, refdes=refdes)
-        classification = classify_evidence_token(token)
+        classification = classify_evidence_token(
+            token, reviewed_profile_tokens=reviewed_profile_tokens
+        )
         label = _evidence_source_label(classification)
         title = _evidence_title(token, classification)
         local_source_attr = (
@@ -175,10 +188,12 @@ def evidence_chips_html(tokens: list[str], *, refdes: str | None = None) -> str:
     return " ".join(chips)
 
 
-def evidence_source_label(token: str) -> str:
+def evidence_source_label(token: str, reviewed_profile_tokens=()) -> str:
     """Return the display source class for one evidence token."""
 
-    return _evidence_source_label(classify_evidence_token(token))
+    return _evidence_source_label(
+        classify_evidence_token(token, reviewed_profile_tokens=reviewed_profile_tokens)
+    )
 
 
 def _evidence_source_label(classification: EvidenceClassification) -> str:

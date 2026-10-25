@@ -356,6 +356,7 @@ def _source_label(source_class: str, audit_status: str) -> str:
     labels = {
         "live_retrieved": "本轮检索",
         "reviewed_profile": "已审档案",
+        "profile_candidate": "未批准档案来源",
         "document_index": "资料索引",
         "design_source": "设计来源",
         "unknown": "未知来源",

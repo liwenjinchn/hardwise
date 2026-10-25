@@ -38,6 +38,11 @@ LOCAL_RULES = {
 }
 
 
+# Same audited electrical/control inputs, now additionally gated by the complete
+# profile review content already present in the profile dependency snapshot.
+LOCAL_RULES |= {(name, version + ".profile-review1") for name, version in LOCAL_RULES}
+
+
 def _digest(value) -> str:
     return hashlib.sha256(
         json.dumps(
@@ -86,11 +91,14 @@ def _electrical_component(component):
 
 
 def _profile(profile):
-    return (
-        profile.model_dump(mode="json", exclude={"extracted_at", "extracted_model", "description"})
-        if profile
-        else None
+    if profile is None:
+        return None
+    # Preserve the complete dependency semantics without repeating a potentially
+    # large field-review ledger in every task's canonical JSON payload.
+    value = profile.model_dump(
+        mode="json", exclude={"extracted_at", "extracted_model", "description"}
     )
+    return {"contract": "hardwise.profile_dependency.v1", "sha256": _digest(value)}
 
 
 def review_fingerprints(context, tasks) -> dict[str, str]:
@@ -140,9 +148,10 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
         component = design.components.get(task.refdes)
         check = task.check or ""
         version = task.assessment.rule_version if task.assessment else None
-        local = (task.kind == "pin_check" and version in {"1", "2"}) or (
-            task.kind == "component_check" and (check, version) in LOCAL_RULES
-        )
+        local = (
+            task.kind == "pin_check"
+            and version in {"1", "2", "1.profile-review1", "2.profile-review1"}
+        ) or (task.kind == "component_check" and (check, version) in LOCAL_RULES)
         if local and component:
             payload = {
                 "scope": "component",

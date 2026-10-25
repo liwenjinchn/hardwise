@@ -47,13 +47,13 @@ def test_render_component_validation_markdown() -> None:
     assert "# Hardwise 器件验证报告 - U1" in md
     assert "| 可信度 | L1 deterministic |" in md
     assert "| 综合判定 | UNKNOWN |" in md
-    assert "| 引脚 PASS/WARN/ERROR | 1 / 0 / 0 |" in md
+    assert "| 引脚 PASS/WARN/ERROR | 0 / 0 / 0 |" in md
     assert "单器件原理图引脚与外围/拓扑验证" in md
     assert "不解析 PCB layout、boardview/板图" in md
     assert "### 引脚一致性" in md
-    assert "| 引脚数量 | 3 | 3 | PASS |" in md
+    assert "| 引脚数量 | 3 | 3 | UNKNOWN |" in md
     assert "## 5. 证据详情" in md
-    assert "| 绝对最大额定 | 结温 | 125 | `datasheet:l78.pdf#p4` (reviewed_profile" in md
+    assert "| 绝对最大额定 | 结温 | 125 | `datasheet:l78.pdf#p4` (profile_candidate" in md
     assert "missing_local_source" in md
     assert "`doc:docs.csv#line2` (document_index)" in md
     assert "### 器件档案证据账本" in md

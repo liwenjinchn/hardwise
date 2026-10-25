@@ -11,7 +11,7 @@ from hardwise.agent.evidence_locator import (
 )
 from hardwise.agent.router import ModelRouter
 from hardwise.agent.runner import Runner
-from hardwise.workbench.context import build_workbench_context
+from tests.profile_review_fixtures import reviewed_context_for_algorithm
 from tests.agent.test_runner import FakeAnthropic, FakeResponse, FakeTextBlock, FakeToolUseBlock
 
 
@@ -32,7 +32,7 @@ def _write_docs(path: Path) -> Path:
 
 
 def _context(document_index: Path | None = None):
-    return build_workbench_context(
+    return reviewed_context_for_algorithm(
         netlist_path=Path("tests/fixtures/allegro/mixed_controller_power_stage.net"),
         bom_path=Path("tests/fixtures/allegro/mixed_controller_power_stage_bom.csv"),
         profiles=Path("data/datasheet_profiles"),
@@ -78,9 +78,9 @@ def test_locate_component_evidence_finds_enable_pin_without_vector_search() -> N
             LocateComponentEvidenceInput(refdes="U12", topic="enable", limit=8),
         )
 
-        assert result.status == "no_profile"
-        assert result.hits == []
-        assert "U12" not in context.validation_targets
+        assert result.status == "unreviewed_profile"
+        assert result.found is False and result.hits == []
+        assert context.validation_targets["U12"].lifecycle == "DRAFT"
     finally:
         context.session.close()
 

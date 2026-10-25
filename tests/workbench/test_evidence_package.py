@@ -43,9 +43,9 @@ def test_evidence_package_keeps_six_coverage_lanes_separate(tmp_path: Path) -> N
         assert _metric(lanes["netlist"], "components") == (25, None, "components")
         assert _metric(lanes["bom"], "matched_refdes") == (25, 25, "refdes")
         assert lanes["bom"].status == "present"
-        assert _metric(lanes["validation"], "ready_profiles") == (8, 25, "components")
+        assert _metric(lanes["validation"], "ready_profiles") == (0, 25, "components")
         assert _metric(lanes["validation"], "validated_components") == (
-            21,
+            22,
             25,
             "components",
         )
@@ -60,7 +60,7 @@ def test_evidence_package_keeps_six_coverage_lanes_separate(tmp_path: Path) -> N
         } == {
             "netlist": "design_source",
             "bom": "design_source",
-            "validation": "reviewed_profile",
+            "validation": "profile_candidate",
             "documents": "document_index",
             "pin_table": "design_source",
             "review_package": "design_source",
@@ -68,12 +68,12 @@ def test_evidence_package_keeps_six_coverage_lanes_separate(tmp_path: Path) -> N
         assert state.summary.model_dump() == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 21,
-            "manual": 4,
+            "validated": 22,
+            "manual": 3,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 2,
-            "unknown_count": 19,
+            "error_count": 0,
+            "unknown_count": 22,
             "not_applicable_count": 0,
         }
 
@@ -152,7 +152,7 @@ def test_profile_coverage_ignores_bom_only_refdes(tmp_path: Path) -> None:
                 datasheet_search_enabled=False,
             ).evidence_package.lanes
         }
-        assert _metric(lanes["validation"], "ready_profiles") == (8, 25, "components")
+        assert _metric(lanes["validation"], "ready_profiles") == (0, 25, "components")
         assert _metric(lanes["bom"], "bom_only_refdes") == (1, None, "refdes")
         assert _metric(lanes["bom"], "quantity_mismatches") == (
             0,
@@ -226,13 +226,13 @@ def test_three_source_pilot_reduces_but_does_not_clear_signoff_gate(
 
         assert (before.status, before.affected_tasks, before.missing_local_sources) == (
             "blocked",
+            82,
             24,
-            14,
         )
         assert (after.status, after.affected_tasks, after.missing_local_sources) == (
             "blocked",
-            12,
-            7,
+            37,
+            8,
         )
     finally:
         close_workbench_context(pilot_context)

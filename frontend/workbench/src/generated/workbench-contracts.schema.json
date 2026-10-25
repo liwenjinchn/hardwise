@@ -1347,6 +1347,7 @@
           "enum": [
             "live_retrieved",
             "reviewed_profile",
+            "profile_candidate",
             "document_index",
             "design_source",
             "unknown"
@@ -2242,6 +2243,30 @@
     "ProfileView": {
       "description": "Profile match metadata for one component.",
       "properties": {
+        "legacy_review_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Legacy Review Status"
+        },
+        "lifecycle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lifecycle"
+        },
         "part_number": {
           "default": "",
           "title": "Part Number",
@@ -2271,6 +2296,8 @@
         }
       },
       "required": [
+        "legacy_review_status",
+        "lifecycle",
         "part_number",
         "path",
         "reason",

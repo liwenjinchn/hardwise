@@ -186,6 +186,9 @@ class WorkbenchChatService:
             evidence_classification=classify_evidence_tokens(
                 evidence,
                 live_retrieved_tokens=live_tokens,
+                reviewed_profile_tokens=row.validation.reviewed_profile_tokens
+                if row is not None and row.validation is not None
+                else [],
             ),
             wrapped=trace.wrapped,
             trust_tier=trust_tier,

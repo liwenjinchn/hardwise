@@ -78,6 +78,8 @@ test("queue clicks on Q12 / U8 / U12 update detail and evidence columns", async 
   await openReview(page);
   for (const refdes of ["Q12", "U8", "U12"]) {
     await pickComponent(page, refdes);
+    await expect(page.getByLabel("档案批准状态")).toContainText("DRAFT");
+    await expect(page.getByLabel("档案批准状态")).toContainText("UNKNOWN");
   }
 });
 
@@ -358,6 +360,12 @@ test("control review survives distant BOM changes and reopens for a direct branc
     await expect.poll(async () => (await state()).review_decisions.run_id).not.toBe(previous);
     return state();
   };
+  const scopedHistory = async () => {
+    const response = await request.get("/api/workbench/review-decisions/history?limit=1000");
+    expect(response.ok()).toBeTruthy();
+    return (await response.json()).events.filter((event: { stable_key: string }) => event.stable_key === task.stable_key);
+  };
+  const originalHistory = await scopedHistory();
   const lines = original.trimEnd().split("\n");
   const administrative = [lines[0], ...lines.slice(1).reverse()].join("\n") + "\n";
   const quantities = administrative.replace("U1,1,", "U1,7,").replace("RCE1,1,", "RCE1,7,");
@@ -366,14 +374,15 @@ test("control review survives distant BOM changes and reopens for a direct branc
   const preserved = metadataOnly.review_tasks.find((item: { stable_key: string }) => item.stable_key === task.stable_key);
   expect(preserved.assessment).toEqual(task.assessment);
   expect(preserved.review_decision.status).toBe("accepted_risk");
-  expect(metadataOnly.review_decisions.history_count).toBe(reviewed.review_decisions.history_count);
-  await expect(row).toContainText("评审 接受风险");
+  expect(await scopedHistory()).toEqual(originalHistory);
+  // The DRAFT approval guard remains conservative; its distinct decision may reopen.
+  expect(metadataOnly.review_tasks.some((item: { check: string; review_decision: { status: string } }) =>
+    item.check === "profile_review_status" && item.review_decision.status === "needs_review")).toBeTruthy();
   const distant = quantities.replace("RCLK3,1,33R,", "RCLK3,1,47R,");
   expect(distant).not.toBe(quantities);
   const kept = await rerun(distant, metadataOnly.review_decisions.run_id);
   expect(kept.review_tasks.find((item: { stable_key: string }) => item.stable_key === task.stable_key).review_decision.status).toBe("accepted_risk");
-  expect(kept.review_decisions.history_count).toBe(reviewed.review_decisions.history_count);
-  await expect(row).toContainText("评审 接受风险");
+  expect(await scopedHistory()).toEqual(originalHistory);
   const branch = distant.replace("RCE1,7,33R,", "RCE1,7,22K,");
   const changed = await rerun(branch, kept.review_decisions.run_id);
   const current = changed.review_tasks.find((item: { stable_key: string }) => item.stable_key === task.stable_key);

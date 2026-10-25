@@ -1,5 +1,8 @@
 """Tests for SS34 Schottky diode validation."""
 
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+
+
 from pathlib import Path
 
 import pytest
@@ -8,7 +11,6 @@ from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
-from hardwise.validation.component import validate_component_against_profile
 from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
@@ -89,7 +91,7 @@ def diode_design():
 def test_ss34_nominal_all_pass(diode_profile, diode_design):
     """Nominal diode: cathode to +12V, anode to output."""
     component = diode_design.components["D1"]
-    results = validate_component_against_profile(component, diode_profile, diode_design)
+    results = validate_with_synthetic_approval(component, diode_profile, diode_design)
 
     assert results.status == "PASS"
     assert results.counts_by_status == {
@@ -119,7 +121,16 @@ def test_ss34_routes_by_family_without_mpn_fallback(diode_profile, diode_design)
     component = diode_design.components["D1"]
     profile = diode_profile.model_copy(update={"part_number": "GENERIC_DIODE"})
 
-    results = validate_component_against_profile(component, profile, diode_design)
+    from hardwise.validation.component import _validate_component_topology
+    from hardwise.validation.types import ValidationReport
+
+    # Pure dispatcher test; the public identity/approval boundary is tested separately.
+    results = ValidationReport(
+        refdes=component.refdes,
+        component_value=component.value,
+        profile_part_number=profile.part_number,
+        component_checks=_validate_component_topology(component, profile, diode_design),
+    )
 
     assert results.component_counts_by_status == {
         "PASS": 3,
@@ -175,7 +186,7 @@ D21,1,BAS316,Nexperia,BAS316
     )
 
     _confirm(design, {"GND": 0, "+12V": 12})
-    results = validate_component_against_profile(design.components["D21"], bas316_profile, design)
+    results = validate_with_synthetic_approval(design.components["D21"], bas316_profile, design)
 
     assert results.status == "PASS"
     assert results.counts_by_status == {
@@ -214,7 +225,7 @@ D21,1,BAS316,Nexperia,BAS316
     )
 
     _confirm(design, {"GND": 0, "+120V": 120})
-    results = validate_component_against_profile(design.components["D21"], bas316_profile, design)
+    results = validate_with_synthetic_approval(design.components["D21"], bas316_profile, design)
 
     reverse = next(
         check for check in results.component_checks if check.check == "diode_reverse_voltage"
@@ -252,7 +263,7 @@ D26,1,1.5SMC15A,Littelfuse,1.5SMC15A
     )
 
     _confirm(design, {"GND": 0, "+12V": 12})
-    results = validate_component_against_profile(design.components["D26"], smc15a_profile, design)
+    results = validate_with_synthetic_approval(design.components["D26"], smc15a_profile, design)
 
     assert results.status == "PASS"
     reverse = next(
@@ -289,7 +300,7 @@ D27,1,SM340AF SMA-FL,LRC,SM340AF SMA-FL
     )
 
     _confirm(design, {"GND": 0, "+12V": 12})
-    results = validate_component_against_profile(design.components["D27"], sm340af_profile, design)
+    results = validate_with_synthetic_approval(design.components["D27"], sm340af_profile, design)
 
     assert results.status == "PASS"
     reverse = next(
@@ -326,7 +337,7 @@ D36,1,SD103AWS-7-F,Diodes Inc,SD103AWS-7-F
     )
 
     _confirm(design, {"GND": 0, "+12V": 12})
-    results = validate_component_against_profile(design.components["D36"], sd103aws_profile, design)
+    results = validate_with_synthetic_approval(design.components["D36"], sd103aws_profile, design)
 
     assert results.status == "PASS"
     reverse = next(
@@ -378,7 +389,7 @@ def test_mixed_controller_diode_profiles_warn_without_topology_claim(
     }
 
     for refdes, profile in profiles.items():
-        results = validate_component_against_profile(
+        results = validate_with_synthetic_approval(
             controller_power_stage_design.components[refdes],
             profile,
             controller_power_stage_design,
@@ -427,7 +438,7 @@ D20,1,SMBJ24CA,Littelfuse,SMBJ24CA
     )
 
     _confirm(design, {"GND": 0, "+24V": 24})
-    results = validate_component_against_profile(design.components["D20"], tvs_profile, design)
+    results = validate_with_synthetic_approval(design.components["D20"], tvs_profile, design)
 
     assert results.status == "PASS"
     assert results.counts_by_status == {
@@ -468,7 +479,7 @@ D20,1,SMBJ24CA,Littelfuse,SMBJ24CA
     )
 
     _confirm(design, {"GND": 0, "+36V": 36})
-    results = validate_component_against_profile(design.components["D20"], tvs_profile, design)
+    results = validate_with_synthetic_approval(design.components["D20"], tvs_profile, design)
 
     standoff = next(
         check for check in results.component_checks if check.check == "tvs_working_standoff"
@@ -497,7 +508,7 @@ RLED,1,330,Fixture,RES-330
     )
 
     _confirm(design, {"GND": 0, "+3V3": 3.3, "GND_LED": 1.1})
-    results = validate_component_against_profile(design.components["D10"], led_profile, design)
+    results = validate_with_synthetic_approval(design.components["D10"], led_profile, design)
 
     assert results.status == "UNKNOWN"
     assert results.counts_by_status == {
@@ -537,7 +548,7 @@ D10,1,LTST-C190KGKT,Lite-On,LTST-C190KGKT
     )
 
     _confirm(design, {"GND": 0, "+3V3": 3.3})
-    results = validate_component_against_profile(design.components["D10"], led_profile, design)
+    results = validate_with_synthetic_approval(design.components["D10"], led_profile, design)
 
     assert results.status == "UNKNOWN"
     check = next(check for check in results.component_checks if check.check == "led_current_limit")
@@ -564,7 +575,7 @@ RLED,1,330,Fixture,RES-330
     )
 
     _confirm(design, {"GND": 0, "+3V3": 3.3, "+3V3_LED": 3.3})
-    results = validate_component_against_profile(design.components["D10"], led_profile, design)
+    results = validate_with_synthetic_approval(design.components["D10"], led_profile, design)
 
     assert results.status == "UNKNOWN"
     checks = {check.check: check for check in results.component_checks}
@@ -592,7 +603,7 @@ RPU,1,10K,Fixture,RES-10K
     )
 
     _confirm(design, {"GND": 0, "+3V3": 3.3})
-    results = validate_component_against_profile(design.components["D10"], led_profile, design)
+    results = validate_with_synthetic_approval(design.components["D10"], led_profile, design)
 
     checks = {check.check: check for check in results.component_checks}
     assert checks["led_indicator_polarity"].status == "PASS"
@@ -618,7 +629,7 @@ RLED,1,330,Fixture,RES-330
 """,
     )
 
-    results = validate_component_against_profile(design.components["D10"], led_profile, design)
+    results = validate_with_synthetic_approval(design.components["D10"], led_profile, design)
 
     check = next(check for check in results.component_checks if check.check == "led_current_limit")
     assert check.status == "UNKNOWN"
@@ -651,7 +662,7 @@ R_LOAD,100R,0805,Load resistor
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
     component = design.components["D1"]
-    results = validate_component_against_profile(component, diode_profile, design)
+    results = validate_with_synthetic_approval(component, diode_profile, design)
 
     assert results.status == "ERROR"
     cathode_checks = [
@@ -688,7 +699,7 @@ R_LOAD,100R,0805,Load resistor
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
     component = design.components["D1"]
-    results = validate_component_against_profile(component, diode_profile, design)
+    results = validate_with_synthetic_approval(component, diode_profile, design)
 
     assert results.status == "ERROR"
     anode_checks = [c for c in results.component_checks if c.check == "diode_anode_connectivity"]

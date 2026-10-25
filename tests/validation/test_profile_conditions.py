@@ -8,6 +8,7 @@ from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Pin
 from hardwise.ir.voltage import VoltageFact, VoltageFactsDocument
 from hardwise.validation.component import validate_component_against_profile
+from tests.profile_review_fixtures import validate_with_synthetic_approval
 from hardwise.validation.profile_conditions import validate_voltage_relations
 
 
@@ -131,8 +132,7 @@ def test_quarantined_profile_cannot_certify_even_when_relation_is_evaluable(tmp_
 def test_reviewed_synthetic_relation_can_detect_original_counterexample(tmp_path):
     profile, component, design = _setup(tmp_path)
     # Explicit test-only approval exercises integration, never writes READY to disk.
-    profile = profile.model_copy(update={"review_status": "ready"})
-    report = validate_component_against_profile(component, profile, design)
+    report = validate_with_synthetic_approval(component, profile, design)
     assert (
         next(c for c in report.component_checks if c.check == "pin_voltage_relation_4").result
         == "FAIL"
@@ -188,10 +188,10 @@ def test_quarantined_profile_is_visible_but_not_executable_in_primary_import():
     )
     try:
         row = next(row for row in context.index.rows if row.refdes == "U12")
-        assert row.validation is None
-        assert row.profile_path is None
-        assert "隔离" in row.reason
-        assert "U12" not in context.validation_targets
+        assert row.validation is not None and row.validation.result == "UNKNOWN"
+        assert row.profile_path is not None
+        assert "DRAFT" in row.reason
+        assert context.validation_targets["U12"].lifecycle == "DRAFT"
         candidate = next(c for c in context.candidate_report.candidates if c.refdes == "U12")
         assert candidate.candidates == [Path("data/datasheet_profiles/xl1509.json")]
         queue = next(
@@ -200,6 +200,6 @@ def test_quarantined_profile_is_visible_but_not_executable_in_primary_import():
             if row.refdes == "U12"
         )
         assert queue.deterministic_status_group == "manual"
-        assert "隔离" in queue.title
+        assert "DRAFT" in queue.title
     finally:
         close_workbench_context(context)

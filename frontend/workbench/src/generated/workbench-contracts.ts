@@ -26,7 +26,8 @@ export type Evidence = string[];
 export type AuditStatus = "ok" | "missing_local_source";
 export type LocalSource = string | null;
 export type Reason = string;
-export type SourceClass = "live_retrieved" | "reviewed_profile" | "document_index" | "design_source" | "unknown";
+export type SourceClass =
+  "live_retrieved" | "reviewed_profile" | "profile_candidate" | "document_index" | "design_source" | "unknown";
 export type Token = string;
 export type EvidenceClassification = EvidenceClassification1[];
 export type Status = string | null;
@@ -134,6 +135,8 @@ export type Number = string;
 export type Status6 = string | null;
 export type Summary2 = string;
 export type Pins = PinView[];
+export type LegacyReviewStatus = string | null;
+export type Lifecycle = string | null;
 export type PartNumber2 = string;
 export type Path = string | null;
 export type Reason4 = string;
@@ -710,6 +713,8 @@ export interface PinView {
  * Profile match metadata for one component.
  */
 export interface ProfileView {
+  legacy_review_status: LegacyReviewStatus;
+  lifecycle: Lifecycle;
   part_number: PartNumber2;
   path: Path;
   reason: Reason4;

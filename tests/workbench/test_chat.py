@@ -226,7 +226,7 @@ def test_fake_chat_reports_datasheet_search_unavailable_and_uses_validation() ->
         assert response.trace[1].trust_tier == "l1"
         assert response.trace[1].trust_label == "L1 deterministic"
         assert {item.source_class for item in response.trace[1].evidence_classification} == {
-            "reviewed_profile"
+            "profile_candidate"
         }
     finally:
         context.session.close()
@@ -241,15 +241,11 @@ def test_fake_chat_uses_evidence_locator_for_exact_profile_evidence() -> None:
             ChatRequest(question="U8 的 BOOT0 数据手册证据在哪?", selected_refdes="U8")
         )
 
-        assert "已审结构化 profile" in response.answer
-        assert "datasheet:stm32g030.pdf#p33" in response.answer
+        assert "没有找到" in response.answer
+        assert "datasheet:stm32g030.pdf#p33" not in response.answer
         assert [trace.tool for trace in response.trace] == ["locate_component_evidence"]
-        assert response.trace[0].summary.startswith("status=found")
-        assert response.trace[0].trust_tier == "l1"
-        assert {item.source_class for item in response.trace[0].evidence_classification} == {
-            "reviewed_profile",
-            "design_source",
-        }
+        assert response.trace[0].summary.startswith("status=unreviewed_profile")
+        assert response.trace[0].evidence == []
     finally:
         context.session.close()
 
@@ -267,12 +263,13 @@ def test_fake_chat_drives_component_topology_tool() -> None:
         assert response.trace
         assert response.trace[0].tool == "get_component_context"
         assert response.trace[0].summary == "status=found"
-        assert response.trace[0].status == "ERROR"
+        assert response.trace[0].status == "UNKNOWN"
         assert response.trace[0].trust_tier == "l1"
         assert response.trace[0].trust_label == "L1 deterministic"
         assert "datasheet:stm32g030.pdf#p33" in response.trace[0].evidence
         assert {item.source_class for item in response.trace[0].evidence_classification} == {
-            "reviewed_profile"
+            "profile_candidate",
+            "design_source",
         }
     finally:
         context.session.close()
@@ -308,9 +305,9 @@ def test_fake_chat_summarizes_project_topology() -> None:
         assert "拓扑摘要只基于解析后的原理图/netlist" in response.answer
         assert "25 个器件" in response.answer
         assert "21 条网络" in response.answer
-        assert "已验证 21 个" in response.answer
-        assert "待人工补档案 4 个" in response.answer
-        assert "PASS/WARN/ERROR=0/0/2" in response.answer
+        assert "已验证 22 个" in response.answer
+        assert "待人工补档案 3 个" in response.answer
+        assert "PASS/WARN/ERROR=0/0/0" in response.answer
         assert "首个器件档案缺口: RES-10K" in response.answer
         assert response.trace
         assert response.trace[0].tool == "summarize_project_topology"

@@ -3,7 +3,7 @@
 from pathlib import Path
 from fastapi.testclient import TestClient
 import pytest
-from hardwise.workbench.context import build_workbench_context
+from tests.profile_review_fixtures import reviewed_context_for_algorithm
 from hardwise.workbench.server import create_workbench_app
 
 
@@ -20,7 +20,7 @@ def test_buck_output_role_survives_import_rerun_export(output):
         text = text.replace(", PL1.1", "")
     else:
         text = text.replace("'P1V8'", repr(output))
-    context = build_workbench_context(
+    context = reviewed_context_for_algorithm(
         netlist_path=netlist, bom_path=bom, profiles=Path("data/datasheet_profiles")
     )
     app = create_workbench_app(context, LocalOnlyChat(), auto_datasheet_candidates=False)
@@ -37,7 +37,7 @@ def test_buck_output_role_survives_import_rerun_export(output):
         detail = client.get("/api/workbench/components/U13").json()
         task = next(t for t in detail["tasks"] if t["check"] == "buck_inductor")
         assert task["assessment"]["result"] == result
-        assert task["assessment"]["rule_version"] == "3"
+        assert task["assessment"]["rule_version"] == "3.profile-review1"
         assert client.post("/api/workbench/rerun").status_code == 200
         assert client.get("/api/workbench/components/U13").json()["checks"] == detail["checks"]
         export = client.get("/api/workbench/export?format=json").json()

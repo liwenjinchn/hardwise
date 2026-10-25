@@ -128,7 +128,7 @@ def test_draft_datasheet_profile_cli_accepts_evidence_chunks(tmp_path: Path) -> 
     assert profile.evidence["evidence.chunks.tokens"] == "datasheet:74lv165.html#p3"
 
 
-def test_generated_archetype_profile_is_ignored_by_profile_matching(tmp_path: Path) -> None:
+def test_generated_archetype_profile_is_a_draft_candidate(tmp_path: Path) -> None:
     index_path = _write_shift_register_index(tmp_path)
     profile = draft_profile_from_project_index(
         index_path,
@@ -146,8 +146,9 @@ def test_generated_archetype_profile_is_ignored_by_profile_matching(tmp_path: Pa
 
     report = suggest_profile_candidates(parse_bom(bom_path), profiles)
 
-    assert report.candidates[0].match_status == "no_result"
-    assert report.candidates[0].profile is None
+    assert report.candidates[0].match_status == "matched"
+    assert report.candidates[0].profile == profiles / "74lv165pw-draft.json"
+    assert report.candidates[0].profile_lifecycle == "DRAFT"
 
 
 def test_unknown_archetype_reports_available_choices(tmp_path: Path) -> None:

@@ -25,7 +25,6 @@ from hardwise.report.ui_terms import (
     profile_part_label,
     profile_value_label,
     recommended_topology_label,
-    review_status_label,
     validation_summary_label,
 )
 from hardwise.validation.types import PinValidation, ValidationReport
@@ -97,7 +96,11 @@ def render(
     lines.extend(_render_component_basic_info(report))
     lines.extend(_render_pin_check_summary(report.pin_results))
     lines.extend(_render_pin_consistency(report, component, profile))
-    lines.extend(_render_pin_function_connectivity(report.pin_results, component, design))
+    lines.extend(
+        _render_pin_function_connectivity(
+            report.pin_results, component, design, report.reviewed_profile_tokens
+        )
+    )
     lines.extend(_render_compliance_checks(report))
     lines.extend(_render_evidence_details(report, profile))
     lines.extend(_render_summary(report))
@@ -110,7 +113,7 @@ def render(
             f"| {pin.pin_number} | {_escape_pipe(pin.pin_name)} | "
             f"{_escape_pipe(pin_category_label(pin.category))} | {_escape_pipe(pin.net or '-')} | "
             f"{pin.status} | {_escape_pipe(validation_summary_label(pin.summary))} | "
-            f"{_evidence_cell(pin.evidence)} |"
+            f"{_evidence_cell(pin.evidence, report.reviewed_profile_tokens)} |"
         )
     lines.append("")
     return "\n".join(lines)
@@ -157,6 +160,12 @@ def _render_model_check(report: ValidationReport) -> list[str]:
         if status == "PASS"
         else "BOM/器件身份需要人工对照器件档案确认。"
     )
+    if not is_generic and (
+        report.profile_lifecycle != "READY"
+        or any(c.check == "profile_review_status" for c in report.component_checks)
+    ):
+        status = "UNKNOWN"
+        note = "候选型号匹配不构成字段批准；相关检查保持 UNKNOWN。"
     lines = ["## 1. 型号核对", ""]
     lines.append("| 项目 | BOM/原理图型号 | 器件档案型号 | 结论 | 说明 |")
     lines.append("|---|---|---|---|---|")
@@ -172,6 +181,7 @@ def _render_pin_function_connectivity(
     pins: list[PinValidation],
     component: Component | None,
     design: Design | None,
+    reviewed_profile_tokens=(),
 ) -> list[str]:
     lines = ["## 3. 连接路径", ""]
     lines.append("| 引脚 | 名称 | 类别 | 网络 | 原理图连接路径 | 证据 / 来源 |")
@@ -185,7 +195,7 @@ def _render_pin_function_connectivity(
         lines.append(
             f"| {pin.pin_number} | {_escape_pipe(pin.pin_name)} | "
             f"{_escape_pipe(pin_category_label(pin.category))} | {_escape_pipe(pin.net or '-')} | "
-            f"{_escape_pipe(path)} | {_evidence_cell(pin.evidence)} |"
+            f"{_escape_pipe(path)} | {_evidence_cell(pin.evidence, reviewed_profile_tokens)} |"
         )
     lines.append("")
     return lines
@@ -225,13 +235,13 @@ def _render_compliance_checks(report: ValidationReport) -> list[str]:
     for pin in report.pin_results:
         lines.append(
             f"| pin:{pin.pin_number} {pin.pin_name} | {report.refdes} | {pin.status} | "
-            f"{_escape_pipe(validation_summary_label(pin.summary))} | {_evidence_cell(pin.evidence)} |"
+            f"{_escape_pipe(validation_summary_label(pin.summary))} | {_evidence_cell(pin.evidence, report.reviewed_profile_tokens)} |"
         )
     for check in report.component_checks:
         lines.append(
             f"| {_escape_pipe(check_label(check.check))} | {_escape_pipe(check.refdes or '-')} | "
             f"{check.status} | {_escape_pipe(validation_summary_label(check.summary))} | "
-            f"{_evidence_cell(check.evidence)} |"
+            f"{_evidence_cell(check.evidence, report.reviewed_profile_tokens)} |"
         )
     lines.append("")
     return lines
@@ -251,7 +261,9 @@ def _render_evidence_details(
     lines.append("|---|---|")
     lines.append(f"| 验证来源 | {_escape_pipe(profile_part_label(report.profile_part_number))} |")
     lines.append(f"| 档案型号 | {_escape_pipe(profile.part_number)} |")
-    lines.append(f"| 审核状态 | {_escape_pipe(review_status_label(profile.review_status))} |")
+    lines.append(
+        f"| 审核状态 | {_escape_pipe(profile.lifecycle + '；旧标签 ' + profile.review_status + ' 不构成批准')} |"
+    )
     lines.append(f"| 档案版本 | {_escape_pipe(profile.schema_version)} |")
     lines.append(f"| 抽取来源 | {_escape_pipe(extraction_model_label(profile.extracted_model))} |")
     lines.append("")
@@ -270,7 +282,7 @@ def _render_evidence_details(
                 f"| {_escape_pipe(profile_group_label(group))} | "
                 f"{_escape_pipe(profile_fact_label(group, key))} | "
                 f"{_escape_pipe(_format_profile_value(value))} | "
-                f"{_evidence_cell([token] if token else [])} |"
+                f"{_evidence_cell([token] if token else [], report.reviewed_profile_tokens)} |"
             )
     lines.append("")
 
@@ -282,7 +294,7 @@ def _render_evidence_details(
         lines.append(
             f"| {pin.number} | {_escape_pipe(pin.name)} | {_escape_pipe(_format_mapping(pin.limits))} | "
             f"{_escape_pipe(_format_recommended_topology(pin.recommended_topology))} | "
-            f"{_evidence_cell(pin.evidence)} |"
+            f"{_evidence_cell(pin.evidence, report.reviewed_profile_tokens)} |"
         )
     lines.append("")
 
@@ -293,7 +305,9 @@ def _render_evidence_details(
     if not profile.evidence:
         lines.append("| - | - |")
     for key, token in sorted(profile.evidence.items()):
-        lines.append(f"| {_escape_pipe(profile_claim_label(key))} | {_evidence_cell([token])} |")
+        lines.append(
+            f"| {_escape_pipe(profile_claim_label(key))} | {_evidence_cell([token], report.reviewed_profile_tokens)} |"
+        )
     lines.append("")
 
     if profile_has_thermal_or_package_evidence(profile):
@@ -340,10 +354,12 @@ def _render_summary(report: ValidationReport) -> list[str]:
     return lines
 
 
-def _evidence_cell(tokens: list[str]) -> str:
+def _evidence_cell(tokens: list[str], reviewed_profile_tokens=()) -> str:
     if not tokens:
         return "-"
-    return ", ".join(f"`{token}` ({evidence_source_label(token)})" for token in tokens)
+    return ", ".join(
+        f"`{token}` ({evidence_source_label(token, reviewed_profile_tokens)})" for token in tokens
+    )
 
 
 def _format_mapping(values: dict[str, ProfileValue]) -> str:

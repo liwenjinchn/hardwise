@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 import pytest
 
-from hardwise.workbench.context import build_workbench_context
+from tests.profile_review_fixtures import reviewed_context_for_algorithm
 from hardwise.workbench.server import create_workbench_app
 
 
@@ -27,7 +27,7 @@ def test_mcu_pin_and_family_share_actual_imported_bounds(bounds, result, severit
     root = Path("tests/fixtures/allegro")
     netlist = root / "stm32g030_mcu.net"
     bom = root / "stm32g030_mcu_bom.csv"
-    context = build_workbench_context(
+    context = reviewed_context_for_algorithm(
         netlist_path=netlist, bom_path=bom, profiles=Path("data/datasheet_profiles")
     )
     app = create_workbench_app(context, LocalOnlyChat(), auto_datasheet_candidates=False)
@@ -82,6 +82,6 @@ def test_mcu_pin_and_family_share_actual_imported_bounds(bounds, result, severit
             assert (formal["result"], formal["severity"], formal["rule_version"]) == (
                 result,
                 severity,
-                "2",
+                "2.profile-review1",
             )
         assert exported["voltage_facts"]["facts"][0]["minimum"] == bounds[0]

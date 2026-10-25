@@ -1,13 +1,17 @@
 """Pin ranges, reference bindings and nominal-only metadata are distinct."""
 
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+from hardwise.validation.component import validate_component_against_profile
+
+
 from pathlib import Path
+import math
 
 import pytest
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Net, Pin
 from hardwise.ir.voltage import VoltageFact, VoltageFactsDocument
-from hardwise.validation.component import validate_component_against_profile
 
 DEFAULT_LIMITS = {
     "abs_max_voltage": 35.0,
@@ -70,7 +74,7 @@ def _facts(design, values, reference="RET"):
 
 
 def _report(design, profile):
-    return validate_component_against_profile(design.components["U1"], profile, design)
+    return validate_with_synthetic_approval(design.components["U1"], profile, design)
 
 
 def _pin(design, profile):
@@ -91,7 +95,7 @@ def test_all_voltage_categories_consume_explicit_ranges(category):
     _facts(design, {"+12V": (11, 13), "RET": (0, 0)})
     pin = _pin(design, profile)
     assert pin.result == "PASS"
-    assert pin.rule_version == "2"
+    assert pin.rule_version == "2.profile-review1"
     assert "相对 RET" in pin.summary
     assert any(t.startswith("voltage_fact:") for t in pin.evidence)
 
@@ -136,7 +140,12 @@ def test_invalid_profile_limit_is_unknown_and_requires_review(bad):
     design, profile = _case()
     profile.pins[0].limits["abs_max_voltage"] = bad
     _facts(design, {"+12V": (12, 12), "RET": (0, 0)})
-    pin = _pin(design, profile)
+    validate = (
+        validate_component_against_profile
+        if isinstance(bad, bool) or (isinstance(bad, float) and not math.isfinite(bad))
+        else validate_with_synthetic_approval
+    )
+    pin = validate(design.components["U1"], profile, design).pin_results[0]
     assert pin.result == "UNKNOWN"
     assert pin.needs_review
 

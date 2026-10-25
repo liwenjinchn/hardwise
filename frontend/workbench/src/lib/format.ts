@@ -95,6 +95,7 @@ export function queueSubtitle(item: ReviewQueueItem): string {
 export function sourceLabel(sourceClass: string): string {
   const labels: Record<string, string> = {
     live_retrieved: "本轮检索",
+    profile_candidate: "未批准档案来源",
     reviewed_profile: "已审档案",
     document_index: "资料索引",
     design_source: "设计来源",

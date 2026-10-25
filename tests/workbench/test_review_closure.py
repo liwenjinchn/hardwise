@@ -29,12 +29,12 @@ def test_state_exposes_signoff_gate_dual_axis_and_grouped_noise(
     with TestClient(create_workbench_app(_context(), DummyChatService())) as client:  # type: ignore[arg-type]
         state = client.get("/api/workbench/state").json()
 
-    assert state["summary"]["error_count"] == 2
+    assert state["summary"]["error_count"] == 0
     readiness = state["evidence_package"]["signoff_readiness"]
     assert readiness["status"] == "blocked"
     assert readiness["signoff_ready"] is False
     assert readiness["affected_tasks"] > 0
-    assert "datasheet:xl1509.pdf#p8" not in readiness["missing_tokens"]
+    assert "datasheet:xl1509.pdf#p8" in readiness["missing_tokens"]
     assert "datasheet:eg2132.pdf#p8" in readiness["missing_tokens"]
 
     u1 = next(item for item in state["queue"] if item["refdes"] == "U1")
@@ -52,10 +52,10 @@ def test_state_exposes_signoff_gate_dual_axis_and_grouped_noise(
     assert len(capacitor["affected_refdes"]) == 9
 
     diode_group = next(
-        group for group in state["review_groups"] if group["check"] == "gate_driver_bootstrap"
+        group for group in state["review_groups"] if group["check"] == "profile_review_status" and "U3" in group["affected_refdes"]
     )
     assert diode_group["affected_refdes"] == ["U3"]
-    assert diode_group["derived_task_count"] == 0
+    assert diode_group["derived_task_count"] > 0
 
 
 def test_review_decisions_persist_rerun_export_and_reopen() -> None:

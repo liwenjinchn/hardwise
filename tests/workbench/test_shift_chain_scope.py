@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 import pytest
 
-from hardwise.workbench.context import build_workbench_context
+from tests.profile_review_fixtures import reviewed_context_for_algorithm
 from hardwise.workbench.server import create_workbench_app
 
 
@@ -37,7 +37,7 @@ def test_import_rerun_export_preserves_chain_scope(tmp_path, change, refdes, res
     netlist.write_text(text)
     bom.write_bytes((fixtures / "shift_register_chain_bom.csv").read_bytes())
     profiles = Path("data/datasheet_profiles")
-    context = build_workbench_context(netlist_path=netlist, bom_path=bom, profiles=profiles)
+    context = reviewed_context_for_algorithm(netlist_path=netlist, bom_path=bom, profiles=profiles)
     app = create_workbench_app(context, LocalOnlyChat(), auto_datasheet_candidates=False)
     with TestClient(app) as client:
         response = client.post(
@@ -51,7 +51,7 @@ def test_import_rerun_export_preserves_chain_scope(tmp_path, change, refdes, res
         detail = client.get(f"/api/workbench/components/{refdes}").json()
         chain = next(c for c in detail["checks"] if c["summary"].startswith("Serial output"))
         assert chain["assessment"]["result"] == result
-        assert chain["assessment"]["rule_version"] == "2"
+        assert chain["assessment"]["rule_version"] == "2.profile-review1"
         assert chain["assessment"]["needs_review"] == (result == "UNKNOWN")
         assert client.post("/api/workbench/rerun").status_code == 200
         assert client.get(f"/api/workbench/components/{refdes}").json()["checks"] == detail["checks"]

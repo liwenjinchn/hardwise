@@ -1,13 +1,17 @@
 """Confirmed DC facts, domains and intervals for transistor rating subchecks."""
 
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+from hardwise.validation.component import validate_component_against_profile
+
+
 from pathlib import Path
+import math
 
 import pytest
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Net, Pin
 from hardwise.ir.voltage import VoltageFact, VoltageFactsDocument
-from hardwise.validation.component import validate_component_against_profile
 
 
 def _case(family="mosfet", names=None):
@@ -52,8 +56,9 @@ def _facts(design, values, **overrides):
     )
 
 
-def _check(design, profile, name):
-    report = validate_component_against_profile(design.components["Q1"], profile, design)
+def _check(design, profile, name, reviewed=True):
+    validate = validate_with_synthetic_approval if reviewed else validate_component_against_profile
+    report = validate(design.components["Q1"], profile, design)
     return next(item for item in report.component_checks if item.check == name)
 
 
@@ -87,7 +92,7 @@ def test_vgs_interval_proof_does_not_invent_correlation(gate, source, expected):
     _facts(design, {"GATE": gate, "SOURCE": source})
     check = _check(design, profile, "mosfet_vgs_rating")
     assert check.result == expected
-    assert check.rule_version == "2"
+    assert check.rule_version == "2.profile-review1"
     assert sum(token.startswith("voltage_fact:") for token in check.evidence) == 2
     assert "datasheet:irf540n.pdf#p1" in check.evidence
 
@@ -118,7 +123,16 @@ def test_missing_or_invalid_rating_never_passes(limit):
         profile.abs_max.pop("vgs")
     else:
         profile.abs_max["vgs"] = limit
-    assert _check(design, profile, "mosfet_vgs_rating").result == "UNKNOWN"
+    assert (
+        _check(
+            design,
+            profile,
+            "mosfet_vgs_rating",
+            reviewed=not isinstance(limit, bool)
+            and not (isinstance(limit, float) and not math.isfinite(limit)),
+        ).result
+        == "UNKNOWN"
+    )
 
 
 def test_same_net_differential_is_zero_despite_varying_common_mode():
@@ -177,5 +191,11 @@ def test_bjt_unsupported_polarity_does_not_reuse_npn_rating_direction(polarity):
     design, profile = _case("bjt")
     _facts(design, {"BASE": (0, 0), "EMITTER": (0, 0), "COLLECTOR": (50, 50)})
     profile.recommended["polarity"] = polarity
-    assert _check(design, profile, "bjt_vebo_rating").result == "UNKNOWN"
-    assert _check(design, profile, "bjt_vceo_rating").result == "UNKNOWN"
+    assert (
+        _check(design, profile, "bjt_vebo_rating", reviewed=polarity is not None).result
+        == "UNKNOWN"
+    )
+    assert (
+        _check(design, profile, "bjt_vceo_rating", reviewed=polarity is not None).result
+        == "UNKNOWN"
+    )

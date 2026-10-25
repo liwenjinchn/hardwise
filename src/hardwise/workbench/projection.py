@@ -123,7 +123,15 @@ class WorkbenchProjectionIndex:
                 self.evidence_summary = evidence_axes(
                     list(tasks),
                     observed_at=self.source_audit_observed_at,
-                    extra_evidence=classify_evidence_tokens(tokens),
+                    extra_evidence=classify_evidence_tokens(
+                        tokens,
+                        reviewed_profile_tokens={
+                            token
+                            for row in self.rows_by_refdes.values()
+                            if row.validation
+                            for token in row.validation.reviewed_profile_tokens
+                        },
+                    ),
                 )
                 grouped: dict[str, list[ReviewTask]] = {}
                 for task in tasks:

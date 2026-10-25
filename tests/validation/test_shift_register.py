@@ -1,6 +1,10 @@
+
 """Tests for PISO shift-register topology validation."""
 
 from __future__ import annotations
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+
+
 
 from pathlib import Path
 
@@ -10,7 +14,6 @@ from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
-from hardwise.validation.component import validate_component_against_profile
 from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
@@ -56,7 +59,7 @@ def test_74lv165_profile_matches_public_pinout() -> None:
 
 def test_shift_register_chain_passes_through_series_resistors(tmp_path: Path) -> None:
     design = _design_from_text(tmp_path, _nominal_netlist())
-    report = validate_component_against_profile(design.components["U1"], _profile(), design)
+    report = validate_with_synthetic_approval(design.components["U1"], _profile(), design)
 
     assert report.status == "UNKNOWN"
     checks = {check.check: check for check in report.component_checks}
@@ -70,14 +73,14 @@ def test_shift_register_chain_passes_through_series_resistors(tmp_path: Path) ->
 @pytest.mark.parametrize("name", ["OUT2", "OUT0", "OUT999", "DATA_RETURN", "GPIO_OUT12_END"])
 def test_output_without_peer_does_not_prove_terminal_stage(tmp_path: Path, name: str) -> None:
     design = _design_from_text(tmp_path, _nominal_netlist().replace("'OUT2'", repr(name)))
-    report = validate_component_against_profile(design.components["U3"], _profile(), design)
+    report = validate_with_synthetic_approval(design.components["U3"], _profile(), design)
 
     chain = next(
         check for check in report.component_checks if check.check == "shift_register_serial_chain"
     )
     assert report.status == "UNKNOWN"
     assert chain.status == "UNKNOWN"
-    assert chain.rule_version == "2"
+    assert chain.rule_version == "2.profile-review1"
     assert chain.needs_review
     assert "terminal stage is unconfirmed" in chain.summary
 
@@ -88,7 +91,7 @@ def test_disconnected_candidate_without_declared_chain_is_unknown(tmp_path: Path
         "  'OUT0_R' ; RCHAIN1.2\n  'BROKEN_DS' ; U2.10\n",
     )
     design = _design_from_text(tmp_path, netlist)
-    report = validate_component_against_profile(design.components["U1"], _profile(), design)
+    report = validate_with_synthetic_approval(design.components["U1"], _profile(), design)
 
     chain = next(
         check for check in report.component_checks if check.check == "shift_register_serial_chain"
@@ -101,16 +104,16 @@ def test_disconnected_candidate_without_declared_chain_is_unknown(tmp_path: Path
 @pytest.mark.parametrize("name", ["OUT999", "DATA_RETURN"])
 def test_connected_peer_pass_does_not_depend_on_output_number(tmp_path, name):
     design = _design_from_text(tmp_path, _nominal_netlist().replace("'OUT0'", repr(name)))
-    report = validate_component_against_profile(design.components["U1"], _profile(), design)
+    report = validate_with_synthetic_approval(design.components["U1"], _profile(), design)
     chain = next(c for c in report.component_checks if c.check == "shift_register_serial_chain")
     assert chain.result == "PASS"
-    assert chain.rule_version == "2"
+    assert chain.rule_version == "2.profile-review1"
     assert "U2" in chain.summary
     assert "timing" in chain.summary
 
 
 def test_missing_serial_output_remains_connection_failure(tmp_path):
     design = _design_from_text(tmp_path, _nominal_netlist().replace("  'OUT2' ; U3.9\n", ""))
-    report = validate_component_against_profile(design.components["U3"], _profile(), design)
+    report = validate_with_synthetic_approval(design.components["U3"], _profile(), design)
     chain = next(c for c in report.component_checks if c.check == "shift_register_serial_chain")
-    assert (chain.result, chain.severity, chain.rule_version) == ("FAIL", "ERROR", "2")
+    assert (chain.result, chain.severity, chain.rule_version) == ("FAIL", "ERROR", "2.profile-review1")

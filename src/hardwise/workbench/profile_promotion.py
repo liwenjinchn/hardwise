@@ -21,7 +21,8 @@ PromotionStatus = Literal[
     "ready_for_draft",
     "needs_public_document",
     "needs_document_selection",
-    "already_l1",
+    "already_l1",  # Legacy payload compatibility only.
+    "matched_profile",
     "covered_by_generic_passive",
 ]
 
@@ -177,7 +178,7 @@ def _is_manual_gap_group(group: ProjectComponentGroup) -> bool:
 
 def _promotion_status(group: ProjectComponentGroup) -> PromotionStatus:
     if group.profile_status == "matched":
-        return "already_l1"
+        return "matched_profile"
     if group.profile_status == "generic_passive":
         return "covered_by_generic_passive"
     if group.document_status == "matched":
@@ -189,13 +190,13 @@ def _promotion_status(group: ProjectComponentGroup) -> PromotionStatus:
 
 def _recommended_action(group: ProjectComponentGroup, status: PromotionStatus) -> str:
     if status == "ready_for_draft":
-        return "用已匹配的公开资料生成 `needs_review` profile 草稿；人工核对后才允许改为 ready。"
+        return "用已匹配的公开资料生成 `needs_review` profile 草稿；须逐字段记录来源/单位/适用条件及人工批准，经 REVIEWED 门槛才能成为有效 READY。"
     if status == "needs_document_selection":
         return "先从候选公开资料中人工选定唯一 datasheet/document，再生成草稿。"
     if status == "needs_public_document":
         return "先补本地公开 document-index 行；没有公开资料时只能保持 manual，不进入 L1。"
-    if status == "already_l1":
-        return "该 BOM group 已有 ready profile 覆盖；不需要 promotion scaffold。"
+    if status in {"already_l1", "matched_profile"}:
+        return "该 BOM group 已匹配档案；匹配不等于批准，须查看有效生命周期及逐字段批准状态。"
     return "该 BOM group 已由 generic passive 轻量规则覆盖；不要冒充深度 datasheet profile。"
 
 
@@ -225,15 +226,15 @@ def _required_checks(group: ProjectComponentGroup) -> list[str]:
         "核对 absolute maximum、recommended operating range、电源/地/使能/复位等关键限制。",
         "核对 aliases 只包含公开 MPN/orderable variant，不包含内部料号。",
         "每条 profile fact 必须有 datasheet/pdf evidence token；无法确认的字段保留 reviewer_to_confirm。",
-        "`review_status` 必须先保持 `needs_review`；人工审完公开证据后才可改为 `ready`。",
+        "旧标签不能授予批准。保留DRAFT，逐字段核对来源/单位/适用条件并明确人审后，经REVIEWED门槛才能升级有效READY。",
     ]
 
 
 def _guardrails() -> list[str]:
     return [
         "本 packet 不写 profile 文件，也不改变 PASS/WARN/ERROR。",
-        "`needs_review` 草稿会被 profile matcher 跳过，不会进入 deterministic validation。",
-        "L1 promotion 只发生在人审公开 evidence 后把 profile 显式改成 `ready`。",
+        "DRAFT 草稿可作为候选匹配；未批准字段相关检查保持 UNKNOWN。",
+        "旧 `ready` 标签不构成批准；有效 READY 要求逐字段来源核对、人工批准及 REVIEWED 门槛。",
         "document-index URL/title 只是资料覆盖，不是电气规格证据。",
     ]
 
@@ -244,6 +245,7 @@ def _candidate_sort_key(candidate: ProfilePromotionCandidate) -> tuple[int, int,
         "needs_document_selection": 1,
         "needs_public_document": 2,
         "already_l1": 3,
+        "matched_profile": 3,
         "covered_by_generic_passive": 4,
     }[candidate.status]
     first_refdes = candidate.refdes_sample[0] if candidate.refdes_sample else ""

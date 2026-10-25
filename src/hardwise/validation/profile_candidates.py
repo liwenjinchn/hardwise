@@ -35,6 +35,7 @@ class ProfileCandidate(BaseModel):
     identity: str
     identity_kind: str
     reason: str
+    profile_lifecycle: str | None = None
     profile: Path | None = None
     candidates: list[Path] = Field(default_factory=list)
     item_number: str | None = None
@@ -75,11 +76,9 @@ def suggest_profile_candidates(
     """Generate profile candidates for each refdes in a schematic BOM."""
 
     all_profiles = _load_profiles(profiles_dir, include_unreviewed=True)
-    profiles = [
-        (path, profile) for path, profile in all_profiles if profile.review_status == "ready"
-    ]
+    profiles = [(path, profile) for path, profile in all_profiles if profile.lifecycle != "RETIRED"]
     quarantined = _profiles_by_part_number(
-        [(path, profile) for path, profile in all_profiles if profile.review_status != "ready"]
+        [(path, profile) for path, profile in all_profiles if profile.lifecycle == "RETIRED"]
     )
     by_part = _profiles_by_part_number(profiles)
     candidates = [
@@ -92,11 +91,20 @@ def suggest_profile_candidates(
             design=design,
         )
     ]
+    loaded = {path: profile for path, profile in all_profiles}
+    for candidate in candidates:
+        if candidate.profile in loaded:
+            profile = loaded[candidate.profile]
+            candidate.profile_lifecycle = profile.lifecycle
+            if profile.lifecycle != "READY":
+                candidate.reason += (
+                    f" 档案有效状态 {profile.lifecycle}，仅作候选；未批准检查为UNKNOWN。"
+                )
     block_identity_candidates(candidates, bom, design)
     for candidate in candidates:
         blocked = quarantined.get(_normalize_identity(candidate.identity), [])
         if candidate.match_status == "no_result" and blocked:
-            candidate.reason = "器件档案已隔离，等待工程复核；不参与确定性判定。"
+            candidate.reason = "器件档案已停用（RETIRED）；不参与新评审。"
             candidate.candidates = blocked
     return ProfileCandidateReport(
         project=project or bom.source_file.stem,

@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 import pytest
 
-from hardwise.workbench.context import build_workbench_context
+from tests.profile_review_fixtures import reviewed_context_for_algorithm
 from hardwise.workbench.server import create_workbench_app
 
 
@@ -18,7 +18,7 @@ class LocalOnlyChat:
 def test_control_unknown_survives_real_import_rerun_and_export(direct_controls):
     root = Path("tests/fixtures/allegro")
     netlist, bom = root / "stm32g030_mcu.net", root / "stm32g030_mcu_bom.csv"
-    context = build_workbench_context(
+    context = reviewed_context_for_algorithm(
         netlist_path=netlist, bom_path=bom, profiles=Path("data/datasheet_profiles")
     )
     app = create_workbench_app(context, LocalOnlyChat(), auto_datasheet_candidates=False)
@@ -61,7 +61,7 @@ def test_control_unknown_survives_real_import_rerun_and_export(direct_controls):
         assert len(controls) == 2
         for control in controls:
             assert control["assessment"]["result"] == "UNKNOWN"
-            assert control["assessment"]["rule_version"] == "2"
+            assert control["assessment"]["rule_version"] == "2.profile-review1"
             assert ("本脚已确认直流差值" in control["summary"]) == direct_controls
         assert client.post("/api/workbench/rerun").status_code == 200
         assert client.get("/api/workbench/components/U8").json()["checks"] == detail["checks"]

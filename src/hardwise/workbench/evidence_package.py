@@ -260,7 +260,16 @@ def _bom_lane(context: WorkbenchContext) -> EvidencePackageLane:
 
 def _validation_lane(context: WorkbenchContext) -> EvidencePackageLane:
     components = context.index.components_in_design
-    profiles = sum(row.match_status == "matched" for row in context.index.rows)
+    profiles = sum(
+        row.validation is not None
+        and row.validation.profile_lifecycle == "READY"
+        and not any(c.check == "profile_review_status" for c in row.validation.component_checks)
+        for row in context.index.rows
+    )
+    drafts = sum(
+        row.validation is not None and row.validation.profile_lifecycle == "DRAFT"
+        for row in context.index.rows
+    )
     validated = len(context.index.validated_rows)
     if profiles == components and validated == components:
         status, group, label = "present", "pass", "full coverage"
@@ -281,18 +290,17 @@ def _validation_lane(context: WorkbenchContext) -> EvidencePackageLane:
         source=source,
         source_token=_source_token("public_profile", source),
         summary=(
-            f"Ready profiles cover {profiles}/{components} components; "
-            f"deterministic validation covers {validated}/{components}."
+            f"有效READY档案覆盖 {profiles}/{components} 器件，DRAFT候选 {drafts}/{components}；"
+            f"已有检查记录 {validated}/{components}（包括UNKNOWN，不表示通过）。"
         ),
         recommended_action=action,
-        trust_boundary=(
-            "Profile and validator coverage are separate facts; uncovered components stay manual."
-        ),
+        trust_boundary=("匹配不等于批准；检查记录覆盖包括UNKNOWN，不代表电气通过或全板覆盖。"),
         metrics=[
-            _metric("ready_profiles", "Ready profiles", profiles, components, "components"),
+            _metric("ready_profiles", "有效READY档案", profiles, components, "components"),
+            _metric("draft_profiles", "DRAFT档案候选", drafts, components, "components"),
             _metric(
                 "validated_components",
-                "Deterministically validated",
+                "已有检查记录",
                 validated,
                 components,
                 "components",

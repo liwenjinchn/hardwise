@@ -28,7 +28,7 @@ def test_report_component_validation_writes_report(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert "component-validation:" in result.output
-    assert "(UNKNOWN, PASS/WARN/ERROR=1/0/0, UNKNOWN/NOT_APPLICABLE=2/0)" in result.output
+    assert "(UNKNOWN, PASS/WARN/ERROR=0/0/0, UNKNOWN/NOT_APPLICABLE=3/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
     assert "# Hardwise 器件验证报告 - U1" in md
@@ -101,13 +101,13 @@ def test_report_component_validation_writes_eg2132_gate_driver_errors(
 
     assert result.exit_code == 0, result.output
     assert "component-validation:" in result.output
-    assert "(UNKNOWN, PASS/WARN/ERROR=7/0/0, UNKNOWN/NOT_APPLICABLE=1/0)" in result.output
+    assert "(UNKNOWN, PASS/WARN/ERROR=0/0/0, UNKNOWN/NOT_APPLICABLE=8/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
     assert "# Hardwise 器件验证报告 - U3" in md
     assert "| 器件档案 | EG2132 |" in md
     assert "| 综合判定 | UNKNOWN |" in md
-    assert "| 器件级检查 PASS/WARN/ERROR | 5 / 0 / 0 |" in md
+    assert "| 器件级检查 PASS/WARN/ERROR | 0 / 0 / 0 |" in md
     assert "栅极驱动自举路径" in md
     assert "MBRA210LT3G" in md
     assert "自举功能未评估" in md
@@ -136,12 +136,12 @@ def test_report_component_validation_writes_stm32_mcu_errors(
 
     assert result.exit_code == 0, result.output
     assert "component-validation:" in result.output
-    assert "(ERROR, PASS/WARN/ERROR=7/0/0, UNKNOWN/NOT_APPLICABLE=2/0)" in result.output
+    assert "(UNKNOWN, PASS/WARN/ERROR=0/0/0, UNKNOWN/NOT_APPLICABLE=9/0)" in result.output
 
     md = output.read_text(encoding="utf-8")
     assert "# Hardwise 器件验证报告 - U8" in md
     assert "| 器件档案 | STM32G030C8T6 |" in md
-    assert "| 综合判定 | ERROR |" in md
+    assert "| 综合判定 | UNKNOWN |" in md
     assert "MCU SWDIO 调试线" in md
     assert "MCU SWCLK 调试线" in md
     assert "MCU SWDIO 连接到了 SWCLK" in md

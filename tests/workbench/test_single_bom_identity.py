@@ -232,9 +232,15 @@ def test_unbound_profile_peer_also_blocks_related_topology(tmp_path):
         assert "BOM_IDENTITY_CONFLICT" in context.design.components["U2"].properties
         u1 = next(row.validation for row in context.index.rows if row.refdes == "U1")
         assert all(
-            check.result == "UNKNOWN" and check.needs_review for check in u1.component_checks
+            check.result == "UNKNOWN" and check.needs_review
+            for check in u1.component_checks
+            if check.check != "profile_review_status"
         )
-        assert all("U2" in check.summary for check in u1.component_checks)
+        assert all(
+            "U2" in check.summary
+            for check in u1.component_checks
+            if check.check != "profile_review_status"
+        )
     finally:
         close_workbench_context(context)
 
@@ -269,7 +275,9 @@ def test_conflicting_netlist_mpn_without_a_bom_row_still_blocks_related_checks(t
         )
         u1 = next(row.validation for row in context.index.rows if row.refdes == "U1")
         assert all(
-            check.result == "UNKNOWN" and "U2" in check.summary for check in u1.component_checks
+            check.result == "UNKNOWN" and "U2" in check.summary
+            for check in u1.component_checks
+            if check.check != "profile_review_status"
         )
     finally:
         close_workbench_context(context)

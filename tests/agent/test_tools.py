@@ -212,10 +212,17 @@ def test_get_component_context_returns_parsed_topology_and_validation() -> None:
         assert result.component.refdes == "U8"
         assert result.component.part_number == "STM32G030C8T6"
         assert result.profile_status == "matched"
-        assert result.validation_status == "ERROR"
+        assert result.validation_status == "UNKNOWN"
         assert {pin.net for pin in result.pins} >= {"+3V3", "GND", "NRST", "SWCLK", "SWDIO"}
         assert any(item.net_name == "+3V3" and item.member_count == 6 for item in result.neighbors)
-        assert result.evidence == ["datasheet:stm32g030.pdf#p33"]
+        assert set(result.evidence) == {
+            "datasheet:stm32g030.pdf#p27",
+            "datasheet:stm32g030.pdf#p39",
+            "datasheet:stm32g030.pdf#p33",
+            "datasheet:stm32g030.pdf#p31",
+            "rule:parsed_pin_connection#U8.10;net=NRST",
+            "rule:parsed_pin_connection#U8.44;net=BOOT0",
+        }
         assert {issue.check for issue in result.issues} >= {"mcu_swdio", "mcu_swclk"}
     finally:
         context.session.close()
@@ -287,13 +294,13 @@ def test_summarize_project_topology_returns_bounded_fact_inventory() -> None:
         assert result.component_count == 25
         assert result.net_count == 21
         assert result.bom_matched == 25
-        assert result.validated_count == 21
-        assert result.manual_count == 4
+        assert result.validated_count == 22
+        assert result.manual_count == 3
         assert result.validation_totals == {
             "PASS": 0,
             "WARN": 0,
-            "ERROR": 2,
-            "UNKNOWN": 19,
+            "ERROR": 0,
+            "UNKNOWN": 22,
             "NOT_APPLICABLE": 0,
         }
         assert any(hit.net_name == "+3V3" for hit in result.power_like_nets)

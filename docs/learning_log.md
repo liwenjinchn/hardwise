@@ -5743,3 +5743,12 @@ trusted scope and the exact conditions that remain unimplemented.
 
 - 第62包追加：发现顶层evidence定位原未纳入字段叶子覆盖，已加入；声明主体须与实际pin/关系式匹配，human标记改为必须显式填写，locator页码不接受bool。全量1658通过；不以此代替消费者迁移。
 - 文档事故：脚本复用p/s后多余的write_text把execution.md误写为验收台账。已从107e5e1恢复完整字节前缀并单独提交纠正，校验SHA/prefix；后续新增执行记录使用指定路径追加，原SQLite工程日志未触碰。
+
+
+## 2026-10-26 — 批准门禁必须覆盖报告、证据分类和 Agent 摘要
+
+- Symptom：只把正式验证改为 DRAFT/UNKNOWN 后，旧报告仍可能按型号或引脚数量相同显示 PASS，把旧 ready 渲染成“已审”；资料来源前缀被当作批准；Agent 拓扑摘要还会漏掉 UNKNOWN。
+- Root cause：匹配、来源核对、原文随附、人工批准原本共用旧标签；报告派生结论与 Agent 的 WARN/ERROR 筛选没有共享新合同。
+- Fix：候选保留实际检查记录，但未获适用字段批准一律 UNKNOWN/HYPOTHESIS；RETIRED 不参与新匹配。来源分类默认 profile_candidate，只有实际适用的有效批准 token 集合才是 reviewed_profile。报告型号/引脚一致性也受批准状态约束，白色 UI 同时显示有效生命周期和旧标签。拓扑工具补 UNKNOWN 类型及来源，候选摘要仍可本地化。匹配档案的 promotion 状态改 matched_profile，兼容旧 already_l1 载荷但不再新生成。
+- Verification boundary：算法测试显式使用标明虚构的批准声明，真实导入使用原始 DRAFT，禁止 autouse 自动批准。跨旧/新/重启的独立进程 SQLite 演练保留原值/理由/事件，首次需复核一次，历史 1→2→2。旧演练数据库与发布入口未被该演练改写。
+- Takeaway：控制规则的局部依赖稳定，不代表同组 DRAFT 批准任务也有相同依赖；E2E 应核对目标 stable_key 的历史与决定，并单独断言批准门禁仍保守。全局历史计数变化不能直接证明控制决定被撤销。测试绿色也不等于真实字段批准、独立标签或 Windows/Cadence 验收。

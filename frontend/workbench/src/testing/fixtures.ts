@@ -492,7 +492,7 @@ export function makeDetail(overrides: Partial<ComponentDetail> = {}): ComponentD
       item_number: null,
       source_line: 3
     },
-    profile: { status: "ok", reason: "", path: null, part_number: "STM32F103C8T6" },
+    profile: { lifecycle: "DRAFT", legacy_review_status: "ready", status: "ok", reason: "", path: null, part_number: "STM32F103C8T6" },
     document: null,
     ...overrides
   };

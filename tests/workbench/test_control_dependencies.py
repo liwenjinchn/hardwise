@@ -67,7 +67,7 @@ def _build(circuit):
         voltage_facts=root / "facts.json",
     )
     task = next(t for t in build_review_tasks(context) if t.refdes == "U1" and t.check == check)
-    assert task.assessment.rule_version == "2"
+    assert task.assessment.rule_version == "2.profile-review1"
     return context, task
 
 

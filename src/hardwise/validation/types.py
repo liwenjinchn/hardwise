@@ -48,6 +48,9 @@ class ValidationReport(BaseModel):
     component_value: str
     part_number: str | None = None
     profile_part_number: str
+    profile_lifecycle: str | None = None
+    legacy_profile_status: str | None = None
+    reviewed_profile_tokens: list[str] = Field(default_factory=list)
     pin_results: list[PinValidation] = Field(default_factory=list)
     component_checks: list[ComponentValidation] = Field(default_factory=list)
 

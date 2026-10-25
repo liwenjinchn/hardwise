@@ -24,15 +24,16 @@ def test_suggest_profile_candidates_matches_mixed_regulators() -> None:
     report = suggest_profile_candidates(bom, Path("data/datasheet_profiles"))
 
     assert report.counts_by_status == {
-        "matched": 3,
-        "no_result": 7,
+        "matched": 4,
+        "no_result": 6,
         "ambiguous": 0,
         "manual_needed": 0,
     }
     matches = {candidate.refdes: candidate for candidate in report.candidates}
     assert matches["U1"].profile == Path("data/datasheet_profiles/l78.json")
-    assert matches["U12"].profile is None
-    assert matches["U12"].match_status == "no_result"
+    assert matches["U12"].profile == Path("data/datasheet_profiles/xl1509.json")
+    assert matches["U12"].match_status == "matched"
+    assert "DRAFT" in matches["U12"].reason
     assert matches["Q12"].profile == Path("data/datasheet_profiles/ss8050.json")
     assert matches["D5"].profile == Path("data/datasheet_profiles/1n4007w.json")
 
@@ -139,8 +140,7 @@ def test_suggest_profile_candidates_uses_matched_document_mpn_with_pin_fit(
     value_alias = "N-MOS管 L2N7002KLT1G SOT23 1.5 LRC"
     bom_path = tmp_path / "bom.csv"
     bom_path.write_text(
-        "Reference,Quantity,Value,Manufacturer,MPN\n"
-        f"PQ10,1,{value_alias},LRC,\n",
+        f"Reference,Quantity,Value,Manufacturer,MPN\nPQ10,1,{value_alias},LRC,\n",
         encoding="utf-8",
     )
     docs_path = tmp_path / "docs.csv"
@@ -187,8 +187,7 @@ def test_suggest_profile_candidates_uses_document_mpn_with_schematic_pin_aliases
     value_alias = "N-MOS管 LN2312LT1G 5A SOT-23 LRC"
     bom_path = tmp_path / "bom.csv"
     bom_path.write_text(
-        "Reference,Quantity,Value,Manufacturer,MPN\n"
-        f"PQ9,1,{value_alias},LRC,\n",
+        f"Reference,Quantity,Value,Manufacturer,MPN\nPQ9,1,{value_alias},LRC,\n",
         encoding="utf-8",
     )
     docs_path = tmp_path / "docs.csv"
@@ -247,7 +246,7 @@ def test_suggest_profile_candidates_uses_value_mpn_with_schematic_pin_aliases() 
     assert candidate.profile == Path("data/datasheet_profiles/ln2312lt1g.json")
 
 
-def test_suggest_profile_candidates_skips_needs_review_drafts(tmp_path: Path) -> None:
+def test_suggest_profile_candidates_retains_draft_as_unapproved_candidate(tmp_path: Path) -> None:
     profiles = tmp_path / "profiles"
     profiles.mkdir()
     draft = profiles / "draft.json"
@@ -264,8 +263,9 @@ def test_suggest_profile_candidates_skips_needs_review_drafts(tmp_path: Path) ->
 
     report = suggest_profile_candidates(parse_bom(bom_path), profiles)
 
-    assert report.candidates[0].match_status == "no_result"
-    assert report.candidates[0].profile is None
+    assert report.candidates[0].match_status == "matched"
+    assert report.candidates[0].profile == draft
+    assert "DRAFT" in report.candidates[0].reason
 
 
 def test_suggest_profile_candidates_reports_manual_needed_for_missing_identity(
@@ -315,8 +315,8 @@ def test_render_profile_candidate_manifest_can_emit_v35_manifest_shape() -> None
     assert "unmatched:" not in text
     assert "refdes: U1" in text
     assert "profile: data/datasheet_profiles/l78.json" in text
-    assert "refdes: U12" not in text
-    assert "profile: data/datasheet_profiles/xl1509.json" not in text
+    assert "refdes: U12" in text
+    assert "profile: data/datasheet_profiles/xl1509.json" in text
 
 
 def test_suggest_profile_candidates_rejects_missing_profile_dir() -> None:

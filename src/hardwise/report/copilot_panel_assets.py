@@ -120,6 +120,7 @@ COPILOT_SCRIPT = (
   const evidenceClassLabels = {
     live_retrieved: '本轮检索证据',
     reviewed_profile: '已审 profile 证据',
+    profile_candidate: '未批准档案来源',
     document_index: '资料索引证据',
     design_source: '设计来源证据',
     unknown: '未知证据来源'

@@ -10,6 +10,7 @@ from hardwise.validation.identity_scope import (
     profile_identity_conflict_report,
 )
 from hardwise.validation.pins import validate_pin
+from hardwise.validation.profile_approval import approval_reason, scope_result, approved_tokens
 from hardwise.validation.pin_voltage import profile_reference_pin
 from hardwise.validation.profile_conditions import validate_voltage_relations
 from hardwise.validation.types import ComponentValidation, ValidationReport
@@ -28,6 +29,8 @@ def validate_component_against_profile(
     if conflict is not None:
         return conflict
 
+    lifecycle = profile.lifecycle
+    reason = approval_reason(component, profile, lifecycle=lifecycle)
     relation_targets = {relation.target_pin for relation in profile.voltage_relations}
     reference = profile_reference_pin(component, profile)
     results = [validate_pin(component, p, design, reference_pin=reference) for p in profile.pins]
@@ -43,31 +46,22 @@ def validate_component_against_profile(
         for item in results
     ]
     component_checks = [
-        *_validate_profile_review_status(component, profile),
+        *_validate_profile_review_status(component, profile, reason),
         *validate_voltage_relations(component, profile, design),
         *scope_topology_identities(
             _validate_component_topology(component, profile, design), design
         ),
     ]
-    if profile.review_status != "ready":
-        # Unreviewed profile premises cannot certify electrical PASS/FAIL.
-        results = [
-            item.model_copy(
-                update={"result": "UNKNOWN", "evidence_kind": "HYPOTHESIS", "needs_review": True}
-            )
-            for item in results
-        ]
-        component_checks = [
-            item.model_copy(
-                update={"result": "UNKNOWN", "evidence_kind": "HYPOTHESIS", "needs_review": True}
-            )
-            for item in component_checks
-        ]
+    results = [scope_result(item, reason) for item in results]
+    component_checks = [scope_result(item, reason) for item in component_checks]
     return ValidationReport(
         refdes=component.refdes,
         component_value=component.value,
         part_number=component.part_number,
         profile_part_number=profile.part_number,
+        profile_lifecycle=lifecycle,
+        legacy_profile_status=profile.review_status,
+        reviewed_profile_tokens=sorted(approved_tokens(profile)) if reason is None else [],
         pin_results=results,
         component_checks=component_checks,
     )
@@ -76,20 +70,19 @@ def validate_component_against_profile(
 def _validate_profile_review_status(
     component: Component,
     profile: DatasheetProfile,
+    reason: str | None,
 ) -> list[ComponentValidation]:
-    if profile.review_status == "ready":
+    if reason is None:
         return []
     return [
         ComponentValidation(
             check="profile_review_status",
             result="UNKNOWN",
+            rule_version="2",
             severity="WARNING",
             evidence_kind="HYPOTHESIS",
             refdes=component.refdes,
-            summary=(
-                f"Datasheet profile {profile.part_number} is marked {profile.review_status}; "
-                "treat deterministic checks as reviewer-confirmed only after profile review."
-            ),
+            summary=reason,
             evidence=[],
         )
     ]

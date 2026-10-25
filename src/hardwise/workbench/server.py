@@ -92,7 +92,7 @@ def create_workbench_app(
     context: WorkbenchContext,
     chat_service: WorkbenchChatService,
     *,
-    profiles: Path = Path("data/datasheet_profiles"),
+    profiles: Path | None = None,
     document_index: Path | None = None,
     pin_table: Path | None = None,
     review_package_manifest: Path | None = None,
@@ -103,6 +103,8 @@ def create_workbench_app(
     if auto_datasheet_candidates:
         logging.getLogger(__name__).warning(DATASHEET_QUERY_DISCLOSURE)
 
+    # Import must retain the caller's actual profile collection, including managed copies.
+    profiles = profiles if profiles is not None else Path(context.candidate_report.profiles_dir)
     context_manager = WorkbenchContextManager(context)
     review_decisions = ReviewDecisionStore(review_db)
     review_workflow_lock = RLock()

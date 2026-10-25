@@ -1,4 +1,8 @@
+
 """Diode/TVS facts and LED applicability cannot be inferred from rail labels."""
+
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+
 
 from pathlib import Path
 
@@ -7,7 +11,6 @@ import pytest
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Net, Pin
 from hardwise.ir.voltage import VoltageFact, VoltageFactsDocument
-from hardwise.validation.component import validate_component_against_profile
 
 
 def _case(file="ss34.json", names=("VBUS_20V", "CHASSIS_GND")):
@@ -48,7 +51,7 @@ def _facts(design, values):
 def _check(design, profile, name):
     return next(
         c
-        for c in validate_component_against_profile(
+        for c in validate_with_synthetic_approval(
             design.components["D1"], profile, design
         ).component_checks
         if c.check == name
@@ -85,7 +88,7 @@ def test_reverse_rating_uses_directed_confirmed_intervals(first, second, expecte
     _facts(design, {"K": first, "A": second})
     item = _check(design, profile, "diode_reverse_voltage")
     assert item.result == expected
-    assert item.rule_version == "2"
+    assert item.rule_version == "2.profile-review1"
     assert len([t for t in item.evidence if t.startswith("voltage_fact:")]) == 2
     assert "datasheet:ss34.pdf#p1" in item.evidence
 

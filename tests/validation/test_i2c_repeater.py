@@ -1,6 +1,10 @@
+
 """Tests for I2C level-shifting repeater validation."""
 
 from __future__ import annotations
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+
+
 
 from pathlib import Path
 
@@ -8,7 +12,6 @@ from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
-from hardwise.validation.component import validate_component_against_profile
 from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
@@ -71,7 +74,7 @@ def test_pca9617a_profile_matches_public_tssop8_pinout() -> None:
 def test_i2c_repeater_connected_ports_do_not_prove_enable_level(tmp_path: Path) -> None:
     design = _design_from_text(tmp_path, _nominal_netlist())
 
-    report = validate_component_against_profile(design.components["U1"], _profile(), design)
+    report = validate_with_synthetic_approval(design.components["U1"], _profile(), design)
 
     assert report.status == "UNKNOWN"
     checks = {check.check: check for check in report.component_checks}
@@ -83,7 +86,7 @@ def test_i2c_repeater_connected_ports_do_not_prove_enable_level(tmp_path: Path) 
 def test_i2c_repeater_vccb_below_recommended_warns(tmp_path: Path) -> None:
     design = _design_from_text(tmp_path, _nominal_netlist().replace("P3V3_STBY", "P1V8"))
 
-    report = validate_component_against_profile(design.components["U1"], _profile(), design)
+    report = validate_with_synthetic_approval(design.components["U1"], _profile(), design)
 
     assert report.status == "WARN"
     vccb = next(pin for pin in report.pin_results if pin.pin_number == "8")
@@ -99,7 +102,7 @@ def test_i2c_repeater_swapped_bus_names_warn(tmp_path: Path) -> None:
         .replace("PEX0_I2C_SDA' ; U1.3", "PEX0_I2C_SCL_WRONG' ; U1.3"),
     )
 
-    report = validate_component_against_profile(design.components["U1"], _profile(), design)
+    report = validate_with_synthetic_approval(design.components["U1"], _profile(), design)
 
     port_a = next(
         check for check in report.component_checks if check.check == "i2c_repeater_port_a_pair"

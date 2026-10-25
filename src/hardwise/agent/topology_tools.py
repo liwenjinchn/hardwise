@@ -75,7 +75,7 @@ class ValidationIssueSummary(BaseModel):
     """Important validation issue copied from ProjectValidationIndex."""
 
     check: str
-    status: Literal["WARN", "ERROR"]
+    status: Literal["WARN", "ERROR", "UNKNOWN"]
     summary: str
     evidence: list[str] = Field(default_factory=list)
 
@@ -401,7 +401,7 @@ def _validation_issues(row: ProjectValidationRow | None) -> list[ValidationIssue
         return []
     issues: list[ValidationIssueSummary] = []
     for pin in row.validation.pin_results:
-        if pin.status in {"WARN", "ERROR"}:
+        if pin.status in {"WARN", "ERROR", "UNKNOWN"}:
             issues.append(
                 ValidationIssueSummary(
                     check=pin.pin_name or pin.pin_number,
@@ -411,7 +411,7 @@ def _validation_issues(row: ProjectValidationRow | None) -> list[ValidationIssue
                 )
             )
     for check in row.validation.component_checks:
-        if check.status in {"WARN", "ERROR"}:
+        if check.status in {"WARN", "ERROR", "UNKNOWN"}:
             issues.append(
                 ValidationIssueSummary(
                     check=check.check,

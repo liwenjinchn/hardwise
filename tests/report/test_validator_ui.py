@@ -61,9 +61,9 @@ def test_render_validator_ui_includes_index_detail_and_scope() -> None:
     assert "L1 确定性" in html
     assert "evidence-chip" in html
     assert 'data-evidence-token="datasheet:l78.pdf#p4"' in html
-    assert 'data-evidence-source-class="reviewed_profile"' in html
+    assert 'data-evidence-source-class="profile_candidate"' in html
     assert 'data-evidence-audit-status="missing_local_source"' in html
-    assert "reviewed_profile/missing_local_source" in html
+    assert "profile_candidate/missing_local_source" in html
     assert 'data-evidence-token="doc:docs.csv#line2"' in html
     assert 'data-evidence-source-class="document_index"' in html
     assert 'href="#evidence-details"' in html
@@ -139,7 +139,7 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     # Old two-tab DOM must be gone.
     assert "data-detail-tab" not in html
     assert "data-detail-tab-panel" not in html
-    assert 'status pass">PASS' in html
+    assert 'status pending">UNKNOWN' in html
     assert 'status pending">UNKNOWN' in html
     assert "下载报告" in html
     assert "1. 型号核对" in html
@@ -153,9 +153,9 @@ def test_render_multi_validator_ui_includes_multiple_details() -> None:
     assert "L1 确定性" in html
     assert "evidence-chip" in html
     assert 'data-evidence-token="datasheet:xl1509.pdf#p9"' in html
-    assert 'data-evidence-source-class="reviewed_profile"' in html
+    assert 'data-evidence-source-class="profile_candidate"' in html
     assert 'data-evidence-audit-status="missing_local_source"' in html
-    assert "reviewed_profile/missing_local_source" in html
+    assert "profile_candidate/missing_local_source" in html
     assert 'href="#U12-evidence-details"' in html
     assert 'id="U12-evidence-details"' in html
     assert "+24V" in html

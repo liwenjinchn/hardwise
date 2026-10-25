@@ -7,7 +7,7 @@ import pytest
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Net, Pin
 from hardwise.ir.voltage import VoltageFact, VoltageFactsDocument
-from hardwise.validation.component import validate_component_against_profile
+from tests.profile_review_fixtures import validate_with_synthetic_approval
 
 CASES = [
     ("stm32g030c8t6", "10", "mcu_nrst"),
@@ -54,7 +54,7 @@ def _case(file, number, label="GND", neighbor="R1"):
 
 
 def _check(design, profile, name):
-    report = validate_component_against_profile(design.components["U1"], profile, design)
+    report = validate_with_synthetic_approval(design.components["U1"], profile, design)
     return next(c for c in report.component_checks if c.check == name)
 
 
@@ -66,7 +66,7 @@ def test_connection_or_candidate_branch_cannot_certify_control(file, number, nam
     design, profile = _case(file, number, label, neighbor)
     check = _check(design, profile, name)
     assert check.result == "UNKNOWN"
-    assert check.rule_version == "2"
+    assert check.rule_version == "2.profile-review1"
     assert "逻辑" in check.summary
     assert any(t.startswith("rule:parsed_pin_connection#") for t in check.evidence)
 

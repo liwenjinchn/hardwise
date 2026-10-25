@@ -257,7 +257,11 @@ def _pin_views(component: Component, validation: ValidationReport | None) -> lis
                 assessment=Assessment.model_validate(result.model_dump()) if result else None,
                 status=result.status if result else None,
                 summary=validation_summary_label(result.summary) if result else "",
-                evidence=_evidence_views(result.evidence if result else [], "l1"),
+                evidence=_evidence_views(
+                    result.evidence if result else [],
+                    "l1",
+                    validation.reviewed_profile_tokens if validation else (),
+                ),
             )
         )
     return views
@@ -274,7 +278,7 @@ def _check_views(validation: ValidationReport | None) -> list[CheckView]:
             status_label=status_label(check.status),
             status_group=_status_group(check.status),
             summary=validation_summary_label(check.summary),
-            evidence=_evidence_views(check.evidence, "l1"),
+            evidence=_evidence_views(check.evidence, "l1", validation.reviewed_profile_tokens),
         )
         for check in validation.component_checks
     ]
@@ -299,10 +303,10 @@ def _evidence_chain(
         )
     else:
         for check in validation.component_checks:
-            chain.append(_check_chain_item(check))
+            chain.append(_check_chain_item(check, validation.reviewed_profile_tokens))
         for pin in validation.pin_results:
             if pin.status != "PASS" or pin.evidence:
-                chain.append(_pin_chain_item(pin))
+                chain.append(_pin_chain_item(pin, validation.reviewed_profile_tokens))
     for hint in risk_hints:
         chain.append(
             EvidenceChainItem(
@@ -318,7 +322,7 @@ def _evidence_chain(
     return chain
 
 
-def _check_chain_item(check: ComponentValidation) -> EvidenceChainItem:
+def _check_chain_item(check: ComponentValidation, reviewed_profile_tokens=()) -> EvidenceChainItem:
     return EvidenceChainItem(
         kind="component_check",
         title=check.refdes or check.check,
@@ -326,11 +330,11 @@ def _check_chain_item(check: ComponentValidation) -> EvidenceChainItem:
         status=check.status,
         status_group=_status_group(check.status),
         trust_tier="l1",
-        evidence=_evidence_views(check.evidence, "l1"),
+        evidence=_evidence_views(check.evidence, "l1", reviewed_profile_tokens),
     )
 
 
-def _pin_chain_item(pin: PinValidation) -> EvidenceChainItem:
+def _pin_chain_item(pin: PinValidation, reviewed_profile_tokens=()) -> EvidenceChainItem:
     return EvidenceChainItem(
         kind="pin_check",
         title=f"引脚 {pin.pin_number} · {pin.pin_name}",
@@ -338,7 +342,7 @@ def _pin_chain_item(pin: PinValidation) -> EvidenceChainItem:
         status=pin.status,
         status_group=_status_group(pin.status),
         trust_tier="l1",
-        evidence=_evidence_views(pin.evidence, "l1"),
+        evidence=_evidence_views(pin.evidence, "l1", reviewed_profile_tokens),
     )
 
 
@@ -399,6 +403,8 @@ def _profile_view(
         reason=reason_label(row.reason) if row.reason else "",
         path=row.profile_path,
         part_number=validation.profile_part_number if validation else "",
+        lifecycle=validation.profile_lifecycle if validation else None,
+        legacy_review_status=validation.legacy_profile_status if validation else None,
     )
 
 

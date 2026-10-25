@@ -1,5 +1,8 @@
 """Tests for 2x5 connector validation rules."""
 
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+
+
 from pathlib import Path
 
 import pytest
@@ -8,7 +11,6 @@ from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
-from hardwise.validation.component import validate_component_against_profile
 from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
@@ -32,7 +34,7 @@ def connector_design():
 def test_connector_nominal_all_pass(connector_profile, connector_design):
     """Nominal connector: all pins properly connected."""
     component = connector_design.components["J1"]
-    results = validate_component_against_profile(component, connector_profile, connector_design)
+    results = validate_with_synthetic_approval(component, connector_profile, connector_design)
 
     assert results.status == "PASS"
     assert results.counts_by_status == {
@@ -66,7 +68,16 @@ def test_connector_routes_by_family_without_mpn_fallback(
     component = connector_design.components["J1"]
     profile = connector_profile.model_copy(update={"part_number": "GENERIC_CONNECTOR"})
 
-    results = validate_component_against_profile(component, profile, connector_design)
+    from hardwise.validation.component import _validate_component_topology
+    from hardwise.validation.types import ValidationReport
+
+    # Pure dispatcher test; the public identity/approval boundary is tested separately.
+    results = ValidationReport(
+        refdes=component.refdes,
+        component_value=component.value,
+        profile_part_number=profile.part_number,
+        component_checks=_validate_component_topology(component, profile, connector_design),
+    )
 
     assert results.component_counts_by_status == {
         "PASS": 10,
@@ -124,7 +135,7 @@ R_SIG8,10K,0805,Signal 8 resistor
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
     component = design.components["J1"]
-    results = validate_component_against_profile(component, connector_profile, design)
+    results = validate_with_synthetic_approval(component, connector_profile, design)
 
     assert results.status == "ERROR"
     signal_4_checks = [
@@ -183,7 +194,7 @@ R_SIG8,10K,0805,Signal 8 resistor
     design = apply_bom_to_design(design, match_bom_to_design(bom, design))
 
     component = design.components["J1"]
-    results = validate_component_against_profile(component, connector_profile, design)
+    results = validate_with_synthetic_approval(component, connector_profile, design)
 
     assert results.status == "UNKNOWN"
     ground_checks = [

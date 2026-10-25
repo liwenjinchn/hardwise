@@ -347,6 +347,8 @@ export interface BomView {
 }
 
 export interface ProfileView {
+  lifecycle: string | null;
+  legacy_review_status: string | null;
   status: string;
   reason: string;
   path: string | null;
@@ -532,6 +534,7 @@ export type PromotionStatus =
   | "needs_public_document"
   | "needs_document_selection"
   | "already_l1"
+  | "matched_profile"
   | "covered_by_generic_passive";
 
 export interface ProfilePromotionCandidate {
@@ -584,6 +587,7 @@ export interface EvidenceClassification {
   source_class:
     | "live_retrieved"
     | "reviewed_profile"
+    | "profile_candidate"
     | "document_index"
     | "design_source"
     | "unknown";

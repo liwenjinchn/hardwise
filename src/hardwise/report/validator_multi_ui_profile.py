@@ -17,7 +17,6 @@ from hardwise.report.ui_terms import (
     profile_part_label,
     profile_value_label,
     recommended_topology_label,
-    review_status_label,
 )
 from hardwise.report.validator_ui import _evidence
 from hardwise.validation.types import ValidationReport
@@ -33,14 +32,16 @@ def _profile_meta(validation: ValidationReport, profile: DatasheetProfile | None
         "<table><tbody>"
         f"<tr><th>验证来源</th><td>{_profile_part_cell(validation.profile_part_number)}</td></tr>"
         f"<tr><th>档案型号</th><td>{escape(profile.part_number)}</td></tr>"
-        f"<tr><th>审核状态</th><td>{_raw_title_cell(review_status_label(profile.review_status), profile.review_status)}</td></tr>"
+        f"<tr><th>审核状态</th><td>{escape(profile.lifecycle + '；旧标签 ' + profile.review_status + ' 不构成批准')}</td></tr>"
         f"<tr><th>档案版本</th><td>{escape(profile.schema_version)}</td></tr>"
         f"<tr><th>抽取来源</th><td>{_raw_title_cell(extraction_model_label(profile.extracted_model), profile.extracted_model)}</td></tr>"
         "</tbody></table>"
     )
 
 
-def _profile_fact_table(profile: DatasheetProfile | None, *, refdes: str | None = None) -> str:
+def _profile_fact_table(
+    profile: DatasheetProfile | None, *, refdes: str | None = None, reviewed_profile_tokens=()
+) -> str:
     if profile is None:
         return ""
     rows = [
@@ -61,7 +62,7 @@ def _profile_fact_table(profile: DatasheetProfile | None, *, refdes: str | None 
                 f"<td>{_raw_title_cell(profile_group_label(group), group)}</td>"
                 f"<td>{_raw_title_cell(profile_fact_label(group, key), f'{group}.{key}')}</td>"
                 f"<td>{_raw_title_cell(_format_profile_value(value), str(value))}</td>"
-                f'<td class="evidence">{_evidence([token] if token else [], refdes)}</td>'
+                f'<td class="evidence">{_evidence([token] if token else [], refdes, reviewed_profile_tokens)}</td>'
                 "</tr>"
             )
     rows.append("</tbody></table>")
@@ -69,7 +70,7 @@ def _profile_fact_table(profile: DatasheetProfile | None, *, refdes: str | None 
 
 
 def _profile_fact_table_with_gaps(
-    profile: DatasheetProfile | None, *, refdes: str | None = None
+    profile: DatasheetProfile | None, *, refdes: str | None = None, reviewed_profile_tokens=()
 ) -> str:
     if profile is None:
         return ""
@@ -88,7 +89,9 @@ def _profile_fact_table_with_gaps(
             claim_key = f"{group}.{key}"
             token = profile.evidence.get(claim_key, "")
             gap = evidence_gap_chip(claim_key, value, profile.evidence)
-            evidence_html = _evidence([token] if token else [], refdes) + gap
+            evidence_html = (
+                _evidence([token] if token else [], refdes, reviewed_profile_tokens) + gap
+            )
             rows.append(
                 "<tr>"
                 f"<td>{_raw_title_cell(profile_group_label(group), group)}</td>"
@@ -102,7 +105,7 @@ def _profile_fact_table_with_gaps(
 
 
 def _profile_pin_detail_table(
-    profile: DatasheetProfile | None, *, refdes: str | None = None
+    profile: DatasheetProfile | None, *, refdes: str | None = None, reviewed_profile_tokens=()
 ) -> str:
     if profile is None:
         return ""
@@ -117,14 +120,16 @@ def _profile_pin_detail_table(
             f"<td>{escape(pin.name)}</td>"
             f"<td>{escape(_format_mapping(pin.limits or {}))}</td>"
             f"<td>{escape(_format_recommended_topology(pin.recommended_topology))}</td>"
-            f'<td class="evidence">{_evidence(pin.evidence, refdes)}</td>'
+            f'<td class="evidence">{_evidence(pin.evidence, refdes, reviewed_profile_tokens)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table>")
     return "".join(rows)
 
 
-def _profile_evidence_table(profile: DatasheetProfile | None, *, refdes: str | None = None) -> str:
+def _profile_evidence_table(
+    profile: DatasheetProfile | None, *, refdes: str | None = None, reviewed_profile_tokens=()
+) -> str:
     if profile is None:
         return ""
     rows = [
@@ -136,7 +141,7 @@ def _profile_evidence_table(profile: DatasheetProfile | None, *, refdes: str | N
     for key, token in sorted(profile.evidence.items()):
         rows.append(
             f"<tr><td>{_raw_title_cell(profile_claim_label(key), key)}</td>"
-            f'<td class="evidence">{_evidence([token], refdes)}</td></tr>'
+            f'<td class="evidence">{_evidence([token], refdes, reviewed_profile_tokens)}</td></tr>'
         )
     rows.append("</tbody></table>")
     return "".join(rows)

@@ -55,9 +55,9 @@ def test_evidence_chip_keeps_token_attrs_and_shows_source_class() -> None:
 
     assert 'data-source="pdf"' in html
     assert 'data-evidence-token="pdf:missing.pdf#p7"' in html
-    assert 'data-evidence-source-class="reviewed_profile"' in html
+    assert 'data-evidence-source-class="profile_candidate"' in html
     assert 'data-evidence-audit-status="missing_local_source"' in html
-    assert "reviewed_profile/missing_local_source" in html
+    assert "profile_candidate/missing_local_source" in html
     assert 'data-source="doc"' in html
     assert 'data-evidence-token="doc:docs.csv#line2"' in html
     assert 'data-evidence-source-class="document_index"' in html

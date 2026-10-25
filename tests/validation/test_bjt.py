@@ -1,8 +1,12 @@
+
 """Tests for 2N3904 NPN BJT validation.
 
 The load-bearing case is reverse B-E breakdown: emitter above base by more
 than VEBO must ERROR even though a base-to-ground check would see 0 V and miss it.
 """
+
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+
 
 from pathlib import Path
 
@@ -12,7 +16,6 @@ from hardwise.adapters.allegro_netlist import parse_allegro_netlist
 from hardwise.bom import apply_bom_to_design, match_bom_to_design, parse_bom
 from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.profile import DatasheetProfile
-from hardwise.validation.component import validate_component_against_profile
 from tests.validation.voltage_fact_fixtures import confirm_dc_values as _confirm
 
 
@@ -48,7 +51,7 @@ def emitter_reference_design():
 
 def test_lowside_nominal_all_pass(bjt_profile, lowside_design):
     component = lowside_design.components["Q2"]
-    results = validate_component_against_profile(component, bjt_profile, lowside_design)
+    results = validate_with_synthetic_approval(component, bjt_profile, lowside_design)
 
     assert results.status == "PASS"
     check_names = {c.check for c in results.component_checks}
@@ -71,7 +74,7 @@ def test_non_ground_emitter_uses_emitter_reference(bjt_profile, emitter_referenc
     _confirm(emitter_reference_design, {"COLLECTOR_NODE": 24.0})
     component = emitter_reference_design.components["Q2"]
 
-    results = validate_component_against_profile(component, bjt_profile, emitter_reference_design)
+    results = validate_with_synthetic_approval(component, bjt_profile, emitter_reference_design)
 
     assert results.status == "PASS"
     vebo = next(c for c in results.component_checks if c.check == "bjt_vebo_rating")
@@ -96,7 +99,7 @@ def test_reverse_be_breakdown_errors_against_emitter_reference(
     _confirm(emitter_reference_design, {"COLLECTOR_NODE": 24.0})
     component = emitter_reference_design.components["Q2"]
 
-    results = validate_component_against_profile(component, bjt_profile, emitter_reference_design)
+    results = validate_with_synthetic_approval(component, bjt_profile, emitter_reference_design)
 
     assert results.status == "ERROR"
     vebo = next(c for c in results.component_checks if c.check == "bjt_vebo_rating")
@@ -109,7 +112,7 @@ def test_floating_base_or_emitter_warns_not_errors(bjt_profile, emitter_referenc
     _confirm(emitter_reference_design, {"COLLECTOR_NODE": 24.0})
     component = emitter_reference_design.components["Q2"]
 
-    results = validate_component_against_profile(component, bjt_profile, emitter_reference_design)
+    results = validate_with_synthetic_approval(component, bjt_profile, emitter_reference_design)
 
     assert results.status == "UNKNOWN"
     vebo = next(c for c in results.component_checks if c.check == "bjt_vebo_rating")
@@ -121,7 +124,7 @@ def test_vceo_overvoltage_errors(bjt_profile, lowside_design):
     _confirm(lowside_design, {"COLLECTOR_RAIL": 50.0})
     component = lowside_design.components["Q2"]
 
-    results = validate_component_against_profile(component, bjt_profile, lowside_design)
+    results = validate_with_synthetic_approval(component, bjt_profile, lowside_design)
 
     assert results.status == "ERROR"
     vceo = next(c for c in results.component_checks if c.check == "bjt_vceo_rating")
@@ -133,7 +136,7 @@ def test_routes_by_family_without_mpn_fallback(bjt_profile, lowside_design):
     component = lowside_design.components["Q2"]
     profile = bjt_profile.model_copy(update={"part_number": "GENERIC_NPN"})
 
-    results = validate_component_against_profile(component, profile, lowside_design)
+    results = validate_with_synthetic_approval(component, profile, lowside_design)
 
     check_names = {c.check for c in results.component_checks}
     assert "bjt_vebo_rating" in check_names
@@ -174,7 +177,7 @@ R_LOAD,1,1K,Fixture,RES-1K
     _confirm(design, {"BASE_DRIVE": 0.7, "GND": 0.0})
     _confirm(design, {"COLLECTOR_RAIL": 12.0})
 
-    results = validate_component_against_profile(design.components["Q10"], mmbt3904_profile, design)
+    results = validate_with_synthetic_approval(design.components["Q10"], mmbt3904_profile, design)
 
     assert results.status == "PASS"
     assert results.component_counts_by_status == {
@@ -213,7 +216,7 @@ def test_ss8050_controller_stage_moves_to_l1_and_flags_missing_emitter() -> None
         "mixed_controller_power_stage_bom.csv",
     )
 
-    results = validate_component_against_profile(design.components["Q12"], profile, design)
+    results = validate_with_synthetic_approval(design.components["Q12"], profile, design)
 
     assert results.status == "ERROR"
     assert [(pin.pin_number, pin.pin_name, pin.net, pin.status) for pin in results.pin_results] == [

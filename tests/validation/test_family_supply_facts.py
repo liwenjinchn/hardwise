@@ -1,5 +1,9 @@
 """Family supply summaries must agree with the confirmed pin-bound evaluator."""
 
+from tests.profile_review_fixtures import validate_with_synthetic_approval
+from hardwise.validation.component import validate_component_against_profile
+
+
 from pathlib import Path
 
 import pytest
@@ -7,7 +11,6 @@ import pytest
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Net, Pin
 from hardwise.ir.voltage import VoltageFact, VoltageFactsDocument
-from hardwise.validation.component import validate_component_against_profile
 from hardwise.validation.family_pin import family_pin_check
 
 CASES = [
@@ -59,8 +62,9 @@ def _confirm(design, bounds, reference="RET"):
     )
 
 
-def _check(design, profile, name):
-    report = validate_component_against_profile(design.components["U1"], profile, design)
+def _check(design, profile, name, reviewed=True):
+    validate = validate_with_synthetic_approval if reviewed else validate_component_against_profile
+    report = validate(design.components["U1"], profile, design)
     return next(c for c in report.component_checks if c.check == name)
 
 
@@ -93,7 +97,7 @@ def test_family_supply_consumes_declared_envelopes(file, target, name, limits, c
         condition, "UNKNOWN"
     )
     if condition != "missing":
-        assert check.rule_version == "2"
+        assert check.rule_version == "2.profile-review1"
         assert any(t.startswith("voltage_fact:") for t in check.evidence)
 
 
@@ -111,7 +115,7 @@ def test_family_supply_cannot_override_incomplete_pin_limits(file, target, name,
             "nominal": {"nominal_voltage": 3.3},
             "invalid": {"recommended_voltage_min": True, "recommended_voltage_max": 5.5},
         }[condition]
-    check = _check(design, profile, name)
+    check = _check(design, profile, name, reviewed=condition != "invalid")
     assert check.result == "UNKNOWN"
     if condition == "invalid":
         assert check.needs_review

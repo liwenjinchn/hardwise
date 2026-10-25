@@ -176,7 +176,7 @@ def test_store_datasheet_profile_cli_writes_contract_store(tmp_path: Path) -> No
 
     assert result.exit_code == 0, result.output
     assert "datasheet-profile-store:" in result.output
-    assert "(part=MPQ8626, aliases=2, pins=14, status=ready)" in result.output
+    assert "(part=MPQ8626, aliases=2, pins=14, legacy_status=ready, lifecycle=DRAFT)" in result.output
 
     session = create_store(db_path)
     try:

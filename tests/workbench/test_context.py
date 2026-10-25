@@ -101,6 +101,7 @@ def test_build_workbench_context_populates_relational_store_from_registry() -> N
             "U1",
             "U3",
             "U8",
+            "U12",
         }
         assert {"C1", "C2", "R1", "R2"} <= {row.refdes for row in context.index.validated_rows}
         assert set(context.validation_targets) == {
@@ -112,6 +113,7 @@ def test_build_workbench_context_populates_relational_store_from_registry() -> N
             "U1",
             "U3",
             "U8",
+            "U12",
         }
         assert context.risk_hints.source_path is None
         assert context.risk_hints.accepted_count == 0
@@ -267,25 +269,25 @@ def test_workbench_state_exposes_spa_queue_and_risk_hint_details(tmp_path: Path)
         assert payload["summary"] == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 21,
-            "manual": 4,
+            "validated": 22,
+            "manual": 3,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 2,
-            "unknown_count": 19,
+            "error_count": 0,
+            "unknown_count": 22,
             "not_applicable_count": 0,
         }
-        assert payload["selected_refdes"] == "Q12"
+        assert payload["selected_refdes"] == "U3"
         queue_by_refdes = {item["refdes"]: item for item in payload["queue"]}
         assert set(queue_by_refdes) >= {"U12", "U8", "Q12"}
         assert len(queue_by_refdes) == len(payload["queue"])
         q12 = queue_by_refdes["Q12"]
         assert q12["task_count"] >= 4
-        assert q12["task_counts"]["error"] == 2
+        assert q12["task_counts"]["error"] == 0
         assert q12["task_counts"]["manual"] >= 2
-        assert q12["task_ids"][0] == "F-001"
-        assert q12["top_task_id"] == "F-001"
-        assert q12["deterministic_status"] == "ERROR"
+        assert q12["task_ids"][0] == q12["top_task_id"]
+        assert q12["top_task_id"] in q12["task_ids"]
+        assert q12["deterministic_status"] == "UNKNOWN"
         assert q12["document_status"] == "not_configured"
         assert payload["risk_hints"] == {
             "external_status": "loaded",
@@ -317,12 +319,12 @@ def test_workbench_state_exposes_finding_first_review_tasks() -> None:
         assert tasks[0]["id"] == "F-001"
         assert {task["refdes"] for task in tasks} >= {"U12", "U8", "Q12"}
         assert payload["task_counts"]["total"] == len(tasks)
-        assert payload["task_counts"]["error"] >= 3
+        assert payload["task_counts"]["error"] == 0
         first_task = tasks[0]
         assert first_task["kind"] == "component_check"
-        assert first_task["stable_key"].startswith("component_check|Q12|")
-        assert first_task["check"] == "bjt_emitter_connectivity"
-        assert first_task["subject"] == "bjt_emitter_connectivity"
+        assert first_task["stable_key"].startswith("component_check|C1|")
+        assert first_task["check"] == "capacitor_rated_voltage_parse"
+        assert first_task["subject"] == "C1"
         assert first_task["evidence_chain"]
         assert {item["kind"] for item in first_task["evidence_chain"]} & {
             "netlist_trace",
@@ -355,12 +357,12 @@ def test_workbench_state_exposes_registry_backed_pin_table_tasks(tmp_path: Path)
         assert payload["summary"] == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 21,
-            "manual": 4,
+            "validated": 22,
+            "manual": 3,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 2,
-            "unknown_count": 19,
+            "error_count": 0,
+            "unknown_count": 22,
             "not_applicable_count": 0,
         }
         assert payload["capabilities"]["pin_table_enabled"] is True
@@ -434,16 +436,16 @@ def test_workbench_state_surfaces_document_candidate_confirmation_tasks(
         assert payload["summary"] == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 21,
-            "manual": 4,
+            "validated": 22,
+            "manual": 3,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 2,
-            "unknown_count": 19,
+            "error_count": 0,
+            "unknown_count": 22,
             "not_applicable_count": 0,
         }
         queue_by_refdes = {item["refdes"]: item for item in payload["queue"]}
-        assert queue_by_refdes["Q12"]["deterministic_status"] == "ERROR"
+        assert queue_by_refdes["Q12"]["deterministic_status"] == "UNKNOWN"
         assert queue_by_refdes["Q12"]["document_status"] == "ambiguous"
         assert queue_by_refdes["Q12"]["task_counts"]["manual"] >= 3
 
@@ -499,7 +501,7 @@ def test_workbench_component_detail_exposes_evidence_classification() -> None:
         detail = client.get("/api/workbench/components/U8").json()
 
         assert detail["refdes"] == "U8"
-        assert detail["status"] == "ERROR"
+        assert detail["status"] == "UNKNOWN"
         assert detail["trust_tier"] == "l1"
         assert detail["task_counts"]["total"] >= 2
         assert {task["kind"] for task in detail["tasks"]} >= {"component_check"}
@@ -507,7 +509,7 @@ def test_workbench_component_detail_exposes_evidence_classification() -> None:
         assert detail["profile"]["path"] == "data/datasheet_profiles/stm32g030c8t6.json"
         assert detail["document"]["status"] == "not_configured"
         evidence = [token for item in detail["evidence_chain"] for token in item["evidence"]]
-        assert any(item["source_class"] == "reviewed_profile" for item in evidence)
+        assert any(item["source_class"] == "profile_candidate" for item in evidence)
         assert any(item["token"] == "datasheet:stm32g030.pdf#p33" for item in evidence)
 
         miss = client.get("/api/workbench/components/U999")
@@ -533,12 +535,10 @@ def test_workbench_component_evidence_endpoint_is_scoped_to_profile_facts() -> N
 
         assert response.status_code == 200
         payload = response.json()
-        assert payload["status"] == "found"
-        assert payload["profile_part_number"] == "STM32G030C8T6"
-        assert any(hit["pin_name"] == "BOOT0" for hit in payload["hits"])
-        assert "datasheet:stm32g030.pdf#p33" in {
-            token for hit in payload["hits"] for token in hit["evidence"]
-        }
+        assert payload["status"] == "unreviewed_profile"
+        assert payload["found"] is False
+        assert payload["hits"] == []
+        assert "DRAFT" in payload["reason"]
         assert miss.status_code == 404
         assert miss.json()["status"] == "not_found"
         assert miss.json()["closest_matches"]
@@ -634,17 +634,17 @@ def test_workbench_project_prep_packet_json_and_markdown_are_safe(tmp_path: Path
         assert packet["summary"] == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 21,
-            "manual": 4,
+            "validated": 22,
+            "manual": 3,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 2,
-            "unknown_count": 19,
+            "error_count": 0,
+            "unknown_count": 22,
             "not_applicable_count": 0,
         }
-        assert packet["queue"][0]["refdes"] == "Q12"
+        assert packet["queue"][0]["refdes"] == "U3"
         assert packet["priority_tasks"][0]["id"] == "F-001"
-        assert packet["priority_tasks"][0]["refdes"] == "Q12"
+        assert packet["priority_tasks"][0]["refdes"] == "U3"
         assert packet["key_component_groups"]
         assert {area["area"] for area in packet["focus_areas"]} >= {"power"}
         assert packet["draft_summaries"]["scope"] == "schematic_netlist_review_prep_only"
@@ -736,7 +736,7 @@ def test_workbench_profile_promotion_packet_is_needs_review_only(tmp_path: Path)
         assert markdown_response.status_code == 200
         assert "needs_review" in markdown_response.text
         assert "ready" in markdown_response.text
-        assert "review_status` 必须先保持 `needs_review`" in markdown_response.text
+        assert "旧标签不能授予批准" in markdown_response.text
 
         assert miss.status_code == 404
         assert miss.json()["reason"] == "unknown_component_group"
@@ -1040,12 +1040,12 @@ def test_workbench_import_rebuilds_context_from_uploaded_files() -> None:
         assert response.json()["summary"] == {
             "components": 25,
             "bom_matched": 25,
-            "validated": 21,
-            "manual": 4,
+            "validated": 22,
+            "manual": 3,
             "pass_count": 0,
             "warn_count": 0,
-            "error_count": 2,
-            "unknown_count": 19,
+            "error_count": 0,
+            "unknown_count": 22,
             "not_applicable_count": 0,
         }
         imported = response.json()
@@ -1095,7 +1095,7 @@ def test_workbench_import_accepts_uploaded_pin_table(tmp_path: Path) -> None:
             )
 
         assert response.status_code == 200, response.text
-        assert response.json()["task_counts"]["error"] >= 5
+        assert response.json()["task_counts"]["error"] == 2
         assert response.json()["pin_table"]["affected_refdes_list"] == ["U3", "U8"]
         assert response.json()["pin_table"]["rejected_unknown_refdes"] == ["U999"]
         state = client.get("/api/workbench/state").json()

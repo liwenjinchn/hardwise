@@ -243,14 +243,12 @@ def _pin_table(validation: ValidationReport) -> str:
             f'<td><span class="status {_status_class(pin.status)}">{escape(pin.status)}</span></td>'
             f"<td>{trust_label_html('l1')}</td>"
             f"<td>{escape(validation_summary_label(pin.summary))}</td>"
-            f'<td class="evidence">{_evidence(pin.evidence)}</td>'
+            f'<td class="evidence">{_evidence(pin.evidence, reviewed_profile_tokens=validation.reviewed_profile_tokens)}</td>'
             "</tr>"
         )
     rows.append("</tbody></table>")
     if validation.component_checks:
-        rows.append(
-            '<p class="scope">器件级检查只覆盖当前器件的确定性原理图外围/拓扑事实。</p>'
-        )
+        rows.append('<p class="scope">器件级检查只覆盖当前器件的确定性原理图外围/拓扑事实。</p>')
         rows.append(
             '<table class="pin-table"><thead><tr><th>检查项</th><th>位号</th><th>结论</th><th>可信度</th><th>说明</th><th>证据</th></tr></thead><tbody>'
         )
@@ -262,7 +260,7 @@ def _pin_table(validation: ValidationReport) -> str:
                 f'<td><span class="status {_status_class(check.status)}">{escape(check.status)}</span></td>'
                 f"<td>{trust_label_html('l1')}</td>"
                 f"<td>{escape(validation_summary_label(check.summary))}</td>"
-                f'<td class="evidence">{_evidence(check.evidence)}</td>'
+                f'<td class="evidence">{_evidence(check.evidence, reviewed_profile_tokens=validation.reviewed_profile_tokens)}</td>'
                 "</tr>"
             )
         rows.append("</tbody></table>")
@@ -303,8 +301,10 @@ def _scope_panel(generated_at: str, profile_path: Path) -> str:
     )
 
 
-def _evidence(tokens: list[str], refdes: str | None = None) -> str:
-    return evidence_chips_html(tokens, refdes=refdes)
+def _evidence(tokens: list[str], refdes: str | None = None, reviewed_profile_tokens=()) -> str:
+    return evidence_chips_html(
+        tokens, refdes=refdes, reviewed_profile_tokens=reviewed_profile_tokens
+    )
 
 
 def _status_class(status: str) -> str:

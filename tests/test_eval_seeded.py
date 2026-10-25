@@ -20,9 +20,9 @@ def test_seeded_defect_benchmark_reports_recall_and_false_positives() -> None:
         profiles=Path("data/datasheet_profiles"),
     )
 
-    assert summary.headline == "7 seeded defects, recall 6/7, 0 false positives"
+    assert summary.headline == "7 seeded defects, recall 3/7, 0 false positives"
     assert summary.seeded_defects == 7
-    assert summary.recall == 6
+    assert summary.recall == 3
     assert summary.false_positives == 0
     assert {case.name for case in summary.cases} == {
         "capacitor_low_voltage",
@@ -34,7 +34,10 @@ def test_seeded_defect_benchmark_reports_recall_and_false_positives() -> None:
         "buck_inductor_output_grounded",
     }
     assert {case.name for case in summary.cases if not case.detected} == {
-        "buck_inductor_output_grounded"
+        "buck_inductor_output_grounded",
+        "mosfet_vgs_over_abs_max",
+        "diode_reverse_over_abs_max",
+        "i2c_mux_half_connected_channel",
     }
     capacitor = next(case for case in summary.cases if case.name == "capacitor_low_voltage")
     assert capacitor.voltage_facts == "tests/fixtures/allegro/pst_dc_voltage_facts.json"
@@ -58,7 +61,7 @@ def test_seeded_defect_benchmark_reports_recall_and_false_positives() -> None:
     assert all(
         item.recall == item.seeded_defects
         for family, item in family_metrics.items()
-        if family != "dcdc_buck"
+        if family in {"capacitor", "resistor"}
     )
     assert all(item.false_positives == 0 for item in family_metrics.values())
     assert len(summary.fixture_sources) == 5
@@ -77,15 +80,18 @@ def test_seeded_defect_cli_writes_json_summary(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0, result.output
-    assert "eval seeded-defects: 7 seeded defects, recall 6/7, 0 false positives" in result.output
+    assert "eval seeded-defects: 7 seeded defects, recall 3/7, 0 false positives" in result.output
     assert "family capacitor: recall 2/2, 0 false positives" in result.output
     assert "capacitor_low_voltage [capacitor]: detected" in result.output
     assert f"summary: {output}" in result.output
 
     summary = SeededDefectSummary.model_validate_json(output.read_text(encoding="utf-8"))
-    assert summary.headline == "7 seeded defects, recall 6/7, 0 false positives"
+    assert summary.headline == "7 seeded defects, recall 3/7, 0 false positives"
     assert {case.name for case in summary.cases if not case.detected} == {
-        "buck_inductor_output_grounded"
+        "buck_inductor_output_grounded",
+        "mosfet_vgs_over_abs_max",
+        "diode_reverse_over_abs_max",
+        "i2c_mux_half_connected_channel",
     }
     assert summary.false_positives == 0
     assert len(summary.family_metrics) == 6
@@ -143,7 +149,20 @@ def test_actual_converter_ground_short_is_detected_independently_of_label(tmp_pa
     )
     matrix = tmp_path / "physical-short.json"
     matrix.write_text(json.dumps({"version": 1, "cases": [case]}))
-    summary = run_seeded_defect_benchmark(matrix=matrix)
+    from tests.profile_review_fixtures import reviewed_context_for_algorithm
+    from hardwise.workbench.context import close_workbench_context
+
+    context = reviewed_context_for_algorithm(
+        netlist_path=Path("tests/fixtures/allegro/mpq8626_sync_buck.net"),
+        bom_path=Path("tests/fixtures/allegro/mpq8626_sync_buck_bom.csv"),
+        profiles=Path("data/datasheet_profiles"),
+    )
+    try:
+        summary = run_seeded_defect_benchmark(
+            matrix=matrix, profiles=context.candidate_report.profiles_dir
+        )
+    finally:
+        close_workbench_context(context)
     assert summary.recall == summary.seeded_defects == 1
     assert summary.false_positives == 0
     assert summary.cases[0].new_issues == [summary.cases[0].expected]
