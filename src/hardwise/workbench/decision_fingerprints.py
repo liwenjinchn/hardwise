@@ -6,7 +6,11 @@ import json
 from hardwise.ir.identity_sources import MPN_RECORDS, is_mpn_field, netlist_mpn_sources
 from hardwise.validation.passive_ratings import resolve_passive_rating
 from hardwise.bom.source_fields import RATING_SOURCES
-from hardwise.workbench.control_dependencies import control_dependency_payload, local_voltage_facts
+from hardwise.workbench.control_dependencies import (
+    control_dependency_payload,
+    local_voltage_facts,
+    local_voltage_review,
+)
 
 REVIEW_DEPENDENCY_CONTRACT = "hardwise.review_dependencies.v3"
 
@@ -159,6 +163,8 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
             if t.kind not in {"component_check", "pin_check"}
         ],
     }
+    if design.voltage_review is not None:
+        broad["voltage_review"] = design.voltage_review.model_dump(mode="json")
     broad_hash = _digest(broad)
     output = {}
     for task in tasks:
@@ -178,6 +184,9 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
                 "active_mode": design.voltage_facts.active_mode,
                 "facts": local_voltage_facts(design, component),
             }
+            review = local_voltage_review(design, component)
+            if review is not None:
+                payload["voltage_review"] = review
             if check in RATING_CHECKS:
                 payload["passive_rating_premises"] = ratings.get(task.refdes, {}).get(
                     RATING_CHECKS[check]

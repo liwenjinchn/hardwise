@@ -20,6 +20,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 from hardwise.ir.voltage import VoltageFactsDocument
+from hardwise.ir.voltage_review import VoltageReviewDocument
 
 from hardwise.checklist.finding import Finding
 from hardwise.ir.profile import DatasheetProfile
@@ -120,6 +121,9 @@ class Design(BaseModel):
     project_path: Path
     source_eda: SourceEda
     voltage_facts: VoltageFactsDocument = Field(default_factory=VoltageFactsDocument)
+    # Full ledger is carried explicitly by run provenance; legacy Design JSON
+    # keeps its executable-facts shape and must not masquerade as a ledger backup.
+    voltage_review: VoltageReviewDocument | None = Field(default=None, exclude=True)
 
     @property
     def refdes_set(self) -> set[str]:

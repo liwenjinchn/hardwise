@@ -8,7 +8,8 @@ import math
 import platform
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from hardwise.ir.voltage_review import VoltageReviewDocument
 from hardwise.input_provenance import InputReadManifest
 
 
@@ -41,6 +42,10 @@ class RunProvenance(BaseModel):
     profiles: list[ProfileModelSnapshot]
     profile_bindings: dict[str, str]
     rule_versions: list[EmittedRuleVersion]
+    # Absent on historical and v1-input runs; never synthesize old review records.
+    voltage_review: VoltageReviewDocument | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     emitted_records: int
 
 
@@ -94,6 +99,7 @@ def build_run_provenance(context) -> RunProvenance:
 
     return RunProvenance(
         review_dependency_contract=REVIEW_DEPENDENCY_CONTRACT,
+        voltage_review=context.design.voltage_review,
         input_capture_status="captured" if context.input_manifest is not None else "unavailable",
         inputs=context.input_manifest,
         package_version=package_version,

@@ -85,3 +85,19 @@ PRD's full batch-confirmation workflow. The import page's legacy passive-only
 help text understates the currently supported family consumers. Its wording and
 the future editing workflow still need alignment; no family-wide certification
 is implied. [Stage67 audit](fact-confirmation-audit-v1.md) records current evidence.
+
+
+## Multi-source review input (stage72)
+
+The same optional input accepts a `hardwise.voltage_review.v1` document with
+source candidates and content/scope-bound declarations. Conflicts and stale
+confirmations do not become executable confirmed facts. The complete ledger is
+retained in the original captured input and in new run provenance; old runs and
+v1 files are not rewritten. Managed save/open and project backup/restore retain
+all candidates and declarations. Ordinary Design/index JSON and CSV carry
+executable assessments/facts, not a complete ledger backup. Use the recorded run
+manifest or complete project backup when preserving review history.
+
+This enables file import/readback persistence only; the planned batch-edit and
+conflict-resolution UI/API is still incomplete. See the selected
+[multi-source implementation contract](fact-confirmation-plan-v1.md).

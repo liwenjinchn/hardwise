@@ -47,7 +47,7 @@ def control_dependency_payload(context, task, component_snapshot, profile_snapsh
         if net_name
         else []
     )
-    return {
+    payload = {
         "scope": "control_neighborhood.v1",
         "component": component_snapshot(component),
         "profile": profile_snapshot,
@@ -60,4 +60,33 @@ def control_dependency_payload(context, task, component_snapshot, profile_snapsh
         },
         "active_mode": context.design.voltage_facts.active_mode,
         "facts": local_voltage_facts(context.design, component, neighbors),
+    }
+    review = local_voltage_review(context.design, component, neighbors)
+    if review is not None:
+        payload["voltage_review"] = review
+    return payload
+
+
+def local_voltage_review(design, component, extra_components=()):
+    """Bind unresolved candidate/decision premises only in the observed scope."""
+    review = design.voltage_review
+    if review is None:
+        return None
+    nets = {pin.net for item in [component, *extra_components] for pin in item.pins if pin.net}
+    candidates = [
+        c for c in review.candidates if c.fact.net in nets and c.fact.mode == review.active_mode
+    ]
+    nets.update(c.fact.reference_net for c in candidates)
+    return {
+        "active_mode": review.active_mode,
+        "candidates": [
+            c.model_dump(mode="json")
+            for c in sorted(review.candidates, key=lambda c: c.id)
+            if c.fact.net in nets and c.fact.mode == review.active_mode
+        ],
+        "confirmations": [
+            d.model_dump(mode="json")
+            for d in review.confirmations
+            if d.net in nets and d.mode == review.active_mode
+        ],
     }

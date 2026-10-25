@@ -29,3 +29,16 @@
 30项模型测试包含生产MOSFETvalidator消费投影：Vgs冲突UNKNOWN、Vds独立PASS；选越界Gate后VgsFAIL，撤回后UNKNOWN而VdsPASS；未批准profile依旧UNKNOWN。证明模型和判定之间的预期接口，尚非工作台端到端。纯批量函数不提供数据库事务、认证或project/run检查，这些必须由下一阶段调用层完成；不能把其revision/scope守卫当成完整并发/持久化验收。
 
 后续必须完成步骤2–5；在此之前生产加载器仍只读原v1，没有自动迁移/新接口/新UI，不升级原日志或冻结包。本次新增基础不会改变现有工作台结果。原PRD范围完整保留。
+
+
+## 第72输入、溯源与保存接入（批量编辑API/UI仍待接）
+
+现有voltage-facts文件槽可识别hardwise.voltage_review.v1完整账本，保留Design.voltage_review并把有效声明投影到原voltage_facts；原v1输入保持原语义，不自动转换或伪造新确认。校验包括未选/冲突候选的net/reference及声明net，未知网络整份拒绝后原Design不变。原30档案/批准合同不变，导入账本仍是用户声明，不代表认证或AI批准。
+
+完整账本随RunProvenance可选voltage_review字段保存到新运行和离线运行清单；旧运行/v1输入不补null字段或新声明，生成契约明确该属性可缺失。Design默认JSON继续仅导出可执行事实；它不是账本备份。要保留候选/历史必须用完整运行清单、受管理项目或项目备份；普通CSV/旧index不承诺携带完整账本。
+
+复用原受管理输入捕获完整源文件，无新SQLite表/格式迁移，源文件字节/hash可在原路径删除后恢复。真实API导入/重跑/保存/ZIP备份/独立恢复已证明冲突仍UNKNOWN、独立电阻PASS、4候选2声明完整。当前/历史run清单各自记录原账本，修改源后重跑不回填旧清单。
+
+局部pin/已审component/control依赖额外记录对应active_mode网络及参考域的完整候选/声明。即使UNKNOWN结果未变，相关冲突候选值/来源改变也更换fingerprint，无关电阻不受影响。没有账本的旧v1/no-fact输入不增加该字段，正常公开报告的所有行/producer/summary/coverage完全一致。
+
+此阶段只接完整文件输入和既有保存/运行接口；没有候选增改或批量确认新路由、事务激活或图形表单。下一阶段仍须按步骤3–5完成project/run/revision保护、批量写入/失败回滚、来源候选管理、白色多选/冲突/撤回及目标交付；不能把导入一个带声明文件当作GUI批量确认已完成。

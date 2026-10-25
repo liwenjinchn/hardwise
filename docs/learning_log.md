@@ -5799,3 +5799,8 @@ Backend ends source tokens at backticks; UI formerly swallowed stray backticks a
 ### 2026-10-26 — Bind voltage confirmation to the full candidate scope
 
 Selecting candidate content alone misses new conflicting sources arriving later. Bind both candidate hash (including source/locator) and all net/mode candidate hashes; additions/removals/content changes require review, reordering does not. Keep latest explicitunknown as revocation and retain all prior declarations. A pure batch reducer can guarantee no input mutation/partial return but cannot claim SQLite transaction, activation or currentrun safety; these remain caller obligations. Thirty model tests include real existingVgs/Vdsvalidators proving unresolvedUNKNOWN and independentPASS. EvidenceHardwise-事实分层71; model foundation only, no workbench migration.
+
+
+### 2026-10-26 — Preserve the full ledger and bind unresolved premises on intake
+
+An executable-facts projection alone loses conflicts and review history. Capture the full source file through existing managed inputs and include the ledger only in new run provenance, leaving old/v1 receipts unexpanded. Generated response schemas normally force defaults required; conditionally omitted ledger must remain optional to match actual payloads. Local fingerprints must include unresolved relevant candidates, otherwise changed conflicting values stillUNKNOWN would silently preserve a stale review. Tests cover unchanged independentR1 hash and changedC1 hash, raw source deletion/reopen, API backup/independent restore and original-run receipt immutability. EvidenceHardwise-事实接入72. New editor API/transactions/UI remain unfinished.

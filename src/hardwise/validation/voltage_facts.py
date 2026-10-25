@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 from fractions import Fraction
 from hardwise.validation.passive_numeric import finite_quantity
@@ -10,23 +11,36 @@ from hardwise.input_provenance import read_input_text
 
 from hardwise.ir.types import Component, Design
 from hardwise.ir.voltage import VoltageFactsDocument
+from hardwise.ir.voltage_review import VoltageReviewDocument
 
 
 def load_voltage_facts(path: Path, design: Design) -> None:
     """Reject invalid/foreign-net inputs before assigning any new facts."""
-    document = VoltageFactsDocument.model_validate_json(read_input_text(path, role="voltage_facts"))
+    raw = json.loads(read_input_text(path, role="voltage_facts"))
+    review = (
+        VoltageReviewDocument.model_validate(raw)
+        if isinstance(raw, dict) and raw.get("schema_version") == "hardwise.voltage_review.v1"
+        else None
+    )
+    document = review.project() if review is not None else VoltageFactsDocument.model_validate(raw)
     known_nets = set(design.nets) | {
         pin.net for component in design.components.values() for pin in component.pins if pin.net
     }
+    # Validate even unresolved or unselected candidates, never hide foreign nets
+    # by projecting them away first. The previous design remains untouched on error.
+    candidates = [candidate.fact for candidate in review.candidates] if review else document.facts
     unknown = {
         name
-        for fact in document.facts
+        for fact in candidates
         for name in (fact.net, fact.reference_net)
         if name not in known_nets
     }
+    if review:
+        unknown.update(d.net for d in review.confirmations if d.net not in known_nets)
     if unknown:
         raise ValueError(f"voltage facts reference unknown nets: {', '.join(sorted(unknown))}")
     design.voltage_facts = document
+    design.voltage_review = review
 
 
 @dataclass(frozen=True)

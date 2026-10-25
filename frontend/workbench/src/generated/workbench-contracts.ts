@@ -323,7 +323,35 @@ export type Scope2 = "pin" | "component" | "net";
 export type Version1 = string;
 export type RuleVersions = EmittedRuleVersion[];
 export type SchemaVersion2 = "hardwise.run_provenance.v1";
+export type ActiveMode = string;
+export type Confirmed = boolean;
+export type ConfirmedBy = string;
+export type Maximum = number | null;
+export type Minimum = number | null;
+export type Mode2 = string;
+export type Net2 = string;
+export type ReferenceNet = string;
+export type Source6 = string;
+export type Typical = number | null;
+export type Unit1 = "V";
+export type Id3 = string;
+export type Locator = string;
+export type Origin = "manual" | "import" | "net_name" | "legacy_v1";
+export type Candidates2 = VoltageCandidate[];
+export type Action = "confirm" | "unknown";
+export type CandidateId = string | null;
+export type CandidateSha256 = string | null;
+export type Id4 = string;
+export type Mode3 = string;
+export type Net3 = string;
+export type Origin1 = "human" | "legacy_v1";
 export type Reason10 = string;
+export type RecordedAt = string | null;
+export type Reviewer = string;
+export type ScopeSha256 = string;
+export type Confirmations = VoltageConfirmation[];
+export type SchemaVersion3 = "hardwise.voltage_review.v1";
+export type Reason11 = string;
 export type RunId2 = string;
 export type Status18 = "recorded" | "not_recorded";
 export type Total4 = number;
@@ -341,7 +369,7 @@ export type Offset = number;
 export type ProjectId2 = string;
 export type RunId3 = string;
 export type Total5 = number;
-export type Id3 = string;
+export type Id5 = string;
 export type Name5 = string;
 export type ProjectId3 = string;
 export type Snapshot = string;
@@ -415,7 +443,7 @@ export type AffectedRefdes1 = string[];
 export type Axis = "electrical" | "evidence";
 export type Check2 = string | null;
 export type DerivedTaskCount = number;
-export type Id4 = string;
+export type Id6 = string;
 export type Identity1 = string;
 export type RawTaskCount = number;
 export type RecommendedAction3 = string;
@@ -432,7 +460,7 @@ export type AcceptedExternalCount = number;
 export type Count1 = number;
 export type ExternalStatus = string;
 export type Count2 = number;
-export type Reason11 = string;
+export type Reason12 = string;
 export type Rejected1 = RejectedRiskHintSummary[];
 export type RejectedExternalCount = number;
 export type WrappedRefdesCount1 = number;
@@ -441,19 +469,9 @@ export type Count3 = number;
 export type ExternalStatus1 = string;
 export type RejectedExternalCount1 = number;
 export type SelectedRefdes3 = string | null;
-export type ActiveMode = string;
-export type Confirmed = boolean;
-export type ConfirmedBy = string;
-export type Maximum = number | null;
-export type Minimum = number | null;
-export type Mode2 = string;
-export type Net2 = string;
-export type ReferenceNet = string;
-export type Source6 = string;
-export type Typical = number | null;
-export type Unit1 = "V";
+export type ActiveMode1 = string;
 export type Facts = VoltageFact[];
-export type SchemaVersion3 = "hardwise.voltage_facts.v1";
+export type SchemaVersion4 = "hardwise.voltage_facts.v1";
 
 export interface WorkbenchContracts {
   ai_disclosure: AIDisclosure;
@@ -976,7 +994,7 @@ export interface RunProvenanceResponse {
   created_at: CreatedAt1;
   project_id: ProjectId1;
   provenance: RunProvenance1 | null;
-  reason: Reason10;
+  reason: Reason11;
   run_id: RunId2;
   status: Status18;
 }
@@ -994,6 +1012,7 @@ export interface RunProvenance1 {
   review_dependency_contract: ReviewDependencyContract;
   rule_versions: RuleVersions;
   schema_version: SchemaVersion2;
+  voltage_review?: VoltageReviewDocument | null;
 }
 export interface InputReadManifest {
   assurance: Assurance;
@@ -1028,6 +1047,52 @@ export interface EmittedRuleVersion {
   scope: Scope2;
   version: Version1;
 }
+/**
+ * Input order is audit order; latest declaration per net/mode supersedes old ones.
+ */
+export interface VoltageReviewDocument {
+  active_mode: ActiveMode;
+  candidates: Candidates2;
+  confirmations: Confirmations;
+  schema_version: SchemaVersion3;
+}
+export interface VoltageCandidate {
+  fact: VoltageFact;
+  id: Id3;
+  locator: Locator;
+  origin: Origin;
+}
+/**
+ * One user-supplied DC envelope relative to an identified reference net.
+ */
+export interface VoltageFact {
+  confirmed: Confirmed;
+  confirmed_by: ConfirmedBy;
+  maximum: Maximum;
+  minimum: Minimum;
+  mode: Mode2;
+  net: Net2;
+  reference_net: ReferenceNet;
+  source: Source6;
+  typical: Typical;
+  unit: Unit1;
+}
+/**
+ * A recorded user assertion, not authenticated identity or engineering approval.
+ */
+export interface VoltageConfirmation {
+  action: Action;
+  candidate_id: CandidateId;
+  candidate_sha256: CandidateSha256;
+  id: Id4;
+  mode: Mode3;
+  net: Net3;
+  origin: Origin1;
+  reason: Reason10;
+  recorded_at: RecordedAt;
+  reviewer: Reviewer;
+  scope_sha256: ScopeSha256;
+}
 export interface ProjectRestoreReceipt {
   journal: Journal;
   launches: Launches;
@@ -1049,7 +1114,7 @@ export interface ReviewHistoryPage {
   total: Total5;
 }
 export interface SavedProjectView {
-  id: Id3;
+  id: Id5;
   name: Name5;
   project_id: ProjectId3;
   snapshot: Snapshot;
@@ -1182,7 +1247,7 @@ export interface ReviewTaskGroup {
   axis: Axis;
   check: Check2;
   derived_task_count: DerivedTaskCount;
-  id: Id4;
+  id: Id6;
   identity: Identity1;
   raw_task_count: RawTaskCount;
   recommended_action: RecommendedAction3;
@@ -1210,7 +1275,7 @@ export interface RiskHintsView {
  */
 export interface RejectedRiskHintSummary {
   count: Count2;
-  reason: Reason11;
+  reason: Reason12;
 }
 /**
  * Backward-compatible compact risk-hints summary.
@@ -1225,22 +1290,7 @@ export interface RiskHintsSummary {
  * Portable project input, validated atomically before replacing active state.
  */
 export interface VoltageFactsDocument {
-  active_mode: ActiveMode;
+  active_mode: ActiveMode1;
   facts: Facts;
-  schema_version: SchemaVersion3;
-}
-/**
- * One user-supplied DC envelope relative to an identified reference net.
- */
-export interface VoltageFact {
-  confirmed: Confirmed;
-  confirmed_by: ConfirmedBy;
-  maximum: Maximum;
-  minimum: Minimum;
-  mode: Mode2;
-  net: Net2;
-  reference_net: ReferenceNet;
-  source: Source6;
-  typical: Typical;
-  unit: Unit1;
+  schema_version: SchemaVersion4;
 }

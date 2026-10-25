@@ -3636,6 +3636,17 @@
           "default": "hardwise.run_provenance.v1",
           "title": "Schema Version",
           "type": "string"
+        },
+        "voltage_review": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VoltageReviewDocument"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -3864,6 +3875,147 @@
       "title": "SourceAudit",
       "type": "object"
     },
+    "VoltageCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "fact": {
+          "$ref": "#/$defs/VoltageFact"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "locator": {
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "manual",
+            "import",
+            "net_name",
+            "legacy_v1"
+          ],
+          "title": "Origin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fact",
+        "id",
+        "locator",
+        "origin"
+      ],
+      "title": "VoltageCandidate",
+      "type": "object"
+    },
+    "VoltageConfirmation": {
+      "additionalProperties": false,
+      "description": "A recorded user assertion, not authenticated identity or engineering approval.",
+      "properties": {
+        "action": {
+          "enum": [
+            "confirm",
+            "unknown"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "candidate_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Id"
+        },
+        "candidate_sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Sha256"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "mode": {
+          "minLength": 1,
+          "title": "Mode",
+          "type": "string"
+        },
+        "net": {
+          "minLength": 1,
+          "title": "Net",
+          "type": "string"
+        },
+        "origin": {
+          "default": "human",
+          "enum": [
+            "human",
+            "legacy_v1"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "recorded_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recorded At"
+        },
+        "reviewer": {
+          "minLength": 1,
+          "title": "Reviewer",
+          "type": "string"
+        },
+        "scope_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Scope Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "candidate_id",
+        "candidate_sha256",
+        "id",
+        "mode",
+        "net",
+        "origin",
+        "reason",
+        "recorded_at",
+        "reviewer",
+        "scope_sha256"
+      ],
+      "title": "VoltageConfirmation",
+      "type": "object"
+    },
     "VoltageFact": {
       "additionalProperties": false,
       "description": "One user-supplied DC envelope relative to an identified reference net.",
@@ -3987,6 +4139,48 @@
         "schema_version"
       ],
       "title": "VoltageFactsDocument",
+      "type": "object"
+    },
+    "VoltageReviewDocument": {
+      "additionalProperties": false,
+      "description": "Input order is audit order; latest declaration per net/mode supersedes old ones.",
+      "properties": {
+        "active_mode": {
+          "default": "dc",
+          "minLength": 1,
+          "title": "Active Mode",
+          "type": "string"
+        },
+        "candidates": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/VoltageCandidate"
+          },
+          "title": "Candidates",
+          "type": "array"
+        },
+        "confirmations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/VoltageConfirmation"
+          },
+          "title": "Confirmations",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "hardwise.voltage_review.v1",
+          "default": "hardwise.voltage_review.v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "active_mode",
+        "candidates",
+        "confirmations",
+        "schema_version"
+      ],
+      "title": "VoltageReviewDocument",
       "type": "object"
     },
     "WorkbenchCapabilities": {

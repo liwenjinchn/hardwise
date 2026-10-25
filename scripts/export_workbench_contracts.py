@@ -34,6 +34,12 @@ def _require_serialized_response_fields(schema: dict[str, object]) -> None:
         properties = definition.get("properties")
         if isinstance(properties, dict):
             definition["required"] = sorted(properties)
+            # This field is deliberately omitted on old/v1-input runs via
+            # Pydantic exclude_if. Do not promise a key the API does not emit.
+            if name == "RunProvenance":
+                definition["required"] = [
+                    key for key in definition["required"] if key != "voltage_review"
+                ]
 
 
 def main() -> None:
