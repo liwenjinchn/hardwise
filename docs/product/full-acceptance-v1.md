@@ -33,7 +33,7 @@
 | A14 | local_cases_verified | 空集未评估/旧记录需复核 | 候选分母合同另未完成 | AI + 对应真实复核人 |
 | 输入支持表 | not_met | 已有解析器和合成文件组，不是真实EDA导出路线 | 记录实际EDA版本/菜单/文件组/编码/层级/成功结果 | 用户/Windows与Cadence操作者 |
 | 云AI隐私启用 | not_met | 生产HTTP/Runner注入记录器复现：无确认聊天200/SDK调用2，包含历史和真实工具结果；无真实外发 | [待选A/B方案](ai-disclosure-plan-v1.md)；后端绑定当前披露、前端先确认；消除dotenv延迟配置漂移 | AI + 用户选择 |
-| 密钥与本地默认 | not_met | 配置资料key且缺省设置时，打开Q12详情进入Datasheets型号查询；显式关闭时0查询，注入复现无真实联网 | 默认外部查询/显式启用边界仍需处理；密钥与日志继续复验 | AI + 用户选择 |
+| 密钥与本地默认 | not_met | 配置资料key且缺省设置时，打开Q12详情进入Datasheets型号查询；显式关闭时0查询，注入复现无真实联网 | 被动GoogleFonts已移除并本机验证；默认资料查询/显式AI启用边界仍需处理，不能据此关闭本项 | AI + 用户选择 |
 | 性能 | baseline_recorded | 当前18进程/63构建0失败；3/25/66器件 | 目标机/真实工作负载与退化预算；无任意大板承诺 | AI测量，用户确认实际工作负载 |
 | 独立样本与指标 | awaiting_human | eval/manifest.yaml自述pseudo-gold；不是独立金标准 | [人工执行材料](peer-acceptance-v1.md)已就绪但记录仍空；需3–5设计、30–50独立标签/留出与归因 | 用户 + 独立同行 |
 | 覆盖分母 | not_met | 146已生成记录=98PASS/4FAIL/44UNKNOWN；full_candidate_count=null | 版本化候选/适用/完成/未知/不适用分母，不能用引脚数代替 | AI提出合同，用户确认 |

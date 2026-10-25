@@ -5660,3 +5660,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: 来源观察用Path.is_file直接抛出，未分开普通不存在与无法检查。不同Python的is_file还可能吞掉更多OSError。
 - Fix: 直接stat并检查普通文件，FileNotFound/NotADirectory作为普通未找到继续；其他OSError继续其他根目录，最终无法定位则用既有unchecked表示，不谎称不存在。异常文本不外传。原文未随附/允许导出、机器判断保持原合同；4新增回归在旧源码失败。
 - Takeaway: 来源位置观察不是内容认证；失败降级应保留不确定性，不能靠吞异常制造“核对成功”。浏览器file协议被工具禁止时不能冒充实际双击验收；本轮只能保留静态HTTP预览。预览还发现GoogleFonts外链请求，需要独立修复默认联网，不能称全部离线零请求。
+
+
+## 2026-10-25 — 单文件HTML仍可能被head外链触发联网
+
+- Symptom: 离线报告已内联JS/CSS，但浏览器仍尝试GoogleFonts请求；被拦截后靠本机字体可读。
+- Root cause: index.html保留两条preconnect和一条远程fontstylesheet，导出只内联Vite资源，没有移除其余head依赖。
+- Fix: 删除源入口3外链并重建生产入口，保留已有字体栈。在线请求/控制台、离线单次加载后关闭服务及断网操作均留证；两份当前白色别名只删相同链接，固定快照JSON逐字不变，有原件备份。
+- Takeaway: “单文件”不能推导“无外部请求”；应检查head、字体和资源请求，且区分资源离线可用、真实file双击、云AI与其他provider入口。
