@@ -8,7 +8,7 @@ This is a pinned public source package for T08 target-machine validation. It is 
 uv run python scripts/build_validation_bundle.py --output /absolute/path/Hardwise-Windows-check.zip
 ```
 
-The supported source commit is `132bd572f2896b0b62584b2453b582365411e896`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 911 source/supplement files; the manifest itself is the 912th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
+The supported source commit is `8938cf7108672f68147d9fe92ccdc59e05098a41`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 915 source/supplement files; the manifest itself is the 916th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
 
 Extract to a normal directory. In native Windows PowerShell, from the extracted root:
 
@@ -46,10 +46,19 @@ Evidence: task output Hardwise-统一交付56 (bundle-metadata.json, bundle-prob
 Windows software probe remains false; actual Cadence export, human profile approval and product release acceptance remain unverified/false. Current browser entry is documented in the task's current-entry note; old numbered reports and frozen ZIPs never update automatically.
 
 
-## Current 132bd57 delivery — 2026-10-25
+## Previous 132bd57 delivery — 2026-10-25
 
 Includes the additional inductance numeric fix under the same accepted local-UNKNOWN policy; generic inductor parse v2 and Buck inductor v3, with broad dependency fallback retained. Exact normal public-fixture report records remain equal excluding only rule_version. The current builder pin is 132bd572f2896b0b62584b2453b582365411e896; previous ZIPs are frozen history.
 
 `Hardwise-132bd57-Windows-check.zip`: 912 files / 911 hashes, 14,166,026 bytes; SHA-256 `3fe88c07ec2c35375fc86eafd5fe1455cd6eec376539452bda26cf28d70345b6`. Chinese/space extraction passed hashes, recorded baseline, white report, real no-key CLI dry-run and canonical review / managed save / independent backup restore without original paths. All 53 resistor/capacitor/inductance numeric tests passed in the extraction. Existing dependencies were reused, no fresh install or native Windows was tested. Native-Windows, tamper, overwrite and unregistered-ref controls rejected, restored hashes passed, archive unchanged.
 
 Current full Python 1567 passed / 7 deselected, 46.62s (delivery run). Final E2E 23 passed, 44.1s; the first run's one identity-import parse-page timeout is retained without an asserted root cause. Both mutable white aliases and owned live18772 now use this source. The live L78 scene contains no inductors, so all original 5 history rows, old runs/catalog and ten managed-input hashes remain unchanged after reload. Evidence: task output Hardwise-电感数值57; no product release, physical engineering approval or Windows/Cadence claim.
+
+
+## Current 8938cf7 delivery — 2026-10-25
+
+Includes the user-selected quarantine of every competing reference candidate, same-name columns and Cadence continuation handling. Existing explicit-identity producer v4 invalidates prior decisions according to the established journal contract; ordinary valid public reports remain exactly equal. Current builder pin is 8938cf7108672f68147d9fe92ccdc59e05098a41; previous ZIPs remain frozen history.
+
+`Hardwise-8938cf7-Windows-check.zip`: 916 files / 915 hashes, 14,176,603 bytes; SHA-256 `7bf6cfe42b66f7f66f109b2a5ee09b0de57fe60d15257637c5131b50908647d9`. Extraction under a Chinese/space path passed hashes, exact public baseline, white rendering, no-key CLI dry-run and managed save / independent restore without original paths. All 78 extracted numeric/reference tests passed in 10.10s. Native Windows, tamper, overwrite and unregistered ref were rejected as expected; restored bytes passed hashes and the ZIP remained unchanged. Existing dependencies were reused; no fresh install or actual Windows/Cadence acceptance was performed.
+
+Current repository Python: 1592 passed / 7 deselected, 46.53s (delivery run); frontend contracts/type check, Ruff/diff and 24 E2E pass (46.4s), including actual white import/quarantine/correction with inspected desktop/narrow screenshots. Both main static white aliases and owned live18772 use this source; all original 5 event rows, 26 old runs, catalog and ten managed-input hashes survived reload without additional events. Evidence: task output Hardwise-位号隔离58. No release approval or independent engineering label is implied.
