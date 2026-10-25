@@ -10,10 +10,15 @@ from pathlib import Path
 from hardwise.input_provenance import read_input_text, read_input_bytes
 from xml.etree import ElementTree
 
-from hardwise.bom.types import Bom, BomItem, BomParseError, split_refdes
+from hardwise.bom.types import Bom, BomItem, BomParseError, split_refdes, BomSourceField
 from hardwise.bom.source_fields import delimited_source_fields, table_source_fields
 from hardwise.bom.identity_fields import identity_value
 from hardwise.bom.quantity_fields import read_quantity_columns, parse_quantity
+from hardwise.bom.reference_fields import (
+    reference_candidates,
+    reference_columns,
+    continued_reference_columns,
+)
 
 _XLSX_MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 _XLSX_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -38,6 +43,8 @@ def parse_bom(path: Path) -> Bom:
 def _parse_cadence_report_bom(path: Path, text: str) -> list[BomItem]:
     lines = text.splitlines()
     header_index = _find_cadence_header(lines)
+    headers = _tab_cells(lines[header_index], min_len=4)
+    reference_fields: list[BomSourceField] = []
     items: list[BomItem] = []
     current: dict[str, object] | None = None
     refdes_parts: list[str] = []
@@ -45,10 +52,11 @@ def _parse_cadence_report_bom(path: Path, text: str) -> list[BomItem]:
     for line_no, raw_line in enumerate(lines[header_index + 1 :], start=header_index + 2):
         if not raw_line.strip() or set(raw_line.strip()) <= {"_", "-"}:
             continue
-        item_cell, quantity_cell, reference_cell, part_cell = _tab_cells(raw_line, min_len=4)[:4]
+        cells = _tab_cells(raw_line, min_len=4)
+        item_cell, quantity_cell, reference_cell, part_cell = cells[:4]
         if item_cell.isdigit():
             if current is not None:
-                items.append(_build_item(current, refdes_parts))
+                items.append(_build_item(current, refdes_parts, reference_fields))
             current = {
                 "item_number": item_cell,
                 "quantity": _parse_quantity(quantity_cell, path, line_no),
@@ -57,15 +65,19 @@ def _parse_cadence_report_bom(path: Path, text: str) -> list[BomItem]:
                 "source_line": line_no,
             }
             refdes_parts = [reference_cell]
+            reference_fields = reference_columns(table_source_fields(headers, cells))
             continue
         if current is not None and not item_cell and not quantity_cell:
+            reference_fields = continued_reference_columns(
+                reference_fields, table_source_fields(headers, cells)
+            )
             if reference_cell:
                 refdes_parts.append(reference_cell)
             if part_cell and current.get("value") is None:
                 current["value"] = part_cell
 
     if current is not None:
-        items.append(_build_item(current, refdes_parts))
+        items.append(_build_item(current, refdes_parts, reference_fields))
     if not items:
         raise BomParseError(f"{path}: no BOM items found")
     return items
@@ -92,8 +104,8 @@ def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]
             line_no += 1
         previous_end = reader.line_num
         raw_refdes = row.get(refdes_field, "") or ""
-        refdes_list = split_refdes(raw_refdes)
         source_fields = next(original_fields)
+        refdes_list = reference_candidates(source_fields)
         quantity = read_quantity_columns(source_fields, path, line_no)
         items.append(
             BomItem(
@@ -127,12 +139,10 @@ def _parse_xlsx_bom(path: Path) -> list[BomItem]:
     items: list[BomItem] = []
     for row_index, row in enumerate(rows[header_index + 1 :], start=header_index + 2):
         raw_refdes = _xlsx_cell(row, refdes_index)
-        if not raw_refdes:
-            continue
-        refdes_list = split_refdes(raw_refdes)
+        source_fields = table_source_fields(rows[header_index], row)
+        refdes_list = reference_candidates(source_fields)
         if not refdes_list:
             continue
-        source_fields = table_source_fields(rows[header_index], row)
         quantity = read_quantity_columns(source_fields, path, row_index)
         value = _blank_to_none(_xlsx_cell(row, value_index))
         item_number = _blank_to_none(_xlsx_cell(row, item_number_index))
@@ -276,12 +286,17 @@ def _find_cadence_header(lines: list[str]) -> int:
     raise BomParseError("missing BOM header row with Item/Quantity/Reference")
 
 
-def _build_item(raw: dict[str, object], refdes_parts: list[str]) -> BomItem:
+def _build_item(
+    raw: dict[str, object], refdes_parts: list[str], source_fields: list[BomSourceField]
+) -> BomItem:
     raw_refdes = " ".join(part.strip() for part in refdes_parts if part.strip())
     return BomItem(
         item_number=raw.get("item_number"),  # type: ignore[arg-type]
         quantity=raw.get("quantity"),  # type: ignore[arg-type]
-        refdes_list=split_refdes(raw_refdes),
+        refdes_list=reference_candidates(source_fields)
+        if source_fields
+        else split_refdes(raw_refdes),
+        source_fields=source_fields,
         value=raw.get("value"),  # type: ignore[arg-type]
         source_file=raw["source_file"],  # type: ignore[arg-type]
         source_line=raw["source_line"],  # type: ignore[arg-type]

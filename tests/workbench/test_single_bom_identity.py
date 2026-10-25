@@ -263,7 +263,7 @@ def test_conflicting_netlist_mpn_without_a_bom_row_still_blocks_related_checks(t
     try:
         u2 = next(row.validation for row in context.index.rows if row.refdes == "U2")
         assert u2.result == "UNKNOWN" and u2.needs_review
-        assert u2.component_checks[0].rule_version == "3"
+        assert u2.component_checks[0].rule_version == "4"
         assert (
             "L7805" in u2.component_checks[0].summary and "L7812" in u2.component_checks[0].summary
         )

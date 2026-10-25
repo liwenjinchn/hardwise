@@ -385,3 +385,37 @@ test("control review survives distant BOM changes and reopens for a direct branc
   await row.scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath("control-dependency-recheck-white.png"), animations: "disabled" });
 });
+
+
+test("competing reference columns quarantine every candidate and clear after correction", async ({ page, request }, testInfo) => {
+  const bom = (conflict: boolean) => Buffer.from(
+    "Reference,Refdes,Quantity,Value\n" +
+    `U1,${conflict ? "C1" : "U1"},1,L7805\n` +
+    "C1,C1,1,100nF 25V\nC2,C2,1,100nF 25V\n"
+  );
+  const load = async (conflict: boolean) => {
+    await page.getByRole("button", { name: "导入", exact: true }).click();
+    await page.getByLabel("选择 netlist / PST").setInputFiles(path.resolve("../../tests/fixtures/allegro/l78_regulator.net"));
+    await page.getByLabel("选择 BOM CSV").setInputFiles({ name: "references.csv", mimeType: "text/csv", buffer: bom(conflict) });
+    await page.getByRole("button", { name: "导入并解析" }).click();
+    await expect(queueRow(page, "U1")).toBeVisible();
+    await expect(queueRow(page, "C1")).toBeVisible();
+  };
+  await openReview(page);
+  await load(true);
+  const state = await (await request.get("/api/workbench/state")).json();
+  const blocked = state.review_tasks.filter((t: { check: string }) => t.check === "bom_identity_conflict");
+  expect(blocked.map((t: { refdes: string }) => t.refdes).sort()).toEqual(["C1", "U1"]);
+  expect(blocked.every((t: { assessment: { result: string; rule_version: string } }) => t.assessment.result === "UNKNOWN" && t.assessment.rule_version === "4")).toBe(true);
+  await page.getByRole("button", { name: "问题清单" }).click();
+  await expect(page.locator(".findings-list")).toContainText("column1 [Reference=U1]");
+  await expect(page.locator(".findings-list")).toContainText("column2 [Refdes=C1]");
+  await page.screenshot({ path: testInfo.outputPath("reference-quarantine-white.png"), animations: "disabled" });
+  await page.setViewportSize({ width: 760, height: 900 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("reference-quarantine-narrow.png"), animations: "disabled" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await load(false);
+  const fixed = await (await request.get("/api/workbench/state")).json();
+  expect(fixed.review_tasks.some((t: { check: string }) => t.check === "bom_identity_conflict")).toBe(false);
+});

@@ -29,10 +29,12 @@ def group_bom_rows(rows: Iterable[BomRow]) -> dict[str, list[BomRow]]:
     return dict(grouped)
 
 
-def single_row_identity_conflict(component: Component, row: BomRow) -> str | None:
+def single_row_identity_conflict(component: Component | None, row: BomRow) -> str | None:
     column_conflict = row_identity_conflicts(row)
     if column_conflict:
         return column_conflict
+    if component is None:
+        return None
     records = netlist_mpn_sources(component)
     identities = {record["value"].strip().casefold() for record in records}
     if not identities:

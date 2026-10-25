@@ -2,6 +2,7 @@
 
 import re
 from hardwise.bom.types import BomSourceField, BomRow
+from hardwise.bom.reference_fields import reference_conflict_reason
 
 IDENTITY_FIELDS = {
     "part_number": {
@@ -45,7 +46,8 @@ def identity_value(fields: list[BomSourceField], dimension: str) -> str | None:
 
 
 def row_identity_conflicts(row: BomRow) -> str | None:
-    conflicts = []
+    reference_reason = reference_conflict_reason(row)
+    conflicts = [reference_reason] if reference_reason else []
     for dimension in IDENTITY_FIELDS:
         fields = identity_columns(row.source_fields, dimension)
         if len({field.value.strip().casefold() for field in fields}) > 1:

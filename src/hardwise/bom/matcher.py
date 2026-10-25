@@ -12,6 +12,7 @@ from hardwise.bom.types import Bom, BomMatchReport, BomQuantityMismatch, BomRow,
 from hardwise.ir.types import Design
 from hardwise.bom.source_fields import RATING_SOURCES, preserved_rating_sources
 from hardwise.bom.quantity_fields import quantity_conflict
+from hardwise.bom.reference_fields import has_reference_conflict
 
 
 def match_bom_to_design(bom: Bom, design: Design) -> BomMatchReport:
@@ -32,7 +33,7 @@ def match_bom_to_design(bom: Bom, design: Design) -> BomMatchReport:
     identity_conflicts = {}
     for refdes, row in list(rows_by_refdes.items()):
         component = design.components.get(refdes)
-        reason = single_row_identity_conflict(component, row) if component is not None else None
+        reason = single_row_identity_conflict(component, row)
         if reason:
             identity_conflicts[refdes] = reason
             rows_by_refdes.pop(refdes)
@@ -49,7 +50,10 @@ def match_bom_to_design(bom: Bom, design: Design) -> BomMatchReport:
             source_line=item.source_line,
         )
         for item in bom.items
-        if item.refdes_list and item.quantity is not None and item.quantity != len(item.refdes_list)
+        if item.refdes_list
+        and not has_reference_conflict(item.source_fields)
+        and item.quantity is not None
+        and item.quantity != len(item.refdes_list)
     ]
 
     return BomMatchReport(

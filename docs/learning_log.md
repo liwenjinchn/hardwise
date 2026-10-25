@@ -5700,3 +5700,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: the independent topology parser converted before unit scaling and before the shared bounded conversion. The original helper made a needless int round-trip for the coded whole part.
 - Fix: reuse checked decimal scaling and remove the integer round-trip; version both generic and Buck consumers. Keep definite topology failures and broad dependency fallback. Exact old/new process proof preserves reasons and rows with one review event.
 - Takeaway: enumerate all consumers before declaring numerical coverage. Workbench attention tasks omit most PASS records; inspect detail checks to prove independent checks continue. Rerun timestamps legitimately change. A first E2E parse-page timeout was retained; isolated trace and full rerun passed, root cause remains unconfirmed.
+
+
+### 2026-10-25 — A reference cell is not an authoritative primary key
+
+- Symptom: Reference=U1 / Refdes=C1 silently chose one column; only the selected component was considered.
+- Root cause: raw table columns were captured but reference expansion still used DictReader's chosen header or one XLSX index. Existing identity guards could never see candidates discarded earlier.
+- Fix: compare all explicit nonblank declaration sets, expand an unresolved candidate union only for quarantine, and route every candidate through existing identity/profile guards. Equivalent aliases do not duplicate rows; Cadence continuation cells extend each column's declaration. Do not calculate assembly quantity mismatches from an unresolved candidate union.
+- Takeaway: preserve observations before selecting keys; quarantine is not a set of accepted component bindings. Keep raw registry pins visible without authorizing electrical checks. When old findings disappear, preserve their history without labelling them resolved or transferring acceptance; a later correction does not resurrect acceptance.
