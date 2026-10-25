@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 import subprocess
 import zipfile
 
-BASELINE_COMMIT = "e2e88f5afa911c6231d481f7c9ef681a320ca48c"
+BASELINE_COMMIT = "26f74fc02fb0a757f75020bb09265f3bee136d7e"
 
 BASELINE = {
     "component_summary": {

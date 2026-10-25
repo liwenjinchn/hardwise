@@ -5784,3 +5784,8 @@ Stage67 finds voltage-facts.md still denied cross-restart persistence after mana
 ### 2026-10-26 — Exact comparisons must follow every shared differential consumer
 
 Stage65 fixed passive stress, but dc_envelope still rounded signed differences before terminal/pin comparisons. Synthetic approved20Vlimit with20V−(−1e−16)V yieldedPASS; negativebound and crossing aliases share the cause. Preserve exact canonical-decimal endpoints alongside display floats, then use them in comparisons; keep final-unrepresentableUNKNOWN and realapproval guards. Family summaries must retain the updated pin producer version, and audited control/pin dependency registrations must include it rather than silently reverting to broad scope. Normal public reports match after removing only versions/source paths (22producer updates), old/new/restart journal1→2→2 preserves source hashes/reason. Evidence:Hardwise-端间精度68. No physical precision or actual approval claim.
+
+
+### 2026-10-26 — Producer delivery must respect the actual stored decision scope
+
+Stage69 copies and trials the original journal before upgrade. Profile pin producers2→3 change, but its sole stored decision is a generic capacitor v4 check whose fingerprint stays identical. Correct migration is6→6→6 events, not adding an event merely because the application changed. Preserve all6old events/32old runs/reason/input hashes and verify one real UI rerun; separately retain the affected profile-decision1→2→2 evidence. Current/historical offline receipts prove pin3 versus original2, with their own run IDs. Do not run negative controls that temporarily modify extracted fixtures/manifest concurrently with tests reading that same tree. Evidence:Hardwise-端间交付69.

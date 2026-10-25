@@ -8,7 +8,7 @@ This is a pinned public source package for T08 target-machine validation. It is 
 uv run python scripts/build_validation_bundle.py --output /absolute/path/Hardwise-Windows-check.zip
 ```
 
-The supported source commit is `e2e88f5afa911c6231d481f7c9ef681a320ca48c`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 936 source/supplement files; the manifest itself is the 937th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
+The supported source commit is `26f74fc02fb0a757f75020bb09265f3bee136d7e`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 939 source/supplement files; the manifest itself is the 940th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
 
 Extract to a normal directory. In native Windows PowerShell, from the extracted root:
 
@@ -79,7 +79,7 @@ Windows software probe remains false; actual Cadence export and human profile ap
 Actual white-UI rerun retained five history events. Its newly captured offline report was loaded once over localhost, then checked with the browser offline and all other requests blocked: five original reasons remained visible; current and historical provenance JSON downloads matched their respective embedded run IDs. Only the HTML request occurred, no API or external request. The user live server remains running; this does not claim a stopped-server file double-click or native Windows check.
 
 
-## Current e2e88f5 delivery — 2026-10-26
+## Previous e2e88f5 delivery — 2026-10-26
 
 The precision comparison fix is now in the frozen capsule, both mutable white report aliases and the owned original live workbench on port18772. The recorded public summary/coverage stays exactly 167 records = 52 PASS + 0 FAIL + 115 UNKNOWN; producer versions change to v4 for capacitor voltage margin and resistor power. This is a software baseline, not independent engineering labels.
 
@@ -92,3 +92,18 @@ Delivery-check Python:1694 passed /7 deselected /7 deliberate malformed-profile 
 Original journal was backed up with SQLite backup and trialled on a copy before owned-process replacement. All5 old events,30 old runs, catalog, original reason/decision history and10 managed plus4 logical input hashes survive. Producer change adds one review event even though the old decision already needs_review: history5→6→6, runs30→31→32 after startup and actual white-UI rerun. Trial/live fingerprint agrees; repeat does not add another event.
 
 Captured offline white report retains all6 reasons. Browser forced offline after its sole HTML request:0 API/external requests. Current receipt matches captured current run and v4; downloaded old receipt matches its original run and v3. User live server remains running; this is not stopped-server/file-double-click/native-Windows evidence. Windows software acceptance=false, actual Cadence and human profile approval unverified, release=false. Evidence: task output Hardwise-精度交付66. Full product acceptance remains NOT_COMPLETE.
+
+
+## Current 26f74fc delivery — 2026-10-26
+
+The exact signed terminal/pin comparison fix now reaches the original live18772, both mutable white aliases and a new source capsule. Public summary and coverage remain167=52PASS/0FAIL/115UNKNOWN;22 profile-related producers deliberately move2→3, while original passive stress producer4 remains. Profile approval is still required; source30JSON bytes are unchanged and actual human approvals remain0.
+
+`Hardwise-26f74fc-Windows-check.zip`:940 files /939 hashes,14,260,560 bytes; SHA-256 `9e85b806133182f36aa6e93d7445f4b6f07ec0c3c3dc2dacb6afac9e18069f14`. Source exactly26f74fc, four supplements separately hashed. Top-level START-HERE.md/PUBLIC-BASELINE.json/BUNDLE-MANIFEST.json define the package; nested source docs/builder defaults can describe an earlier pin. Old e2e88f5/aeb45f9/3cda993 ZIP hashes remain unchanged; this is not a project backup or authenticated signature.
+
+Chinese/space extraction passes all hashes, full public baseline, white report, real/no-key CLI dry-run, canonical state/history, managed save and fresh-process independent restore without original paths.340 extracted signed-difference/pin/family/control/dependency/import/offline tests pass18.72s. Negative controls reject nativeWindows-on-macOS, source tamper, semantic baseline mismatch despite updated manifest hash, ZIP overwrite and unregistered e2e88f5; restore passes hashes. Existing dependencies reused, no fresh target install.
+
+Packaging-check Python:1712 passed /7 deselected /7 deliberate malformed-profile serialization warnings,91.33s; Ruff/diff pass. The same26f74fc runtime already passed24 E2E1.4m in stage68; not rerun as stage69. Runtime/frontend code and static assets are unchanged in this packaging step.
+
+SQLite backup/all-row snapshot precedes copied-journal trial and owned-process replacement. Original6events/32runs/catalog/reason/decision and10managed+4logicalinputhashes survive. The existing decision depends on unchanged generic capacitor v4, so no artificial review event is added:6→6→6 events,32→33→34 runs after startup and actual UI rerun. Separate stage68 old/new/restart profile-dependent producer migration proves1→2→2 where dependencies do change.
+
+Offline white original-reason report retains6 reasons; forced-offline browser makes1HTML and0API/external requests. Downloaded current pin producer3.profile-review1 and original historical pin2 each match their own recorded run IDs; old passive receipt3 is also preserved while current passive remains4. Old receipts are not backfilled. Live server remains running; no stopped-server/file-double-click/nativeWindows claim. Windows software=false, actual Cadence and human engineering approval unverified, release=false, full productNOT_COMPLETE. Evidence:Hardwise-端间交付69.
