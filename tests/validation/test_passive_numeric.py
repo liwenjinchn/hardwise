@@ -90,7 +90,7 @@ def test_unavailable_resistance_keeps_independent_checks(tmp_path):
     assert checks["resistor_value_parse"].result == "UNKNOWN"
     assert checks["resistor_value_parse"].rule_version == "2"
     assert checks["resistor_power_estimate"].result == "UNKNOWN"
-    assert checks["resistor_power_estimate"].rule_version == "3"
+    assert checks["resistor_power_estimate"].rule_version == "4"
     assert "numerically unavailable" in checks["resistor_power_estimate"].summary
     assert checks["resistor_package_presence"].result == "PASS"
     assert all(pin.result == "PASS" for pin in result.pin_results)
@@ -115,7 +115,7 @@ def test_representable_power_does_not_lose_intermediate_values(
     item = next(c for c in result.component_checks if c.check == "resistor_power_estimate")
     assert item.result == expected
     assert f"power {float(power):g} W" in item.summary
-    assert item.rule_version == "3"
+    assert item.rule_version == "4"
 
 
 @pytest.mark.parametrize("voltage", [1e200, 1e-300])
@@ -130,7 +130,7 @@ def test_overflowing_terminal_difference_is_unknown(tmp_path):
     result = report(tmp_path, "capacitor", "1uF 25V", 1e308, -1e308)
     item = next(c for c in result.component_checks if c.check == "capacitor_voltage_margin")
     assert item.result == "UNKNOWN" and "finite numeric range" in item.summary
-    assert item.rule_version == "3"
+    assert item.rule_version == "4"
     assert all(p.result == "PASS" for p in result.pin_results)
 
 
@@ -176,3 +176,78 @@ def test_same_net_common_mode_extremes_still_have_zero_dc_difference(tmp_path):
     result = validate_generic_passive(component, None, design, "capacitor")
     check = next(c for c in result.component_checks if c.check == "capacitor_voltage_margin")
     assert check.result == "PASS" and "voltage 0 V" in check.summary
+
+
+@pytest.mark.parametrize(
+    "resistance,voltage,rating,expected",
+    [
+        ("3", 1, "0.3333333333333333", "FAIL"),
+        ("3", 1, "1/3", "PASS"),
+        ("3", 1, "0.3333333333333334", "PASS"),
+        ("1", 1, "0.99999999999999999", "FAIL"),
+        ("1", 1, "1.00000000000000001", "PASS"),
+        ("1", 1, "1", "PASS"),
+        ("1", 1, "99999999999999999/100000000000000000", "FAIL"),
+        ("10", 1, "0.1", "PASS"),
+        ("3", 1.1, "0.4033333333333333", "FAIL"),
+    ],
+)
+def test_power_rating_comparison_precedes_display_rounding(
+    tmp_path, resistance, voltage, rating, expected
+):
+    # Independent exact oracle for this declared decimal point model, not device truth.
+    exact_power = Fraction(str(voltage)) ** 2 / Fraction(resistance)
+    assert (exact_power > Fraction(rating)) == (expected == "FAIL")
+    result = report(tmp_path, "resistor", f"{resistance}R {rating}W", voltage)
+    power = next(c for c in result.component_checks if c.check == "resistor_power_estimate")
+    assert power.result == expected
+    assert all(p.result == "PASS" for p in result.pin_results)
+    assert (
+        next(c for c in result.component_checks if c.check == "resistor_package_presence").result
+        == "PASS"
+    )
+
+
+@pytest.mark.parametrize(
+    "family,unit,check",
+    [
+        ("resistor", "W", "resistor_power_estimate"),
+        ("capacitor", "V", "capacitor_voltage_margin"),
+    ],
+)
+def test_terminal_difference_is_not_rounded_before_rating_comparison(tmp_path, family, unit, check):
+    left, right = 0.10000000000000003, -0.9
+    exact_delta = Fraction(str(left)) - Fraction(str(right))
+    assert exact_delta > 1 and float(exact_delta) == 1
+    result = report(
+        tmp_path, family, f"{'1R' if family == 'resistor' else '1uF'} 1{unit}", left, right
+    )
+    assert next(c for c in result.component_checks if c.check == check).result == "FAIL"
+
+
+def test_capacitor_rating_retains_resolved_decimal_precision(tmp_path):
+    result = report(tmp_path, "capacitor", "1uF 0.99999999999999999V", 1)
+    assert (
+        next(c for c in result.component_checks if c.check == "capacitor_voltage_margin").result
+        == "FAIL"
+    )
+
+
+@pytest.mark.parametrize(
+    "amount,text",
+    [
+        (Fraction(1, 3), "1/3"),
+        (Fraction(1, 8), "0.125"),
+        (Fraction(-1, 20), "-0.05"),
+        (Fraction(1000), "1000"),
+        (Fraction(0), "0"),
+        (Fraction("0.99999999999999999"), "0.99999999999999999"),
+        (Fraction(100000000000000003, 10**17), "1.00000000000000003"),
+        (Fraction(1, 10**81), "1/" + "1" + "0" * 81),
+    ],
+)
+def test_comparison_text_never_rounds_its_exact_quantity(amount, text):
+    from hardwise.validation.passive_numeric import exact_quantity_text
+
+    assert exact_quantity_text(amount) == text
+    assert Fraction(text) == amount

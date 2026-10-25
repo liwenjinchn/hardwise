@@ -92,7 +92,7 @@ def test_rating_premises_have_no_source_priority(scene, value, header, cell, res
     context = build(scene, path)
     try:
         item = check(context)
-        assert item.result == result and item.rule_version == "3"
+        assert item.result == result and item.rule_version == "4"
         if result == "UNKNOWN":
             assert item.needs_review
         row = next(row for row in context.index.validated_rows if row.refdes == "C1")
@@ -152,7 +152,7 @@ def test_resistor_keeps_independent_estimate_when_rating_unresolved(scene, value
     context = build(scene, path)
     try:
         item = check(context, "R1", "resistor_power_estimate")
-        assert item.result == result and item.rule_version == "3"
+        assert item.result == result and item.rule_version == "4"
         assert "Estimated resistor power" in item.summary
         if result == "UNKNOWN":
             assert item.needs_review and "0.4 W" in item.summary

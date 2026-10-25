@@ -10,6 +10,12 @@ from hardwise.bom.types import BomRow
 from hardwise.bom.source_fields import RATING_SOURCES, rating_field_unit, is_value_source
 from hardwise.validation.types import ComponentValidation
 
+RATING_RULE_VERSIONS = {
+    "capacitor_rated_voltage_parse": "3",
+    "capacitor_voltage_margin": "4",
+    "resistor_power_estimate": "4",
+}
+
 _NUMBER = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:/\d+(?:\.\d*)?)?"
 _TOKEN = re.compile(rf"(?<![\w.])({_NUMBER})\s*([mkM]?[VvWw])\b")
 _CELL = re.compile(rf"^\s*({_NUMBER})\s*([mkM]?[VvWw])?\s*$")
@@ -49,6 +55,15 @@ class PassiveRating:
     origins: list[str]
     evidence: list[str]
     issue: str
+
+    @property
+    def exact_value(self) -> Fraction | None:
+        if self.value is None or self.issue or len(self.values) != 1:
+            return None
+        try:
+            return Fraction(self.values[0])
+        except (ValueError, ZeroDivisionError, OverflowError):
+            return None
 
     def signature(self):
         # Raw field names/ordinals and unrelated notes are provenance, not
@@ -142,7 +157,7 @@ def resolve_passive_rating(
 
 def attach_rating_sources(check: ComponentValidation, rating: PassiveRating) -> ComponentValidation:
     data = {key: getattr(check, key) for key in ComponentValidation.model_fields}
-    data["rule_version"] = "3"
+    data["rule_version"] = RATING_RULE_VERSIONS.get(check.check, check.rule_version)
     data["evidence"] = list(dict.fromkeys([*check.evidence, *rating.evidence]))
     if rating.issue:
         data.update(result="UNKNOWN", severity="INFO", needs_review=True)

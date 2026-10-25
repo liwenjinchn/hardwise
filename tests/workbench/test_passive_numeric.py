@@ -147,9 +147,9 @@ def test_rating_rule_version_change_reopens_once_preserving_original_reason(tmp_
         current = next(
             t for t in tasks if t.refdes == "R1" and t.check == "resistor_power_estimate"
         )
-        assert current.assessment.rule_version == "3"
+        assert current.assessment.rule_version == "4"
         old = current.model_copy(
-            update={"assessment": current.assessment.model_copy(update={"rule_version": "2"})}
+            update={"assessment": current.assessment.model_copy(update={"rule_version": "3"})}
         )
         store = ReviewDecisionStore(tmp_path / "replay.sqlite")
         key = review_project_key(c)

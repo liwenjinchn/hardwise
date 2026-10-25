@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from math import isfinite
+from fractions import Fraction
+from hardwise.validation.passive_numeric import finite_quantity
 from hardwise.input_provenance import read_input_text
 
 from hardwise.ir.types import Component, Design
@@ -33,6 +34,7 @@ class TerminalStress:
     maximum_delta: float | None
     reason: str
     evidence: tuple[str, ...] = ()
+    exact_delta: Fraction | None = None
 
 
 def terminal_dc_stress(component: Component, design: Design) -> TerminalStress:
@@ -65,16 +67,24 @@ def terminal_dc_stress(component: Component, design: Design) -> TerminalStress:
             evidence,
         )
     # The same electrical net has zero differential, even if its common mode varies.
-    delta = (
-        0.0
-        if left.net == right.net
-        else max(abs(left.minimum - right.maximum), abs(left.maximum - right.minimum))
-    )
-    if not isfinite(delta):
+    try:
+        exact_delta = (
+            Fraction(0)
+            if left.net == right.net
+            else max(
+                abs(Fraction(str(left.minimum)) - Fraction(str(right.maximum))),
+                abs(Fraction(str(left.maximum)) - Fraction(str(right.minimum))),
+            )
+        )
+    except (ValueError, OverflowError):
+        return TerminalStress(None, "DC difference exceeds the finite numeric range", evidence)
+    delta = finite_quantity(exact_delta)
+    if delta is None:
         return TerminalStress(None, "DC difference exceeds the finite numeric range", evidence)
     return TerminalStress(
         delta,
         f"confirmed DC envelope in mode {document.active_mode}, reference {left.reference_net}; "
         "transients, ripple, polarity and thermal suitability are not evaluated",
         evidence,
+        exact_delta,
     )

@@ -28,6 +28,8 @@ LOCAL_RULES = {
     ("capacitor_rated_voltage_parse", "3"),
     ("capacitor_voltage_margin", "3"),
     ("resistor_power_estimate", "3"),
+    ("capacitor_voltage_margin", "4"),
+    ("resistor_power_estimate", "4"),
     ("diode_reverse_voltage", "2"),
     ("tvs_working_standoff", "2"),
     ("mosfet_vgs_rating", "2"),

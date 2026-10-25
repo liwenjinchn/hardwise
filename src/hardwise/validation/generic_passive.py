@@ -21,7 +21,7 @@ from hardwise.validation.passive_helpers import (
     _terminal_connectivity,
 )
 from hardwise.validation.identity_scope import identity_conflict_report
-from hardwise.validation.passive_ratings import resolve_passive_rating
+from hardwise.validation.passive_ratings import resolve_passive_rating, RATING_RULE_VERSIONS
 from hardwise.validation.types import ValidationReport
 from hardwise.validation.value_parsing import (
     ParsedCurrentRating,
@@ -94,9 +94,7 @@ def validate_generic_passive(
         "ferrite_impedance_parse": "2",
         "inductor_current_rating_token": "2",
         "ferrite_current_rating_token": "2",
-        "capacitor_rated_voltage_parse": "3",
-        "capacitor_voltage_margin": "3",
-        "resistor_power_estimate": "3",
+        **RATING_RULE_VERSIONS,
     }
     checks = [
         check.model_copy(update={"rule_version": versions[check.check]})
