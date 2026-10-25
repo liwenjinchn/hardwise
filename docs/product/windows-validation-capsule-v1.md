@@ -8,7 +8,7 @@ This is a pinned public source package for T08 target-machine validation. It is 
 uv run python scripts/build_validation_bundle.py --output /absolute/path/Hardwise-Windows-check.zip
 ```
 
-The supported source commit is `aeb45f90e6b455e43c6584f1cfcac81874d61e7a`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 934 source/supplement files; the manifest itself is the 935th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
+The supported source commit is `e2e88f5afa911c6231d481f7c9ef681a320ca48c`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 936 source/supplement files; the manifest itself is the 937th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
 
 Extract to a normal directory. In native Windows PowerShell, from the extracted root:
 
@@ -64,7 +64,7 @@ Includes the user-selected quarantine of every competing reference candidate, sa
 Current repository Python: 1592 passed / 7 deselected, 46.53s (delivery run); frontend contracts/type check, Ruff/diff and 24 E2E pass (46.4s), including actual white import/quarantine/correction with inspected desktop/narrow screenshots. Both main static white aliases and owned live18772 use this source; all original 5 event rows, 26 old runs, catalog and ten managed-input hashes survived reload without additional events. Evidence: task output Hardwise-位号隔离58. No release approval or independent engineering label is implied.
 
 
-## Current aeb45f9 delivery — 2026-10-26
+## Previous aeb45f9 delivery — 2026-10-26
 
 The source now includes full SQL profile contracts and the user-selected DRAFT migration across validators, candidates, evidence, reports, Agent and the white workbench. The public software baseline deliberately changes to 25 components / 22 reports / 3 unmatched gaps, component 0 PASS / 0 WARN / 0 ERROR / 22 UNKNOWN, and 167 emitted records = 52 PASS / 0 FAIL / 115 UNKNOWN. Effective READY is zero. These counts reflect unapproved premises, not repaired electrical defects; the full candidate denominator remains unknown. Prior baseline counts must not be accepted for this version.
 
@@ -77,3 +77,18 @@ Current delivery-check Python: 1668 passed / 7 deselected / 7 deliberate malform
 Windows software probe remains false; actual Cadence export and human profile approval remain unverified; product release acceptance remains false. Evidence: task output Hardwise-交付对齐64.
 
 Actual white-UI rerun retained five history events. Its newly captured offline report was loaded once over localhost, then checked with the browser offline and all other requests blocked: five original reasons remained visible; current and historical provenance JSON downloads matched their respective embedded run IDs. Only the HTML request occurred, no API or external request. The user live server remains running; this does not claim a stopped-server file double-click or native Windows check.
+
+
+## Current e2e88f5 delivery — 2026-10-26
+
+The precision comparison fix is now in the frozen capsule, both mutable white report aliases and the owned original live workbench on port18772. The recorded public summary/coverage stays exactly 167 records = 52 PASS + 0 FAIL + 115 UNKNOWN; producer versions change to v4 for capacitor voltage margin and resistor power. This is a software baseline, not independent engineering labels.
+
+`Hardwise-e2e88f5-Windows-check.zip`: 937 files / 936 hashes, 14,247,628 bytes; SHA-256 `d6248de1c52b204338436210a86a6f53298f4d3d08a612ca38073960942e9dc6`. Source is exactly e2e88f5. Four supplements are separately hashed. Nested builder/docs can describe previous pins; top-level START-HERE.md, PUBLIC-BASELINE.json and BUNDLE-MANIFEST.json define this archive. Old aeb45f9 and3cda993 ZIP bytes remain unchanged.
+
+Chinese/space-path extraction passes hashes, exact baseline, white offline report, real/no-key CLI dry-run, canonical review state/history, managed save and fresh-process independent restore without original paths. Extracted precision/intake/dependency tests:171 passed,15.29s. Existing dependencies reused. Native-Windows requirement, source tamper, semantic baseline tamper with updated manifest hash, overwrite and unregistered old ref reject with expected diagnostics; restored source passes hashes.
+
+Delivery-check Python:1694 passed /7 deselected /7 deliberate malformed-profile serialization warnings,196.35s. Stage65's same runtime source passed24 E2E in1.4m; frontend tests were not rerun as stage66. No runtime/frontend change in this packaging step.
+
+Original journal was backed up with SQLite backup and trialled on a copy before owned-process replacement. All5 old events,30 old runs, catalog, original reason/decision history and10 managed plus4 logical input hashes survive. Producer change adds one review event even though the old decision already needs_review: history5→6→6, runs30→31→32 after startup and actual white-UI rerun. Trial/live fingerprint agrees; repeat does not add another event.
+
+Captured offline white report retains all6 reasons. Browser forced offline after its sole HTML request:0 API/external requests. Current receipt matches captured current run and v4; downloaded old receipt matches its original run and v3. User live server remains running; this is not stopped-server/file-double-click/native-Windows evidence. Windows software acceptance=false, actual Cadence and human profile approval unverified, release=false. Evidence: task output Hardwise-精度交付66. Full product acceptance remains NOT_COMPLETE.

@@ -5769,3 +5769,8 @@ trusted scope and the exact conditions that remain unimplemented.
 - Fix：内部TerminalStress保留规范十进制输入的精确差值；功耗比较保留有理数，使用额定来源原有规范量。最终可显示float不可表达仍按已选A局部UNKNOWN。cap_margin/resistor_power升v4，额定解析v3不改；只注册原有已审局部依赖。应力函数从293行passive_checks拆到独立小模块。整数/可紧凑精确表达的十进制直接显示，其他保留分数，显示函数的8例均能无损往返。
 - Boundary：这是当前已确认电压和已解析阻值模型的规范十进制算术；不恢复进入float模型前已丢失的精度、不引入真实测量准确度、容差、降额、温升或新的审批。XLSX验收使用既有中文表头和文本单元格；初次测试错误使用不支持的英文表头，改正fixture而未悄然扩展解析器。API复现初始REF不在网表，被正确拒绝；检查视图subject是位号而非规则ID，复现改用原始报告中的检查顺序定位对应视图，没有绕过实际导入。
 - Takeaway：保留精确量到比较结束，显示转换单独处理；有限性检查和普通样例绿灯都不能替代阈值两侧、真相等及跨单位独立算式。真实输入前置失败和测试断言失败必须与已复现产品漏洞分开。
+
+
+### 2026-10-26 — Preserve producer history when delivering precision changes
+
+An already needs_review decision can legitimately gain one event when its producer fingerprint changes. Freeze all old rows and input hashes, trial the migration on a copied journal, then verify startup and an actual UI rerun give5→6→6 events. Offline acceptance must download both current and historical receipts: v4 now must not rewrite recorded v3. Card visibility is also insufficient evidence for excerpt export policy: synthetic audit found complete FieldSource.excerpt inside both receipt projections despite no component-card display. F06 choice remains pending; audit is not approval or a distribution incident. Evidence:Hardwise-精度交付66.
