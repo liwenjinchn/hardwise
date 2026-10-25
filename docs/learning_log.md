@@ -5774,3 +5774,8 @@ trusted scope and the exact conditions that remain unimplemented.
 ### 2026-10-26 — Preserve producer history when delivering precision changes
 
 An already needs_review decision can legitimately gain one event when its producer fingerprint changes. Freeze all old rows and input hashes, trial the migration on a copied journal, then verify startup and an actual UI rerun give5→6→6 events. Offline acceptance must download both current and historical receipts: v4 now must not rewrite recorded v3. Card visibility is also insufficient evidence for excerpt export policy: synthetic audit found complete FieldSource.excerpt inside both receipt projections despite no component-card display. F06 choice remains pending; audit is not approval or a distribution incident. Evidence:Hardwise-精度交付66.
+
+
+### 2026-10-26 — Audit actual facts persistence before treating old docs as current gaps
+
+Stage67 finds voltage-facts.md still denied cross-restart persistence after managed inputs shipped, and passive-only help omitted explicit family consumers. Production API rejected six bad documents without any active-state change; save/delete-original/open retained the entire document and queue assessments. Correct the docs while preserving the real missing PRD batch confirmation/conflict UI. A whole-document rejection is not a human conflict resolution workflow. Evidence:Hardwise-事实确认审查67; no runtime change.

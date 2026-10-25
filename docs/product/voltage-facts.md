@@ -4,10 +4,12 @@ The passive capacitor voltage-margin and resistor-power checks require explicit
 confirmed terminal envelopes. Names such as `VBUS_20V`, `USB3P0_D_P`, `GND` and
 legacy `Net.voltage_hint` values do not confirm these inputs.
 
-This input currently controls the generic passive stress checks. Existing
-profile-family rules still use the legacy inference helper and have not been
-re-certified by this change. Result/severity/evidence separation, BOM conflicts,
-profile conditions and full project persistence remain open product work.
+Generic passive stress checks consume this document directly. Supported profile
+pin/terminal-voltage, diode and control paths also consume explicit DC envelopes
+through `dc_envelope.py`; their separate profile identity, approved-field and
+condition guards still apply. Providing voltage facts does not approve a profile
+or establish that every family rule is covered. See the current full-acceptance
+ledger for outstanding product requirements.
 
 ## Input and calculation
 
@@ -68,6 +70,18 @@ on that page and survive deterministic reruns. JSON state/index exports carry
 the full document; Markdown includes a fact table and each computed stress
 includes the facts it used. The offline React snapshot includes the same state.
 
-Uploaded inputs still live in the existing process-owned temporary directory;
-this is not cross-restart project persistence. Graphical per-net confirmation
-and source locators for these new fact tokens remain further work.
+An unsaved upload initially lives in a process-owned temporary directory. Saving
+the project to the SQLite journal captures its voltage-facts file in the managed
+input directory. Reopening the saved project can restore the complete document
+without the original upload paths. Move the journal together with its managed
+input directory, or use the project backup/restore workflow; copying the SQLite
+file alone is insufficient. See [managed projects](managed-project-v1.md).
+
+The graphical import surface currently uploads an entire JSON document and reads
+back the records. It does not provide per-net editing, candidate selection, batch
+confirmation or conflict resolution. Invalid/duplicate documents are rejected
+atomically, retaining the previous active project; this does not satisfy the
+PRD's full batch-confirmation workflow. The import page's legacy passive-only
+help text understates the currently supported family consumers. Its wording and
+the future editing workflow still need alignment; no family-wide certification
+is implied. [Stage67 audit](fact-confirmation-audit-v1.md) records current evidence.
