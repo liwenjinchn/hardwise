@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from pathlib import Path
+from stat import S_ISREG
 from typing import Literal
 
 from pydantic import BaseModel
@@ -42,13 +43,17 @@ def classify_evidence_token(
     value = token.strip()
     live_tokens = set(live_retrieved_tokens or [])
     source_class = _source_class(value, live_tokens)
-    local_source, missing = _local_pdf_audit(value, source_roots)
+    local_source, missing, unchecked = _local_pdf_audit(value, source_roots)
     return EvidenceClassification(
         token=value,
         source_class=source_class,
         audit_status="missing_local_source" if missing else "ok",
         local_source=str(local_source) if local_source is not None else None,
-        reason=_reason(value, source_class, missing),
+        reason=(
+            "local PDF path observation could not be completed; source remains unchecked"
+            if unchecked
+            else _reason(value, source_class, missing)
+        ),
     )
 
 
@@ -95,19 +100,28 @@ def _source_class(token: str, live_retrieved_tokens: set[str]) -> EvidenceSource
 def _local_pdf_audit(
     token: str,
     source_roots: Sequence[str | Path] | None,
-) -> tuple[Path | None, bool]:
+) -> tuple[Path | None, bool, bool]:
     prefix = _token_prefix(token)
     if prefix not in LOCAL_PDF_PREFIXES:
-        return None, False
+        return None, False, False
 
     source = _token_source(token)
     if not source or _is_url(source) or not source.lower().endswith(".pdf"):
-        return None, False
+        return None, False, False
 
+    unchecked = False
     for candidate in _candidate_paths(source, source_roots):
-        if candidate.is_file():
-            return candidate, False
-    return None, True
+        try:
+            if S_ISREG(candidate.stat().st_mode):
+                return candidate, False, False
+        except (FileNotFoundError, NotADirectoryError):
+            continue
+        except OSError:
+            # An inaccessible/invalid path is not proof that the PDF is absent.
+            # Continue looking in the remaining configured roots before falling
+            # back to the existing unlocated-source/unchecked representation.
+            unchecked = True
+    return None, not unchecked, unchecked
 
 
 def _candidate_paths(source: str, source_roots: Sequence[str | Path] | None) -> list[Path]:
