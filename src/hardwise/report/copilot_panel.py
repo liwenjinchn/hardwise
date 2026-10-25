@@ -54,6 +54,7 @@ def render_copilot_panel(
         <strong>可询问范围</strong>
         <span>选中器件、验证证据、资料缺口，或某个位号是否存在。</span>
       </div>
+      <section class="ai-disclosure-legacy" data-ai-disclosure aria-label="AI 发送说明"></section>
       <section class="ai-stream" data-ai-stream aria-live="polite"></section>
       <div class="ai-compose">
         <form data-ai-form>

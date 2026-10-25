@@ -5708,3 +5708,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: raw table columns were captured but reference expansion still used DictReader's chosen header or one XLSX index. Existing identity guards could never see candidates discarded earlier.
 - Fix: compare all explicit nonblank declaration sets, expand an unresolved candidate union only for quarantine, and route every candidate through existing identity/profile guards. Equivalent aliases do not duplicate rows; Cadence continuation cells extend each column's declaration. Do not calculate assembly quantity mismatches from an unresolved candidate union.
 - Takeaway: preserve observations before selecting keys; quarantine is not a set of accepted component bindings. Keep raw registry pins visible without authorizing electrical checks. When old findings disappear, preserve their history without labelling them resolved or transferring acceptance; a later correction does not resurrect acceptance.
+
+
+## 2026-10-25 — 披露配置必须与延迟模型客户端一致
+
+- Symptom：服务构建与首次调用分别加载dotenv，可能出现先披露A、初始化实际使用B；直接HTTP无前置确认。
+- Root cause：展示和延迟初始化分别读取可变环境，且只检查提问而未绑定当前输入上下文。
+- Fix：服务构建时加载dotenv一次；冻结实际SDK参数/模型路由，服务端HMAC绑定完整配置/来源/版本，Runner前检查；页面内存确认与发送前刷新。配置变化更换延迟客户端，GET不初始化SDK。
+- Takeaway：显示去敏地址、冻结实际参数和后端门槛需一起验证。测试继承的备用认证环境曾进入失败断言日志，已脱敏输出并显式清除测试AUTH_TOKEN/CUSTOM_HEADERS；只设置主API key不足以隔离测试秘密。浏览器截图初帧会有进入动画透明度，需检查稳定帧；浏览器脚本VM不支持动态import，公开fixture改为明确传入字节后复验，原失败证据保留。

@@ -15,6 +15,7 @@ import type {
   StatusGroup,
   WorkbenchState
 } from "./types";
+import { useAIConsent } from "./useAIConsent";
 import { CopilotPanel } from "./views/CopilotPanel";
 import { ExportView } from "./views/ExportView";
 import { FindingsView } from "./views/FindingsView";
@@ -39,6 +40,7 @@ function App() {
   const [error, setError] = useState("");
   const [parseResult, setParseResult] = useState<ImportResponse | null>(null);
   const detailRequestId = useRef(0);
+  const aiConsent = useAIConsent(state);
 
   const applyState = (payload: WorkbenchState) => {
     const firstComponent = payload.queue[0] ?? null;
@@ -218,7 +220,7 @@ function App() {
         </section>
       )}
       {view === "copilot" && (
-        <CopilotPanel state={state} selectedRefdes={selectedRefdes} className="copilot-full" />
+        <CopilotPanel state={state} consent={aiConsent} selectedRefdes={selectedRefdes} className="copilot-full" />
       )}
       {view === "findings" && (
         <FindingsView

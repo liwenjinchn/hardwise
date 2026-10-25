@@ -1,3 +1,4 @@
+export type { AIDisclosure } from "./generated/workbench-contracts";
 export type { ReviewHistoryPage } from "./generated/workbench-contracts";
 import type { BomQuantityColumnConflict, RunProvenance } from "./generated/workbench-contracts";
 

@@ -537,3 +537,10 @@
     grid-column: 1 / -1;
   }
 }
+
+.ai-disclosure { margin: 12px; padding: 14px; border: 1px solid var(--line, #d9d5ca); border-radius: 8px; background: #f5f7ff; font-size: 12px; line-height: 1.65; overflow-wrap: anywhere; max-height: 40vh; overflow-y: auto; flex-shrink: 0; }
+.ai-disclosure p { margin: 5px 0; }
+.ai-disclosure ul { padding-left: 20px; margin: 6px 0; }
+.ai-disclosure label { display: flex; align-items: flex-start; gap: 8px; font-weight: 600; }
+.ai-disclosure input { margin-top: 5px; }
+.ai-disclosure [role="alert"] { color: #a32626; }

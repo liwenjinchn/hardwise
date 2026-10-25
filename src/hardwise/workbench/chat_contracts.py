@@ -25,6 +25,7 @@ class ChatRequest(BaseModel):
     """User question sent from the Copilot panel."""
 
     question: str
+    disclosure_id: str | None = Field(default=None, max_length=128)
     selected_refdes: str | None = None
     history: list[ChatMessage] = Field(default_factory=list)
 

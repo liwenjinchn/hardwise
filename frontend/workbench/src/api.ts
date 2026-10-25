@@ -1,4 +1,5 @@
 import type {
+  AIDisclosure,
   ChatMessage,
   ChatResponse,
   ComponentDetail,
@@ -164,10 +165,20 @@ export async function fetchProjectPrepPacketMarkdown(): Promise<string> {
   return response.text();
 }
 
+export function fetchAIDisclosure(): Promise<AIDisclosure> {
+  if (offlineSnapshot()) return Promise.resolve({
+    version: "hardwise.ai_disclosure.v1", mode: "snapshot", available: true,
+    context_id: "offline-snapshot", disclosure_id: null, destination: null, model: null,
+    data_categories: [], notice: "离线审计快照，不调用云模型。"
+  });
+  return requestJson<AIDisclosure>("/api/workbench/ai-disclosure");
+}
+
 export function askCopilot(
   question: string,
   selectedRefdes: string | null,
-  history: ChatMessage[]
+  history: ChatMessage[],
+  disclosureId?: string | null
 ): Promise<ChatResponse> {
   const snapshot = offlineSnapshot();
   if (snapshot) {
@@ -198,7 +209,8 @@ export function askCopilot(
     body: JSON.stringify({
       question,
       selected_refdes: selectedRefdes,
-      history
+      history,
+      disclosure_id: disclosureId
     })
   });
 }

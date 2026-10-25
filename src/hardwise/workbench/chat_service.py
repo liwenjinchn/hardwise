@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-from functools import partial
 from threading import RLock
 from typing import Any
 
@@ -31,7 +29,9 @@ from hardwise.workbench.chat_fake_model import (
     _trace_refdes,
 )
 from hardwise.workbench.context import WorkbenchContext
-from hardwise.workbench.chat_client import DeferredWorkbenchClient, WorkbenchAIUnavailable
+from hardwise.workbench.chat_client import WorkbenchAIUnavailable
+from hardwise.workbench.ai_config import create_provider_client
+from hardwise.workbench.ai_disclosure import DisclosureSession, AIConfirmationRequired
 
 
 class WorkbenchChatService:
@@ -45,6 +45,7 @@ class WorkbenchChatService:
         tier: Tier = "normal",
         collection: Any | None = None,
         client: Any | None = None,
+        injected_destination: str | None = None,
     ) -> None:
         self.context = context
         self.mode = mode
@@ -56,11 +57,16 @@ class WorkbenchChatService:
             # Preserve model-slot configuration before the router snapshots
             # the environment, without requiring a key or constructing an SDK client.
             load_dotenv(override=True)
+        self._disclosure_session = DisclosureSession(
+            client=client,
+            injected_destination=injected_destination,
+            factory=lambda config: self._default_client("real", config),
+        )
         self.client = (
             client
             if client is not None
             else (
-                DeferredWorkbenchClient(partial(self._default_client, mode))
+                self._disclosure_session.snapshot().client
                 if mode == "real"
                 else self._default_client(mode)
             )
@@ -78,15 +84,36 @@ class WorkbenchChatService:
     def datasheet_search_enabled(self) -> bool:
         return self.collection is not None
 
+    def disclosure(self):
+        with self._turn_lock:
+            return self._disclosure_session.describe(
+                self.context, mode=self.mode, tier=self.tier, collection=self.collection is not None
+            )
+
     def ask(self, request: ChatRequest) -> ChatResponse:
         # One context owns one SQLAlchemy Session. Serialize the complete agent
         # turn so concurrent requests cannot share that Session or the stateful
         # deterministic fake client at the same time.
         with self._turn_lock, self.context.agent_lock:
+            client, router = self.client, self.router
+            if self.mode == "real":
+                snapshot = self._disclosure_session.snapshot()
+                disclosure = self._disclosure_session.describe(
+                    self.context,
+                    mode=self.mode,
+                    tier=self.tier,
+                    collection=self.collection is not None,
+                    snapshot=snapshot,
+                )
+                if not disclosure.available:
+                    raise WorkbenchAIUnavailable(disclosure.notice)
+                if request.disclosure_id != disclosure.disclosure_id:
+                    raise AIConfirmationRequired(stale=bool(request.disclosure_id))
+                client, router = snapshot.client, snapshot.config.router()
             selected = self._selected_refdes(request.selected_refdes)
             runner = Runner(
-                client=self.client,
-                router=self.router,
+                client=client,
+                router=router,
                 session=self.context.session,
                 registry=self.context.registry,
                 collection=self.collection,
@@ -189,21 +216,12 @@ class WorkbenchChatService:
         return [_sanitize_chat_copy(item, self.context) for item in raw]
 
     @staticmethod
-    def _default_client(mode: ChatMode) -> Any:
+    def _default_client(mode: ChatMode, config=None) -> Any:
         if mode in {"fake", "snapshot"}:
             return FakeWorkbenchAnthropic()
-
-        from anthropic import Anthropic
-        from dotenv import load_dotenv
-
-        load_dotenv(override=True)
-        api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-        base_url = os.environ.get("ANTHROPIC_BASE_URL", "")
-        if not api_key or api_key == "replace_me":
-            raise WorkbenchAIUnavailable(
-                "未配置有效的 ANTHROPIC_API_KEY；导入、确定性检查、人工处理和导出仍可使用。"
-            )
-        return Anthropic(api_key=api_key, base_url=base_url)
+        if config is None:
+            raise WorkbenchAIUnavailable("AI 配置快照缺失；请刷新发送说明。")
+        return create_provider_client(config)
 
 
 def default_refdes(context: WorkbenchContext) -> str | None:

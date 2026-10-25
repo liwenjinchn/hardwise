@@ -23,6 +23,7 @@ from hardwise.report.copilot_panel import render_copilot_panel
 from hardwise.report.validator_project_ui import render_project_workbench
 from hardwise.workbench.chat import ChatRequest, ChatResponse, WorkbenchChatService, default_refdes
 from hardwise.workbench.chat_client import WorkbenchAIUnavailable
+from hardwise.workbench.ai_disclosure import AIDisclosure, AIConfirmationRequired
 from hardwise.workbench.api_contracts import ImportResponse
 from hardwise.workbench.review_history import ReviewHistoryPage
 from hardwise.workbench.run_provenance import RunProvenanceResponse, build_run_provenance
@@ -607,6 +608,20 @@ def create_workbench_app(
                 chat_service.context = next_context
             return state_with_decisions(next_context)
 
+    @app.get("/api/workbench/ai-disclosure", response_model=AIDisclosure)
+    def ai_disclosure():
+        with context_manager.lease() as context:
+            service = copy.copy(chat_service)
+            service.context = context
+            if not hasattr(service, "disclosure"):
+                return AIDisclosure(
+                    mode="unavailable",
+                    available=False,
+                    data_categories=[],
+                    notice="此工作台未启用 AI；本地评审仍可使用。",
+                )
+            return service.disclosure()
+
     @app.post("/api/workbench/chat", response_model=ChatResponse)
     def chat(request: ChatRequest) -> ChatResponse:
         with context_manager.lease() as context:
@@ -614,6 +629,8 @@ def create_workbench_app(
             snapshot_service.context = context
             try:
                 return snapshot_service.ask(request)
+            except AIConfirmationRequired as exc:
+                raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
             except WorkbenchAIUnavailable as exc:
                 raise HTTPException(status_code=503, detail=str(exc)) from exc
 

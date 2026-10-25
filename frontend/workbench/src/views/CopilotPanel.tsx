@@ -1,8 +1,10 @@
-import { useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Bot, MessageSquare, ShieldCheck } from "lucide-react";
 import { askCopilot } from "../api";
 import { TrustBadge } from "../components/ui";
 import { sourceLabel } from "../lib/format";
+import { AIDisclosureNotice } from "./AIDisclosureNotice";
+import type { AIConsent } from "../useAIConsent";
 import { ChatBoundary } from "./ChatBoundary";
 import type { ChatMessage, ChatResponse, WorkbenchState } from "../types";
 
@@ -19,10 +21,12 @@ type ThreadMessage = ChatMessage & {
 
 export function CopilotPanel({
   state,
+  consent,
   selectedRefdes,
   className = ""
 }: {
   state: WorkbenchState;
+  consent: AIConsent;
   selectedRefdes: string | null;
   className?: string;
 }) {
@@ -32,16 +36,37 @@ export function CopilotPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  const threadContext = useRef<string | null>(null);
+  useEffect(() => {
+    const next = consent.descriptor?.context_id ?? null;
+    if (next && threadContext.current && next !== threadContext.current) {
+      setMessages([]);
+      setLastResponse(null);
+    }
+    if (next) threadContext.current = next;
+  }, [consent.descriptor?.context_id]);
+
   const send = async (text: string) => {
     const clean = text.trim();
     if (!clean || busy) return;
     setBusy(true);
     setError("");
-    const nextHistory: ThreadMessage[] = [...messages, { role: "user", content: clean }];
-    setMessages(nextHistory);
-    setQuestion("");
     try {
-      const response = await askCopilot(clean, selectedRefdes, chatHistory(messages));
+      const disclosure = await consent.prepare();
+      if (!disclosure) { setQuestion(clean); return; }
+      if (threadContext.current && disclosure.context_id !== threadContext.current) {
+        setMessages([]);
+        setLastResponse(null);
+        setQuestion(clean);
+        threadContext.current = disclosure.context_id;
+        setError("当前项目已变化，旧对话已清空，请再次主动发送。");
+        return;
+      }
+      threadContext.current = disclosure.context_id;
+      const nextHistory: ThreadMessage[] = [...messages, { role: "user", content: clean }];
+      setMessages(nextHistory);
+      setQuestion("");
+      const response = await askCopilot(clean, selectedRefdes, chatHistory(messages), disclosure.mode === "real" ? disclosure.disclosure_id : undefined);
       setLastResponse(response);
       setMessages([...nextHistory, { role: "assistant", content: response.answer, response }]);
     } catch (err) {
@@ -54,6 +79,7 @@ export function CopilotPanel({
   return (
     <section className={`copilot ${className}`}>
       <div className="cop-main">
+        <AIDisclosureNotice consent={consent} />
         <div className="cop-thread">
           <div className="cop-thread-inner">
             {messages.length === 0 && (

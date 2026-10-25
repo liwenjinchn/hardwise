@@ -1,6 +1,6 @@
-# 云AI发送前披露与确认 — 待选择方案
+# 云AI发送前披露与确认 — 已选 A
 
-2026-10-25。状态：PROPOSED，尚未实现；不得据此关闭PRD §10。使用feature-dev按外发边界风险核对。
+2026-10-25。状态：IMPLEMENTED_LOCAL_CASES_VERIFIED；第59包已实现所选A，不得据此关闭PRD §10。使用feature-dev按外发边界风险核对。
 
 ## Goal / Context / Constraints / Done when
 
@@ -16,7 +16,7 @@
 | A，推荐 | 当前浏览器页面明确确认一次；刷新、项目或目的地/披露版本变化后重新确认 | 适合连续核查；仍须后端核对当前披露标识 |
 | B | 每次发送前都再次确认，不自动提交刚输入的问题 | 更频繁提醒；每轮提问多一次操作 |
 
-两种都必须有后端门槛。只加欢迎文案或只把发送按钮置灰不能满足直接HTTP边界。方案问题已发给用户；无答复不是选择。仓库AGENTS.md硬规则7：“present 2-3 solution approaches with trade-offs before starting implementation. Let the human choose the direction”。此次选择改变确认持续时间，需先选再实现；不是feature-dev凭空增加发布审批。
+两种都必须有后端门槛。只加欢迎文案或只把发送按钮置灰不能满足直接HTTP边界。用户已明确选择A：当前页面确认一次，刷新、换项目或目的地后重新确认。仓库AGENTS.md硬规则7：“present 2-3 solution approaches with trade-offs before starting implementation. Let the human choose the direction”。此次选择改变确认持续时间，需先选再实现；不是feature-dev凭空增加发布审批。
 
 ## 发送内容与接收方
 
@@ -24,7 +24,7 @@
 
 将接收地址的安全显示值与实际SDK配置绑定，移除URL userinfo、query和fragment；不将含密钥的任意配置原样传给浏览器。配置格式无效时拒绝AI并给出不含原值的说明。未配置key仍显示AI不可用及基本功能可用，不为展示说明初始化网络。真实接收地址可能是第三方代理或本机中转，标签只能声称配置地址，不能证明后端模型品牌/下游目的地。
 
-## 拟实施边界（待选择后再落地）
+## 实施边界
 
 1. 服务端提供安全的披露描述：real/fake/snapshot、配置的接收方、所选模型、数据类别、披露版本及当前上下文绑定的opaque标识。离线/合成模式明确不调用真实服务；不把real描述封存为当前离线连接承诺。
 2. 浏览器先展示说明；未确认时不向chat端点发问题。按A或B管理确认，仅存当前页面内存，不写工程决定日志、档案批准或备份。失败不自动重试/发送；建议问题按钮和Enter键遵守同一入口。
@@ -43,10 +43,19 @@
 
 ## 证据
 
-任务输出Hardwise-AI启用核对49/probe_current.py与current-sdk-boundary-proof.json。该证明使用生产chat服务/HTTP/Runner/确定性工具和注入模型记录器；工具选择由fake决定，只证明所选路径以及当前缺少后端门槛，不声称枚举了所有可能模型行为或真实供应商品质。依赖的软件基线5dc437d、工具提交ac1d26a。用户尚未选择A/B，产品代码未修改。
+任务输出Hardwise-AI启用核对49/probe_current.py与current-sdk-boundary-proof.json。该证明使用生产chat服务/HTTP/Runner/确定性工具和注入模型记录器；工具选择由fake决定，只证明所选路径以及当前缺少后端门槛，不声称枚举了所有可能模型行为或真实供应商品质。依赖的软件基线5dc437d、工具提交ac1d26a。以上为旧基线证据；用户已选择A，第59包已实施，不再询问此选择。
 
 ## 另一个独立外发入口：自动器件资料查询
 
 同轮核对发现，serve-workbench CLI和create_workbench_app的auto_datasheet_candidates默认均为True。配置Datasheets key后，打开缺文档器件详情会调用Datasheets.com查询型号，无需聊天。公开Q12样例真实HTTP/候选构建路径、本地注入provider复现：缺省设置查询SS8050一次，显式False查询0；无真实provider调用，未使用真实key。证据current-default-datasheet-boundary.json。
 
 这是资料服务查询，不是模型调用，数据范围也不同，不能由“未点击聊天”推断未联网。现有Windows复验包和无key工作流已经显式--no-auto-datasheet-candidates，不受该默认触发。完整产品本地默认仍须审查此入口：建议缺省关闭，显式启用时说明接收服务/型号查询；具体落地时与用户选定的AI方案分别测试，不将一个确认标识隐式复用为两个服务授权。此次仅留证，不擅自更改已有默认行为；也不向真实服务查询。
+
+
+## 第59包本机复验
+
+实现位于workbench/ai_config.py、ai_disclosure.py及chat_service.py；SPA和旧版兼容面板均执行同一披露合同。接收方仅显示scheme/host/port，完整路径也省略；HMAC绑定完整内部配置、当前真实输入来源、模型档位、检索启用状态和披露版本。GET不会初始化SDK；缺确认428、陈旧确认409、配置不可用503。dotenv只在真实服务构建时加载，SDK使用已披露配置的冻结参数；修改.env需重启。
+
+确认仅在当前页面内存，导航保留、刷新清除；每次主动发送前重新取得当前说明，不自动提交暂存问题或失败重试。后端检查当前披露标识，不能证明真实人已阅读，亦不阻止掌握当前标识的程序主动发送；不作为认证或CSRF防护。fake与离线只读快照明确不调用云模型，离线导出不携带真实确认标识。注入客户端必须声明目的地，且显示注入模式的证据限制。
+
+完整Python1607通过/7未选、Ruff通过；前端合同/类型/构建、105单元和24浏览器回归通过。新增15个后端用例覆盖配置/项目/版本失效、恶意地址和秘密哨兵；23项相关测试通过。真实浏览器实测白色UI的Enter/建议/发送门槛、勾选不自动发送、同页导航/刷新、目的地与真实HTTP导入变更、503不自动重试；兼容面板的门槛/发送/刷新也通过。模型客户端是合成注入，真实Runner/工具与本地HTTP实际运行，无真实云供应商调用；760px截图检查无横向溢出。证据位于任务输出Hardwise-AI确认59。

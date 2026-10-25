@@ -1,16 +1,20 @@
 """Static CSS and JavaScript for the workbench Copilot panel."""
 
+from hardwise.report.copilot_consent_assets import COPILOT_CONSENT_SCRIPT
+
 COPILOT_STYLE = """
 .ai-fab{position:fixed;right:22px;bottom:22px;z-index:40;width:54px;height:54px;border:1px solid rgba(0,184,212,.65);background:#00b8d4;color:#001013;font-weight:900;font-family:var(--mono);box-shadow:0 16px 50px rgba(0,0,0,.45);cursor:pointer}
 .ai-fab:hover{filter:brightness(1.08)}
 .ai-root.ai-open .ai-fab{display:none}
-.ai-panel{position:fixed;right:0;top:0;bottom:0;z-index:39;width:min(430px,100vw);display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;border-left:1px solid var(--line);background:#0c100f;box-shadow:-22px 0 70px rgba(0,0,0,.48);transform:translateX(100%);transition:transform .18s ease}
+.ai-panel{position:fixed;right:0;top:0;bottom:0;z-index:39;width:min(430px,100vw);display:grid;grid-template-rows:auto auto auto auto minmax(0,1fr) auto;border-left:1px solid var(--line);background:#0c100f;box-shadow:-22px 0 70px rgba(0,0,0,.48);transform:translateX(100%);transition:transform .18s ease}
 .ai-panel.open{transform:translateX(0)}
 .ai-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 16px 14px;border-bottom:1px solid var(--line);background:#111716}
 .ai-panel-head h2{font-size:18px;margin:0 0 4px}
 .ai-panel-head p{margin:0;color:var(--muted);font-size:12px}
 .ai-close{width:32px;height:32px;border:1px solid var(--line);background:#070908;color:var(--ink);cursor:pointer;font-size:18px;line-height:1}
 .ai-stream{min-height:0;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:11px}
+.ai-disclosure-legacy{margin:8px 14px;padding:8px;border:1px solid var(--line);max-height:180px;overflow:auto;font-size:12px;overflow-wrap:anywhere}
+.ai-disclosure-legacy p{margin:5px 0}
 .ai-guide{margin:8px 14px 0;padding:0;color:var(--muted);font-size:12px;line-height:1.55}
 .ai-guide strong{display:inline;margin-right:8px;color:#b8c5c0;font-size:12px;font-weight:800}
 .ai-guide span{display:inline;overflow-wrap:anywhere}
@@ -44,7 +48,8 @@ COPILOT_STYLE = """
 @media print{.ai-fab,.ai-panel{display:none}}
 """
 
-COPILOT_SCRIPT = """
+COPILOT_SCRIPT = (
+    """
 (() => {
   const configNode = document.getElementById('hardwise-copilot-config');
   const root = document.querySelector('[data-ai-root]');
@@ -332,9 +337,15 @@ COPILOT_SCRIPT = """
       suggestions: config.suggestions || []
     };
   };
+"""
+    + COPILOT_CONSENT_SCRIPT
+    + """
   const ask = async (question) => {
     if (!question.trim()) return;
     open();
+    const gate = await prepareAISend();
+    if (!gate.allowed) { input.value = question; return; }
+    input.value = '';
     addMessage('user', question);
     history.push({role: 'user', content: question});
     const pending = addMessage('assistant', 'Hardwise 正在核验证据...');
@@ -344,14 +355,17 @@ COPILOT_SCRIPT = """
         const res = await fetch(config.apiEndpoint, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({question, selected_refdes: selectedRefdes, history: history.slice(-6)})
+          body: JSON.stringify({question, selected_refdes: selectedRefdes, history: history.slice(-6), disclosure_id: gate.receipt})
         });
         response = await res.json();
+        if (!res.ok) throw new Error(typeof response.detail === 'string' ? response.detail : 'AI 请求失败');
       } else {
         response = fallbackResponse(question);
       }
     } catch (error) {
-      response = {answer: `原理图检验工具对话失败：${error}`, trace: []};
+      pending.remove();
+      addMessage('assistant', `发送失败：${error.message || 'AI 暂不可用'}`);
+      return;
     }
     pending.remove();
     const answer = response.answer || '';
@@ -370,8 +384,8 @@ COPILOT_SCRIPT = """
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     const question = input.value.trim();
-    input.value = '';
     ask(question);
   });
 })();
 """
+)

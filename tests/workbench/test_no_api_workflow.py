@@ -23,6 +23,8 @@ ROOT = Path(__file__).parents[2]
 @pytest.fixture(autouse=True)
 def no_user_credentials(monkeypatch):
     monkeypatch.setattr("dotenv.load_dotenv", lambda **kwargs: False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("ANTHROPIC_CUSTOM_HEADERS", raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "")
     monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
     monkeypatch.delenv("DATASHEETS_API_KEY", raising=False)
@@ -38,7 +40,12 @@ def context():
 
 def create(path, client=None):
     ctx = context()
-    service = WorkbenchChatService(ctx, mode="real", client=client)
+    service = WorkbenchChatService(
+        ctx,
+        mode="real",
+        client=client,
+        injected_destination="https://injected-test.invalid" if client is not None else None,
+    )
     return create_workbench_app(ctx, service, review_db=path, auto_datasheet_candidates=False)
 
 
@@ -120,6 +127,7 @@ def test_missing_key_keeps_real_review_import_rerun_export_and_restart_working(
 
 
 def test_real_request_snapshots_share_one_lazily_initialized_client(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "synthetic-test-key")
     factory = Mock(return_value=FakeWorkbenchAnthropic())
     monkeypatch.setattr(WorkbenchChatService, "_default_client", staticmethod(factory))
     ctx = context()
@@ -127,9 +135,17 @@ def test_real_request_snapshots_share_one_lazily_initialized_client(monkeypatch)
         service = WorkbenchChatService(ctx, mode="real")
         factory.assert_not_called()
         first, second = copy.copy(service), copy.copy(service)
-        first.ask(ChatRequest(question="板上有没有 U999?"))
-        second.ask(ChatRequest(question="板上有没有 U999?"))
-        factory.assert_called_once_with("real")
+        first.ask(
+            ChatRequest(question="板上有没有 U999?", disclosure_id=first.disclosure().disclosure_id)
+        )
+        second.ask(
+            ChatRequest(
+                question="板上有没有 U999?", disclosure_id=second.disclosure().disclosure_id
+            )
+        )
+        factory.assert_called_once()
+        assert factory.call_args.args[0] == "real"
+        assert factory.call_args.args[1].api_key == "synthetic-test-key"
         assert first.client is second.client is service.client
     finally:
         close_workbench_context(ctx)
@@ -162,7 +178,14 @@ def test_failed_initialization_can_retry_after_explicit_configuration(tmp_path, 
         )
         constructor.assert_not_called()
         monkeypatch.setenv("ANTHROPIC_API_KEY", "synthetic-test-value")
-        response = client.post("/api/workbench/chat", json={"question": "板上有没有 U999?"})
+        assert (
+            client.post("/api/workbench/chat", json={"question": "板上有没有 U999?"}).status_code
+            == 428
+        )
+        receipt = client.get("/api/workbench/ai-disclosure").json()["disclosure_id"]
+        response = client.post(
+            "/api/workbench/chat", json={"question": "板上有没有 U999?", "disclosure_id": receipt}
+        )
         assert response.status_code == 200 and response.json()["mode"] == "real"
         assert response.json()["trace"]
         constructor.assert_called_once()
@@ -186,7 +209,10 @@ def test_provider_failure_does_not_publish_answer_or_change_review_state(tmp_pat
         create(tmp_path / "review.sqlite", SimpleNamespace(messages=messages))
     ) as client:
         before = client.get("/api/workbench/state").json()
-        response = client.post("/api/workbench/chat", json={"question": "Explain U1"})
+        receipt = client.get("/api/workbench/ai-disclosure").json()["disclosure_id"]
+        response = client.post(
+            "/api/workbench/chat", json={"question": "Explain U1", "disclosure_id": receipt}
+        )
         assert response.status_code == 503
         assert "AI 服务暂不可用" in response.json()["detail"]
         assert "synthetic-private-detail" not in response.text

@@ -32,7 +32,7 @@
 | A13 | partial | 真实无key流程与SDK故障注入 | 真实目标机断网；可选配置边界 | AI + 对应真实复核人 |
 | A14 | local_cases_verified | 空集未评估/旧记录需复核 | 候选分母合同另未完成 | AI + 对应真实复核人 |
 | 输入支持表 | not_met | 已有解析器和合成文件组，不是真实EDA导出路线 | 记录实际EDA版本/菜单/文件组/编码/层级/成功结果 | 用户/Windows与Cadence操作者 |
-| 云AI隐私启用 | not_met | 生产HTTP/Runner注入记录器复现：无确认聊天200/SDK调用2，包含历史和真实工具结果；无真实外发 | [待选A/B方案](ai-disclosure-plan-v1.md)；后端绑定当前披露、前端先确认；消除dotenv延迟配置漂移 | AI + 用户选择 |
+| 云AI隐私启用 | local_cases_verified | 第59包按已选A实现页面确认；未确认428/过期409且SDK初始化0；配置冻结、当前上下文绑定与白色/兼容UI复验通过 | [实施及证据边界](ai-disclosure-plan-v1.md)；注入客户端不代表真实供应商、认证或目标机验收 | AI + 对应真实复核人 |
 | 密钥与本地默认 | not_met | 配置资料key且缺省设置时，打开Q12详情进入Datasheets型号查询；显式关闭时0查询，注入复现无真实联网 | 被动GoogleFonts已移除并本机验证；默认资料查询/显式AI启用边界仍需处理，不能据此关闭本项 | AI + 用户选择 |
 | 性能 | baseline_recorded | 当前18进程/63构建0失败；3/25/66器件 | 目标机/真实工作负载与退化预算；无任意大板承诺 | AI测量，用户确认实际工作负载 |
 | 独立样本与指标 | awaiting_human | eval/manifest.yaml自述pseudo-gold；不是独立金标准 | [人工执行材料](peer-acceptance-v1.md)已就绪但记录仍空；需3–5设计、30–50独立标签/留出与归因 | 用户 + 独立同行 |

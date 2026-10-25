@@ -1,5 +1,100 @@
 {
   "$defs": {
+    "AIDisclosure": {
+      "properties": {
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "context_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context Id"
+        },
+        "data_categories": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Data Categories",
+          "type": "array"
+        },
+        "destination": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Destination"
+        },
+        "disclosure_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Disclosure Id"
+        },
+        "mode": {
+          "enum": [
+            "real",
+            "fake",
+            "snapshot",
+            "unavailable"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "notice": {
+          "title": "Notice",
+          "type": "string"
+        },
+        "version": {
+          "default": "hardwise.ai_disclosure.v1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "available",
+        "context_id",
+        "data_categories",
+        "destination",
+        "disclosure_id",
+        "mode",
+        "model",
+        "notice",
+        "version"
+      ],
+      "title": "AIDisclosure",
+      "type": "object"
+    },
     "Assessment": {
       "description": "Canonical check contract; old status-only records cannot certify a result.",
       "properties": {
@@ -297,6 +392,19 @@
     "ChatRequest": {
       "description": "User question sent from the Copilot panel.",
       "properties": {
+        "disclosure_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Disclosure Id"
+        },
         "history": {
           "items": {
             "$ref": "#/$defs/ChatMessage"
@@ -4122,6 +4230,9 @@
     }
   },
   "properties": {
+    "ai_disclosure": {
+      "$ref": "#/$defs/AIDisclosure"
+    },
     "chat_request": {
       "$ref": "#/$defs/ChatRequest"
     },
@@ -4167,7 +4278,8 @@
     "saved_project_catalog",
     "project_restore",
     "chat_request",
-    "chat_response"
+    "chat_response",
+    "ai_disclosure"
   ],
   "title": "WorkbenchContracts",
   "type": "object"

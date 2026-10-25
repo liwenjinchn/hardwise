@@ -1,5 +1,15 @@
 /* Generated from backend Pydantic contracts. Do not edit. */
 
+export type Available = boolean;
+export type ContextId = string | null;
+export type DataCategories = string[];
+export type Destination = string | null;
+export type DisclosureId = string | null;
+export type Mode = "real" | "fake" | "snapshot" | "unavailable";
+export type Model = string | null;
+export type Notice = string;
+export type Version = string;
+export type DisclosureId1 = string | null;
 export type Content = string;
 export type Role = "user" | "assistant";
 export type History = ChatMessage[];
@@ -8,7 +18,7 @@ export type SelectedRefdes = string | null;
 export type Answer = string;
 export type ClaimVerification = "unverified";
 export type DatasheetSearchEnabled = boolean;
-export type Mode = "fake" | "real" | "snapshot";
+export type Mode1 = "fake" | "real" | "snapshot";
 export type ResponseKind = "model_explanation" | "insufficient_evidence" | "offline_notice";
 export type SelectedRefdes1 = string | null;
 export type Suggestions = string[];
@@ -307,7 +317,7 @@ export type ReviewDependencyContract = string | null;
 export type EmittedCount = number;
 export type Name4 = string;
 export type Scope2 = "pin" | "component" | "net";
-export type Version = string;
+export type Version1 = string;
 export type RuleVersions = EmittedRuleVersion[];
 export type SchemaVersion2 = "hardwise.run_provenance.v1";
 export type Reason10 = string;
@@ -433,7 +443,7 @@ export type Confirmed = boolean;
 export type ConfirmedBy = string;
 export type Maximum = number | null;
 export type Minimum = number | null;
-export type Mode1 = string;
+export type Mode2 = string;
 export type Net2 = string;
 export type ReferenceNet = string;
 export type Source6 = string;
@@ -443,6 +453,7 @@ export type Facts = VoltageFact[];
 export type SchemaVersion3 = "hardwise.voltage_facts.v1";
 
 export interface WorkbenchContracts {
+  ai_disclosure: AIDisclosure;
   chat_request: ChatRequest;
   chat_response: ChatResponse;
   component_detail: ComponentDetail;
@@ -455,10 +466,22 @@ export interface WorkbenchContracts {
   saved_project_catalog: SavedProjectCatalog;
   workbench_state: WorkbenchState;
 }
+export interface AIDisclosure {
+  available: Available;
+  context_id: ContextId;
+  data_categories: DataCategories;
+  destination: Destination;
+  disclosure_id: DisclosureId;
+  mode: Mode;
+  model: Model;
+  notice: Notice;
+  version: Version;
+}
 /**
  * User question sent from the Copilot panel.
  */
 export interface ChatRequest {
+  disclosure_id?: DisclosureId1;
   history?: History;
   question: Question;
   selected_refdes?: SelectedRefdes;
@@ -477,7 +500,7 @@ export interface ChatResponse {
   answer: Answer;
   claim_verification: ClaimVerification;
   datasheet_search_enabled: DatasheetSearchEnabled;
-  mode: Mode;
+  mode: Mode1;
   response_kind: ResponseKind;
   selected_refdes: SelectedRefdes1;
   suggestions: Suggestions;
@@ -998,7 +1021,7 @@ export interface EmittedRuleVersion {
   emitted_count: EmittedCount;
   name: Name4;
   scope: Scope2;
-  version: Version;
+  version: Version1;
 }
 export interface ProjectRestoreReceipt {
   journal: Journal;
@@ -1209,7 +1232,7 @@ export interface VoltageFact {
   confirmed_by: ConfirmedBy;
   maximum: Maximum;
   minimum: Minimum;
-  mode: Mode1;
+  mode: Mode2;
   net: Net2;
   reference_net: ReferenceNet;
   source: Source6;

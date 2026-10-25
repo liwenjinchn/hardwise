@@ -18,6 +18,7 @@ from hardwise.workbench.managed_project_contracts import (
     ProjectRestoreReceipt,
 )
 from hardwise.workbench.chat_contracts import ChatRequest, ChatResponse
+from hardwise.workbench.ai_disclosure import AIDisclosure
 from hardwise.workbench.view_model import ComponentDetail, WorkbenchState
 
 
@@ -52,6 +53,7 @@ def main() -> None:
         project_restore=(ProjectRestoreReceipt, ...),
         chat_request=(ChatRequest, ...),
         chat_response=(ChatResponse, ...),
+        ai_disclosure=(AIDisclosure, ...),
     )
     schema = bundle.model_json_schema(mode="serialization")
     _require_serialized_response_fields(schema)

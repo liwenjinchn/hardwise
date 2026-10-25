@@ -216,7 +216,11 @@ describe("ParseView", () => {
 describe("CopilotPanel", () => {
   it("renders the guard welcome, default probes, and trust legend", () => {
     const html = renderToStaticMarkup(
-      <CopilotPanel state={makeState()} selectedRefdes="U8" />
+      <CopilotPanel state={makeState()} selectedRefdes="U8" consent={{
+        descriptor: null, error: "", confirmed: false, acknowledge: () => {},
+        prepare: async () => null,
+        refresh: async () => ({ version: "hardwise.ai_disclosure.v1", mode: "snapshot", available: true, context_id: null, disclosure_id: null, destination: null, model: null, data_categories: [], notice: "离线快照" })
+      }} />
     );
     expect(html).toContain("回答是待核验的 AI 解释");
     expect(html).toContain("这个 U8 为什么是 ERROR/WARN?");
