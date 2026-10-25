@@ -5789,3 +5789,8 @@ Stage65 fixed passive stress, but dc_envelope still rounded signed differences b
 ### 2026-10-26 — Producer delivery must respect the actual stored decision scope
 
 Stage69 copies and trials the original journal before upgrade. Profile pin producers2→3 change, but its sole stored decision is a generic capacitor v4 check whose fingerprint stays identical. Correct migration is6→6→6 events, not adding an event merely because the application changed. Preserve all6old events/32old runs/reason/input hashes and verify one real UI rerun; separately retain the affected profile-decision1→2→2 evidence. Current/historical offline receipts prove pin3 versus original2, with their own run IDs. Do not run negative controls that temporarily modify extracted fixtures/manifest concurrently with tests reading that same tree. Evidence:Hardwise-端间交付69.
+
+
+### 2026-10-26 — Match citation tokenizer boundaries across API and UI
+
+Backend ends source tokens at backticks; UI formerly swallowed stray backticks and missed unsupported-token equality, displaying a misleading ordinary source chip. UI EV branch also lacked ASCII left boundary. Align both, retain CJK and multi-token code warnings; five regressions old4fail/1control, new110unit pass. Actual injected wrongvalue/unit/object prose stays unverified and outside formalstate/CSV/profiles/offline. A valid source token does not validate semantic binding; negative lookup still unlocks model prose/signoff wording, an explicit remainingF04gap. EvidenceHardwise-引用边界70.

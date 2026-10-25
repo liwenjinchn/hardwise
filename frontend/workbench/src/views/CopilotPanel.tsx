@@ -326,7 +326,7 @@ function tableCells(line: string): string[] {
 }
 
 function renderInline(text: string, unsupported?: Set<string>) {
-  const parts = text.split(/(`[^`]+`|\b(?:datasheet|doc):[^\s,;，。；：、)）]+|EV-[A-Z0-9_-]+)/g);
+  const parts = text.split(/(`[^`]+`|\b(?:datasheet|doc):[^\s,;，。；：、)）`]+|\bEV-[A-Z0-9_-]+)/g);
   return parts.filter(Boolean).map((part, index) => {
     const inCode = part.startsWith("`") && part.endsWith("`");
     const token = inCode ? part.slice(1, -1) : part;

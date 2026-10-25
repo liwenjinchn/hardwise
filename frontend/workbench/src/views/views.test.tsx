@@ -755,3 +755,25 @@ it("does not let a multi-token code span hide an unsupported citation", () => {
   const html = renderToStaticMarkup(<RichMessageText text="`datasheet:real.pdf#p1 和 datasheet:ghost.pdf#p9`" unsupportedTokens={["datasheet:ghost.pdf#p9"]} />);
   expect(html).toContain("evidence-inline unverified");
 });
+
+
+it.each([
+  "datasheet:ghost.pdf#p9`",
+  "doc:ghost#row1`",
+  "依据datasheet:ghost.pdf#p9`code`",
+])("keeps an unsupported citation warning beside stray or adjacent code delimiters: %s", (text) => {
+  const html = renderToStaticMarkup(<RichMessageText text={text} unsupportedTokens={["datasheet:ghost.pdf#p9", "doc:ghost#row1"]} />);
+  expect(html).toContain("evidence-inline unverified");
+  expect(html).toContain("未验证引用");
+});
+
+it("does not turn an embedded ASCII event prefix into an evidence chip", () => {
+  const html = renderToStaticMarkup(<RichMessageText text="xEV-FAKE abc_EV-FAKE" unsupportedTokens={[]} />);
+  expect(html).not.toContain("evidence-inline");
+  expect(html).toContain("xEV-FAKE abc_EV-FAKE");
+});
+
+it("still warns for a source event glued to Chinese prose", () => {
+  const html = renderToStaticMarkup(<RichMessageText text="依据EV-FAKE" unsupportedTokens={["EV-FAKE"]} />);
+  expect(html).toContain("evidence-inline unverified");
+});

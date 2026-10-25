@@ -670,3 +670,12 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - OriginaljournalSQLitebackup/allrows+10managed/4logicalhashes beforecopytrial. Trial6→6→6events,32→33→34runs; originaldecisionunchangedgenericv4/fingerprintunchanged, so no manufacturedprofile event. Stop exactownedPID76125 onlyafter allrows/hash/commandchecks, replacewith26runtime on18772fake/noautodatasheets. Actualstartup preserves6old events/32oldruns/catalog/decision/reason; U1DRAFT/pinproducer3.profile-review1. ActualwhiteUIrerun6events34runs. Separate68affectedprofilemigration1→2→2 remainsvalid.
 - Bothmainwhitealiases HTTPbytesmatchverifiednewcapsulewhite andfullbaseline. Capturedoriginal-reasonoffline report sixreasons,forcedbrowseroffline1HTML/0API/external; currentpin3.profile-review1 andhistoricalpin2 receipts matchtheiractualrunIDs, historicalpassive3/current4 retained. Userlive remainsrunning; nofiledoubleclick/stoppedserver/nativeWindowsclaim. Screenshots inspected.
 - Packagingfull1712passed/7deselected/7deliberatebadfixtureserializationwarnings91.33s; Ruff/diffpass. No runtime/frontend/staticchange thispackagingstep; stage68same-source24E2E1.4m retained, not relabelled69rerun. Currententry/FAQ/plan/fieldcontract/fullledger/windowsguide/learningupdated. All realapproval/independentlabels/targetmachine/peer/fullcandidate/PDF/factUIgaps remain; goalactiveNOT_COMPLETE, nopush. EvidenceHardwise-端间交付69.
+
+
+### 2026-10-26 — 第70阶段：引用警告词法修复与F04对抗审查
+
+- 上轮a731ea6完成26f74fc交付为progress，无blocked计数。本轮发现source后孤立反引号使frontendunsupported比较失配、嵌英文EV误成来源chip；5新用例旧4fail/1control。前端token截止反引号、EV加入ASCII左边界，保留中文/多token代码警告，110unit、build/contracts/typecheck、24E2E44.2s及full1712/7deselected/7existingwarnings57.34s通过。无后端规则/数据迁移，无生产档案/日志变更。
+- 六组真实chatAPI本地注入模型：假值、假单位、错对象、孤立反引号假引用、零工具签核、负查询签核。正式state/CSV/profiles不变，offline不含伪造标记；无外部模型。真token假解释仍unverified，负查询仍允许签核措辞，保留为F04语义缺口。详见output-boundary-audit-v1.md及Hardwise-引用边界70。
+- 用户已选择F01完整多来源候选/冲突/已确认分层，按net/mode批量确认，未解决冲突UNKNOWN。不再等待或重问F01；F06仍独立待答。下一按feature-dev执行该已选路线，保留旧事实/历史，不能缩成单稿编辑。完整产品NOT_COMPLETE，无push。
+
+- 实际白色18778注入模型界面1440/760已检查，EV和datasheet两个未核警告可见，xEV普通文本，760=document760；独立preview仅公开合成模型无外发。此前进程handle缺失且lsof确认无监听后重启，未猜测超时等于停止。F01已选实施brief保存fact-confirmation-plan-v1.md；第70修复先独立提交，下一进入已授权模型实现。
