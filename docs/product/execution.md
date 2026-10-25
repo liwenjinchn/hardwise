@@ -679,3 +679,12 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - 用户已选择F01完整多来源候选/冲突/已确认分层，按net/mode批量确认，未解决冲突UNKNOWN。不再等待或重问F01；F06仍独立待答。下一按feature-dev执行该已选路线，保留旧事实/历史，不能缩成单稿编辑。完整产品NOT_COMPLETE，无push。
 
 - 实际白色18778注入模型界面1440/760已检查，EV和datasheet两个未核警告可见，xEV普通文本，760=document760；独立preview仅公开合成模型无外发。此前进程handle缺失且lsof确认无监听后重启，未猜测超时等于停止。F01已选实施brief保存fact-confirmation-plan-v1.md；第70修复先独立提交，下一进入已授权模型实现。
+
+
+### 2026-10-26 — 第71阶段：已选F01多来源模型基础
+
+- 用户已选完整多来源候选/冲突/确认分层，不再待答F01；F06独立仍待答。使用feature-dev，Goal/Context/Constraints/Donewhen及逐层实施计划已记录，先完成70独立fix1eea001再进本模型，未反复询问。
+- 三个focused模块定义candidate/confirmation/document、projection和all-or-nothing纯batchreducer。确认绑定candidate+whole scopehash，来源/定位/候选集合变化即needs_review，重排不影响；未确认/冲突不发出confirmedfacts，unknown撤回留历史，典型值不造范围，mode/reference不自动合并，网名候选仅人工明确确认后生效。新声明要求reviewer/reason/timezone timestamp，非认证；legacyv1保留原声明并显式legacy/no新timestamp。
+-30targetedpass0.24s，包括真实现有MOSFETvalidator投影消费，冲突VgsUNKNOWN/Vds独立PASS，选择越界FAIL，撤回UNKNOWN；原未批准门禁仍UNKNOWN。模型未接Design/context/loader/API/SQL/UI，故无生产迁移或判定变化；batch纯函数不能冒充数据库事务/currentproject/run保护。后续必须按原计划接持久化/激活/API/白色界面/恢复/离线，不能以模型单测关闭F01。完整goalactiveNOT_COMPLETE，无push。
+
+- Finalfull1742passed/7deselected/7existingbadvaluewarnings72.30s；Ruff/diffpass。projection-proof.json直接证明冲突→选择24V→新增来源使确认失效和显式撤回。新增模型不接runtime，原用户日志与冻结包未写。活跃服务可用性需重新lsof核实，当前原18772无监听，不能沿用第69“仍运行”状态；本轮不擅自修改或恢复原日志。

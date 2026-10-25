@@ -5794,3 +5794,8 @@ Stage69 copies and trials the original journal before upgrade. Profile pin produ
 ### 2026-10-26 — Match citation tokenizer boundaries across API and UI
 
 Backend ends source tokens at backticks; UI formerly swallowed stray backticks and missed unsupported-token equality, displaying a misleading ordinary source chip. UI EV branch also lacked ASCII left boundary. Align both, retain CJK and multi-token code warnings; five regressions old4fail/1control, new110unit pass. Actual injected wrongvalue/unit/object prose stays unverified and outside formalstate/CSV/profiles/offline. A valid source token does not validate semantic binding; negative lookup still unlocks model prose/signoff wording, an explicit remainingF04gap. EvidenceHardwise-引用边界70.
+
+
+### 2026-10-26 — Bind voltage confirmation to the full candidate scope
+
+Selecting candidate content alone misses new conflicting sources arriving later. Bind both candidate hash (including source/locator) and all net/mode candidate hashes; additions/removals/content changes require review, reordering does not. Keep latest explicitunknown as revocation and retain all prior declarations. A pure batch reducer can guarantee no input mutation/partial return but cannot claim SQLite transaction, activation or currentrun safety; these remain caller obligations. Thirty model tests include real existingVgs/Vdsvalidators proving unresolvedUNKNOWN and independentPASS. EvidenceHardwise-事实分层71; model foundation only, no workbench migration.

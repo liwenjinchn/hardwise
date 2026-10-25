@@ -18,3 +18,14 @@
 5. 验收数据包含等值多来源、值冲突、域冲突、典型值无上下限、模式切换、修改已选候选后hash失效、重复确认/撤回、并发过期、失败回滚及备份独立恢复。各层与完整主流程复验后，安全升级原日志/新编号复验包。
 
 细节在实施前按现有代码约束完善，不能用此文档声称功能已实现。第70引用提示修复先独立提交，避免混淆其已验证范围和本特性的新数据模型。
+
+
+## 第71模型基础（尚未接工作台）
+
+新增voltage_review.py候选/声明/账本、voltage_review_projection.py有效事实投影、voltage_review_actions.py整批纯校验。候选本身禁止confirmed/confirmed_by；人工confirm绑定候选完整content hash及该net/mode全部候选scope hash，来源/定位也参与hash，新增相同值候选仍要求重新复核；候选重排不使scope hash变化。最新声明按追加顺序生效，unknown撤回保留旧声明；任一批量项失败不返回新账本，也不修改输入。新声明需确认人、理由、带时区时间；身份仍为用户声明，不是认证。
+
+投影：无人工选择的多来源相同值为unconfirmed，不同值/参考域/范围为conflict，均不产生已确认事实；绑定过期为needs_review。明确选一个候选可解决该scope冲突，所有原候选和声明保留。典型值确认不补造min/max；其他mode候选保留，由现行active_mode过滤。net_name候选不会自动确认，必须明确人工选择。旧v1兼容转换保留原confirmed_by和值，标origin=legacy_v1、无新时间戳，不冒充新真人批准；历史原JSON不改。
+
+30项模型测试包含生产MOSFETvalidator消费投影：Vgs冲突UNKNOWN、Vds独立PASS；选越界Gate后VgsFAIL，撤回后UNKNOWN而VdsPASS；未批准profile依旧UNKNOWN。证明模型和判定之间的预期接口，尚非工作台端到端。纯批量函数不提供数据库事务、认证或project/run检查，这些必须由下一阶段调用层完成；不能把其revision/scope守卫当成完整并发/持久化验收。
+
+后续必须完成步骤2–5；在此之前生产加载器仍只读原v1，没有自动迁移/新接口/新UI，不升级原日志或冻结包。本次新增基础不会改变现有工作台结果。原PRD范围完整保留。
