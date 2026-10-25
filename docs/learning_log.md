@@ -5752,3 +5752,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Fix：候选保留实际检查记录，但未获适用字段批准一律 UNKNOWN/HYPOTHESIS；RETIRED 不参与新匹配。来源分类默认 profile_candidate，只有实际适用的有效批准 token 集合才是 reviewed_profile。报告型号/引脚一致性也受批准状态约束，白色 UI 同时显示有效生命周期和旧标签。拓扑工具补 UNKNOWN 类型及来源，候选摘要仍可本地化。匹配档案的 promotion 状态改 matched_profile，兼容旧 already_l1 载荷但不再新生成。
 - Verification boundary：算法测试显式使用标明虚构的批准声明，真实导入使用原始 DRAFT，禁止 autouse 自动批准。跨旧/新/重启的独立进程 SQLite 演练保留原值/理由/事件，首次需复核一次，历史 1→2→2。旧演练数据库与发布入口未被该演练改写。
 - Takeaway：控制规则的局部依赖稳定，不代表同组 DRAFT 批准任务也有相同依赖；E2E 应核对目标 stable_key 的历史与决定，并单独断言批准门禁仍保守。全局历史计数变化不能直接证明控制决定被撤销。测试绿色也不等于真实字段批准、独立标签或 Windows/Cadence 验收。
+
+
+## 2026-10-26 — 合同变化需要有意识重定软件基线
+
+- Symptom：F03消费者升级后，旧交付脚本仍固定3cda993和146条检查，不能证明新DRAFT合同；要求新版数量完全不变会反向保留旧ready认证。
+- Root cause：源码pin、固定公开样例基线、mutable页面和原SQLite在线进程是不同交付面。
+- Fix：重新从已验证aeb45f9计算完整summary/coverage，固定新pin并新建编号ZIP；解压后验证真实导入源码、全部清单哈希、新基线与独立恢复。错误基线即使同步更新清单hash也须被语义比较拒绝。原日志先备份并对副本演练，保留全部旧事件/运行/原理由与输入哈希后再重启原入口。
+- Takeaway：基线是有边界的软件观测，不是工程真值。当前0ERROR来自未批准字段保持UNKNOWN，不能写成电路故障已解决。原日志仅有泛型决定时，F03升级不应凭空制造档案复核事件；档案决定迁移另用明确合成记录证明。旧ZIP不可覆盖，工具/文档提交与运行源码pin分开记录。

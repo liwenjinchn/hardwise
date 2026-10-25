@@ -11,31 +11,31 @@ from pathlib import Path, PurePosixPath
 import subprocess
 import zipfile
 
-BASELINE_COMMIT = "3cda993cf9cbd799d019c7cb6c7fe0fea879bd10"
+BASELINE_COMMIT = "aeb45f90e6b455e43c6584f1cfcac81874d61e7a"
 
 BASELINE = {
     "component_summary": {
         "components": 25,
         "bom_matched": 25,
-        "validated": 21,
-        "manual": 4,
+        "validated": 22,
+        "manual": 3,
         "pass_count": 0,
         "warn_count": 0,
-        "error_count": 2,
-        "unknown_count": 19,
+        "error_count": 0,
+        "unknown_count": 22,
         "not_applicable_count": 0,
     },
     "assessment_coverage": {
         "rule_set_version": "hardwise.assessment.v1",
         "basis": "emitted_check_records",
-        "generated_checks": 146,
-        "completed_checks": 102,
-        "unknown_checks": 44,
+        "generated_checks": 167,
+        "completed_checks": 52,
+        "unknown_checks": 115,
         "not_applicable_checks": 0,
         "legacy_needs_review": 0,
-        "needs_review_checks": 0,
-        "result_counts": {"PASS": 98, "FAIL": 4, "UNKNOWN": 44, "NOT_APPLICABLE": 0},
-        "unsupported_components": 4,
+        "needs_review_checks": 91,
+        "result_counts": {"PASS": 52, "FAIL": 0, "UNKNOWN": 115, "NOT_APPLICABLE": 0},
+        "unsupported_components": 3,
         "full_candidate_count": None,
         "boundary": "只统计已生成的检查记录；尚未建立全板候选检查集合，不代表全板覆盖率。",
     },

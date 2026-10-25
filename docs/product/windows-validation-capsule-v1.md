@@ -8,7 +8,7 @@ This is a pinned public source package for T08 target-machine validation. It is 
 uv run python scripts/build_validation_bundle.py --output /absolute/path/Hardwise-Windows-check.zip
 ```
 
-The supported source commit is `3cda993cf9cbd799d019c7cb6c7fe0fea879bd10`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 923 source/supplement files; the manifest itself is the 924th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
+The supported source commit is `aeb45f90e6b455e43c6584f1cfcac81874d61e7a`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 934 source/supplement files; the manifest itself is the 935th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
 
 Extract to a normal directory. In native Windows PowerShell, from the extracted root:
 
@@ -55,10 +55,25 @@ Includes the additional inductance numeric fix under the same accepted local-UNK
 Current full Python 1567 passed / 7 deselected, 46.62s (delivery run). Final E2E 23 passed, 44.1s; the first run's one identity-import parse-page timeout is retained without an asserted root cause. Both mutable white aliases and owned live18772 now use this source. The live L78 scene contains no inductors, so all original 5 history rows, old runs/catalog and ten managed-input hashes remain unchanged after reload. Evidence: task output Hardwise-电感数值57; no product release, physical engineering approval or Windows/Cadence claim.
 
 
-## Current 8938cf7 delivery — 2026-10-25
+## Previous 8938cf7 delivery — 2026-10-25
 
 Includes the user-selected quarantine of every competing reference candidate, same-name columns and Cadence continuation handling. Existing explicit-identity producer v4 invalidates prior decisions according to the established journal contract; ordinary valid public reports remain exactly equal. Current builder pin is 8938cf7108672f68147d9fe92ccdc59e05098a41; previous ZIPs remain frozen history.
 
 `Hardwise-8938cf7-Windows-check.zip`: 916 files / 915 hashes, 14,176,603 bytes; SHA-256 `7bf6cfe42b66f7f66f109b2a5ee09b0de57fe60d15257637c5131b50908647d9`. Extraction under a Chinese/space path passed hashes, exact public baseline, white rendering, no-key CLI dry-run and managed save / independent restore without original paths. All 78 extracted numeric/reference tests passed in 10.10s. Native Windows, tamper, overwrite and unregistered ref were rejected as expected; restored bytes passed hashes and the ZIP remained unchanged. Existing dependencies were reused; no fresh install or actual Windows/Cadence acceptance was performed.
 
 Current repository Python: 1592 passed / 7 deselected, 46.53s (delivery run); frontend contracts/type check, Ruff/diff and 24 E2E pass (46.4s), including actual white import/quarantine/correction with inspected desktop/narrow screenshots. Both main static white aliases and owned live18772 use this source; all original 5 event rows, 26 old runs, catalog and ten managed-input hashes survived reload without additional events. Evidence: task output Hardwise-位号隔离58. No release approval or independent engineering label is implied.
+
+
+## Current aeb45f9 delivery — 2026-10-26
+
+The source now includes full SQL profile contracts and the user-selected DRAFT migration across validators, candidates, evidence, reports, Agent and the white workbench. The public software baseline deliberately changes to 25 components / 22 reports / 3 unmatched gaps, component 0 PASS / 0 WARN / 0 ERROR / 22 UNKNOWN, and 167 emitted records = 52 PASS / 0 FAIL / 115 UNKNOWN. Effective READY is zero. These counts reflect unapproved premises, not repaired electrical defects; the full candidate denominator remains unknown. Prior baseline counts must not be accepted for this version.
+
+`Hardwise-aeb45f9-Windows-check.zip`: 935 files / 934 hashes, 14,235,722 bytes; SHA-256 `1a508f4e8f35731ab4462ce22280278e593b184ed6ebbe5bbe58497fab8b63dc`. The Git source is fixed at aeb45f9; the four named supplements come from the builder checkout and are separately hashed. Nested source documentation/build defaults may describe earlier deliveries: the top-level START-HERE.md, PUBLIC-BASELINE.json and BUNDLE-MANIFEST.json define this capsule. The previous 3cda993 ZIP is preserved unchanged.
+
+Chinese/space-path extraction passed all hashes, exact public baseline, white offline rendering, real no-key CLI dry-run, canonical review states, managed save and fresh-process backup restore after original paths became unavailable. Extracted profile/storage/lifecycle/migration/dependency/locator tests: 138 passed, 21.34s. Native-Windows enforcement, source tampering, deliberately mismatched baseline with otherwise valid hashes, archive overwrite and an unregistered source ref were rejected with the expected diagnostic; restored original bytes passed hashes and the frozen ZIP hash remained unchanged. Existing dependencies were reused; no fresh Windows install or actual Cadence acceptance was performed.
+
+Current delivery-check Python: 1668 passed / 7 deselected / 7 deliberate malformed-fixture serialization warnings, 264.77s; Ruff/diff pass. Runtime/frontend source is unchanged from aeb45f9's 105 unit / 24 E2E passes; those frontend results were not rerun or relabelled as this packaging check. Original live 18772 and both mutable white aliases now use aeb45f9. The original journal's 5 events, 28 old runs, catalog, existing generic decision, four logical input hashes and ten managed input hashes survived upgrade; startup and an actual white-UI rerun added two runs (30 total), with no manufactured profile-review decision. Controlled profile-dependent decision invalidation is separately proven by stage63's old/new/restart 1→2→2 history exercise.
+
+Windows software probe remains false; actual Cadence export and human profile approval remain unverified; product release acceptance remains false. Evidence: task output Hardwise-交付对齐64.
+
+Actual white-UI rerun retained five history events. Its newly captured offline report was loaded once over localhost, then checked with the browser offline and all other requests blocked: five original reasons remained visible; current and historical provenance JSON downloads matched their respective embedded run IDs. Only the HTML request occurred, no API or external request. The user live server remains running; this does not claim a stopped-server file double-click or native Windows check.

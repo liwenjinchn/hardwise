@@ -42,8 +42,7 @@ UNKNOWN。综合 FAIL 的严重度来自实际 FAIL 项，其他紧急 UNKNOWN �
 追溯元数据单列。只有概要而无检查记录，无法重新认证通过。
 
 未审核器件档案产生的检查统一保留为待核假设/UNKNOWN；不是只在一条警告旁
-继续认证其余结果。现有 READY 标签本身不等于本轮完成了独立工程复核，仍需
-T03 的受控子集、条件参数与出处核查。
+继续认证其余结果。旧 review_status=ready 标签不授予新版字段批准。有效生命周期和实际型号/厂商/封装作用域由 F03 门禁核对；仍需 T03 的受控子集、条件参数与真实出处审查。
 
 ## 各端和统计范围
 
@@ -58,9 +57,9 @@ T03 的受控子集、条件参数与出处核查。
 - 注入评测把“资料不可解析”的预期改为 UNKNOWN，并保留这项检出验收。
   回归的未预期差分项不是总体误报率。
 
-公开 mixed_controller_power_stage 当前样例：25 个器件，21 个有报告，0 个综合 PASS、
-2 个综合 FAIL、19 个 UNKNOWN，另有4个档案缺口。生成146条检查记录：98 PASS、
-4 FAIL、44 UNKNOWN、0 NOT_APPLICABLE；完成数102，仅为已生成的PASS+FAIL记录，
+公开 mixed_controller_power_stage 当前 aeb45f9 样例：25 个器件，22 个有报告，0 个综合 PASS、
+0 个综合 FAIL、22 个 UNKNOWN，另有3个未匹配档案缺口。有效READY为0，DRAFT候选9。生成167条检查记录：52 PASS、
+0 FAIL、115 UNKNOWN、0 NOT_APPLICABLE；完成数52，仅为已生成的PASS+FAIL记录。旧ready标签失去认证资格，不代表原电气故障已修复；
 full_candidate_count 仍为空。组件与检查记录不是同一分母，也不是全板覆盖率或专家准确率。
 
 ## 未完成的产品门槛
