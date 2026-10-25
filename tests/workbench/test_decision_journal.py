@@ -16,7 +16,7 @@ def _store(path, fingerprint="f1", project="project"):
     return store
 
 
-def _decide(store, keys=("a",), status="waived", fps=None):
+def _decide(store, keys=("a",), status="accepted_risk", fps=None):
     return store.update(
         known_keys=["a", "b"],
         request=ReviewDecisionRequest(
@@ -34,11 +34,11 @@ def test_restart_restores_same_snapshot_and_keeps_history(tmp_path):
     first = _store(path)
     _decide(first)
     second = _store(path)
-    assert second.summary(["a"]).waived == 1
+    assert second.summary(["a"]).accepted_risk == 1
     assert second.history()[0]["decision"]["reason"] == "Public synthetic reason"
     _decide(second, status="open")
     assert second.summary(["a"]).open == 1
-    assert [e["decision"]["status"] for e in second.history()] == ["open", "waived"]
+    assert [e["decision"]["status"] for e in second.history()] == ["open", "accepted_risk"]
 
 
 def test_run_provenance_and_invalidations_rollback_together(tmp_path):
@@ -69,7 +69,7 @@ def test_changed_fingerprint_requires_review_without_losing_original_reason(tmp_
     second = _store(path, "changed")
     assert second.summary(["a"]).needs_review == 1
     item = second.history()[0]["decision"]
-    assert item["previous_status"] == "waived"
+    assert item["previous_status"] == "accepted_risk"
     assert item["reason"] == "Public synthetic reason"
     assert _store(path, "changed").summary(["a"]).needs_review == 1
     assert len(_store(path, "changed").history()) == 2
@@ -97,7 +97,7 @@ def test_stale_process_cannot_overwrite_a_newer_writer(tmp_path):
     _decide(second, ("b",))
     with pytest.raises(ReviewConflictError, match="another process"):
         _decide(first)
-    assert _store(path).summary(["a", "b"]).waived == 1
+    assert _store(path).summary(["a", "b"]).accepted_risk == 1
 
 
 def test_disappeared_task_is_history_not_human_resolution(tmp_path):
@@ -107,7 +107,7 @@ def test_disappeared_task_is_history_not_human_resolution(tmp_path):
     assert store.begin_run("project", {"b": "fb"}) == 1
     assert store.summary(["b"]).resolved == 0
     assert store.history()[0]["event"] == "disappeared"
-    assert store.history()[0]["decision"]["status"] == "waived"
+    assert store.history()[0]["decision"]["status"] == "accepted_risk"
 
 
 def test_projects_are_isolated_and_restorable(tmp_path):
@@ -116,10 +116,10 @@ def test_projects_are_isolated_and_restorable(tmp_path):
     other = _store(path, project="other")
     assert other.summary(["a"]).open == 1
     old_read = other.summary(["a"], project="project")
-    assert old_read.waived == 0
+    assert old_read.accepted_risk == 0
     assert old_read.run_id is None
     assert old_read.project_id == "project"
-    assert _store(path).summary(["a"]).waived == 1
+    assert _store(path).summary(["a"]).accepted_risk == 1
 
 
 def test_future_or_foreign_database_is_preserved(tmp_path):
@@ -156,7 +156,7 @@ def test_process_exit_before_commit_preserves_last_committed_decision(tmp_path):
     program = "import sqlite3,os,sys; db=sqlite3.connect(sys.argv[1]); db.execute('BEGIN IMMEDIATE'); db.execute('DELETE FROM review_state'); os._exit(17)"
     result = subprocess.run([sys.executable, "-c", program, str(path)], env=os.environ.copy())
     assert result.returncode == 17
-    assert _store(path).summary(["a"]).waived == 1
+    assert _store(path).summary(["a"]).accepted_risk == 1
 
 
 def test_reverting_inputs_does_not_silently_reactivate_old_waiver(tmp_path):
@@ -166,4 +166,4 @@ def test_reverting_inputs_does_not_silently_reactivate_old_waiver(tmp_path):
     restored = _store(path, "f1")
     assert restored.summary(["a"]).needs_review == 1
     assert restored.history()[0]["decision"]["current_fingerprint"] == "f1"
-    assert restored.history()[0]["decision"]["previous_status"] == "waived"
+    assert restored.history()[0]["decision"]["previous_status"] == "accepted_risk"

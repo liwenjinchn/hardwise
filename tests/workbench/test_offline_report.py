@@ -27,7 +27,7 @@ def test_report_retains_all_history_decisions_and_manifests_without_writes(manag
                 "/api/workbench/review-decisions",
                 json={
                     "stable_keys": [key],
-                    "status": "waived",
+                    "status": "accepted_risk",
                     "reason": f"独立原始理由{i} </script> 中文",
                     "expected_run_id": ids["run_id"],
                 },
@@ -105,7 +105,7 @@ def test_memory_only_service_can_deliver_its_decisions_before_shutdown(managed_r
             "/api/workbench/review-decisions",
             json={
                 "stable_keys": [state["review_tasks"][0]["stable_key"]],
-                "status": "accepted",
+                "status": "accepted_risk",
                 "reason": "仅内存服务的原始理由",
                 "expected_run_id": ids["run_id"],
             },

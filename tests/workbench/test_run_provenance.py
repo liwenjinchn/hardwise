@@ -137,7 +137,7 @@ def test_old_run_keeps_original_raw_hash_when_cosmetic_edit_preserves_waiver(pro
                 "/api/workbench/review-decisions",
                 json={
                     "stable_keys": [task["stable_key"]],
-                    "status": "waived",
+                    "status": "accepted_risk",
                     "reason": "Public synthetic historical reason",
                     "expected_run_id": run,
                 },
@@ -147,7 +147,7 @@ def test_old_run_keeps_original_raw_hash_when_cosmetic_edit_preserves_waiver(pro
         with (project / "l78_regulator_bom.csv").open("a") as stream:
             stream.write("\n")
         state = client.post("/api/workbench/rerun").json()
-        assert state["review_decisions"]["waived"] == 1
+        assert state["review_decisions"]["accepted_risk"] == 1
         after = client.get(_url(state["review_decisions"]["run_id"])).json()
         assert _file(before, "bom")["sha256"] != _file(after, "bom")["sha256"]
         assert client.get(_url(run)).json() == before

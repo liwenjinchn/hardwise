@@ -213,7 +213,7 @@ def test_changed_rating_invalidates_but_unrelated_bom_note_keeps_waiver(scene):
                 "/api/workbench/review-decisions",
                 json={
                     "stable_keys": [task["stable_key"]],
-                    "status": "waived",
+                    "status": "accepted_risk",
                     "reason": "public rating source review reason",
                     "expected_run_id": state["review_decisions"]["run_id"],
                 },
@@ -221,7 +221,7 @@ def test_changed_rating_invalidates_but_unrelated_bom_note_keeps_waiver(scene):
             == 200
         )
         write(scene, headers, ["C1", 1, "100nF 25V", "16V", "unrelated note changed"])
-        assert client.post("/api/workbench/rerun").json()["review_decisions"]["waived"] == 1
+        assert client.post("/api/workbench/rerun").json()["review_decisions"]["accepted_risk"] == 1
         write(scene, headers, ["C1", 1, "100nF 25V", "18V", "unrelated note changed"])
         state = client.post("/api/workbench/rerun").json()
         assert state["review_decisions"]["needs_review"] == 1

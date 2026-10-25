@@ -79,13 +79,13 @@ def test_missing_key_keeps_real_review_import_rerun_export_and_restart_working(
             "/api/workbench/review-decisions",
             json={
                 "stable_keys": [before["review_tasks"][0]["stable_key"]],
-                "status": "waived",
+                "status": "accepted_risk",
                 "reason": "public no-key review reason",
                 "expected_run_id": before["review_decisions"]["run_id"],
             },
         )
         assert decision.status_code == 200
-        assert client.post("/api/workbench/rerun").json()["review_decisions"]["waived"] == 1
+        assert client.post("/api/workbench/rerun").json()["review_decisions"]["accepted_risk"] == 1
         for export_format in ("json", "csv", "annotations"):
             assert (
                 client.get("/api/workbench/export", params={"format": export_format}).status_code
@@ -93,7 +93,7 @@ def test_missing_key_keeps_real_review_import_rerun_export_and_restart_working(
             )
     with TestClient(create(path)) as client:
         restored = client.get("/api/workbench/state").json()
-        assert restored["review_decisions"]["waived"] == 1
+        assert restored["review_decisions"]["accepted_risk"] == 1
         assert (
             client.get("/api/workbench/review-decisions/history").json()["events"][0]["decision"][
                 "reason"

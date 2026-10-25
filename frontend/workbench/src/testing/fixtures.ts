@@ -419,6 +419,8 @@ export function makeState(overrides: Partial<WorkbenchState> = {}): WorkbenchSta
       open: 1,
       accepted: 0,
       waived: 0,
+      accepted_risk: 0,
+      false_positive: 0,
       resolved: 0,
       needs_review: 0,
       storage: "memory",

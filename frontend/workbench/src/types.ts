@@ -205,14 +205,15 @@ export interface ReviewTask {
   review_decision: ReviewDecision | null;
 }
 
-export type ReviewDecisionStatus = "open" | "accepted" | "waived" | "resolved";
+export type ReviewDecisionStatus = "open" | "accepted_risk" | "false_positive" | "resolved";
+export type StoredReviewDecisionStatus = ReviewDecisionStatus | "accepted" | "waived";
 
 export interface ReviewDecision {
   stable_key: string;
-  status: ReviewDecisionStatus | "needs_review";
+  status: StoredReviewDecisionStatus | "needs_review";
   reason: string;
   updated_at: string;
-  previous_status: ReviewDecisionStatus | null;
+  previous_status: StoredReviewDecisionStatus | null;
   fingerprint: string | null;
   current_fingerprint: string | null;
 }
@@ -223,6 +224,8 @@ export interface ReviewDecisionSummary {
   accepted: number;
   waived: number;
   resolved: number;
+  accepted_risk: number;
+  false_positive: number;
   stale_removed_on_rerun: number;
   needs_review: number;
   storage: "memory" | "local_file";

@@ -137,7 +137,7 @@ def test_canonical_axes_survive_api_export_and_human_decision():
             "/api/workbench/review-decisions",
             json={
                 "stable_keys": [task["stable_key"]],
-                "status": "waived",
+                "status": "accepted_risk",
                 "reason": "Public synthetic workflow test only",
             },
         )
@@ -147,7 +147,7 @@ def test_canonical_axes_survive_api_export_and_human_decision():
             for item in response.json()["review_tasks"]
             if item["stable_key"] == task["stable_key"]
         )
-        assert reviewed["review_decision"]["status"] == "waived"
+        assert reviewed["review_decision"]["status"] == "accepted_risk"
         assert reviewed["assessment"] == before
         exported = client.get("/api/workbench/export?format=json").json()
         item = next(

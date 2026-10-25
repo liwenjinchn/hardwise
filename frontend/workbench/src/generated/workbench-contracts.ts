@@ -155,10 +155,10 @@ export type RecommendedAction = string;
 export type Refdes2 = string;
 export type CurrentFingerprint = string | null;
 export type Fingerprint = string | null;
-export type PreviousStatus = ("open" | "accepted" | "waived" | "resolved") | null;
+export type PreviousStatus = ("open" | "accepted_risk" | "false_positive" | "resolved" | "accepted" | "waived") | null;
 export type Reason5 = string;
 export type StableKey = string;
-export type Status9 = "open" | "accepted" | "waived" | "resolved" | "needs_review";
+export type Status9 = "open" | "accepted_risk" | "false_positive" | "resolved" | "accepted" | "waived" | "needs_review";
 export type UpdatedAt = string;
 export type SourceClasses = string[];
 export type StableKey1 = string;
@@ -386,6 +386,8 @@ export type TrustTier5 = "l1" | "l2" | "l3";
 export type Value4 = string;
 export type Queue = ReviewQueueItem[];
 export type Accepted = number;
+export type AcceptedRisk = number;
+export type FalsePositive = number;
 export type HistoryCount = number;
 export type NeedsReview1 = number;
 export type Open = number;
@@ -1131,6 +1133,8 @@ export interface ReviewQueueItem {
  */
 export interface ReviewDecisionSummary {
   accepted: Accepted;
+  accepted_risk: AcceptedRisk;
+  false_positive: FalsePositive;
   history_count: HistoryCount;
   needs_review: NeedsReview1;
   open: Open;

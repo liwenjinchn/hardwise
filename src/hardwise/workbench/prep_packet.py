@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from hardwise.workbench.review_decision_contracts import review_status_label
 from hardwise.bom.types import sort_refdes_key
 from hardwise.ir.types import Component
 from hardwise.report.ui_terms import status_label, validation_summary_label
@@ -167,9 +168,12 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
         f"| Review tasks | {packet.task_counts.total} |",
         *(
             [
-                f"| Review decisions open / accepted / waived / resolved | "
+                f"| Review decisions open / legacy accepted / legacy waived / resolved | "
                 f"{packet.review_decisions.open} / {packet.review_decisions.accepted} / "
-                f"{packet.review_decisions.waived} / {packet.review_decisions.resolved} |"
+                f"{packet.review_decisions.waived} / {packet.review_decisions.resolved} |",
+                f"| Review decisions accepted_risk / false_positive / needs_review | "
+                f"{packet.review_decisions.accepted_risk} / "
+                f"{packet.review_decisions.false_positive} / {packet.review_decisions.needs_review} |"
             ]
             if packet.review_decisions is not None
             else []
@@ -304,7 +308,8 @@ def render_project_review_prep_packet_markdown(packet: ProjectReviewPrepPacket) 
                     f"  - 稳定键：`{task.stable_key}`",
                     *(
                         [
-                            f"  - 评审决策：{task.review_decision.status}；"
+                            f"  - 评审决策：{task.review_decision.status}（"
+                            f"{review_status_label(task.review_decision.status)}）；"
                             f"理由：{task.review_decision.reason}"
                         ]
                         if task.review_decision is not None

@@ -68,7 +68,7 @@ def _waive(client, refdes="C1"):
         "/api/workbench/review-decisions",
         json={
             "stable_keys": [task["stable_key"]],
-            "status": "waived",
+            "status": "accepted_risk",
             "reason": "Public engineer reason retained across restart",
             "expected_run_id": current_state["review_decisions"]["run_id"],
         },
@@ -115,7 +115,7 @@ def test_restart_and_semantic_change_classification(tmp_path, change):
         current = next(t for t in state["review_tasks"] if t["stable_key"] == task["stable_key"])
         decision = current["review_decision"]
         assert decision["status"] == (
-            "needs_review" if change in {"voltage", "profile"} else "waived"
+            "needs_review" if change in {"voltage", "profile"} else "accepted_risk"
         )
         assert decision["reason"] == "Public engineer reason retained across restart"
         assert (
@@ -125,7 +125,7 @@ def test_restart_and_semantic_change_classification(tmp_path, change):
         assert history[-1]["event"] == "human_decision"
         if change in {"voltage", "profile"}:
             assert history[0]["event"] == "inputs_changed"
-            assert decision["previous_status"] == "waived"
+            assert decision["previous_status"] == "accepted_risk"
         exported = client.get("/api/workbench/export?format=json").json()
         assert (
             next(t for t in exported["review_tasks"] if t["stable_key"] == task["stable_key"])[
@@ -263,7 +263,7 @@ def test_failed_import_publication_retains_previous_review_namespace(
         assert response.status_code == 503
         state = client.get("/api/workbench/state").json()
         current = next(t for t in state["review_tasks"] if t["stable_key"] == task["stable_key"])
-        assert current["review_decision"]["status"] == "waived"
+        assert current["review_decision"]["status"] == "accepted_risk"
         assert (
             current["review_decision"]["reason"] == "Public engineer reason retained across restart"
         )
@@ -317,13 +317,13 @@ def test_history_pages_keep_scope_counts_and_original_reason(tmp_path, durable):
         assert newest["project_id"] == project
         assert newest["run_id"] == state["review_decisions"]["run_id"]
         assert newest["events"][0]["event"] == "inputs_changed"
-        assert newest["events"][0]["decision"]["previous_status"] == "waived"
+        assert newest["events"][0]["decision"]["previous_status"] == "accepted_risk"
         assert newest["events"][0]["stable_key"] == task["stable_key"]
         older = client.get(
             "/api/workbench/review-decisions/history", params={**params, "offset": 1}
         ).json()
         assert older["events"][0]["event"] == "human_decision"
-        assert older["events"][0]["decision"]["status"] == "waived"
+        assert older["events"][0]["decision"]["status"] == "accepted_risk"
         assert older["events"][0]["decision"]["reason"] == newest["events"][0]["decision"]["reason"]
         empty = client.get(
             "/api/workbench/review-decisions/history", params={**params, "offset": 2}

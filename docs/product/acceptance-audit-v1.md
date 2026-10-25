@@ -31,6 +31,6 @@
 
 可以继续推进既定合同下的正确性缺口、原始字段/定位的受限保留、回归和实际本地闭环；本轮已修复额定列冲突，未以更容易通过的展示工作替代它。用户已选择SQLite日志＋受管理输入目录；按managed-project-v1.md实施保存/重开/搬迁/备份恢复，当前原始输入快照基础层不等于完整项目恢复。离线交付合同已由用户确认：来源核对和原文随附分别显示，允许导出，明确缺原文及待核查项；不自动复制外部PDF。档案批准、独立标签、真实Windows/Cadence与两轮同行观察必须取得对应人的真实记录；AI材料不替代这些证据。
 
-当前公开主样例仍为25器件/21有报告/4档案缺口，组件0PASS、0WARN、2ERROR、19UNKNOWN；146记录=98PASS+4FAIL+44UNKNOWN。full_candidate_count=null，不宣传全板覆盖率。当前机器结果和人工状态分开，人工状态仍为open/accepted/waived/resolved及派生needs_review；尚未完成PRD FALSE_POSITIVE/ACCEPTED_RISK的命名与迁移。
+当前公开主样例仍为25器件/21有报告/4档案缺口，组件0PASS、0WARN、2ERROR、19UNKNOWN；146记录=98PASS+4FAIL+44UNKNOWN。full_candidate_count=null，不宣传全板覆盖率。当前机器结果和人工状态分开；新决定使用open/accepted_risk/false_positive/resolved及派生needs_review，旧accepted/waived保留原值并明确标为旧版，不推断其新分类。新旧状态、导出和备份恢复的列示回归已覆盖；这不替代实际人工判断质量验收。
 
 本次逐用例证据、选定A01–A14映射、当前样例JSON、BOM前后反例与日志在任务输出 Hardwise-验收核对27。它们是可审查的证据索引，不是产品放行报告。

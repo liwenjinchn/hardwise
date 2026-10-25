@@ -7,7 +7,7 @@ test("review history pages retain original reasons and machine totals", async ({
   const key = original.review_tasks[0].stable_key;
   for (let i = 1; i <= 21; i++) {
     const response = await request.put("/api/workbench/review-decisions", { data: {
-      stable_keys: [key], status: "waived", reason: `历史分页理由 ${i}`,
+      stable_keys: [key], status: "accepted_risk", reason: `历史分页理由 ${i}`,
       expected_run_id: original.review_decisions.run_id
     }});
     expect(response.ok()).toBeTruthy();
@@ -118,17 +118,17 @@ test("review decision survives reload and deterministic rerun, then reopens", as
   const firstGroup = page.locator(".finding-row").first();
   await expect(firstGroup).toBeVisible();
   await firstGroup.locator("input").fill("Public regression fixture intentionally retains this fault.");
-  await firstGroup.getByRole("button", { name: "豁免" }).click();
-  await expect(firstGroup).toContainText("评审 waived");
+  await firstGroup.getByRole("button", { name: "接受风险" }).click();
+  await expect(firstGroup).toContainText("评审 接受风险");
 
   await page.reload();
   await page.getByRole("button", { name: "问题清单" }).click();
-  await expect(page.locator(".finding-row").first()).toContainText("评审 waived");
+  await expect(page.locator(".finding-row").first()).toContainText("评审 接受风险");
   await page.getByRole("button", { name: "重新运行确定性检查" }).click();
-  await expect(page.locator(".finding-row").first()).toContainText("评审 waived");
+  await expect(page.locator(".finding-row").first()).toContainText("评审 接受风险");
 
   await page.locator(".finding-row").first().getByRole("button", { name: "重新打开" }).click();
-  await expect(page.locator(".finding-row").first()).toContainText("评审 open");
+  await expect(page.locator(".finding-row").first()).toContainText("评审 待处理");
 });
 
 test("export JSON preview is a compact handoff summary", async ({ page }) => {
@@ -346,8 +346,8 @@ test("control review survives distant BOM changes and reopens for a direct branc
   await page.getByRole("button", { name: "问题清单" }).click();
   const row = page.locator(".finding-row").filter({ hasText: `${group.id} ·` });
   await row.getByLabel(`${group.id} 评审理由`).fill("公开合成控制连接复核理由");
-  await row.getByRole("button", { name: "豁免", exact: true }).click();
-  await expect(row).toContainText("评审 waived");
+  await row.getByRole("button", { name: "接受风险", exact: true }).click();
+  await expect(row).toContainText("评审 接受风险");
   const reviewed = await state();
   const ownedBom = await realpath(reviewed.project.bom_source);
   expect(path.basename(ownedBom)).toBe("control-neighborhood.csv");
@@ -361,9 +361,9 @@ test("control review survives distant BOM changes and reopens for a direct branc
   const distant = original.replace("RCLK3,1,33R,", "RCLK3,1,47R,");
   expect(distant).not.toBe(original);
   const kept = await rerun(distant, reviewed.review_decisions.run_id);
-  expect(kept.review_tasks.find((item: { stable_key: string }) => item.stable_key === task.stable_key).review_decision.status).toBe("waived");
+  expect(kept.review_tasks.find((item: { stable_key: string }) => item.stable_key === task.stable_key).review_decision.status).toBe("accepted_risk");
   expect(kept.review_decisions.history_count).toBe(reviewed.review_decisions.history_count);
-  await expect(row).toContainText("评审 waived");
+  await expect(row).toContainText("评审 接受风险");
   const branch = distant.replace("RCE1,1,33R,", "RCE1,1,22K,");
   const changed = await rerun(branch, kept.review_decisions.run_id);
   const current = changed.review_tasks.find((item: { stable_key: string }) => item.stable_key === task.stable_key);

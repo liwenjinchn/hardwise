@@ -3,17 +3,33 @@
 from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
-ReviewDecisionStatus = Literal["open", "accepted", "waived", "resolved"]
+# New mutations require an explicit classification; legacy stored values remain readable.
+ReviewDecisionStatus = Literal["open", "accepted_risk", "false_positive", "resolved"]
+StoredReviewDecisionStatus = Literal[ReviewDecisionStatus, "accepted", "waived"]
+
+REVIEW_STATUS_LABELS = {
+    "open": "待处理",
+    "accepted_risk": "接受风险",
+    "false_positive": "误报",
+    "resolved": "已解决",
+    "needs_review": "需复核",
+    "accepted": "旧版接受",
+    "waived": "旧版豁免",
+}
+
+
+def review_status_label(status: str) -> str:
+    return REVIEW_STATUS_LABELS.get(status, status)
 
 
 class ReviewDecisionView(BaseModel):
     """One human workflow decision keyed by a stable finding key."""
 
     stable_key: str
-    status: Literal["open", "accepted", "waived", "resolved", "needs_review"]
+    status: Literal[StoredReviewDecisionStatus, "needs_review"]
     reason: str
     updated_at: str
-    previous_status: ReviewDecisionStatus | None = None
+    previous_status: StoredReviewDecisionStatus | None = None
     fingerprint: str | None = None
     current_fingerprint: str | None = None
 
@@ -52,6 +68,8 @@ class ReviewDecisionSummary(BaseModel):
     accepted: int
     waived: int
     resolved: int
+    accepted_risk: int = 0
+    false_positive: int = 0
     stale_removed_on_rerun: int = 0
     needs_review: int = 0
     storage: Literal["memory", "local_file"] = "memory"

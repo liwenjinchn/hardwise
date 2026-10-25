@@ -168,7 +168,7 @@ def test_persisted_reason_survives_unrelated_change_and_becomes_review_needed_fo
             known_keys=[t.stable_key for t in tasks],
             request=ReviewDecisionRequest(
                 stable_keys=[task.stable_key],
-                status="waived",
+                status="accepted_risk",
                 reason=reason,
                 expected_run_id=store.summary([task.stable_key], project=project).run_id,
             ),
@@ -176,7 +176,7 @@ def test_persisted_reason_survives_unrelated_change_and_becomes_review_needed_fo
         )
     finally:
         close_workbench_context(context)
-    for refdes, status, count in [("RFAR", "waived", 1), ("R1", "needs_review", 2)]:
+    for refdes, status, count in [("RFAR", "accepted_risk", 1), ("R1", "needs_review", 2)]:
         _change_value(root, refdes, "22K")
         context, task, store, tasks, fps, project = begin()
         try:
@@ -228,7 +228,7 @@ def test_previous_project_scope_requires_one_review_and_preserves_reason(circuit
             fingerprints=legacy,
             request=ReviewDecisionRequest(
                 stable_keys=[task.stable_key],
-                status="waived",
+                status="accepted_risk",
                 reason="旧范围原始中文理由",
                 expected_run_id=store.summary([task.stable_key], project=project).run_id,
             ),
@@ -236,7 +236,7 @@ def test_previous_project_scope_requires_one_review_and_preserves_reason(circuit
         store.begin_run(project, current)
         decision = store.apply([task], fingerprints=current, project=project)[0].review_decision
         assert decision.status == "needs_review" and decision.reason == "旧范围原始中文理由"
-        assert decision.previous_status == "waived"
+        assert decision.previous_status == "accepted_risk"
         assert store.history_page()["total"] == 2
         store.begin_run(project, current)
         assert store.history_page()["total"] == 2

@@ -10,6 +10,7 @@ import type {
 } from "../types";
 import type { ViewId } from "./nav";
 import { ReviewHistory } from "./ReviewHistory";
+import { reviewStatusLabel } from "../lib/review-status";
 
 export function FindingsView({
   groups,
@@ -78,6 +79,7 @@ export function FindingsView({
                 : "人工决定仅保存在本次服务中；服务退出后不会自动恢复。"}
               {reviewSummary?.needs_review ? ` ${reviewSummary.needs_review} 条旧决定因输入或评审依据更新需要复核，原理由已保留。` : ""}
             </p>
+            <p>接受风险表示仍认可问题但接受其风险；误报表示人工判断此项不适用或判断有误。均须写明理由，机器结果不变。旧版接受／豁免保留原含义。</p>
             {error && <p className="form-error" role="alert">{error}</p>}
 
         </div>
@@ -121,7 +123,7 @@ export function FindingsView({
                   group={group.status_group}
                   label={`${group.axis === "electrical" ? "电气" : "证据"} ${group.status_group.toUpperCase()}`}
                 />
-                <span className="source-badge">评审 {decision === "needs_review" ? "需复核" : decision}</span>
+                <span className="source-badge">评审 {reviewStatusLabel(decision)}</span>
                 {groupTasks.some((task) => task.review_decision?.reason) && (
                   <details>
                     <summary>已有处理理由</summary>
@@ -134,7 +136,7 @@ export function FindingsView({
               <input
                 aria-label={`${group.id} 评审理由`}
                 value={reason}
-                placeholder="填写接受、豁免或解决理由"
+                placeholder="填写接受风险、误报或解决理由"
                 onChange={(event) => setReasons((current) => ({
                   ...current,
                   [group.id]: event.target.value
@@ -143,8 +145,8 @@ export function FindingsView({
               <div className="finding-actions">
                 <button type="button" onClick={() => root && onOpenTask(root)} disabled={!root}>查看</button>
                 <button type="button" onClick={() => root && onOpenTask(root, "copilot")} disabled={!root}>问 Copilot</button>
-                <button type="button" onClick={() => void decide(group, "accepted")} disabled={offline || !reason || busy !== ""}>接受</button>
-                <button type="button" onClick={() => void decide(group, "waived")} disabled={offline || !reason || busy !== ""}>豁免</button>
+                <button type="button" onClick={() => void decide(group, "accepted_risk")} disabled={offline || !reason || busy !== ""}>接受风险</button>
+                <button type="button" onClick={() => void decide(group, "false_positive")} disabled={offline || !reason || busy !== ""}>误报</button>
                 <button type="button" onClick={() => void decide(group, "resolved")} disabled={offline || !reason || busy !== ""}>已解决</button>
                 <button type="button" onClick={() => void decide(group, "open")} disabled={offline || busy !== ""}>重新打开</button>
               </div>

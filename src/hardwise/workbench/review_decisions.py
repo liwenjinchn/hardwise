@@ -232,6 +232,8 @@ class ReviewDecisionStore:
             return ReviewDecisionSummary(
                 total_tasks=len(stable_keys),
                 open=statuses.count("open"),
+                accepted_risk=statuses.count("accepted_risk"),
+                false_positive=statuses.count("false_positive"),
                 accepted=statuses.count("accepted"),
                 waived=statuses.count("waived"),
                 resolved=statuses.count("resolved"),

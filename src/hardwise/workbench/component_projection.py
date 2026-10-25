@@ -7,6 +7,7 @@ from difflib import get_close_matches
 from typing import TYPE_CHECKING
 from datetime import datetime, timezone
 
+from hardwise.workbench.review_decision_contracts import review_status_label
 from hardwise.bom.types import sort_refdes_key
 from hardwise.ir.types import Component
 from hardwise.report.ui_terms import reason_label, status_label, validation_summary_label
@@ -119,7 +120,8 @@ def render_review_prep_packet_markdown(packet: ReviewPrepPacket) -> str:
                     f"  - 稳定键：`{task.stable_key}`",
                     *(
                         [
-                            f"  - 评审决策：{task.review_decision.status}；"
+                            f"  - 评审决策：{task.review_decision.status}（"
+                            f"{review_status_label(task.review_decision.status)}）；"
                             f"理由：{task.review_decision.reason}"
                         ]
                         if task.review_decision is not None

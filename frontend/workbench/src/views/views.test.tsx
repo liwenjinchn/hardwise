@@ -327,14 +327,28 @@ describe("FindingsView", () => {
     expect(html).toContain("问题清单与评审决策");
     expect(html).toContain("1 个审查组");
     expect(html).toContain("1 条原始任务");
-    expect(html).toContain("接受");
-    expect(html).toContain("豁免");
+    expect(html).toContain("接受风险");
+    expect(html).toContain("误报");
     expect(html).toContain("已解决");
     expect(html).toContain("重新打开");
   });
 });
 
 describe("review decision recovery", () => {
+  it.each([["accepted", "旧版接受"], ["waived", "旧版豁免"],
+    ["accepted_risk", "接受风险"], ["false_positive", "误报"]] as const)(
+    "preserves %s semantics in read-only reports", (status, label) => {
+      const state = makeState();
+      state.review_tasks[0].review_decision = {
+        stable_key: state.review_tasks[0].stable_key, status, reason: "保留原理由",
+        updated_at: "2026-10-25", previous_status: null, fingerprint: "f", current_fingerprint: "f"
+      };
+      const html = renderToStaticMarkup(<FindingsView groups={state.review_groups} tasks={state.review_tasks}
+        onDecision={async () => {}} onRerun={async () => {}} onOpenTask={() => {}} />);
+      expect(html).toContain(`评审 ${label}`);
+      expect(html).toContain("保留原理由");
+    });
+
   it("shows local persistence, changed-input review and the retained reason", () => {
     const state = makeState();
     state.review_tasks[0].review_decision = {

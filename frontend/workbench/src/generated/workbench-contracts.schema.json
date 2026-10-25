@@ -2326,6 +2326,16 @@
           "title": "Accepted",
           "type": "integer"
         },
+        "accepted_risk": {
+          "default": 0,
+          "title": "Accepted Risk",
+          "type": "integer"
+        },
+        "false_positive": {
+          "default": 0,
+          "title": "False Positive",
+          "type": "integer"
+        },
         "history_count": {
           "default": 0,
           "title": "History Count",
@@ -2393,6 +2403,8 @@
       },
       "required": [
         "accepted",
+        "accepted_risk",
+        "false_positive",
         "history_count",
         "needs_review",
         "open",
@@ -2439,9 +2451,11 @@
             {
               "enum": [
                 "open",
+                "accepted_risk",
+                "false_positive",
+                "resolved",
                 "accepted",
-                "waived",
-                "resolved"
+                "waived"
               ],
               "type": "string"
             },
@@ -2463,9 +2477,11 @@
         "status": {
           "enum": [
             "open",
+            "accepted_risk",
+            "false_positive",
+            "resolved",
             "accepted",
             "waived",
-            "resolved",
             "needs_review"
           ],
           "title": "Status",

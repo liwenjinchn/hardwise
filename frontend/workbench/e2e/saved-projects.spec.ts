@@ -7,7 +7,7 @@ test("white save and open restore the saved project and reason after another imp
   const initial = await (await request.get("/api/workbench/state")).json();
   const key = initial.review_tasks.find((t: { kind: string }) => t.kind === "pin_check").stable_key;
   expect((await request.put("/api/workbench/review-decisions", { data: {
-    stable_keys: [key], status: "waived", reason: "白色页面保存重开理由", expected_run_id: initial.review_decisions.run_id
+    stable_keys: [key], status: "accepted_risk", reason: "白色页面保存重开理由", expected_run_id: initial.review_decisions.run_id
   }})).ok()).toBeTruthy();
   await page.goto("/");
   await page.getByRole("button", { name: "导入", exact: true }).click();

@@ -5,7 +5,8 @@ import shutil
 import pytest
 from hardwise.workbench.context import build_workbench_context, close_workbench_context
 from hardwise.workbench.decision_fingerprints import review_project_key, review_fingerprints
-from hardwise.workbench.review_decisions import ReviewDecisionStore, ReviewDecisionRequest
+from hardwise.workbench.review_decisions import ReviewDecisionStore
+from hardwise.workbench.decision_journal import DecisionJournal
 from hardwise.workbench.task_projection import build_review_tasks
 
 
@@ -30,15 +31,31 @@ def managed_review(tmp_path):
     decisions.begin_run(key, fps)
     summary = decisions.summary([t.stable_key for t in tasks], project=key)
     task = next(t for t in tasks if t.kind == "pin_check")
-    decisions.update(
-        known_keys=[t.stable_key for t in tasks],
-        request=ReviewDecisionRequest(
-            stable_keys=[task.stable_key],
-            status="waived",
-            reason="公开合成理由",
-            expected_run_id=summary.run_id,
-        ),
-        fingerprints=fps,
+    # A pre-upgrade persisted value, not a newly submitted legacy mutation.
+    record = dict(
+        stable_key=task.stable_key,
+        status="waived",
+        reason="公开合成理由",
+        updated_at="2026-10-24T00:00:00+00:00",
+        previous_status=None,
+        fingerprint=fps[task.stable_key],
+        current_fingerprint=fps[task.stable_key],
+    )
+    persisted = DecisionJournal(journal)
+    _, revision = persisted.load(key)
+    persisted.save(
+        key,
+        summary.run_id,
+        {task.stable_key: record},
+        [
+            dict(
+                event="human_decision",
+                stable_key=task.stable_key,
+                created_at=record["updated_at"],
+                decision=record,
+            )
+        ],
+        expected_revision=revision,
     )
     yield source, context, journal, summary.run_id, task.stable_key, fps
     close_workbench_context(context)

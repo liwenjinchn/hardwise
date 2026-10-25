@@ -3,9 +3,7 @@ import { fetchReviewHistory } from "../api";
 import type { ReviewHistoryPage, ReviewTask } from "../types";
 import { ProvenanceDownload } from "../components/ProvenanceDownload";
 
-const statusLabels: Record<string, string> = {
-  open: "待处理", accepted: "已接受", waived: "已豁免", resolved: "已解决", needs_review: "需复核"
-};
+import { reviewStatusLabel } from "../lib/review-status";
 
 export function ReviewHistory({ projectId, runId, historyCount, tasks }: {
   projectId: string | null; runId: string | null; historyCount: number; tasks: ReviewTask[];
@@ -65,8 +63,8 @@ function HistoryPages({ projectId, tasks }: { projectId: string | null; tasks: R
           return <li className="history-event" key={event.id}>
             <strong>{label}</strong>
             <p>{task ? `当前对应问题：${task.refdes} · ${task.title}` : "历史问题（当前列表无对应项）"}</p>
-            <p>{decision.previous_status ? `${statusLabels[decision.previous_status]} → ` : ""}
-              {statusLabels[decision.status] ?? decision.status}</p>
+            <p>{decision.previous_status ? `${reviewStatusLabel(decision.previous_status)} → ` : ""}
+              {reviewStatusLabel(decision.status)}</p>
             <p className="history-reason">原记录理由：{decision.reason || "未填写"}</p>
             <time dateTime={event.created_at}>{Number.isNaN(date.getTime()) ? event.created_at : date.toLocaleString("zh-CN", { hour12: false })}</time>
             <details><summary>追溯标识与输入指纹</summary>

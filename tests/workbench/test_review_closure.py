@@ -64,7 +64,7 @@ def test_review_decisions_persist_rerun_export_and_reopen() -> None:
         task = initial["review_tasks"][0]
         payload = {
             "stable_keys": [task["stable_key"]],
-            "status": "waived",
+            "status": "accepted_risk",
             "reason": "Public fixture intentionally retains this fault for regression.",
         }
         updated = client.put("/api/workbench/review-decisions", json=payload)
@@ -74,20 +74,20 @@ def test_review_decisions_persist_rerun_export_and_reopen() -> None:
             item for item in current["review_tasks"] if item["stable_key"] == task["stable_key"]
         )
         assert decided["status"] == task["status"]
-        assert decided["review_decision"]["status"] == "waived"
-        assert current["review_decisions"]["waived"] == 1
+        assert decided["review_decision"]["status"] == "accepted_risk"
+        assert current["review_decisions"]["accepted_risk"] == 1
 
         persisted = client.get("/api/workbench/state").json()
-        assert persisted["review_decisions"]["waived"] == 1
+        assert persisted["review_decisions"]["accepted_risk"] == 1
         csv_export = client.get("/api/workbench/export?format=csv").text
         annotation_export = client.get("/api/workbench/export?format=annotations").text
         assert "review_status" in csv_export
-        assert "waived" in csv_export
-        assert "waived" in annotation_export
+        assert "accepted_risk" in csv_export
+        assert "accepted_risk" in annotation_export
 
         rerun = client.post("/api/workbench/rerun")
         assert rerun.status_code == 200
-        assert rerun.json()["review_decisions"]["waived"] == 1
+        assert rerun.json()["review_decisions"]["accepted_risk"] == 1
 
         reopened = client.put(
             "/api/workbench/review-decisions",
@@ -107,7 +107,7 @@ def test_review_decision_requires_reason_and_known_key() -> None:
         )
         unknown = client.put(
             "/api/workbench/review-decisions",
-            json={"stable_keys": ["missing|key"], "status": "accepted", "reason": "checked"},
+            json={"stable_keys": ["missing|key"], "status": "accepted_risk", "reason": "checked"},
         )
 
     assert missing_reason.status_code == 400

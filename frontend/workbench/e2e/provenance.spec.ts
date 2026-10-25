@@ -8,7 +8,7 @@ test("current and historical downloads retain their actual run identities", asyn
   const before = await (await request.get("/api/workbench/state")).json();
   const old = before.review_decisions;
   const decision = await request.put("/api/workbench/review-decisions", { data: {
-    stable_keys: [before.review_tasks[0].stable_key], status: "waived",
+    stable_keys: [before.review_tasks[0].stable_key], status: "accepted_risk",
     reason: "provenance synthetic reason", expected_run_id: old.run_id
   } });
   expect(decision.ok()).toBeTruthy();

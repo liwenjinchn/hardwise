@@ -45,7 +45,7 @@ def saved(tmp_path):
         known_keys=list(fps),
         request=ReviewDecisionRequest(
             stable_keys=[task.stable_key],
-            status="waived",
+            status="accepted_risk",
             reason="公开合成备份理由",
             expected_run_id=run,
         ),
@@ -77,7 +77,7 @@ def test_complete_restore_after_originals_and_journal_deleted(saved, tmp_path):
         decisions.begin_run(review_project_key(context), fps)
         state, _ = decisions._journal.load(second["project_id"])
         assert state[task]["reason"] == "公开合成备份理由"
-        assert state[task]["status"] == "waived"
+        assert state[task]["status"] == "accepted_risk"
         assert decisions.history()[0]["decision"]["reason"] == "公开合成备份理由"
     finally:
         close_workbench_context(context)

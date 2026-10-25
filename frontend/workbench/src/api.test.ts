@@ -18,7 +18,7 @@ describe("review closure API", () => {
 
     await updateReviewDecision({
       stableKeys: ["component_check|U12|buck_inductor|-|L1"],
-      status: "waived",
+      status: "accepted_risk",
       reason: "fixture defect retained",
       expectedRunId: "current-run"
     });
@@ -28,7 +28,7 @@ describe("review closure API", () => {
     expect(init.method).toBe("PUT");
     expect(JSON.parse(String(init.body))).toEqual({
       stable_keys: ["component_check|U12|buck_inductor|-|L1"],
-      status: "waived",
+      status: "accepted_risk",
       reason: "fixture defect retained",
       expected_run_id: "current-run"
     });
