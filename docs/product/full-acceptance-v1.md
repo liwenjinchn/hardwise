@@ -13,7 +13,7 @@
 | 场景5 分享复查 | partial | 只读离线历史/运行清单/缺原文提示 | PDF摘录/版本条件与目标机断网打开；设计版本对比范围 | AI + 目标机 |
 | F01 电压和地 | partial | voltage-facts.md；网名不认证，参考域/模式隔离 | 批量确认UI与完整冲突处理；不新增自动跨器件传播 | AI |
 | F02 电容电阻 | partial | 第55/57包按用户选择局部UNKNOWN；电阻/电感已列数值反例修复，CSV/TSV/XLSX/API/离线及正常样例复验通过 | [数值修复证据](numeric-boundary-plan-v1.md)；独立边界/人工核对仍需完成 | AI + 用户选择/人工主审 |
-| F03 档案 | not_met | 第61包核对29ready/1needs_review；SQL/CLI往返丢XL1509两条关系式，相关检查消失；字段批准未实现 | [字段/生命周期及迁移选择](profile-field-contract-v1.md)；修复存取、逐字段批准，5–10档案人工批准 | AI提出迁移，用户选择/主审，同行抽查 |
+| F03 档案 | not_met | 第62包修复SQL关系式丢失，加入字段批准/有效DRAFT基础；正式消费者迁移未完成 | [字段/生命周期及迁移选择](profile-field-contract-v1.md)；接入正式判定/UI/复核及5–10档案真实人工批准 | AI提出迁移，用户选择/主审，同行抽查 |
 | F04 输出边界 | partial | Guard/结构化结论与聊天分离；无工具保护 | 对象/属性/单位/条件的受限核验与独立反例；不声称自由文本完全语义保证 | AI + 人工主审 |
 | F05 持久化 | partial | managed-project-v1.md；事务/退出边界及恢复流程 | 其他输入、剩余规则依赖及目标机；保留旧理由 | AI + 目标机 |
 | F06 证据闭环 | partial | 来源核对与原文随附分开；当前离线历史 | 补可分发摘录/版本/条件定位和独立核对 | AI + 人工主审 |
@@ -58,7 +58,7 @@
 - [A01–A14细项](acceptance-audit-v1.md)、[PRD](prd-v1.md)、[Roadmap](roadmap-v1.md)是原合同入口；既有各包事实见[执行记录](execution.md)。当前任务输出Hardwise-全项验收48保存`full-acceptance-ledger.json`、`python-junit.xml`和按实际ID重算的`requirement-test-map-current.json`（选定映射均匹配；并非完整要求覆盖）。Python1510通过、7未选；不计算产品通过率。
 - `A11-unresolved-reference-columns.json`与输入CSV保留旧版静默选U1的失败反例。用户已选择全候选隔离，第58包按此实现并完成真实三格式/UI/历史复验；见[范围与证据](reference-ambiguity-v1.md)。
 - `data/profile_reviews/first_subset_v1.json`仍是5档案244字段待人工审，已复核候选哈希与当前源一致；批准/独立复核0。模型初筛与既有ready标签不等于批准。`eval/manifest.yaml`为回归伪金标准，不能填充独立30–50案例放行表。
-- 当前[Windows源码复验包](windows-validation-capsule-v1.md)固定3cda993；第60包解压923哈希、公开软件基线/白色报告/无key启动及项目保存/独立恢复检查通过，reports JSON明确Windows=false、工程批准未取得、release=false；解压隐私专项28通过。第60包`negative-controls.json`保留篡改/恢复/非Windows/覆盖/未登记版本反例。第58包915哈希和78项数值/位号回归保留为历史，不混用为当前版本证据。第61包新发现的SQL档案关系式丢失仍存在于当前源码，绿色包校验不证明此项已满足。
+- 当前[Windows源码复验包](windows-validation-capsule-v1.md)固定3cda993；第60包解压923哈希、公开软件基线/白色报告/无key启动及项目保存/独立恢复检查通过，reports JSON明确Windows=false、工程批准未取得、release=false；解压隐私专项28通过。第60包`negative-controls.json`保留篡改/恢复/非Windows/覆盖/未登记版本反例。第58包915哈希和78项数值/位号回归保留为历史，不混用为当前版本证据。冻结3cda993仍含第61包发现的SQL关系式缺口；第62包开发源码修复了存储，尚未发布整套F03迁移，绿色包校验不证明新合同已满足。
 - 用户确认目前只有macOS，不能从本机软件流程关闭Windows/Cadence门槛。操作指南保留目标机人工空表，不代填。同行记录是否存在已单独询问；未获证据前不填真实试用，不自动发出邀请。
 - [性能基线](performance-baseline-v1.md)记录当前固定源18进程63构建的原始耗时/峰值内存、机器与输入哈希。没有获批退化预算、真实EDA、真实模型或任意大板性能结论。
 

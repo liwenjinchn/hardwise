@@ -5732,3 +5732,10 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause：字段已加入DatasheetProfile，但DatasheetProfileRow、upsert和重建函数未覆盖；现有“all_fields”往返测试只检查无关系式的MPQ样例的部分字段。全部30个profile往返29相等/1丢字段，已有28项相关测试仍通过。
 - Fix status：尚未修复。已冻结反例、两个新增预期失败用例和F03合同草案，等待用户选择旧ready迁移方式，不默认为人工批准；不会把旧SQL的缺列简单当“已确认无关系”。
 - Takeaway：声明全字段往返需比完整model_dump并覆盖非空条件列表、更新/清空/重开及旧表迁移；存储成功和现有绿灯不等于条件完整。当前在线工作台走JSON档案，不把SQL往返失败泛化为已复现在线同样丢失。
+
+
+## 2026-10-26 — 完整模型存储与有效批准状态分开接入
+
+- Fix for 61：SQL新增可空完整profile_json列，新行由完整模型序列化/反序列化，原来两条关系式不再丢失；旧行不覆盖，缺完整合同标legacy_incomplete，有效DRAFT。损坏完整/旧JSON和索引身份错配均拒绝，不以空对象吞掉错误。增列代码独立profile_schema模块，保留原pin-alias增列。
+- Verification：全部30档案完整model_dump往返，关系式更新/清空/重新打开、旧表原行无损、实际CLI新进程2关系式保留；第61两个红反例转绿。初次旧库测试误用12个占位符对应11列，已修正测试建库而不改迁移语义，失败日志保留。
+- New boundary：逐字段内容哈希和人审声明可验证失配，但不能证明人已阅读；旧标签保留与有效DRAFT区别明确。先建立模型/存储不等于正式validator已切换，阶段交付需标清未接入的消费者，继续全链路迁移。

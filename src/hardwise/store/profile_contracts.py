@@ -6,11 +6,12 @@ import json
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text, inspect, text
+from sqlalchemy import Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Session
 
 from hardwise.ir.profile import DatasheetProfile, PinProfile
 from hardwise.store.relational import Base
+from hardwise.store.profile_schema import ensure_profile_columns
 
 
 class DatasheetProfileStoreError(ValueError):
@@ -33,6 +34,8 @@ class DatasheetProfileRow(Base):
     extracted_model = Column(String, nullable=False, default="")
     schema_version = Column(String, nullable=False, default="v1")
     source_path = Column(String, nullable=False, default="")
+    # Full contract is authoritative for new rows. NULL identifies legacy incomplete rows.
+    profile_json = Column(Text, nullable=True)
 
 
 class DatasheetProfileAliasRow(Base):
@@ -88,7 +91,9 @@ def upsert_datasheet_profile(
         .filter(DatasheetProfileRow.part_number == profile.part_number)
         .one_or_none()
     )
-    _validate_identity_namespace(session, profile, excluded_profile_id=existing.id if existing else None)
+    _validate_identity_namespace(
+        session, profile, excluded_profile_id=existing.id if existing else None
+    )
     if existing is None:
         row = DatasheetProfileRow(part_number=profile.part_number)
         session.add(row)
@@ -111,6 +116,7 @@ def upsert_datasheet_profile(
     row.extracted_model = profile.extracted_model
     row.schema_version = profile.schema_version
     row.source_path = str(source_path or "")
+    row.profile_json = profile.model_dump_json()
 
     for idx, alias in enumerate(_profile_aliases(profile)):
         session.add(DatasheetProfileAliasRow(profile_id=row.id, alias=alias, ordinal=idx))
@@ -169,6 +175,16 @@ def list_datasheet_profiles(session: Session) -> list[DatasheetProfile]:
 
 
 def _row_to_profile(session: Session, row: DatasheetProfileRow) -> DatasheetProfile:
+    if row.profile_json is not None:
+        try:
+            restored = DatasheetProfile.model_validate_json(row.profile_json)
+            if restored.part_number != row.part_number:
+                raise DatasheetProfileStoreError("Stored profile identity does not match its index")
+            return restored
+        except ValueError as exc:
+            raise DatasheetProfileStoreError(
+                "Stored profile contract is invalid; no empty fallback"
+            ) from exc
     aliases = [
         alias.alias
         for alias in session.query(DatasheetProfileAliasRow)
@@ -194,6 +210,7 @@ def _row_to_profile(session: Session, row: DatasheetProfileRow) -> DatasheetProf
     ]
     return DatasheetProfile(
         part_number=row.part_number,
+        storage_integrity="legacy_incomplete",
         part_number_aliases=aliases,
         review_status=row.review_status,
         abs_max=_json_load(row.abs_max_json, {}),
@@ -235,15 +252,12 @@ def _validate_identity_namespace(
     )
     if excluded_profile_id is not None:
         part_query = part_query.filter(DatasheetProfileRow.id != excluded_profile_id)
-        alias_query = alias_query.filter(
-            DatasheetProfileAliasRow.profile_id != excluded_profile_id
-        )
+        alias_query = alias_query.filter(DatasheetProfileAliasRow.profile_id != excluded_profile_id)
 
     conflicting_part = part_query.first()
     if conflicting_part is not None:
         raise DatasheetProfileStoreError(
-            f"datasheet profile alias already used as a part number: "
-            f"{conflicting_part.part_number}"
+            f"datasheet profile alias already used as a part number: {conflicting_part.part_number}"
         )
 
     conflicting_alias = alias_query.first()
@@ -261,9 +275,14 @@ def _json_load(raw: str | None, default: Any) -> Any:
     if not raw:
         return default
     try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        return default
+        value = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise DatasheetProfileStoreError(
+            "Stored legacy profile JSON is corrupt; no empty fallback"
+        ) from exc
+    if not isinstance(value, type(default)):
+        raise DatasheetProfileStoreError("Stored legacy profile JSON shape is invalid")
+    return value
 
 
 def _ensure_tables(session: Session) -> None:
@@ -276,20 +295,4 @@ def _ensure_tables(session: Session) -> None:
             DatasheetProfilePinRow.__table__,
         ],
     )
-    _ensure_profile_pin_alias_column(session)
-
-
-def _ensure_profile_pin_alias_column(session: Session) -> None:
-    """Add the pin-alias column for profile stores created before D3b."""
-
-    bind = session.get_bind()
-    columns = {column["name"] for column in inspect(bind).get_columns("datasheet_profile_pins")}
-    if "schematic_pin_aliases_json" in columns:
-        return
-    session.execute(
-        text(
-            "ALTER TABLE datasheet_profile_pins "
-            "ADD COLUMN schematic_pin_aliases_json TEXT NOT NULL DEFAULT '[]'"
-        )
-    )
-    session.commit()
+    ensure_profile_columns(session)

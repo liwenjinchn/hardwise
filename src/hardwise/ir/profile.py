@@ -11,6 +11,7 @@ from typing import Literal, Union
 from pydantic import BaseModel, Field
 
 from hardwise.ir.profile_conditions import PinVoltageRelation
+from hardwise.ir.profile_review import ProfileReview, Lifecycle, effective_lifecycle
 
 ProfileValue = Union[bool, float, str]
 
@@ -33,7 +34,19 @@ class DatasheetProfile(BaseModel):
 
     part_number: str
     part_number_aliases: list[str] = Field(default_factory=list)
-    review_status: Literal["ready", "needs_review"] = "ready"
+    # Legacy declaration is retained verbatim; new consumers must use lifecycle.
+    review_status: Literal["ready", "needs_review"] = "needs_review"
+    field_review: ProfileReview | None = None
+    storage_integrity: Literal["complete", "legacy_incomplete"] = "complete"
+
+    @property
+    def lifecycle(self) -> Lifecycle:
+        return effective_lifecycle(self)
+
+    @property
+    def approved_for_validation(self) -> bool:
+        return self.lifecycle == "READY"
+
     abs_max: dict[str, ProfileValue] = Field(default_factory=dict)
     recommended: dict[str, ProfileValue] = Field(default_factory=dict)
     pin_function: dict[str, str] = Field(default_factory=dict)
