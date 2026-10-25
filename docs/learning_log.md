@@ -5636,3 +5636,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: 固定源码基线与独立操作说明没有随数据/存储合同同步；只查文件哈希不足以证明保存的项目可重开。
 - Fix: 固定5dc437d并增加独立公开流程helper；实际合成accepted_risk/false_positive不改机器判定，旧写入拒绝，离线两条历史/理由封存，原始路径改名后备份在新目录/新进程恢复。897哈希、真实无keyCLI、非Windows/篡改/覆盖已有ZIP/不支持ref拒绝均留证。输出ZIP使用独占创建，旧证据不被覆盖。
 - Takeaway: 源码工具包、用户项目备份、人工批准与目标机验收是不同证据。macOS可以验证软件流程，不能关闭Windows/Cadence；合成决定不能增加人工批准计数。完整PRD台账需覆盖场景/F项/隐私/独立标签/M阶段，不能只统计A项回归。
+
+
+## 2026-10-25 — AI解释边界声明不等于发送前披露
+
+- Symptom: Copilot页面有“待核验AI解释”声明，但无外发确认HTTP请求仍返回200并进入两次SDK调用。
+- Root cause: ChatRequest只含问题/位号/短历史；真实Runner继续发送工具返回。服务构建与延迟SDK创建各自load_dotenv还可能造成展示配置与实际配置不一致。
+- Fix: 本轮只完成生产路径本地注入复现和可审A/B方案，未实现；等待用户选择确认持续范围。复现禁止socket连接、未读.env、未访问真实供应商，仍调用真实确定性工具。
+- Takeaway: 需在Runner/客户端初始化前验证当前披露，且披露与实际配置同源；不能只改按钮或只看Anthropic SDK名推断供应商。未选择方案/未实现门槛时保持PRD隐私项未通过。
