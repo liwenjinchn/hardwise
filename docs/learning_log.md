@@ -5668,3 +5668,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: index.html保留两条preconnect和一条远程fontstylesheet，导出只内联Vite资源，没有移除其余head依赖。
 - Fix: 删除源入口3外链并重建生产入口，保留已有字体栈。在线请求/控制台、离线单次加载后关闭服务及断网操作均留证；两份当前白色别名只删相同链接，固定快照JSON逐字不变，有原件备份。
 - Takeaway: “单文件”不能推导“无外部请求”；应检查head、字体和资源请求，且区分资源离线可用、真实file双击、云AI与其他provider入口。
+
+
+## 2026-10-25 — 有限输入不保证有限或正确的中间运算
+
+- Symptom: 超长阻值转成inf后12²/inf得到0W/PASS；1e−200V与1e−300Ω算平方先下溢0，尽管正确功率1e−100W高于1e−200W额定仍PASS。另有差值/平方inf文本签定。
+- Root cause: 文本float转换缺有效性检查；被动terminal_dc_stress未像通用DC差值守卫有限性，功率采用易溢出/下溢的delta*delta/R。仅检查最终isfinite无法发现已经下溢成0的错误。
+- Fix: 本轮留存生产函数与真实导入/HTTP/离线反例，更新A03/F02未满足，并提出局部UNKNOWN/拒绝导入两合同供用户选择；未实施。需稳定计算及解析可用性、规则版本/旧决定适用性一起验证。
+- Takeaway: 不能凭输入FiniteFloat或几个常规浮点结果推断算式安全；需独立精确算式覆盖中间下溢，以及最终仍可表达的结果，避免只把inf换成UNKNOWN就漏掉假0PASS。
