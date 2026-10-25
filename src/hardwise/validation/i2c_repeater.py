@@ -6,7 +6,7 @@ from hardwise.validation.assessment import result_for_attention, severity_for_at
 
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
-from hardwise.validation.control_scope import observe_control_scope
+from hardwise.validation.control_scope import observe_control_scope, control_pin_profile
 from hardwise.validation.types import ComponentValidation
 
 
@@ -33,7 +33,7 @@ def _validate_enable(
         component,
         profile,
         design,
-        profile.pin_by_number(_profile_pin(profile, "enable_pin", "5")),
+        control_pin_profile(profile, "i2c_repeater_enable"),
         "i2c_repeater_enable",
         "repeater 使能状态",
     )

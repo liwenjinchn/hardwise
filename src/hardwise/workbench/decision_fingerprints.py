@@ -1,4 +1,4 @@
-"""Versioned semantic snapshots: component-local rules and explicit broad fallback."""
+"""Versioned component/control-neighborhood scopes with explicit broad fallback."""
 
 import hashlib
 import json
@@ -6,6 +6,9 @@ import json
 from hardwise.ir.identity_sources import MPN_RECORDS, is_mpn_field, netlist_mpn_sources
 from hardwise.validation.passive_ratings import resolve_passive_rating
 from hardwise.bom.source_fields import RATING_SOURCES
+from hardwise.workbench.control_dependencies import control_dependency_payload, local_voltage_facts
+
+REVIEW_DEPENDENCY_CONTRACT = "hardwise.review_dependencies.v2"
 
 RATING_CHECKS = {
     "capacitor_rated_voltage_parse": "voltage",
@@ -79,8 +82,9 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
     """No guessed graph dependency for unmodeled rules: use a marked broad snapshot.
 
     Local pin and two-terminal numeric checks do not depend on unrelated devices.
-    Broader topology/auxiliary tasks currently use project-level semantic scope;
-    per-rule dependency declarations must replace that fallback before A10 closes.
+    Audited v2 control observations use immediate control-net neighborhoods.
+    Other topology/auxiliary tasks keep project-level semantic fallback;
+    these declarations do not establish complete A10 coverage.
     """
     from hardwise.workbench.task_projection import build_review_tasks
 
@@ -125,30 +129,23 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
             task.kind == "component_check" and (check, version) in LOCAL_RULES
         )
         if local and component:
-            nets = {p.net for p in component.pins if p.net}
-            facts = [
-                f
-                for f in design.voltage_facts.facts
-                if f.net in nets and f.mode == design.voltage_facts.active_mode
-            ]
-            nets.update(f.reference_net for f in facts)
             payload = {
                 "scope": "component",
                 "component": _component(component),
                 "profile": profiles.get(task.refdes),
                 "active_mode": design.voltage_facts.active_mode,
-                "facts": [
-                    f.model_dump(mode="json")
-                    for f in sorted(design.voltage_facts.facts, key=lambda f: (f.mode, f.net))
-                    if f.net in nets and f.mode == design.voltage_facts.active_mode
-                ],
+                "facts": local_voltage_facts(design, component),
             }
             if check in RATING_CHECKS:
                 payload["passive_rating_premises"] = ratings.get(task.refdes, {}).get(
                     RATING_CHECKS[check]
                 )
         else:
-            payload = {"scope": "project_snapshot", "snapshot": broad_hash}
+            payload = control_dependency_payload(
+                context, task, _component, profiles.get(task.refdes)
+            )
+            if payload is None:
+                payload = {"scope": "project_snapshot", "snapshot": broad_hash}
         output[task.stable_key] = _digest(
             {
                 "version": 1,

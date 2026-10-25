@@ -9,6 +9,27 @@ from hardwise.validation.topology import components_on_net
 from hardwise.validation.types import ComponentValidation
 
 
+CONTROL_CHECKS = frozenset(
+    {"mcu_nrst", "mcu_boot0", "i2c_repeater_enable", "shift_register_clock_enable"}
+)
+
+
+def control_pin_profile(profile: DatasheetProfile, check: str) -> PinProfile | None:
+    """One selector shared by observation and its versioned dependency declaration."""
+    if check in {"mcu_nrst", "mcu_boot0"}:
+        name = "NRST" if check == "mcu_nrst" else "BOOT0"
+        return next((pin for pin in profile.pins if pin.name.upper() == name), None)
+    selectors = {
+        "i2c_repeater_enable": ("enable_pin", "5"),
+        "shift_register_clock_enable": ("clock_enable_pin", "15"),
+    }
+    if check not in selectors:
+        return None
+    key, default = selectors[check]
+    value = profile.recommended.get(key)
+    return profile.pin_by_number(str(value) if value else default)
+
+
 def observe_control_scope(
     component: Component,
     profile: DatasheetProfile,

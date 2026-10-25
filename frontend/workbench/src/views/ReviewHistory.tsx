@@ -48,7 +48,7 @@ function HistoryPages({ projectId, tasks }: { projectId: string | null; tasks: R
   }, [projectId, offset, revision]);
   const byKey = new Map(tasks.map((task) => [task.stable_key, task]));
   return <div className="history-pages">
-    <p>这里展示评审处理历史。输入变化和问题撤下不代表工程师手工解决；机器判定不受历史状态修改。</p>
+    <p>这里展示评审处理历史。输入变化、规则/依赖合同更新和问题撤下不代表工程师手工解决；机器判定不受历史状态修改。</p>
     {busy && <p role="status">正在读取历史…</p>}
     {error && <p role="alert" className="form-error">{error}</p>}
     <button type="button" disabled={busy} onClick={() => { setOffset(0); setRevision(revision + 1); }}>刷新历史</button>
@@ -60,7 +60,7 @@ function HistoryPages({ projectId, tasks }: { projectId: string | null; tasks: R
           const task = byKey.get(event.stable_key);
           const decision = event.decision;
           const label = event.event === "disappeared" ? "从当前列表撤下（未视作人工解决）"
-            : event.event === "inputs_changed" ? "输入变化，原处理需复核" : "人工更新处理状态";
+            : event.event === "inputs_changed" ? "输入变化或评审依据更新，原处理需复核" : "人工更新处理状态";
           const date = new Date(event.created_at);
           return <li className="history-event" key={event.id}>
             <strong>{label}</strong>

@@ -29,6 +29,7 @@ class EmittedRuleVersion(BaseModel):
 class RunProvenance(BaseModel):
     schema_version: Literal["hardwise.run_provenance.v1"] = "hardwise.run_provenance.v1"
     raw_inputs_archived: Literal[False] = False
+    review_dependency_contract: str | None = None
     input_capture_status: Literal["captured", "unavailable"]
     inputs: InputReadManifest | None
     package_version: str
@@ -89,7 +90,10 @@ def build_run_provenance(context) -> RunProvenance:
         package_version = version("hardwise")
     except PackageNotFoundError:
         package_version = "uninstalled_source_tree"
+    from hardwise.workbench.decision_fingerprints import REVIEW_DEPENDENCY_CONTRACT
+
     return RunProvenance(
+        review_dependency_contract=REVIEW_DEPENDENCY_CONTRACT,
         input_capture_status="captured" if context.input_manifest is not None else "unavailable",
         inputs=context.input_manifest,
         package_version=package_version,

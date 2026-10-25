@@ -5,7 +5,7 @@ from __future__ import annotations
 from hardwise.ir.profile import DatasheetProfile, PinProfile
 from hardwise.ir.types import Component, Design, Pin
 from hardwise.validation.family_pin import family_pin_check
-from hardwise.validation.control_scope import observe_control_scope
+from hardwise.validation.control_scope import observe_control_scope, control_pin_profile
 from hardwise.validation.types import ComponentValidation
 
 
@@ -48,7 +48,7 @@ def _validate_reset(
         component,
         profile,
         design,
-        _pin_profile_by_name(profile, "NRST"),
+        control_pin_profile(profile, "mcu_nrst"),
         "mcu_nrst",
         "复位释放、RC过程和上电时序",
     )
@@ -63,7 +63,7 @@ def _validate_boot0(
         component,
         profile,
         design,
-        _pin_profile_by_name(profile, "BOOT0"),
+        control_pin_profile(profile, "mcu_boot0"),
         "mcu_boot0",
         "启动采样状态",
     )

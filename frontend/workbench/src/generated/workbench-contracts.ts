@@ -303,6 +303,7 @@ export type Sha2562 = string;
 export type Profiles = ProfileModelSnapshot[];
 export type PythonVersion = string;
 export type RawInputsArchived = false;
+export type ReviewDependencyContract = string | null;
 export type EmittedCount = number;
 export type Name4 = string;
 export type Scope2 = "pin" | "component" | "net";
@@ -960,6 +961,7 @@ export interface RunProvenance1 {
   profiles: Profiles;
   python_version: PythonVersion;
   raw_inputs_archived: RawInputsArchived;
+  review_dependency_contract: ReviewDependencyContract;
   rule_versions: RuleVersions;
   schema_version: SchemaVersion2;
 }

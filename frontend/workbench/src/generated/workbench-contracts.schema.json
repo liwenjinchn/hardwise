@@ -3461,6 +3461,18 @@
           "title": "Raw Inputs Archived",
           "type": "boolean"
         },
+        "review_dependency_contract": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Review Dependency Contract"
+        },
         "rule_versions": {
           "items": {
             "$ref": "#/$defs/EmittedRuleVersion"
@@ -3486,6 +3498,7 @@
         "profiles",
         "python_version",
         "raw_inputs_archived",
+        "review_dependency_contract",
         "rule_versions",
         "schema_version"
       ],

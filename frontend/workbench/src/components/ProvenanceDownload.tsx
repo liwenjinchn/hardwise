@@ -39,7 +39,7 @@ export function ProvenanceDownload({ projectId, runId, historical = false }: {
     <button type="button" disabled={busy} onClick={() => void download()}>
       {busy ? "正在读取清单…" : historical ? "下载该次输入与版本清单" : "下载本次输入与版本清单"}
     </button>
-    {!historical && <p>清单记录读取文件哈希、实际档案与规则版本，不包含原始文件，不等于项目备份。</p>}
+    {!historical && <p>清单记录文件哈希、档案/规则及复核依赖合同版本（决定哪些变动需复核），不包含原始文件，不等于项目备份。</p>}
     {message && <p role="status">{message}</p>}
     {error && <p role="alert" className="form-error">{error}</p>}
   </div>;

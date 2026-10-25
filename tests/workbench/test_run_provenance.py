@@ -292,3 +292,18 @@ def test_offline_export_preserves_captured_inputs_without_inventing_journal_run(
         assert "run_id" not in payload["run_provenance"]
     finally:
         close_workbench_context(context)
+
+
+def test_dependency_contract_is_declared_for_new_runs_and_not_inferred_for_old_ones(project):
+    from hardwise.workbench.run_provenance import build_run_provenance, RunProvenance
+    from hardwise.workbench.decision_fingerprints import REVIEW_DEPENDENCY_CONTRACT
+
+    context = _context(project)
+    try:
+        captured = build_run_provenance(context)
+        assert captured.review_dependency_contract == REVIEW_DEPENDENCY_CONTRACT
+        old = captured.model_dump(mode="json")
+        del old["review_dependency_contract"]
+        assert RunProvenance.model_validate(old).review_dependency_contract is None
+    finally:
+        close_workbench_context(context)

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import path from "node:path";
+import { realpath, writeFile } from "node:fs/promises";
 
 test("review history pages retain original reasons and machine totals", async ({ page, request }) => {
   const original = await (await request.get("/api/workbench/state")).json();
@@ -326,4 +327,51 @@ test("quantity column warnings preserve an independently passing electrical chec
   await load("1");
   const repaired = await (await request.get("/api/workbench/state")).json();
   expect(repaired.evidence_package.bom_quantity_conflicts).toEqual([]);
+});
+
+test("control review survives distant BOM changes and reopens for a direct branch", async ({ page, request }, testInfo) => {
+  const original = "Reference,Quantity,Value,Manufacturer,MPN\n" +
+    ["U1", "U2", "U3"].map(ref => `${ref},1,74LV165PW,Nexperia,74LV165PW`).join("\n") + "\n" +
+    ["RCLK1", "RCLK2", "RCLK3", "RCE1", "RCE2", "RCE3", "RCHAIN1", "RCHAIN2"].map(ref => `${ref},1,33R,Fixture,GW_RESISTOR`).join("\n") + "\n";
+  await openReview(page);
+  await page.getByRole("button", { name: "导入", exact: true }).click();
+  await page.getByLabel("选择 netlist / PST").setInputFiles(path.resolve("../../tests/fixtures/allegro/shift_register_chain.net"));
+  await page.getByLabel("选择 BOM CSV").setInputFiles({ name: "control-neighborhood.csv", mimeType: "text/csv", buffer: Buffer.from(original) });
+  await page.getByRole("button", { name: "导入并解析" }).click();
+  await expect(queueRow(page, "U1")).toBeVisible();
+  const state = async () => (await (await request.get("/api/workbench/state")).json());
+  const initial = await state();
+  const task = initial.review_tasks.find((item: { refdes: string; check: string }) => item.refdes === "U1" && item.check === "shift_register_clock_enable");
+  const group = initial.review_groups.find((item: { stable_keys: string[] }) => item.stable_keys.includes(task.stable_key));
+  await page.getByRole("button", { name: "问题清单" }).click();
+  const row = page.locator(".finding-row").filter({ hasText: `${group.id} ·` });
+  await row.getByLabel(`${group.id} 评审理由`).fill("公开合成控制连接复核理由");
+  await row.getByRole("button", { name: "豁免", exact: true }).click();
+  await expect(row).toContainText("评审 waived");
+  const reviewed = await state();
+  const ownedBom = await realpath(reviewed.project.bom_source);
+  expect(path.basename(ownedBom)).toBe("control-neighborhood.csv");
+  expect(path.basename(path.dirname(ownedBom))).toMatch(/^hardwise-workbench-import-/);
+  const rerun = async (body: string, previous: string) => {
+    await writeFile(ownedBom, body);
+    await page.getByRole("button", { name: "重新运行确定性检查" }).click();
+    await expect.poll(async () => (await state()).review_decisions.run_id).not.toBe(previous);
+    return state();
+  };
+  const distant = original.replace("RCLK3,1,33R,", "RCLK3,1,47R,");
+  expect(distant).not.toBe(original);
+  const kept = await rerun(distant, reviewed.review_decisions.run_id);
+  expect(kept.review_tasks.find((item: { stable_key: string }) => item.stable_key === task.stable_key).review_decision.status).toBe("waived");
+  expect(kept.review_decisions.history_count).toBe(reviewed.review_decisions.history_count);
+  await expect(row).toContainText("评审 waived");
+  const branch = distant.replace("RCE1,1,33R,", "RCE1,1,22K,");
+  const changed = await rerun(branch, kept.review_decisions.run_id);
+  const current = changed.review_tasks.find((item: { stable_key: string }) => item.stable_key === task.stable_key);
+  expect(current.assessment).toEqual(task.assessment);
+  expect(current.review_decision.status).toBe("needs_review");
+  expect(current.review_decision.reason).toBe("公开合成控制连接复核理由");
+  await expect(row).toContainText("评审 需复核");
+  await row.getByText("已有处理理由", { exact: true }).click();
+  await row.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("control-dependency-recheck-white.png"), animations: "disabled" });
 });
