@@ -1,6 +1,6 @@
 # 完整产品验收台账
 
-2026-10-25，运行源码固定5dc437d；对照PRD v1和Roadmap v1原范围，整体 **NOT_COMPLETE / 不放行**。不得以本机回归、合成操作或新材料数量替代真实工程批准、独立标签、目标机与同行使用。
+2026-10-25，当前运行/交付源码2cfd152；对照PRD v1和Roadmap v1原范围，整体 **NOT_COMPLETE / 不放行**。不得以本机回归、合成操作或新材料数量替代真实工程批准、独立标签、目标机与同行使用。
 
 `local_cases_verified`仅表示列示本机反例已验证；`partial`为部分实现；`not_met`为已有明确缺口；`not_verified`为审查尚无满足合同证据；`awaiting_human`需真实人的记录；`baseline_recorded`仅有测量。任一都不是完整产品通过。此台账汇总已知范围，新增反例仍需回到对应项。
 
@@ -44,7 +44,7 @@
 | T05 基础规则 | partial | A01–A07选定回归 | A05/A06生产条件批准和独立反例 | AI + 人工主审 |
 | T06 输出分离 | partial | 结构化结果/受限解释与Guard | F04剩余语义/独立样例 | AI + 人工主审 |
 | T07 存储指纹 | partial | SQLite/输入目录/搬迁/完整备份，v3局部范围 | 其余依赖和目标机验收 | AI + 目标机 |
-| T08 导入证据体验 | partial | 当前5dc437d复验包897哈希/本机合成流程通过 | A11、PDF证据、支持表和真实Windows演练 | AI + 用户/目标机 |
+| T08 导入证据体验 | partial | 当前2cfd152复验包909哈希/本机合成流程通过 | A11、PDF证据、支持表和真实Windows演练 | AI + 用户/目标机 |
 | T09 独立评测发布 | awaiting_human | 可运行源码包不是产品放行 | 冻结独立集/覆盖分母/关键反例零回归/误报归因 | 独立同行 + 用户决定 |
 | T10 两轮试用 | awaiting_human | 尚无真实试用记录；已问用户记录是否存在 | [两轮操作/计时模板](peer-acceptance-v1.md)仅准备；仍需3人两轮、2回用、四类时间与价值案例 | 用户主导，同行实际使用 |
 | M0 | not_complete | 合同与候选材料部分就绪，244字段未获人工批准 | T02/T03与独立样本记录 | 用户/同行 + AI |
@@ -58,7 +58,7 @@
 - [A01–A14细项](acceptance-audit-v1.md)、[PRD](prd-v1.md)、[Roadmap](roadmap-v1.md)是原合同入口；既有各包事实见[执行记录](execution.md)。当前任务输出Hardwise-全项验收48保存`full-acceptance-ledger.json`、`python-junit.xml`和按实际ID重算的`requirement-test-map-current.json`（选定映射均匹配；并非完整要求覆盖）。Python1510通过、7未选；不计算产品通过率。
 - `A11-unresolved-reference-columns.json`与输入CSV保留当前静默选U1的失败反例。待回复的选择是“隔离所有候选位号继续其余”或“拒绝该次新导入保留当前”。其他问题的回答不能充当这一决策。
 - `data/profile_reviews/first_subset_v1.json`仍是5档案244字段待人工审，已复核候选哈希与当前源一致；批准/独立复核0。模型初筛与既有ready标签不等于批准。`eval/manifest.yaml`为回归伪金标准，不能填充独立30–50案例放行表。
-- 当前[Windows源码复验包](windows-validation-capsule-v1.md)本机897哈希、白色报告、无key实际启动与合成状态/保存/离线/独立恢复均通过；原路径不可用、两条历史和理由保留，机器判定相同。`macOS-current-software-proof-final.json`明确Windows=false、工程批准未取得、release=false。源篡改/非Windows/覆盖旧包/未支持版本的反向结果见`negative-control-summary.json`。
+- 当前[Windows源码复验包](windows-validation-capsule-v1.md)本机909哈希、白色报告、无key实际启动与合成状态/保存/离线/独立恢复均通过；原路径不可用、两条历史和理由保留，机器判定相同。第56包`bundle-probe.txt`对应解压reports JSON明确Windows=false、工程批准未取得、release=false；另有解压源码34条数值回归通过。源篡改/非Windows/覆盖旧包/未支持版本的反向结果见第56包`negative-controls.json`。第48包证据保留为历史，不冒充新版本。
 - 用户确认目前只有macOS，不能从本机软件流程关闭Windows/Cadence门槛。操作指南保留目标机人工空表，不代填。同行记录是否存在已单独询问；未获证据前不填真实试用，不自动发出邀请。
 - [性能基线](performance-baseline-v1.md)记录当前固定源18进程63构建的原始耗时/峰值内存、机器与输入哈希。没有获批退化预算、真实EDA、真实模型或任意大板性能结论。
 

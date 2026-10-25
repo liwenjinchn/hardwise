@@ -5684,3 +5684,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: checking finite inputs or final isfinite alone misses intermediate underflow. Decimal unit conversion happened after float rounding; invalid parsing and physically true zero were conflated. Document scroll width alone missed internal text overflow.
 - Fix: user-selected local UNKNOWN; scale exact decimal rationals before checked conversion and compute resistor power without a rounded intermediate square. Reject nonzero-to-zero conversion, preserve real zero, version affected rules and retain old SQLite history/reasons. Use existing white layout with overflow-wrap on detail and evidence text; inspect actual screenshots and element bounds.
 - Takeaway: match claimed numerical guarantees to the exact consumer scope, test representable recovery as well as rejection, and prove a real old/new process journal transition. A green routine suite is not independent engineering acceptance.
+
+
+### 2026-10-25 — Versioned delivery paths need explicit promotion
+
+- Symptom: current source contained verified fixes while mutable white HTML aliases and the Windows capsule still held older snapshots.
+- Root cause: generated reports and pinned Git-source archives are immutable observations; a runtime commit does not regenerate them. Rule versions legitimately differ even when public-fixture electrical results are equal.
+- Fix: back up aliases/SQLite first, regenerate with the same declared inputs, compare exact machine data excluding only expected rule_version, rebaseline the pinned builder, and test the extracted package itself. Preserve old reports/ZIPs and distinguish source capsule from project backup.
+- Takeaway: name source commit, supplemental files, live process and snapshot versions explicitly. Prove original rows/input hashes survive; do not require byte equality of current fingerprints when an approved rule-version migration must reopen a decision.
