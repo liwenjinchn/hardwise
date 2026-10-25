@@ -53,7 +53,7 @@ def test_actual_floating_supply_import(vb, result):
             c for c in detail["checks"] if c["summary"].startswith("VB−VS 已确认直流范围")
         )
         assert floating["assessment"]["result"] == result
-        assert floating["assessment"]["rule_version"] == "2.profile-review1"
+        assert floating["assessment"]["rule_version"] == "3.profile-review1"
         bootstrap = next(c for c in detail["checks"] if "本项自举功能未评估" in c["summary"])
         assert bootstrap["assessment"]["result"] == "UNKNOWN"
         assert client.post("/api/workbench/rerun").status_code == 200

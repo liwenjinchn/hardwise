@@ -105,11 +105,11 @@ def _validate_led_indicator_polarity(
     result, reason = "UNKNOWN", delta.reason
     evidence = _profile_evidence(profile, "recommended.diode_role")
     if delta.minimum is not None and delta.maximum is not None:
-        reason = f"LED 阳极减阴极的已确认直流范围为 [{delta.minimum:g}, {delta.maximum:g}] V。"
-        if delta.minimum > 0 and evidence:
+        reason = f"LED 阳极减阴极的已确认直流范围为 {delta.range_text()} V。"
+        if delta.exact_minimum > 0 and evidence:
             result = "PASS"
             reason += "仅确认当前直流偏置方向为正；未证明点亮、限流或功能正常。"
-        elif delta.maximum <= 0:
+        elif delta.exact_maximum <= 0:
             reason += "当前状态未形成正向偏置；缺少预期点亮/关闭工况，不能据此判定接反。"
         else:
             reason += "范围跨越零点，偏置方向不能确定。"
@@ -120,7 +120,7 @@ def _validate_led_indicator_polarity(
         severity="INFO",
         summary=reason,
         evidence=[*evidence, *delta.evidence],
-        rule_version="2",
+        rule_version="3",
     )
 
 

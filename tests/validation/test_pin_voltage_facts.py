@@ -95,7 +95,7 @@ def test_all_voltage_categories_consume_explicit_ranges(category):
     _facts(design, {"+12V": (11, 13), "RET": (0, 0)})
     pin = _pin(design, profile)
     assert pin.result == "PASS"
-    assert pin.rule_version == "2.profile-review1"
+    assert pin.rule_version == "3.profile-review1"
     assert "相对 RET" in pin.summary
     assert any(t.startswith("voltage_fact:") for t in pin.evidence)
 

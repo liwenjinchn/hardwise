@@ -1,6 +1,7 @@
 """Limited DC terminal-rating checks from confirmed, same-domain envelopes."""
 
 from math import isfinite
+from fractions import Fraction
 
 from hardwise.ir.types import Component, Design, Pin
 from hardwise.validation.types import ComponentValidation
@@ -33,18 +34,19 @@ def terminal_voltage_check(
     sources.extend(delta.evidence)
     reason = applicability_reason or delta.reason
     if not applicability_reason and delta.minimum is not None and delta.maximum is not None:
-        low, high = delta.minimum, delta.maximum
-        reason = f"{label} 已确认直流范围 [{low:g}, {high:g}] V。"
+        low, high = delta.exact_minimum, delta.exact_maximum
+        assert low is not None and high is not None
+        reason = f"{label} 已确认直流范围 {delta.range_text()} V。"
         if limit is None or not isfinite(limit) or limit <= 0:
             reason += "缺少有效的档案额定值，不能判为通过。"
         elif not evidence:
             reason += "缺少该额定字段的来源证据，不能判为通过或违规。"
         elif require_nonnegative and low < 0:
             reason += "范围包含反向工作状态，该额定值不覆盖此条件。"
-        elif high <= limit and (not symmetric or low >= -limit):
+        elif high <= Fraction(str(limit)) and (not symmetric or low >= -Fraction(str(limit))):
             result = "PASS"
             reason += f"未超出档案 {label} {limit_label} {limit:g} V 的数值界限。"
-        elif low > limit or (symmetric and high < -limit):
+        elif low > Fraction(str(limit)) or (symmetric and high < -Fraction(str(limit))):
             result, severity = "FAIL", "ERROR"
             reason += f"整个范围超出 {label} {limit_label} {limit:g} V。"
         else:
@@ -59,5 +61,5 @@ def terminal_voltage_check(
         severity=severity,
         summary=reason,
         evidence=sources,
-        rule_version="2",
+        rule_version="3",
     )

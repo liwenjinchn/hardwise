@@ -61,7 +61,7 @@ def test_gate_supply_uses_confirmed_range(bounds, result, severity):
     assert (check.result, check.severity, check.rule_version) == (
         result,
         severity,
-        "2.profile-review1",
+        "3.profile-review1",
     )
 
 
@@ -73,7 +73,7 @@ def test_floating_supply_is_measured_between_actual_pins(vb, vs, result):
     check = _checks(design, profile)["gate_driver_vb_vs_voltage"]
     assert check.result == result
     assert f"[{vb - vs:g}, {vb - vs:g}] V" in check.summary
-    assert check.rule_version == "2.profile-review1"
+    assert check.rule_version == "3.profile-review1"
 
 
 def test_crossing_floating_supply_boundary_is_unknown():

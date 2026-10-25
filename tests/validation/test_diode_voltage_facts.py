@@ -88,7 +88,7 @@ def test_reverse_rating_uses_directed_confirmed_intervals(first, second, expecte
     _facts(design, {"K": first, "A": second})
     item = _check(design, profile, "diode_reverse_voltage")
     assert item.result == expected
-    assert item.rule_version == "2.profile-review1"
+    assert item.rule_version == "3.profile-review1"
     assert len([t for t in item.evidence if t.startswith("voltage_fact:")]) == 2
     assert "datasheet:ss34.pdf#p1" in item.evidence
 

@@ -27,7 +27,7 @@ def control_dependency_payload(context, task, component_snapshot, profile_snapsh
         task.kind != "component_check"
         or task.check not in CONTROL_CHECKS
         or task.assessment is None
-        or task.assessment.rule_version not in {"2", "2.profile-review1"}
+        or task.assessment.rule_version not in {"2", "2.profile-review1", "3", "3.profile-review1"}
     ):
         return None
     component = context.design.components.get(task.refdes)

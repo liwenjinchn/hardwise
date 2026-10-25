@@ -66,7 +66,7 @@ def test_connection_or_candidate_branch_cannot_certify_control(file, number, nam
     design, profile = _case(file, number, label, neighbor)
     check = _check(design, profile, name)
     assert check.result == "UNKNOWN"
-    assert check.rule_version == "2.profile-review1"
+    assert check.rule_version == "3.profile-review1"
     assert "逻辑" in check.summary
     assert any(t.startswith("rule:parsed_pin_connection#") for t in check.evidence)
 

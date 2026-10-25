@@ -82,6 +82,6 @@ def test_mcu_pin_and_family_share_actual_imported_bounds(bounds, result, severit
             assert (formal["result"], formal["severity"], formal["rule_version"]) == (
                 result,
                 severity,
-                "2.profile-review1",
+                "3.profile-review1",
             )
         assert exported["voltage_facts"]["facts"][0]["minimum"] == bounds[0]

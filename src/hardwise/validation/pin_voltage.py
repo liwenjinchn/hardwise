@@ -1,6 +1,7 @@
 """Profile pin voltage bounds tied to an explicit local reference terminal."""
 
 from math import isfinite
+from fractions import Fraction
 
 from hardwise.ir.profile import DatasheetProfile, PinProfile
 from hardwise.ir.types import Component, Design, Pin
@@ -65,15 +66,17 @@ def validate_pin_voltage(
     if invalid:
         reason = "档案电压限值缺乏有效有限数值或相互矛盾，需要复核，不能生成电压合规结论。"
     elif delta.minimum is not None and delta.maximum is not None and evidence and profile.evidence:
-        low, high = delta.minimum, delta.maximum
+        low, high = delta.exact_minimum, delta.exact_maximum
+        assert low is not None and high is not None
         reason = (
-            f"引脚 {profile.name} 相对 {reference.net} 的已确认直流范围为 [{low:g}, {high:g}] V。"
+            f"引脚 {profile.name} 相对 {reference.net} 的已确认直流范围为 {delta.range_text()} V。"
         )
         failures, crossing = [], []
         for key, value in limits.items():
             is_lower = key in {"abs_min_voltage", "recommended_voltage_min"}
-            violated = high < value if is_lower else low > value
-            partial = low < value if is_lower else high > value
+            exact_value = Fraction(str(value))
+            violated = high < exact_value if is_lower else low > exact_value
+            partial = low < exact_value if is_lower else high > exact_value
             if violated:
                 failures.append(
                     (
@@ -116,5 +119,5 @@ def validate_pin_voltage(
         evidence=evidence,
         evidence_kind="HYPOTHESIS" if invalid else "DERIVED",
         needs_review=bool(invalid),
-        rule_version="2",
+        rule_version="3",
     )

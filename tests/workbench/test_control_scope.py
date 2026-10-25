@@ -61,7 +61,7 @@ def test_control_unknown_survives_real_import_rerun_and_export(direct_controls):
         assert len(controls) == 2
         for control in controls:
             assert control["assessment"]["result"] == "UNKNOWN"
-            assert control["assessment"]["rule_version"] == "2.profile-review1"
+            assert control["assessment"]["rule_version"] == "3.profile-review1"
             assert ("本脚已确认直流差值" in control["summary"]) == direct_controls
         assert client.post("/api/workbench/rerun").status_code == 200
         assert client.get("/api/workbench/components/U8").json()["checks"] == detail["checks"]

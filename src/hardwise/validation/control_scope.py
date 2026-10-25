@@ -47,7 +47,7 @@ def observe_control_scope(
             severity="INFO",
             evidence_kind="HYPOTHESIS",
             needs_review=True,
-            rule_version="2",
+            rule_version="3",
             summary="缺少控制脚档案，无法核验逻辑功能或引脚映射。",
         )
     pin = schematic_pin_for_profile_pin(component, pin_profile)
@@ -58,7 +58,7 @@ def observe_control_scope(
             refdes=component.refdes,
             result="FAIL",
             severity="ERROR",
-            rule_version="2",
+            rule_version="3",
             evidence=evidence,
             summary=f"控制脚 {pin_profile.name} 缺失或没有连接网络；仅报告连接错误。",
         )
@@ -88,9 +88,7 @@ def observe_control_scope(
     delta = confirmed_dc_difference(design, pin, profile_reference_pin(component, profile))
     evidence.extend(delta.evidence)
     if delta.minimum is not None and delta.maximum is not None:
-        observations.append(
-            f"本脚已确认直流差值 [{delta.minimum:g}, {delta.maximum:g}] V（相对档案地引脚）"
-        )
+        observations.append(f"本脚已确认直流差值 {delta.range_text()} V（相对档案地引脚）")
     else:
         observations.append("本脚直流范围未确认或参考关系不满足")
     observations.append(
@@ -102,7 +100,7 @@ def observe_control_scope(
         result="UNKNOWN",
         severity="INFO",
         evidence_kind="HYPOTHESIS" if candidates else "DERIVED",
-        rule_version="2",
+        rule_version="3",
         summary="。".join(observations) + "。",
         evidence=list(dict.fromkeys(evidence)),
     )

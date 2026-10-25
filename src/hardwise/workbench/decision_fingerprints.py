@@ -40,6 +40,21 @@ LOCAL_RULES = {
 }
 
 
+# Exact DC arithmetic changes the producer, not its audited input scope.
+LOCAL_RULES |= {
+    (name, "3")
+    for name in (
+        "diode_reverse_voltage",
+        "tvs_working_standoff",
+        "mosfet_vgs_rating",
+        "mosfet_vds_rating",
+        "bjt_vebo_rating",
+        "bjt_vceo_rating",
+        "led_indicator_polarity",
+    )
+}
+
+
 # Same audited electrical/control inputs, now additionally gated by the complete
 # profile review content already present in the profile dependency snapshot.
 LOCAL_RULES |= {(name, version + ".profile-review1") for name, version in LOCAL_RULES}
@@ -152,7 +167,8 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
         version = task.assessment.rule_version if task.assessment else None
         local = (
             task.kind == "pin_check"
-            and version in {"1", "2", "1.profile-review1", "2.profile-review1"}
+            and version
+            in {"1", "2", "3", "1.profile-review1", "2.profile-review1", "3.profile-review1"}
         ) or (task.kind == "component_check" and (check, version) in LOCAL_RULES)
         if local and component:
             payload = {

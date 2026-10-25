@@ -35,7 +35,7 @@ def family_pin_check(
         component, pin_profile, design, reference_pin=profile_reference_pin(component, profile)
     )
     fields = {key: getattr(pin, key) for key in Assessment.model_fields}
-    fields["rule_version"] = "2"
+    fields["rule_version"] = "3" if pin.rule_version == "3" else "2"
     return ComponentValidation(
         check=check, refdes=component.refdes, summary=pin.summary, evidence=pin.evidence, **fields
     )

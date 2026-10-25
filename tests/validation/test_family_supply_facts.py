@@ -97,7 +97,7 @@ def test_family_supply_consumes_declared_envelopes(file, target, name, limits, c
         condition, "UNKNOWN"
     )
     if condition != "missing":
-        assert check.rule_version == "2.profile-review1"
+        assert check.rule_version == "3.profile-review1"
         assert any(t.startswith("voltage_fact:") for t in check.evidence)
 
 

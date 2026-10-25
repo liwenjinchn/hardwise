@@ -92,7 +92,7 @@ def test_vgs_interval_proof_does_not_invent_correlation(gate, source, expected):
     _facts(design, {"GATE": gate, "SOURCE": source})
     check = _check(design, profile, "mosfet_vgs_rating")
     assert check.result == expected
-    assert check.rule_version == "2.profile-review1"
+    assert check.rule_version == "3.profile-review1"
     assert sum(token.startswith("voltage_fact:") for token in check.evidence) == 2
     assert "datasheet:irf540n.pdf#p1" in check.evidence
 

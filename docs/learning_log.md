@@ -5779,3 +5779,8 @@ An already needs_review decision can legitimately gain one event when its produc
 ### 2026-10-26 — Audit actual facts persistence before treating old docs as current gaps
 
 Stage67 finds voltage-facts.md still denied cross-restart persistence after managed inputs shipped, and passive-only help omitted explicit family consumers. Production API rejected six bad documents without any active-state change; save/delete-original/open retained the entire document and queue assessments. Correct the docs while preserving the real missing PRD batch confirmation/conflict UI. A whole-document rejection is not a human conflict resolution workflow. Evidence:Hardwise-事实确认审查67; no runtime change.
+
+
+### 2026-10-26 — Exact comparisons must follow every shared differential consumer
+
+Stage65 fixed passive stress, but dc_envelope still rounded signed differences before terminal/pin comparisons. Synthetic approved20Vlimit with20V−(−1e−16)V yieldedPASS; negativebound and crossing aliases share the cause. Preserve exact canonical-decimal endpoints alongside display floats, then use them in comparisons; keep final-unrepresentableUNKNOWN and realapproval guards. Family summaries must retain the updated pin producer version, and audited control/pin dependency registrations must include it rather than silently reverting to broad scope. Normal public reports match after removing only versions/source paths (22producer updates), old/new/restart journal1→2→2 preserves source hashes/reason. Evidence:Hardwise-端间精度68. No physical precision or actual approval claim.

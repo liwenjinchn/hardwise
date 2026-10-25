@@ -144,7 +144,7 @@ def test_transistor_facts_import_rerun_and_export(gate, expected, tmp_path):
         detail = client.get("/api/workbench/components/Q1").json()
         check = next(c for c in detail["checks"] if c["summary"].startswith("Vgs "))
         assert check["status"] == expected
-        assert check["assessment"]["rule_version"] == "2.profile-review1"
+        assert check["assessment"]["rule_version"] == "3.profile-review1"
         assert len([e for e in check["evidence"] if e["token"].startswith("voltage_fact:")]) == 2
         assert client.post("/api/workbench/rerun").status_code == 200
         rerun = client.get("/api/workbench/components/Q1").json()
@@ -186,7 +186,7 @@ def test_diode_tvs_led_import_rerun_and_export(cathode, expected):
             c for c in details["D1"]["checks"] if c["summary"].startswith("二极管反向电压 ")
         )
         assert reverse["status"] == expected
-        assert reverse["assessment"]["rule_version"] == "2.profile-review1"
+        assert reverse["assessment"]["rule_version"] == "3.profile-review1"
         standoff = next(
             c for c in details["D2"]["checks"] if c["summary"].startswith("TVS 两端工作电压 ")
         )
@@ -232,7 +232,7 @@ def test_generic_pin_bounds_import_rerun_export_without_nominal_signoff(vin, exp
         detail = client.get("/api/workbench/components/U1").json()
         pins = {p["number"]: p for p in detail["pins"]}
         assert pins["1"]["status"] == expected
-        assert pins["1"]["assessment"]["rule_version"] == "2.profile-review1"
+        assert pins["1"]["assessment"]["rule_version"] == "3.profile-review1"
         assert pins["3"]["status"] == "UNKNOWN"  # a typical output value is not a tolerance
         assert "不使用固定 ±0.2 V" in pins["3"]["summary"]
         assert client.post("/api/workbench/rerun").status_code == 200
