@@ -85,6 +85,24 @@ def validate_generic_passive(
         checks = _inductor_checks(component, value, evidence)
     else:
         checks = _ferrite_checks(component, value, evidence)
+    # Numeric producer changes must invalidate only via declared rule identities;
+    # old run manifests and historical decisions remain untouched.
+    versions = {
+        "capacitor_value_parse": "2",
+        "resistor_value_parse": "2",
+        "ferrite_impedance_parse": "2",
+        "inductor_current_rating_token": "2",
+        "ferrite_current_rating_token": "2",
+        "capacitor_rated_voltage_parse": "3",
+        "capacitor_voltage_margin": "3",
+        "resistor_power_estimate": "3",
+    }
+    checks = [
+        check.model_copy(update={"rule_version": versions[check.check]})
+        if check.check in versions
+        else check
+        for check in checks
+    ]
     return ValidationReport(
         refdes=component.refdes,
         component_value=value,

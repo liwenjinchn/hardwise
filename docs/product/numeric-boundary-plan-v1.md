@@ -1,6 +1,6 @@
-# 数值边界修复方案 — 待选择
+# 数值边界修复方案 — 已选 A 并实施
 
-2026-10-25。当前源码45b3b0b。状态PROPOSED；已证实误导性PASS，未修复，不允许扩大试用。按feature-dev核对核心判定；不修改旧档案、原始输入或人的历史决定。
+2026-10-25。基线45b3b0b的误导性PASS已复现；用户明确选择A，修复见第55包。状态IMPLEMENTED_FOR_LISTED_CASES；完整产品验收未完成。按feature-dev核对核心判定；不修改旧档案、原始输入或人的历史决定。
 
 ## Goal / Context / Constraints / Done when
 
@@ -20,16 +20,16 @@
 
 这些是合成软件边界，不宣称物理样板存在上述参数。证据位于任务输出Hardwise-数值边界53：before-numeric-proof.json、actual-import-before.json、current-misleading-pass.html、finite-underflow-before.json和输入/复现脚本。后者用Fraction独立计算该已声明十进制算式，未替代生产算法或给实际器件签核。
 
-## 两种处理合同，已向用户提问
+## 两种处理合同，用户已选择 A
 
 | 选择 | 行为 | 取舍 |
 |---|---|---|
 | A，推荐 | 不可用数值只令相关检查UNKNOWN，其他可独立判断的检查继续；来源/理由明确 | 沿用缺资料流程，局部问题不阻塞整次评审 |
 | B | 发现不可计算数值的新导入失败，保留当前项目，提供文件/行/字段定位 | 更早中断，但不能继续核查其余部分；还需给所有CLI/直接模型入口定义一致失败边界 |
 
-仓库AGENTS.md硬规则7要求：“present 2-3 solution approaches with trade-offs before starting implementation. Let the human choose the direction”。此次选择改变无效值导入和判定的用户合同，因此等待明确选择；目标续跑不是选择。feature-dev用于风险与验证，不是额外发布审批来源。
+仓库AGENTS.md硬规则7要求：“present 2-3 solution approaches with trade-offs before starting implementation. Let the human choose the direction”。此次选择改变无效值导入和判定的用户合同；用户已明确选择“相关检查标UNKNOWN，其余检查继续；明确数值不可用”，因此按A实施。feature-dev用于风险与验证，不是额外发布审批来源。
 
-## 拟实施步骤，选定后执行
+## 实施步骤与范围
 
 1. 枚举电阻文本转换及功耗、被动两端差值、额定解析的所有消费点，确认不会把其他家族的未知条件意外改为FAIL。空文本、inf转换、非零下溢和精确0分别处理；相同数字不同单位/表示保留当前规范化与冲突规则。
 2. 对可表示的输入使用不会因中间平方溢出/下溢而错误变0/inf的计算方式。例如对有限float事实用精确有理运算形成功率再受控输出，或等效可验证的稳定缩放算法；不简单将表达式重排后假设所有极端都正确。对最终不可表达的数值按A/B合同处置；不硬编码任意工程上限掩盖缺陷。精确文本与float已损失的信息不得假装恢复。
@@ -37,3 +37,11 @@
 4. 明确受影响producer版本（至少电阻值解析、功耗与电容端差相关检查），避免attach_rating_sources将新版强行覆回v2；依赖注册只加入已审核的新版本，保留其他版本广域fallback。旧run/provenance不重写，同源重跑受影响旧决定需复核并保留理由，后续相同运行稳定。
 5. 先在旧源码运行击中上述失真的回归，再当前验证正常0Ω/1K/边界等有限案例；真实CSV/TSV/有限XLSX路径、API导出和异常保留当前项目按所选合同核对。对已可正确计算的微小正值功率，用独立算式交叉检查结果和边界比较，不能只断言不为inf。
 6. 全量回归/实际入口留证后更新台账与当前演练；冻结48源码包仍不含新修复，后续明确新基线再交付，不覆盖旧ZIP。不能仅因当前回归绿就关闭M0–M3。
+
+## 第55包实测结果
+
+- 原始十进制值先以有理数换算单位，再检查最终float可表示性；非零下溢不冒充0。电阻DC功耗用有限输入的规范十进制表示计算，避免中间平方溢出/下溢；无法恢复输入float已损失的精度。最终不可表示及端差溢出只使相关检查UNKNOWN，其他检查继续；真实0Ω逻辑不变。
+- CSV/TSV/有限XLSX真实导入、API、离线JSON/MD/CSV保留原始值并一致显示局部未知；有限中间下溢反例恢复为1e−100W/FAIL，普通R2保持PASS。规则版本升级，依赖只注册已审查局部规则。旧/新独立进程同一SQLite证明事件1→2→2、旧理由/事件/运行保留。
+- 正常公开样例的全部report记录仅去除rule_version后逐字段一致，组件25/报告21/缺口4的机器口径不变。新34条定向用例通过；旧基线运行前33条为29失败/4通过，其中含版本断言，并非29个独立数值缺陷。
+- 最终全量Python1548通过/7未选，39.04s；前端105单测、23端到端通过，37.6s；构建、类型/合同、Ruff、diff检查通过。白色前端1440/760截图检查，长原始数值折行；本机HTTP离线报告不等同file双击或Windows验收。
+- 证据目录：任务输出Hardwise-数值修复55，含old-new-process-proof.json、baseline-comparison-proof.json、python-tests-complete.txt、browser-tests-final.txt、numeric-final.html和最终截图。冻结48源码包不含本修复。电感解析、所有器件家族/profile的数值边界和独立工程批准不在本修复完成声明内。

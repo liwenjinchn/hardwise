@@ -36,6 +36,7 @@ def _replace_known_clauses(summary: str) -> str:
 _CLAUSE_LABELS = {
     "Capacitor voltage margin cannot be checked: ": "电容耐压裕量未知：",
     "Resistor power cannot be estimated: ": "电阻功耗未知：",
+    "DC difference exceeds the finite numeric range": "直流端间压差超出可计算数值范围",
     "both terminal voltages require explicit confirmation; net names and voltage_hint are candidates only": "需要确认两个端点的电压；网名和已有电压提示仅作候选",
     "requires exactly two connected terminals": "需要恰好两个已连接的端点",
     "terminal reference domains differ; their relationship is unknown": "两端参考网络不同，参考关系尚未确认",

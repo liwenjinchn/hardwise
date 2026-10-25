@@ -5676,3 +5676,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: 文本float转换缺有效性检查；被动terminal_dc_stress未像通用DC差值守卫有限性，功率采用易溢出/下溢的delta*delta/R。仅检查最终isfinite无法发现已经下溢成0的错误。
 - Fix: 本轮留存生产函数与真实导入/HTTP/离线反例，更新A03/F02未满足，并提出局部UNKNOWN/拒绝导入两合同供用户选择；未实施。需稳定计算及解析可用性、规则版本/旧决定适用性一起验证。
 - Takeaway: 不能凭输入FiniteFloat或几个常规浮点结果推断算式安全；需独立精确算式覆盖中间下溢，以及最终仍可表达的结果，避免只把inf换成UNKNOWN就漏掉假0PASS。
+
+
+### 2026-10-25 — Passive numeric range and false zero
+
+- Symptom: 400-digit resistance became infinity then 0W/PASS; finite operands could underflow the intermediate square into the same false zero. Long original values also escaped detail/evidence layout.
+- Root cause: checking finite inputs or final isfinite alone misses intermediate underflow. Decimal unit conversion happened after float rounding; invalid parsing and physically true zero were conflated. Document scroll width alone missed internal text overflow.
+- Fix: user-selected local UNKNOWN; scale exact decimal rationals before checked conversion and compute resistor power without a rounded intermediate square. Reject nonzero-to-zero conversion, preserve real zero, version affected rules and retain old SQLite history/reasons. Use existing white layout with overflow-wrap on detail and evidence text; inspect actual screenshots and element bounds.
+- Takeaway: match claimed numerical guarantees to the exact consumer scope, test representable recovery as well as rejection, and prove a real old/new process journal transition. A green routine suite is not independent engineering acceptance.

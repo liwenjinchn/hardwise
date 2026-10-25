@@ -35,7 +35,7 @@ def _quantity(number, unit, dimension):
     else:
         amount = Fraction(number)
     amount *= _UNITS[unit][1]
-    if amount <= 0 or not math.isfinite(float(amount)):
+    if amount <= 0 or not math.isfinite(float(amount)) or float(amount) == 0:
         raise ValueError("rating must be finite and positive")
     return amount
 
@@ -142,7 +142,7 @@ def resolve_passive_rating(
 
 def attach_rating_sources(check: ComponentValidation, rating: PassiveRating) -> ComponentValidation:
     data = {key: getattr(check, key) for key in ComponentValidation.model_fields}
-    data["rule_version"] = "2"
+    data["rule_version"] = "3"
     data["evidence"] = list(dict.fromkeys([*check.evidence, *rating.evidence]))
     if rating.issue:
         data.update(result="UNKNOWN", severity="INFO", needs_review=True)

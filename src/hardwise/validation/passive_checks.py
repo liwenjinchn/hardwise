@@ -23,6 +23,7 @@ from hardwise.validation.value_parsing import (
     parse_resistance_ohms,
 )
 from hardwise.validation.passive_ratings import PassiveRating, attach_rating_sources
+from hardwise.validation.passive_numeric import resistor_dc_power
 
 
 def _capacitor_checks(
@@ -217,7 +218,7 @@ def _resistor_power_check(
             result="UNKNOWN",
             severity="INFO",
             refdes=component.refdes,
-            summary="Resistor power cannot be estimated because resistance is missing.",
+            summary="Resistor power cannot be estimated because resistance is missing or numerically unavailable.",
             evidence=evidence,
         )
 
@@ -249,7 +250,16 @@ def _resistor_power_check(
             evidence=evidence,
         )
 
-    power = delta * delta / resistance.ohms
+    power = resistor_dc_power(delta, resistance.ohms)
+    if power is None:
+        return ComponentValidation(
+            check="resistor_power_estimate",
+            result="UNKNOWN",
+            severity="INFO",
+            refdes=component.refdes,
+            summary="Resistor DC power is numerically unavailable; no power margin was evaluated.",
+            evidence=evidence,
+        )
     if power_rating is not None and power > power_rating:
         return ComponentValidation(
             check="resistor_power_estimate",

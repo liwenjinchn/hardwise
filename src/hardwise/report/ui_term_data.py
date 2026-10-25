@@ -324,6 +324,8 @@ VALIDATION_SUMMARY_LABELS = {
     "I2C mux reset and address pins are connected for deterministic review.": "I2C mux 的复位和地址引脚已连接，可进行确定性检查。",
     "Capacitor voltage margin cannot be checked because rated voltage is missing.": "电容额定电压缺失，无法检查电压裕量。",
     "Resistor power cannot be estimated because resistance is missing.": "电阻值缺失，无法估算功耗。",
+    "Resistor power cannot be estimated because resistance is missing or numerically unavailable.": "电阻值缺失或超出可计算数值范围，无法估算功耗。",
+    "Resistor DC power is numerically unavailable; no power margin was evaluated.": "电阻直流功耗超出可计算数值范围；功率裕量未评估。",
     "No deterministic rail voltage was inferred for this capacitor; voltage-margin comparison was skipped without guessing.": (
         "没有推断出该电容的确定性电源轨电压；电压裕量比较已跳过，不做猜测。"
     ),

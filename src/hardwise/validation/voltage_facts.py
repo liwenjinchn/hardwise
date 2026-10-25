@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from math import isfinite
 from hardwise.input_provenance import read_input_text
 
 from hardwise.ir.types import Component, Design
@@ -69,6 +70,8 @@ def terminal_dc_stress(component: Component, design: Design) -> TerminalStress:
         if left.net == right.net
         else max(abs(left.minimum - right.maximum), abs(left.maximum - right.minimum))
     )
+    if not isfinite(delta):
+        return TerminalStress(None, "DC difference exceeds the finite numeric range", evidence)
     return TerminalStress(
         delta,
         f"confirmed DC envelope in mode {document.active_mode}, reference {left.reference_net}; "

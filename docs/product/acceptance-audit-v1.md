@@ -6,7 +6,7 @@
 |---|---|---|
 | A01 网名不作可信电压 | validation/test_voltage_facts、test_pin_voltage_facts；网名/未确认提示不能认证 | 列示样例已验证；图形化批量事实确认未完成 |
 | A02 ±12 V跨16 V电容、未知参考域 | confirmed_bipolar_voltage_fails_rating、different_reference_domains_are_unknown及真实导入回归 | 列示样例已验证；仅DC子检查 |
-| A03 缺电压/功率资料不增加通过 | passive_terminal_stress 的缺失输入反例；BOM额定源冲突新回归 | **未满足**：原列示缺资料样例通过，但新复现超长阻值inf→0W/PASS、全有限输入中间下溢→0W/PASS；见numeric-boundary-plan-v1.md，待选A/B后修复。显式字段仍仅识别记录表头/单位子集 |
+| A03 缺电压/功率资料不增加通过 | passive_terminal_stress 的缺失输入反例；BOM额定源冲突新回归 | **部分满足**：第55包按用户选择A修复已列数值假PASS，局部UNKNOWN/其余继续；真实三格式导入及导出复验通过。见numeric-boundary-plan-v1.md；独立样本/工程复核待完成，显式字段仍仅识别记录表头/单位子集 |
 | A04 地名不证明等电位 | ground_names_do_not_establish_reference_equivalence、ground_pin_result_is_connectivity | 列示样例已验证；不作任意地域自动传播 |
 | A05 XL1509 EN相对VIN约束 | profile_conditions 中关系边界、合成批准样本与隔离回归 | 部分实现：生产档案仍needs_review，尚无独立批准，不能把内存测试批准当产品FAIL验收 |
 | A06 条件电感表 | 33µH不再被全局68µH误报；缺条件保持UNKNOWN | 部分实现：完整工况模型/表格选择和档案批准仍缺失 |

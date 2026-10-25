@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from fractions import Fraction
+
+from hardwise.validation.passive_numeric import decimal_quantity
 
 
 @dataclass(frozen=True)
@@ -43,48 +46,50 @@ def parse_capacitance_f(value: str) -> float | None:
     match = _CAPACITANCE_RE.search(value.replace("μ", "u"))
     if match is None:
         return None
-    magnitude = float(match.group(1))
     unit = match.group(2).upper().replace("µ", "U").replace("Μ", "U")
     scale = {
-        "PF": 1e-12,
-        "NF": 1e-9,
-        "UF": 1e-6,
-        "MF": 1e-3,
-        "F": 1.0,
+        "PF": Fraction(1, 10**12),
+        "NF": Fraction(1, 10**9),
+        "UF": Fraction(1, 10**6),
+        "MF": Fraction(1, 1000),
+        "F": Fraction(1),
     }[unit]
-    return magnitude * scale
+    return decimal_quantity(match.group(1), scale)
 
 
 def parse_rated_voltage(value: str) -> float | None:
     """Parse the largest explicit voltage token from a passive value."""
 
-    voltages = [float(match.group(1)) for match in _VOLTAGE_RE.finditer(value)]
+    voltages = [decimal_quantity(match.group(1)) for match in _VOLTAGE_RE.finditer(value)]
+    if any(voltage is None for voltage in voltages):
+        return None
     return max(voltages) if voltages else None
 
 
 def parse_resistance_ohms(value: str) -> ParsedResistance | None:
     """Parse common resistor notation into ohms."""
 
-    token = value.strip().split(maxsplit=1)[0].upper().replace("Ω", "R")
-    if not token:
+    words = value.strip().split(maxsplit=1)
+    if not words:
         return None
+    token = words[0].upper().replace("Ω", "R")
     token = token.rstrip(",;")
     if "/" in token:
         return None
 
     match = re.fullmatch(r"(\d+(?:\.\d+)?|\.\d+)([RKM]?)", token)
     if match:
-        number = float(match.group(1))
         suffix = match.group(2)
-        multiplier = {"": 1.0, "R": 1.0, "K": 1e3, "M": 1e6}[suffix]
-        return ParsedResistance(number * multiplier, token)
+        multiplier = {"": 1, "R": 1, "K": 1000, "M": 1000000}[suffix]
+        number = decimal_quantity(match.group(1), Fraction(multiplier))
+        return ParsedResistance(number, token) if number is not None else None
 
     match = re.fullmatch(r"(\d+)([RKM])(\d+)", token)
     if match:
         whole, suffix, fraction = match.groups()
-        number = float(f"{whole}.{fraction}")
-        multiplier = {"R": 1.0, "K": 1e3, "M": 1e6}[suffix]
-        return ParsedResistance(number * multiplier, token)
+        multiplier = {"R": 1, "K": 1000, "M": 1000000}[suffix]
+        number = decimal_quantity(f"{whole}.{fraction}", Fraction(multiplier))
+        return ParsedResistance(number, token) if number is not None else None
 
     return None
 
@@ -94,16 +99,13 @@ def parse_power_watts(value: str) -> float | None:
 
     fraction = _POWER_FRACTION_RE.search(value)
     if fraction is not None:
-        numerator = float(fraction.group(1))
-        denominator = float(fraction.group(2))
-        if denominator:
-            return numerator / denominator
+        return decimal_quantity(f"{fraction.group(1)}/{fraction.group(2)}")
 
     decimal = _POWER_DECIMAL_RE.search(value)
     if decimal is None:
         return None
-    magnitude = float(decimal.group(1))
-    return magnitude / 1000.0 if decimal.group(2).upper() == "MW" else magnitude
+    scale = Fraction(1, 1000) if decimal.group(2).upper() == "MW" else Fraction(1)
+    return decimal_quantity(decimal.group(1), scale)
 
 
 def parse_current_rating_amps(value: str) -> ParsedCurrentRating | None:
@@ -112,10 +114,11 @@ def parse_current_rating_amps(value: str) -> ParsedCurrentRating | None:
     match = _CURRENT_RE.search(value)
     if match is None:
         return None
-    magnitude = float(match.group(1))
     unit = match.group(2).upper()
-    amps = magnitude / 1000.0 if unit == "MA" else magnitude
-    return ParsedCurrentRating(amps=amps, token=match.group(0).strip())
+    amps = decimal_quantity(match.group(1), Fraction(1, 1000) if unit == "MA" else Fraction(1))
+    return (
+        ParsedCurrentRating(amps=amps, token=match.group(0).strip()) if amps is not None else None
+    )
 
 
 def parse_ferrite_impedance_ohms(value: str) -> ParsedImpedance | None:
@@ -129,11 +132,13 @@ def parse_ferrite_impedance_ohms(value: str) -> ParsedImpedance | None:
 
         match = re.fullmatch(r"(\d+(?:\.\d+)?|\.\d+)R", normalized)
         if match:
-            return ParsedImpedance(ohms=float(match.group(1)), token=token)
+            ohms = decimal_quantity(match.group(1))
+            return ParsedImpedance(ohms=ohms, token=token) if ohms is not None else None
 
         match = re.fullmatch(r"(\d+)R(\d+)", normalized)
         if match:
             whole, fraction = match.groups()
-            return ParsedImpedance(ohms=float(f"{whole}.{fraction}"), token=token)
+            ohms = decimal_quantity(f"{whole}.{fraction}")
+            return ParsedImpedance(ohms=ohms, token=token) if ohms is not None else None
 
     return None
