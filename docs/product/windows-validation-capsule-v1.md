@@ -8,7 +8,7 @@ This is a pinned public source package for T08 target-machine validation. It is 
 uv run python scripts/build_validation_bundle.py --output /absolute/path/Hardwise-Windows-check.zip
 ```
 
-The supported source commit is `2cfd152b80aa532bbcd2b235d305b595a6c48086`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 909 source/supplement files; the manifest itself is the 910th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
+The supported source commit is `132bd572f2896b0b62584b2453b582365411e896`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 911 source/supplement files; the manifest itself is the 912th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
 
 Extract to a normal directory. In native Windows PowerShell, from the extracted root:
 
@@ -31,7 +31,7 @@ Native-Windows requirement on this host failed as expected. Adding a byte to the
 The builder refuses an existing output path and any ref outside the supported baseline; an existing ZIP is never overwritten. Negative controls confirmed these failures, native-Windows rejection and tamper-before-probe rejection, with original bytes restored afterward. The previous frozen artifact is `Hardwise-5dc437d-Windows-check-final.zip`, 14,112,931 bytes, SHA-256 `91fb5971da2a19d631650e90596633b33b03fd1b067391f9d61362cd179c42fe`. Earlier non-final artifacts are intermediate. This capsule fixes runtime source to the named commit; supplemental verifier files come from the builder checkout and are separately listed and hashed. Their integrity is not an authenticated signature.
 
 
-## Current 2cfd152 delivery — 2026-10-25
+## Previous 2cfd152 delivery — 2026-10-25
 
 The builder now deliberately accepts only the recorded 2cfd152 source baseline. The full summary and emitted coverage remain identical to the previous baseline; numeric rule producer versions changed, including the false-zero and nonfinite fixes. Canonical human states, source-audit OS-error fallback and local font assets are included. This is a packaging rebaseline, not new product behavior. Historical ZIPs are retained.
 
@@ -44,3 +44,12 @@ Native-Windows requirement, source tampering, overwrite of an existing ZIP and u
 Evidence: task output Hardwise-统一交付56 (bundle-metadata.json, bundle-probe.txt, negative-controls.json, extracted-numeric-tests.txt). Both current main white HTML aliases were regenerated with the same inputs; exact stable-key assessments match after removing only rule_version. The live L78 demo retained all 4 previous events, old runs, managed catalog and input hashes; numeric version migration added one needs-review event, then actual UI rerun stayed at 5. The captured offline report exposes these 5 events and matching run provenance / project Markdown downloads with the browser forced offline (one HTML request; no API or external request). The live server remains running for the user; this browser check does not claim that server was stopped or file:// double-click was tested.
 
 Windows software probe remains false; actual Cadence export, human profile approval and product release acceptance remain unverified/false. Current browser entry is documented in the task's current-entry note; old numbered reports and frozen ZIPs never update automatically.
+
+
+## Current 132bd57 delivery — 2026-10-25
+
+Includes the additional inductance numeric fix under the same accepted local-UNKNOWN policy; generic inductor parse v2 and Buck inductor v3, with broad dependency fallback retained. Exact normal public-fixture report records remain equal excluding only rule_version. The current builder pin is 132bd572f2896b0b62584b2453b582365411e896; previous ZIPs are frozen history.
+
+`Hardwise-132bd57-Windows-check.zip`: 912 files / 911 hashes, 14,166,026 bytes; SHA-256 `3fe88c07ec2c35375fc86eafd5fe1455cd6eec376539452bda26cf28d70345b6`. Chinese/space extraction passed hashes, recorded baseline, white report, real no-key CLI dry-run and canonical review / managed save / independent backup restore without original paths. All 53 resistor/capacitor/inductance numeric tests passed in the extraction. Existing dependencies were reused, no fresh install or native Windows was tested. Native-Windows, tamper, overwrite and unregistered-ref controls rejected, restored hashes passed, archive unchanged.
+
+Current full Python 1567 passed / 7 deselected, 46.62s (delivery run). Final E2E 23 passed, 44.1s; the first run's one identity-import parse-page timeout is retained without an asserted root cause. Both mutable white aliases and owned live18772 now use this source. The live L78 scene contains no inductors, so all original 5 history rows, old runs/catalog and ten managed-input hashes remain unchanged after reload. Evidence: task output Hardwise-电感数值57; no product release, physical engineering approval or Windows/Cadence claim.
