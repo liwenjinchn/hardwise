@@ -5628,3 +5628,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Verification: corrected new tests against archived217c02e show16 failures/8 passes; current targeted105 passes and full1510/7 deselected pass. Full browser23 passes, including reverse-row+owner/neighbor-quantity edits followed by an actual direct-branch change. Old/new fresh processes preserve new administrative-only decisions, retain broad future-rule sensitivity and require one migration review only; Value changes reopen the relevant task. Initial test drafts incorrectly compared a post-write decision with the helper's pre-write task; final tests compare the actual saved response/state.
 - Live proof: preserve original3 events and all historical run payloads; append exactly1 dependency-upgrade event (total4), with unchanged machine assessments and original reason. Identical rerun keeps4, managed catalog unchanged. Online backup precedes the verified service reload.
 - Takeaway: distinguish raw provenance, administrative quantity diagnostics and electrical dependencies. Share the serializer only within audited scopes; changing the global serializer would silently weaken future rules. A smaller fingerprint does not establish complete per-field dependencies for all rules.
+
+
+## 2026-10-25 — 复验包源码和操作合同必须一起更新
+
+- Symptom: Windows源码包仍固定4a9fabf，未覆盖当前明确人工分类、受管理保存/按ID重开与备份恢复；旧包通过不能证明当前流程。
+- Root cause: 固定源码基线与独立操作说明没有随数据/存储合同同步；只查文件哈希不足以证明保存的项目可重开。
+- Fix: 固定5dc437d并增加独立公开流程helper；实际合成accepted_risk/false_positive不改机器判定，旧写入拒绝，离线两条历史/理由封存，原始路径改名后备份在新目录/新进程恢复。897哈希、真实无keyCLI、非Windows/篡改/覆盖已有ZIP/不支持ref拒绝均留证。输出ZIP使用独占创建，旧证据不被覆盖。
+- Takeaway: 源码工具包、用户项目备份、人工批准与目标机验收是不同证据。macOS可以验证软件流程，不能关闭Windows/Cadence；合成决定不能增加人工批准计数。完整PRD台账需覆盖场景/F项/隐私/独立标签/M阶段，不能只统计A项回归。

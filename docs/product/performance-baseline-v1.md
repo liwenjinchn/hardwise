@@ -31,3 +31,15 @@ PYTHONPATH=src uv run python scripts/benchmark_workbench.py --revision <verified
 每个工作进程均使用显式代码树 PYTHONPATH，并检查实际 context 加载路径；--revision 是操作者记录的标签，不自动证明工作区干净。复跑前记录 git status 和 git rev-parse HEAD。参数有界：1–10 个进程，0–20 次重建，单子进程超时 120 秒。失败退出码与 stderr 保存在报告；输入在整轮前后哈希不同则拒绝发布报告。超时或测量器异常会让整轮命令失败，不能把旧输出当新结果。
 
 历史对照无需切换当前工作树：将 git archive 1032884 src tests data/datasheet_profiles 解到独立临时目录，传 --code-root <archive-root> --inputs-root <current-repo> --revision 1032884，仍使用同一 Python/依赖。两版必须核对输入哈希与工作负载签名；任一不同就不作同样工作量的速度比较。最好在无其他重负载的机器上交替复测，后续目标机与大规模样例另立基线。
+
+## 当前固定源码复验 — 2026-10-25
+
+源码为复验包内 `5dc437dbfcca7ab5e6224171e369e2f82577364d`，使用上述同一本机和现有依赖；明确记录并校验实际模块加载路径。两轮36个输入哈希相同，各轮前后哈希校验通过。每个样例3个单次构建进程，另3个进程各首轮加5次重建：共18进程、63次构建，失败0/18。
+
+| 样例 | 单次构建进程总耗时中位 ms | 首轮构建/投影/渲染中位 ms | 同进程重建中位 ms | 重建进程最大RSS MiB |
+|---|---:|---:|---:|---:|
+| l78_regulator | 781.4 | 139.4 | 19.9 | 103.8 |
+| mixed_controller_power_stage | 881.4 | 213.5 | 93.9 | 114.8 |
+| motor_sensor_controller | 997.7 | 325.9 | 198.1 | 162.2 |
+
+原始 `performance-current-fresh.json` 和 `performance-current-rebuild.json` 位于任务输出 Hardwise-全项验收48，记录机器配置、逐次耗时/签名/退出码和输入哈希。这是当前版本基线；未设置获批性能预算，也没有同期交替对照，因此不声称相对历史版本提速或已通过退化门槛。新进程不是清缓存磁盘冷启动，RSS是进程高水位；上述既有边界仍适用。

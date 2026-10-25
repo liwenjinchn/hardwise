@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import platform
+import runpy
 import subprocess
 import sys
 from uuid import uuid4
@@ -87,6 +88,8 @@ def probe(root, result, prefix):
     )
     if completed.returncode or "mode=real" not in completed.stdout:
         raise ValueError("Real-mode no-key CLI startup check failed")
+    helper = runpy.run_path(str(root / "BUNDLE-REVIEW.py"))
+    result["public_review_workflow"] = helper["probe"](root, prefix)
 
 
 def main():

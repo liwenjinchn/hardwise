@@ -332,7 +332,7 @@ PST 重复 primitive 定义或同一属性不同字面值会明确拒绝导入�
 
 ### Windows复验包是否表示Windows/Cadence已经验收？
 
-不表示。v1固定源码在4a9fabf，并附校验器、公开回归计数与人工实测空表。已在本机macOS用现有依赖验证解压目录中文/空格、849文件哈希、白色HTML及真实模式无key启动；非Windows要求与文件改动均明确失败。Windows标记保持false，没有实际Windows依赖安装或Cadence导出证据。参见[复验包说明](product/windows-validation-capsule-v1.md)。
+不表示。v1现固定源码在5dc437d，附校验器、公开流程复验器、回归计数和实测空表。本机macOS中文/空格路径通过897文件哈希、白色HTML、真实模式无key启动；合成两种明确处理状态、离线历史和原路径不可用后的独立进程备份恢复均通过，机器判定不变。非Windows要求、文件改动、覆盖既有ZIP和未支持版本均明确拒绝。用户目前只有macOS，Windows标记保持false；没有实际Windows安装或Cadence导出证据。自动处理操作不是人工批准，源码包不是已有项目备份。参见[复验包说明](product/windows-validation-capsule-v1.md)。
 
 ### Capture引脚表的NC列为空会被当成没有NC吗？
 
