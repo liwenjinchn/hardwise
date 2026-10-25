@@ -115,9 +115,11 @@ _VALIDATION_PATTERNS = [
         ),
     ),
     (
-        re.compile(r"Inductor ([^ ]+) value cannot be parsed deterministically\. (.*)"),
+        re.compile(
+            r"Inductor ([^ ]+) value cannot be parsed deterministically(?: or is numerically unavailable)?\. (.*)"
+        ),
         lambda match: (
-            f"电感 {match.group(1)} 的值无法确定性解析。{_replace_known_clauses(match.group(2))}"
+            f"电感 {match.group(1)} 的值未识别或数值不可用，无法确定性解析。{_replace_known_clauses(match.group(2))}"
         ),
     ),
     (
@@ -292,6 +294,10 @@ _VALIDATION_PATTERNS = [
         lambda match: (
             f"{GENERIC_PASSIVE_TERM_LABELS[match.group(1)]}无法从 '{match.group(2)}' 确定性解析。"
         ),
+    ),
+    (
+        re.compile(r"Inductance value is unrecognized or numerically unavailable in '([^']+)'\."),
+        lambda match: f"电感值未识别或数值不可用，无法从 '{match.group(1)}' 确定性解析。",
     ),
     (
         re.compile(r"Capacitor rated voltage ([^ ]+) V was parsed from '([^']+)'\."),

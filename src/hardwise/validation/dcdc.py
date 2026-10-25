@@ -64,7 +64,7 @@ def _validate_buck_inductor(
     if inductor is None:
         return ComponentValidation(
             check="buck_inductor",
-            rule_version="2",
+            rule_version="3",
             result="FAIL",
             severity="ERROR",
             summary="Buck switch output net does not connect to an inductor.",
@@ -79,11 +79,11 @@ def _validate_buck_inductor(
     max_uh = _float_recommended(profile, "inductor_max_uh")
     if inductance is None:
         summary = (
-            f"Inductor {inductor.refdes} value cannot be parsed deterministically. {path_summary}"
+            f"Inductor {inductor.refdes} value cannot be parsed deterministically or is numerically unavailable. {path_summary}"
         )
         return ComponentValidation(
             check="buck_inductor",
-            rule_version="2",
+            rule_version="3",
             result=result_for_attention(
                 worst_status("WARN", path_status), warning_result="UNKNOWN"
             ),
@@ -99,7 +99,7 @@ def _validate_buck_inductor(
         )
         return ComponentValidation(
             check="buck_inductor",
-            rule_version="2",
+            rule_version="3",
             result="FAIL",
             severity="ERROR",
             refdes=inductor.refdes,
@@ -113,7 +113,7 @@ def _validate_buck_inductor(
         )
         return ComponentValidation(
             check="buck_inductor",
-            rule_version="2",
+            rule_version="3",
             result="FAIL" if path_status in {"PASS", "ERROR"} else "UNKNOWN",
             severity=severity_for_attention(worst_status("WARN", path_status)),
             refdes=inductor.refdes,
@@ -123,7 +123,7 @@ def _validate_buck_inductor(
     if profile.recommended.get("inductor_requires_operating_conditions"):
         return ComponentValidation(
             check="buck_inductor",
-            rule_version="2",
+            rule_version="3",
             result="FAIL" if path_status == "ERROR" else "UNKNOWN",
             severity="ERROR" if path_status == "ERROR" else "INFO",
             refdes=inductor.refdes,
@@ -137,7 +137,7 @@ def _validate_buck_inductor(
         )
         return ComponentValidation(
             check="buck_inductor",
-            rule_version="2",
+            rule_version="3",
             result=result_for_attention(path_status, warning_result="UNKNOWN"),
             severity=severity_for_attention(path_status),
             refdes=inductor.refdes,
@@ -146,7 +146,7 @@ def _validate_buck_inductor(
         )
     return ComponentValidation(
         check="buck_inductor",
-        rule_version="2",
+        rule_version="3",
         result=result_for_attention(path_status, warning_result="UNKNOWN"),
         severity=severity_for_attention(path_status),
         refdes=inductor.refdes,

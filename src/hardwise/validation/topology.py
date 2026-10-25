@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import re
+from fractions import Fraction
+
+from hardwise.validation.passive_numeric import decimal_quantity
 
 from hardwise.ir.types import Component, Design
 
@@ -55,7 +58,7 @@ def parse_inductance_uh(value: str) -> float | None:
     compact = value.strip().replace("μ", "u").replace("µ", "u").upper()
     match = re.search(r"(\d+(?:\.\d+)?)\s*(UH|NH|MH|H)\b", compact)
     if match is not None:
-        amount = float(match.group(1))
+        amount = match.group(1)
         unit = match.group(2)
         return _inductance_to_uh(amount, unit)
 
@@ -63,18 +66,20 @@ def parse_inductance_uh(value: str) -> float | None:
     if coded is None:
         return None
     whole = coded.group(1) or "0"
-    amount = float(f"{int(whole)}.{coded.group(2)}")
+    amount = f"{whole}.{coded.group(2)}"
     return _inductance_to_uh(amount, "UH")
 
 
-def _inductance_to_uh(amount: float, unit: str) -> float:
-    if unit == "NH":
-        return amount / 1000.0
-    if unit == "UH":
-        return amount
-    if unit == "MH":
-        return amount * 1000.0
-    return amount * 1_000_000.0
+def _inductance_to_uh(amount: str, unit: str) -> float | None:
+    # Scale before conversion: even a finite final value can have an overflowing
+    # decimal magnitude or an underflowing unscaled intermediate.
+    scale = {
+        "NH": Fraction(1, 1000),
+        "UH": Fraction(1),
+        "MH": Fraction(1000),
+        "H": Fraction(1000000),
+    }[unit]
+    return decimal_quantity(amount, scale)
 
 
 def is_likely_schottky_diode(value: str) -> bool | None:

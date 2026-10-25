@@ -37,7 +37,7 @@ def test_buck_output_role_survives_import_rerun_export(output):
         detail = client.get("/api/workbench/components/U13").json()
         task = next(t for t in detail["tasks"] if t["check"] == "buck_inductor")
         assert task["assessment"]["result"] == result
-        assert task["assessment"]["rule_version"] == "2"
+        assert task["assessment"]["rule_version"] == "3"
         assert client.post("/api/workbench/rerun").status_code == 200
         assert client.get("/api/workbench/components/U13").json()["checks"] == detail["checks"]
         export = client.get("/api/workbench/export?format=json").json()

@@ -90,6 +90,7 @@ def validate_generic_passive(
     versions = {
         "capacitor_value_parse": "2",
         "resistor_value_parse": "2",
+        "inductor_value_parse": "2",
         "ferrite_impedance_parse": "2",
         "inductor_current_rating_token": "2",
         "ferrite_current_rating_token": "2",

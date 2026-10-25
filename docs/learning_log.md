@@ -5692,3 +5692,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause: generated reports and pinned Git-source archives are immutable observations; a runtime commit does not regenerate them. Rule versions legitimately differ even when public-fixture electrical results are equal.
 - Fix: back up aliases/SQLite first, regenerate with the same declared inputs, compare exact machine data excluding only expected rule_version, rebaseline the pinned builder, and test the extracted package itself. Preserve old reports/ZIPs and distinguish source capsule from project backup.
 - Takeaway: name source commit, supplemental files, live process and snapshot versions explicitly. Prove original rows/input hashes survive; do not require byte equality of current fingerprints when an approved rule-version migration must reopen a decision.
+
+
+### 2026-10-25 — Audit shared numeric consumers, not only the first parser
+
+- Symptom: after resistor fixes, inductance still parsed infinity/false zero as success; a 5000-digit coded integer aborted intake. A synthetic Buck path could emit PASS containing inf.
+- Root cause: the independent topology parser converted before unit scaling and before the shared bounded conversion. The original helper made a needless int round-trip for the coded whole part.
+- Fix: reuse checked decimal scaling and remove the integer round-trip; version both generic and Buck consumers. Keep definite topology failures and broad dependency fallback. Exact old/new process proof preserves reasons and rows with one review event.
+- Takeaway: enumerate all consumers before declaring numerical coverage. Workbench attention tasks omit most PASS records; inspect detail checks to prove independent checks continue. Rerun timestamps legitimately change. A first E2E parse-page timeout was retained; isolated trace and full rerun passed, root cause remains unconfirmed.

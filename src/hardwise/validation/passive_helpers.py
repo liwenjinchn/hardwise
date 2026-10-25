@@ -61,6 +61,11 @@ def _value_check(
     parsed: bool,
     evidence: list[str],
 ) -> ComponentValidation:
+    missing_summary = (
+        f"Inductance value is unrecognized or numerically unavailable in '{value}'."
+        if label == "Inductance"
+        else f"{label} value could not be parsed deterministically from '{value}'."
+    )
     return ComponentValidation(
         check=check,
         result=result_for_attention("PASS" if parsed else "WARN", warning_result="UNKNOWN"),
@@ -70,7 +75,7 @@ def _value_check(
         summary=(
             f"{label} value was parsed from BOM/component value '{value}'."
             if parsed
-            else f"{label} value could not be parsed deterministically from '{value}'."
+            else missing_summary
         ),
         evidence=evidence,
     )
