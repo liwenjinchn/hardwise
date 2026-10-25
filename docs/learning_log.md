@@ -5724,3 +5724,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause：自动查询开关和手工HTTP候选路径原本独立，CLI与工厂默认True。
 - Fix：用户已选默认关闭；默认False且候选所有格式也检查开关，显式True才调用既有provider。CLI帮助/服务监听前日志与白色导入页分别显示接收服务和发送类别；不复用云AI确认。
 - Takeaway：验证“关闭”要在有合成key时同时检查被动详情和直接HTTP。新增页面读取浏览器快照需兼容静态服务端渲染测试：首次unit暴露window未定义，已在isOfflineWorkbench加typeof检查；旧CLI默认auto断言随用户选定合同改为off。初次失败日志保留，修正后再跑全量。
+
+
+## 2026-10-25 — 新模型字段未进入关系存储会静默丢条件
+
+- Symptom：XL1509的两条voltage_relations经真实档案CLI/SQLite存储并新进程读取后变成空列表；生产needs_review的两项UNKNOWN关系检查消失，合成ready副本的EN关系FAIL也消失。
+- Root cause：字段已加入DatasheetProfile，但DatasheetProfileRow、upsert和重建函数未覆盖；现有“all_fields”往返测试只检查无关系式的MPQ样例的部分字段。全部30个profile往返29相等/1丢字段，已有28项相关测试仍通过。
+- Fix status：尚未修复。已冻结反例、两个新增预期失败用例和F03合同草案，等待用户选择旧ready迁移方式，不默认为人工批准；不会把旧SQL的缺列简单当“已确认无关系”。
+- Takeaway：声明全字段往返需比完整model_dump并覆盖非空条件列表、更新/清空/重开及旧表迁移；存储成功和现有绿灯不等于条件完整。当前在线工作台走JSON档案，不把SQL往返失败泛化为已复现在线同样丢失。

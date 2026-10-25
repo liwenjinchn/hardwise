@@ -8,7 +8,7 @@ This is a pinned public source package for T08 target-machine validation. It is 
 uv run python scripts/build_validation_bundle.py --output /absolute/path/Hardwise-Windows-check.zip
 ```
 
-The supported source commit is `8938cf7108672f68147d9fe92ccdc59e05098a41`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 915 source/supplement files; the manifest itself is the 916th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
+The supported source commit is `3cda993cf9cbd799d019c7cb6c7fe0fea879bd10`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 923 source/supplement files; the manifest itself is the 924th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
 
 Extract to a normal directory. In native Windows PowerShell, from the extracted root:
 
