@@ -5600,3 +5600,12 @@ trusted scope and the exact conditions that remain unimplemented.
 - Fix: share the producer's pin selector and declare only the four known version-2 control observation scopes. Include resolved pin identity, control-net nodes, immediate neighbors and endpoint/reference facts. Unknown producers/versions retain the broad fallback. Existing component-local payloads remain identical. Persist the declared dependency contract in new run provenance; absent legacy fields remain null.
 - Verification: real SQLite old/new processes retain reasons through a one-time migration; repeated same-input runs add no duplicate event. Real white UI reruns retain waivers after a distant change and reopen the direct branch. Full Python 1477 passed/7 deselected; full browser 22 passed. Synthetic decisions are regression fixtures, not human approvals.
 - Takeaway: scope review validity to observed dependencies only after auditing the producer. Pin identity matters even when aliases share a net. Conservative neighbor snapshots still include metadata; this is not complete field-minimal A10 coverage or a control-function model.
+
+
+### 2026-10-25 — Storage instructions must distinguish three deliverables
+
+- Symptom: the findings page still required original paths after managed save/open existed; the journal/FAQ still claimed input ownership, backup/restore and full offline history were unavailable.
+- Root cause: later implementation packages appended correct descriptions without reconciling earlier current-use sections. The runtime had progressed beyond its usage contract.
+- Fix: reconcile findings copy, CLI help, journal and FAQ around journal-only decisions, explicitly saved owned inputs, frozen read-only reports and complete saved-project ZIPs. Keep legacy schema/downgrade and external-PDF boundaries explicit. Review-basis changes are now named alongside input changes.
+- Verification: 35 storage/offline/archive cases, full Python 1477 passed, 101 frontend tests and four real-browser lifecycle cases; live offline capture retained3 events with exact event/run/state tables unchanged. A white-page screenshot verifies the actual guidance. This is software behavior evidence, not target-environment acceptance.
+- Takeaway: new capability documentation must remove contradictory current instructions as well as add a new dated entry. Journal persistence, owned originals and offline reports are separate promises.

@@ -21,7 +21,7 @@ Raw snapshots preserve each logical source independently, including duplicate ba
 2. Journal v2 adds a managed project UUID, snapshot reference and typed reopen arguments. Explicit save adopts the existing review namespace as the durable key, preserving its history verbatim; the new managed UUID selects its saved sources. No association is guessed from names. Both remain stable after sidecar relocation. Loading reconstructs declared reader inputs and profile files in a private temporary tree, preserving relative source layout; external document links remain subject to the existing missing-source checks.
 3. Save/open/rerun endpoints serialize under the existing review lock. Candidate context must parse and verify before publish. Context cleanup must never remove owned snapshots. Existing legacy import continues working until explicit save adoption.
 4. Complete backup uses a consistent SQLite backup and only its referenced source snapshots; restore stages and validates before activation in a fresh destination, never overwrites a valid existing project. Reject traversal, symlinks, duplicate members, unknown versions, hash mismatch and missing members. Run IDs/history are retained; current code/rule changes still trigger normal re-review.
-5. Add save/open/backup/restore to the existing white frontend, generated API contracts and offline scope explanations; exercise the actual browser and independent-process lifecycle. Record exactly which evidence originals are included. Offline readiness contract remains a separate pending choice.
+5. Add save/open/backup/restore to the existing white frontend, generated API contracts and offline scope explanations; exercise the actual browser and independent-process lifecycle. Record exactly which evidence originals are included. Offline source-audit and original-delivery states are separate: export is allowed with missing originals and pending checks disclosed; external PDFs are not implicitly copied.
 
 ## Acceptance checks
 
@@ -85,7 +85,7 @@ Destination must be new; backup output must be new. Neither operation may write 
 
 Observed real CLI/HTTP experiment: backup from current public demo journal, restore to a fresh directory, then independently start --open-project without source paths/key/fake mode. The three prior history events and original NEEDS_REVIEW reason were retained. Original demo inputs/journal were preserved. Separate tests delete source and journal before restore, retain repeated saved versions, preserve local-pin waived reason, prove a concurrent later save cannot mix into the frozen catalog, reject damaged packages/existing targets and block interrupted restore.
 
-Archive backup/restore is available through both these local commands and the white page described below; restored copies remain separate from the current service. Full A09/M2 requires remaining source-publication/SQLite crash boundaries, all relevant rule-dependency acceptance and target environment proof; do not close the full product goal from these tests.
+Archive backup/restore is available through both these local commands and the white page described below; restored copies remain separate from the current service. The four save publication/SQLite process-exit boundaries below are covered locally. Full A09/M2 still requires the remaining input scopes, all relevant rule-dependency acceptance and target environment proof; do not close the full product goal from these tests.
 
 ## Browser archive operations
 

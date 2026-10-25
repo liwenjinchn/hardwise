@@ -31,7 +31,7 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
         review_db: Path | None = typer.Option(
             None,
             "--review-db",
-            help="Optional local SQLite reviewer journal; retain source inputs for restart recovery.",
+            help="Optional local SQLite reviewer journal; save the project to own source inputs for restart recovery.",
         ),
         open_project: str | None = typer.Option(
             None,

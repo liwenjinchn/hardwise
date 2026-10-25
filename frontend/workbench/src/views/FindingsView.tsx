@@ -68,15 +68,15 @@ export function FindingsView({
           <h2>问题清单与评审决策</h2>
           <p>
             当前显示 {groups.length} 个审查组，保留 {tasks.length} 条原始任务用于审计。
-            决策由后端保存，不改变确定性 PASS/WARN/ERROR。
+            人工决定由后端保存，不改变机器检查结果。
           </p>
             <p role="status">
               {offline
                 ? "离线只读快照：人工理由及已封存历史可查看；不能修改决定或重新运行。"
                 : reviewSummary?.storage === "local_file"
-                ? "人工决定已保存到本地评审文件；恢复时需要保留原输入文件及路径。"
+                ? "人工决定已保存到本地日志。在“导入”页保存项目后可保留原始输入供重开；搬迁时请携带输入目录或完整项目备份。"
                 : "人工决定仅保存在本次服务中；服务退出后不会自动恢复。"}
-              {reviewSummary?.needs_review ? ` ${reviewSummary.needs_review} 条旧决定因输入变化需要复核，原理由已保留。` : ""}
+              {reviewSummary?.needs_review ? ` ${reviewSummary.needs_review} 条旧决定因输入或评审依据更新需要复核，原理由已保留。` : ""}
             </p>
             {error && <p className="form-error" role="alert">{error}</p>}
 

@@ -344,10 +344,11 @@ describe("review decision recovery", () => {
     const html = renderToStaticMarkup(<FindingsView groups={state.review_groups} tasks={state.review_tasks}
       reviewSummary={{...state.review_decisions!, storage:"local_file", needs_review:1}}
       onDecision={async () => {}} onRerun={async () => {}} onOpenTask={() => {}} />);
-    expect(html).toContain("人工决定已保存到本地评审文件");
+    expect(html).toContain("人工决定已保存到本地日志");
+    expect(html).toContain("保存项目后可保留原始输入供重开");
     expect(html).toContain("评审 需复核");
     expect(html).toContain("保留先前工程理由");
-    expect(html).toContain("输入变化需要复核");
+    expect(html).toContain("输入或评审依据更新需要复核");
   });
 });
 
