@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 import shutil
 import sqlite3
 import tempfile
@@ -35,6 +36,7 @@ from hardwise.workbench.context import (
 from hardwise.workbench.context_manager import WorkbenchContextManager
 from hardwise.workbench.server_datasheet_candidates import (
     _attach_auto_datasheet_candidates,
+    DATASHEET_QUERY_DISCLOSURE,
     _datasheets_api_key,
 )
 from hardwise.workbench.server_io import (
@@ -94,10 +96,12 @@ def create_workbench_app(
     document_index: Path | None = None,
     pin_table: Path | None = None,
     review_package_manifest: Path | None = None,
-    auto_datasheet_candidates: bool = True,
+    auto_datasheet_candidates: bool = False,
     review_db: Path | None = None,
 ) -> FastAPI:
-    """Create the local live workbench app."""
+    """Create the workbench; explicit query opt-in discloses its outbound boundary."""
+    if auto_datasheet_candidates:
+        logging.getLogger(__name__).warning(DATASHEET_QUERY_DISCLOSURE)
 
     context_manager = WorkbenchContextManager(context)
     review_decisions = ReviewDecisionStore(review_db)
@@ -339,6 +343,13 @@ def create_workbench_app(
         page: int = Query(1, ge=1),
         timeout_seconds: int = Query(20, ge=1, le=60, alias="timeout"),
     ) -> Response:
+        if not auto_datasheet_candidates:
+            raise HTTPException(
+                status_code=403,
+                detail="资料联网查询已关闭；需显式启用 --auto-datasheet-candidates。"
+                "启用后将向 https://www.datasheets.com/api/v1/search 发送器件型号/标识、"
+                "limit/page及资料服务认证；不上传设计原文件。此设置独立于云AI确认。",
+            )
         context = current_context["value"]
         packet = build_datasheet_candidate_search_packet(
             context,

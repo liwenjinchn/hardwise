@@ -5716,3 +5716,11 @@ trusted scope and the exact conditions that remain unimplemented.
 - Root cause：展示和延迟初始化分别读取可变环境，且只检查提问而未绑定当前输入上下文。
 - Fix：服务构建时加载dotenv一次；冻结实际SDK参数/模型路由，服务端HMAC绑定完整配置/来源/版本，Runner前检查；页面内存确认与发送前刷新。配置变化更换延迟客户端，GET不初始化SDK。
 - Takeaway：显示去敏地址、冻结实际参数和后端门槛需一起验证。测试继承的备用认证环境曾进入失败断言日志，已脱敏输出并显式清除测试AUTH_TOKEN/CUSTOM_HEADERS；只设置主API key不足以隔离测试秘密。浏览器截图初帧会有进入动画透明度，需检查稳定帧；浏览器脚本VM不支持动态import，公开fixture改为明确传入字节后复验，原失败证据保留。
+
+
+## 2026-10-25 — 默认关闭必须同时覆盖详情和直接候选接口
+
+- Symptom：只关闭详情自动补候选仍可通过直接候选GET调用资料服务，带服务key的配置会产生用户未预期的型号外发。
+- Root cause：自动查询开关和手工HTTP候选路径原本独立，CLI与工厂默认True。
+- Fix：用户已选默认关闭；默认False且候选所有格式也检查开关，显式True才调用既有provider。CLI帮助/服务监听前日志与白色导入页分别显示接收服务和发送类别；不复用云AI确认。
+- Takeaway：验证“关闭”要在有合成key时同时检查被动详情和直接HTTP。新增页面读取浏览器快照需兼容静态服务端渲染测试：首次unit暴露window未定义，已在isOfflineWorkbench加typeof检查；旧CLI默认auto断言随用户选定合同改为off。初次失败日志保留，修正后再跑全量。

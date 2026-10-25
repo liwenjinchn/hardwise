@@ -8,7 +8,7 @@ import {
   Play,
   UploadCloud
 } from "lucide-react";
-import { importWorkbench } from "../api";
+import { importWorkbench, isOfflineWorkbench } from "../api";
 import { EvidencePackageDashboard } from "../components/EvidencePackageDashboard";
 import { SavedProjects } from "../components/SavedProjects";
 import type { ImportResponse, WorkbenchState } from "../types";
@@ -61,6 +61,13 @@ export function ImportView({
   return (
     <section className="flow-page import-page">
       {onOpened && <SavedProjects key={state.review_decisions?.run_id} state={state} onOpened={onOpened} />}
+      <section className="current-snapshot" aria-label="资料联网查询设置">
+        <strong>器件资料联网查询：{isOfflineWorkbench() ? "离线快照，不查询" : state.capabilities.datasheet_candidate_lookup_enabled ? "已显式启用" : "已关闭（默认）"}</strong>
+        <p>接收服务：https://www.datasheets.com/api/v1/search。启用后，打开缺资料的器件详情或请求候选时，
+          会发送器件型号/标识搜索词、limit/page和资料服务认证；不上传网表或BOM原文件，不自动下载PDF。</p>
+        <p>资料候选需核对，不构成工程批准；资料查询与云AI分别启用。
+          {!isOfflineWorkbench() && !state.capabilities.datasheet_candidate_lookup_enabled && <>启用需在服务启动时明确添加 <code>--auto-datasheet-candidates</code>；关闭后重新启动可停止后续查询。</>}</p>
+      </section>
       <div className="flow-copy">
         <span className="eyebrow">Import</span>
         <h2>上传 netlist / BOM，重建当前工作台</h2>

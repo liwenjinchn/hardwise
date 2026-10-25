@@ -93,11 +93,13 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
             ),
         ),
         auto_datasheet_candidates: bool = typer.Option(
-            True,
+            False,
             "--auto-datasheet-candidates/--no-auto-datasheet-candidates",
             help=(
-                "On component detail views, query Datasheets.com for MPN-like missing "
-                "document candidates. This never downloads PDFs or changes validation verdicts."
+                "Disabled by default. Explicitly enable sending component MPN/identity queries "
+                "to https://www.datasheets.com/api/v1/search when opening missing-document "
+                "details or requesting candidates. Sends query/limit/page and the service key; "
+                "does not upload design files, download PDFs, or change validation verdicts."
             ),
         ),
         dry_run: bool = typer.Option(
@@ -120,6 +122,10 @@ def register_workbench_server_commands(app: typer.Typer) -> None:
             typer.echo(f"error: tier must be fast|normal|deep, got {tier!r}", err=True)
             raise typer.Exit(1)
 
+        if auto_datasheet_candidates:
+            from hardwise.workbench.server_datasheet_candidates import DATASHEET_QUERY_DISCLOSURE
+
+            typer.echo(DATASHEET_QUERY_DISCLOSURE)
         load_dotenv(override=True)
         with ExitStack() as resources:
             try:

@@ -18,6 +18,13 @@ from hardwise.workbench.view_model import (
 )
 
 
+DATASHEET_QUERY_DISCLOSURE = (
+    "已显式启用资料联网查询：接收服务 https://www.datasheets.com/api/v1/search；"
+    "打开缺资料的器件详情或请求候选时，会发送器件型号/标识搜索词、limit/page及资料服务认证。"
+    "不上传网表/BOM原文件，不自动下载PDF；候选资料不构成工程批准。此设置独立于云AI确认。"
+)
+
+
 def _attach_auto_datasheet_candidates(
     context: WorkbenchContext,
     detail: ComponentDetail,

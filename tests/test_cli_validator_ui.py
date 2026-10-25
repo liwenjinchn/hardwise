@@ -721,7 +721,7 @@ def test_serve_workbench_fake_ai_dry_run_does_not_require_api_key() -> None:
     assert "serve-workbench:" in result.output
     assert "mode=fake" in result.output
     assert "validated=21" in result.output
-    assert "datasheet-candidates=auto" in result.output
+    assert "datasheet-candidates=off" in result.output
 
 
 def test_serve_workbench_fake_ai_dry_run_accepts_document_index(tmp_path: Path) -> None:

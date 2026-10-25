@@ -786,7 +786,9 @@ def test_workbench_datasheet_candidate_search_returns_reviewable_candidates(
     )
 
     try:
-        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        client = TestClient(
+            create_workbench_app(context, DummyChatService(), auto_datasheet_candidates=True)
+        )  # type: ignore[arg-type]
         json_response = client.get(
             "/api/workbench/profile-gaps/15/datasheet-candidates?format=json&limit=3&timeout=4"
         )
@@ -854,7 +856,9 @@ def test_workbench_datasheet_candidate_search_fails_closed_without_api_key(
     )
 
     try:
-        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        client = TestClient(
+            create_workbench_app(context, DummyChatService(), auto_datasheet_candidates=True)
+        )  # type: ignore[arg-type]
         response = client.get("/api/workbench/profile-gaps/15/datasheet-candidates")
         miss = client.get("/api/workbench/profile-gaps/999/datasheet-candidates")
 
@@ -897,7 +901,9 @@ def test_workbench_component_detail_auto_attaches_mpn_candidate_status(
     )
 
     try:
-        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        client = TestClient(
+            create_workbench_app(context, DummyChatService(), auto_datasheet_candidates=True)
+        )  # type: ignore[arg-type]
         response = client.get("/api/workbench/components/Q12")
         state = client.get("/api/workbench/state")
 
@@ -988,7 +994,9 @@ def test_workbench_component_detail_skips_auto_candidate_lookup_for_passive_valu
     )
 
     try:
-        client = TestClient(create_workbench_app(context, DummyChatService()))  # type: ignore[arg-type]
+        client = TestClient(
+            create_workbench_app(context, DummyChatService(), auto_datasheet_candidates=True)
+        )  # type: ignore[arg-type]
         response = client.get("/api/workbench/components/C1")
 
         assert response.status_code == 200

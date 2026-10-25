@@ -49,7 +49,7 @@
 
 同轮核对发现，serve-workbench CLI和create_workbench_app的auto_datasheet_candidates默认均为True。配置Datasheets key后，打开缺文档器件详情会调用Datasheets.com查询型号，无需聊天。公开Q12样例真实HTTP/候选构建路径、本地注入provider复现：缺省设置查询SS8050一次，显式False查询0；无真实provider调用，未使用真实key。证据current-default-datasheet-boundary.json。
 
-这是资料服务查询，不是模型调用，数据范围也不同，不能由“未点击聊天”推断未联网。现有Windows复验包和无key工作流已经显式--no-auto-datasheet-candidates，不受该默认触发。完整产品本地默认仍须审查此入口：建议缺省关闭，显式启用时说明接收服务/型号查询；具体落地时与用户选定的AI方案分别测试，不将一个确认标识隐式复用为两个服务授权。此次仅留证，不擅自更改已有默认行为；也不向真实服务查询。
+这是资料服务查询，不是模型调用，数据范围也不同，不能由“未点击聊天”推断未联网。现有Windows复验包和无key工作流已经显式--no-auto-datasheet-candidates，不受该默认触发。完整产品本地默认仍须审查此入口：建议缺省关闭，显式启用时说明接收服务/型号查询；具体落地时与用户选定的AI方案分别测试，不将一个确认标识隐式复用为两个服务授权。用户随后选择默认关闭，第60包按[资料查询设置合同](datasheet-query-default-v1.md)实施；两项设置互相独立，不向真实服务查询。
 
 
 ## 第59包本机复验

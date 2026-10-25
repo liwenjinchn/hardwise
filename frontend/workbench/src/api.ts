@@ -165,6 +165,8 @@ export async function fetchProjectPrepPacketMarkdown(): Promise<string> {
   return response.text();
 }
 
+export function isOfflineWorkbench(): boolean { return typeof window !== "undefined" && Boolean(offlineSnapshot()); }
+
 export function fetchAIDisclosure(): Promise<AIDisclosure> {
   if (offlineSnapshot()) return Promise.resolve({
     version: "hardwise.ai_disclosure.v1", mode: "snapshot", available: true,
