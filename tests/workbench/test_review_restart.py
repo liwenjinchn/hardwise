@@ -374,3 +374,45 @@ def test_history_read_failure_is_retryable_without_modifying_decisions(tmp_path,
         monkeypatch.setattr(DecisionJournal, "history_page", fail_read)
         assert client.get("/api/workbench/review-decisions/history").status_code == 503
         assert client.get("/api/workbench/state").json() == state
+
+
+@pytest.mark.parametrize("refdes", ["C1", "U1"])
+@pytest.mark.parametrize("change", ["row_order", "quantity"])
+def test_administrative_bom_changes_keep_audited_electrical_decisions(tmp_path, refdes, change):
+    _inputs(tmp_path)
+    with TestClient(_app(tmp_path)) as client:
+        task = _waive(client, refdes)
+        initial = client.get("/api/workbench/state").json()
+        ids = initial["review_decisions"]
+        old_manifest = client.get(f"/api/workbench/review-runs/{ids['run_id']}/provenance").json()[
+            "provenance"
+        ]["inputs"]["readset_sha256"]
+    path = tmp_path / "l78_regulator_bom.csv"
+    body = path.read_text()
+    if change == "row_order":
+        lines = body.splitlines()
+        body = "\n".join([lines[0], *reversed(lines[1:])]) + "\n"
+    elif refdes == "U1":
+        body = body.replace("U1,1,", "U1,2,")
+    else:
+        body = body.replace('"C1 C2",2,', '"C1 C2",3,')
+    assert body != path.read_text()
+    path.write_text(body)
+    with TestClient(_app(tmp_path)) as client:
+        state = client.get("/api/workbench/state").json()
+        current = next(t for t in state["review_tasks"] if t["stable_key"] == task["stable_key"])
+        assert current["assessment"] == task["assessment"]
+        assert current["body"] == task["body"]
+        assert state["summary"] == initial["summary"]
+        assert (
+            current["review_decision"]
+            == next(t for t in initial["review_tasks"] if t["stable_key"] == task["stable_key"])[
+                "review_decision"
+            ]
+        )
+        assert state["review_decisions"]["history_count"] == 1
+        manifest = client.get(
+            f"/api/workbench/review-runs/{state['review_decisions']['run_id']}/provenance"
+        ).json()["provenance"]
+        assert manifest["inputs"]["readset_sha256"] != old_manifest
+        assert manifest["review_dependency_contract"] == "hardwise.review_dependencies.v3"

@@ -8,7 +8,7 @@ from hardwise.validation.passive_ratings import resolve_passive_rating
 from hardwise.bom.source_fields import RATING_SOURCES
 from hardwise.workbench.control_dependencies import control_dependency_payload, local_voltage_facts
 
-REVIEW_DEPENDENCY_CONTRACT = "hardwise.review_dependencies.v2"
+REVIEW_DEPENDENCY_CONTRACT = "hardwise.review_dependencies.v3"
 
 RATING_CHECKS = {
     "capacitor_rated_voltage_parse": "voltage",
@@ -67,6 +67,18 @@ def _component(component):
             {record["value"].strip().casefold() for record in records}
         )
     data["pins"] = sorted(data["pins"], key=lambda p: p["number"])
+    return data
+
+
+def _electrical_component(component):
+    """Only audited local/control producers ignore administrative BOM metadata.
+
+    Keep the broad fallback snapshot intact: unknown rules may depend on quantity.
+    Original fields and raw-input manifests remain available outside this hash.
+    """
+    data = _component(component)
+    for field in ("BOM_ITEM", "BOM_ITEM_QUANTITY"):
+        data["properties"].pop(field, None)
     return data
 
 
@@ -131,7 +143,7 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
         if local and component:
             payload = {
                 "scope": "component",
-                "component": _component(component),
+                "component": _electrical_component(component),
                 "profile": profiles.get(task.refdes),
                 "active_mode": design.voltage_facts.active_mode,
                 "facts": local_voltage_facts(design, component),
@@ -142,7 +154,7 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
                 )
         else:
             payload = control_dependency_payload(
-                context, task, _component, profiles.get(task.refdes)
+                context, task, _electrical_component, profiles.get(task.refdes)
             )
             if payload is None:
                 payload = {"scope": "project_snapshot", "snapshot": broad_hash}

@@ -297,3 +297,46 @@ def test_changed_observed_pin_alias_is_not_erased_by_pin_sorting(circuit):
     assert original.assessment == current.assessment
     assert original.evidence_chain != current.evidence_chain
     assert after != before
+
+
+@pytest.mark.parametrize("change", ["row_order", "owner_quantity", "neighbor_quantity"])
+def test_control_observation_ignores_only_audited_administrative_fields(circuit, change):
+    before, task_before = _fingerprint(circuit)
+    path = circuit[0] / "public.csv"
+    with path.open(newline="") as stream:
+        rows = list(csv.reader(stream))
+    if change == "row_order":
+        rows[1:] = reversed(rows[1:])
+    else:
+        target = "U1" if change == "owner_quantity" else "R1"
+        next(row for row in rows[1:] if row[0] == target)[1] = "7"
+    with path.open("w", newline="") as stream:
+        csv.writer(stream).writerows(rows)
+    after, task_after = _fingerprint(circuit)
+    assert task_after.assessment == task_before.assessment
+    assert task_after.body == task_before.body
+    assert after == before
+
+
+@pytest.mark.parametrize("future", ["new_check", "new_version"])
+def test_unaudited_controls_keep_bom_quantity_in_the_conservative_scope(circuit, future):
+    def fingerprint():
+        context, task = _build(circuit)
+        try:
+            custom = (
+                task.model_copy(update={"check": task.check + "_future"})
+                if future == "new_check"
+                else task.model_copy(
+                    update={
+                        "assessment": task.assessment.model_copy(update={"rule_version": "next"})
+                    }
+                )
+            )
+            return review_fingerprints(context, [custom])[custom.stable_key]
+        finally:
+            close_workbench_context(context)
+
+    before = fingerprint()
+    path = circuit[0] / "public.csv"
+    path.write_text(path.read_text().replace("U1,1,", "U1,7,"))
+    assert fingerprint() != before
