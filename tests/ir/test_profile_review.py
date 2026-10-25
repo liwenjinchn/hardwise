@@ -53,6 +53,7 @@ def synthetic_profile():
         )
         decision = FieldDecision(
             decision="approved",
+            actor="human",  # simulated declaration; never actual human acceptance
             reviewer="AUTOMATED SYNTHETIC RECORD - NOT HUMAN APPROVAL",
             reviewed_at="2026-10-25T00:00:00Z",
             reason="Test mechanics only",
@@ -244,5 +245,49 @@ def test_python_model_dump_roundtrip_retains_review_timestamp():
 def test_whitespace_only_review_declaration_rejected(name):
     data = synthetic_profile().field_review.fields[-1].decisions[-1].model_dump(mode="json")
     data[name] = "   "
+    with pytest.raises(ValidationError):
+        FieldDecision.model_validate(data)
+
+
+def test_top_level_evidence_changes_also_require_review():
+    ready = ready_profile()
+    changed = ready.model_copy(update={"evidence": {"abs_max.vin": "datasheet:other.pdf#p1"}})
+    assert changed.lifecycle == "DRAFT"
+
+
+def test_wrong_subject_cannot_be_approved_even_with_fresh_digest():
+    profile = ready_profile()
+    review = profile.field_review
+    field = review.fields[-1]
+    field = field.model_copy(update={"subject": "OTHER-DEVICE"})
+    field = field.model_copy(
+        update={
+            "decisions": [
+                field.decisions[-1].model_copy(
+                    update={"content_sha256": field.content_hash(review.identity)}
+                )
+            ]
+        }
+    )
+    changed = profile.model_copy(
+        update={"field_review": review.model_copy(update={"fields": [*review.fields[:-1], field]})}
+    )
+    assert changed.lifecycle == "DRAFT"
+
+
+def test_boolean_page_locator_rejected():
+    data = synthetic_profile().field_review.fields[-1].source.model_dump(mode="json")
+    data["page"] = True
+    with pytest.raises(ValidationError):
+        FieldSource.model_validate(data)
+
+
+@pytest.mark.parametrize("actor", [None, "ai"])
+def test_human_actor_is_explicit_never_inferred_from_missing_marker(actor):
+    data = synthetic_profile().field_review.fields[-1].decisions[-1].model_dump(mode="json")
+    if actor is None:
+        data.pop("actor")
+    else:
+        data["actor"] = actor
     with pytest.raises(ValidationError):
         FieldDecision.model_validate(data)

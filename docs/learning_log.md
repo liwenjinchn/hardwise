@@ -5739,3 +5739,7 @@ trusted scope and the exact conditions that remain unimplemented.
 - Fix for 61：SQL新增可空完整profile_json列，新行由完整模型序列化/反序列化，原来两条关系式不再丢失；旧行不覆盖，缺完整合同标legacy_incomplete，有效DRAFT。损坏完整/旧JSON和索引身份错配均拒绝，不以空对象吞掉错误。增列代码独立profile_schema模块，保留原pin-alias增列。
 - Verification：全部30档案完整model_dump往返，关系式更新/清空/重新打开、旧表原行无损、实际CLI新进程2关系式保留；第61两个红反例转绿。初次旧库测试误用12个占位符对应11列，已修正测试建库而不改迁移语义，失败日志保留。
 - New boundary：逐字段内容哈希和人审声明可验证失配，但不能证明人已阅读；旧标签保留与有效DRAFT区别明确。先建立模型/存储不等于正式validator已切换，阶段交付需标清未接入的消费者，继续全链路迁移。
+
+
+- 第62包追加：发现顶层evidence定位原未纳入字段叶子覆盖，已加入；声明主体须与实际pin/关系式匹配，human标记改为必须显式填写，locator页码不接受bool。全量1658通过；不以此代替消费者迁移。
+- 文档事故：脚本复用p/s后多余的write_text把execution.md误写为验收台账。已从107e5e1恢复完整字节前缀并单独提交纠正，校验SHA/prefix；后续新增执行记录使用指定路径追加，原SQLite工程日志未触碰。

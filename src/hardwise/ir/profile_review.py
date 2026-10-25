@@ -54,7 +54,7 @@ class FieldSource(BaseModel):
     url: str = Field(pattern=r"^https?://[^\s]+$")
     document_revision: str = Field(min_length=1)
     document_sha256: str = Field(pattern=SHA256)
-    page: int = Field(ge=1)
+    page: int = Field(ge=1, strict=True)
     locator: str = Field(min_length=1)
     excerpt: str = Field(min_length=1)
 
@@ -72,7 +72,7 @@ class FieldDecision(BaseModel):
     reviewed_at: AwareDatetime
     reason: str = Field(min_length=1)
     content_sha256: str = Field(pattern=SHA256)
-    actor: Literal["human"] = "human"
+    actor: Literal["human"]
 
     @field_validator("reviewed_at", mode="before")
     @classmethod
@@ -153,6 +153,7 @@ def profile_values(profile) -> dict[str, object]:
             "pin_function",
             "pins",
             "voltage_relations",
+            "evidence",
         },
     )
     values = {}
@@ -178,6 +179,18 @@ def same_value(first, second):
         return False
 
 
+def expected_subject(profile, pointer):
+    parts = pointer.split("/")
+    if len(parts) > 2 and parts[1] == "pins":
+        return f"pin:{profile.pins[int(parts[2])].number}"
+    if len(parts) > 2 and parts[1] == "pin_function":
+        return f"pin:{parts[2]}"
+    if len(parts) > 2 and parts[1] == "voltage_relations":
+        relation = profile.voltage_relations[int(parts[2])]
+        return f"pin:{relation.target_pin}->pin:{relation.supply_pin}@pin:{relation.ground_pin}"
+    return profile.part_number
+
+
 def approval_problems(profile) -> list[str]:
     review = profile.field_review
     if review is None:
@@ -193,6 +206,8 @@ def approval_problems(profile) -> list[str]:
             problems.append(f"{pointer}: 缺少匹配当前值的字段声明。")
         elif not field.approved(review.identity):
             problems.append(f"{pointer}: 缺少匹配当前内容与来源的人工批准。")
+        elif field.subject != expected_subject(profile, pointer):
+            problems.append(f"{pointer}: 批准主体与档案/引脚关系不一致。")
         elif problem := declaration_problem(field):
             problems.append(f"{pointer}: {problem}")
     for pointer in fields.keys() - values.keys():
