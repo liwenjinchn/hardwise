@@ -749,3 +749,12 @@ Each implementation commit records exact commands and outputs below. Passing reg
 范围：单工作台进程内真正同时到达的HTTP请求与新进程恢复，不证明多服务器协同写入、真实工程批准、Windows/Cadence或无限负载。原用户日志和冻结包未使用；未修改运行代码。F01/F05仍partial，真实工程来源/工况主审与目标机未验。详细请求、胜出结果及恢复证明在任务输出Hardwise-并发验收77/race-results.json和recovery-proof.json。F04、F06各自方案待答，不据此推定选择。
 
 第77文档提交前完整1790passed/7deselected/7既有刻意坏值warnings70.50s，Ruff/diff通过；未重跑frontend unit/E2E。原用户日志6事件36运行、10managed/4logicalhash及10冻结ZIP均保持不变。独立演练18783进程已正常退出，未占用原主入口。
+
+
+### 2026-10-26 — 第79结构化声明合同基础（F04路线A已选）
+
+- 上轮35c29e0真实并发/恢复证据为progress。本轮先完成输入支持核查20case并保存在任务输出Hardwise-输入支持78：.net UTF8BOM拒绝、PST/BOM坏UTF8替换后接受、PST单文件浏览器400等实测，未改导入合同或宣传真实Cadence支持。随后收到用户明确选择F04完整结构化解释/证据绑定，按该路线实施，不再等待/重复询问F04；F06独立待答。
+- 新增agent/claim_contract纯绑定核验基础和45新测试。事实绑定对象/属性/值/单位/全条件与已知状态/来源/规则，id包含本回合scope/toolcall及完整内容。核验只返回匹配的服务端facts，拒绝的值/自由签核不回显；unknownconditions不认证。typed补资料请求仅已知对象/有界topic，不自授signoff。digest仅内容一致性、非认证或真实批准。
+- 严格JSON/未知字段/重复键/非有限/深层与长payload保护，mixedtrue/false分别核、旧回合不借用；nestedmutation检测和源字典拷贝。45专项通过。本模块尚未接入Runner/ChatService/API/whiteUI，不能声称第76签核漏洞已修；完整实施顺序在output-contract-plan-v1.md，不能缩成只修负查询。原档案/日志/冻结包不动、无模型网络或真实批准，goalactiveNOT_COMPLETE，no push。
+
+第79提交前完整1835passed/7deselected/7既有刻意坏值warnings64.22s，45新增专项0.14s；Ruff/diff通过。当前模块未导入Runner/API，因此不变更前端typed契约/static，未重跑UIunit/E2E，也未复用为F04端到端修复证据。
