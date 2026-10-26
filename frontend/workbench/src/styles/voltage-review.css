@@ -20,3 +20,14 @@
 .voltage-review details { border-top: 1px solid #dcd5c8; padding-top: 12px; font-size: 12px; }
 .voltage-review :disabled { opacity: .55; cursor: not-allowed; }
 @media(max-width:850px) { .voltage-scopes,.voltage-metadata,.voltage-form-grid { grid-template-columns: minmax(0,1fr); } }
+
+.excerpt-review { min-width: 0; }
+.excerpt-review h4, .excerpt-current { overflow-wrap: anywhere; }
+.excerpt-review fieldset { min-width: 0; margin: 14px 0; border: 1px solid var(--border, #dbe2ea); border-radius: 8px; padding: 14px; }
+.excerpt-review label { display: grid; gap: 6px; }
+.excerpt-review input, .excerpt-review select, .excerpt-review textarea { max-width: 100%; min-width: 0; font: inherit; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; }
+.excerpt-review textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.excerpt-review input[type="checkbox"] { width: auto; justify-self: start; }
+.excerpt-current { padding: 10px 14px; background: #f5f7fa; border-radius: 8px; }
+.excerpt-current blockquote { white-space: pre-wrap; margin: 10px 0; padding-left: 12px; border-left: 3px solid #9ca3af; }
+.excerpt-editor .primary-action { margin-top: 14px; }

@@ -9,6 +9,7 @@ import {
   UploadCloud
 } from "lucide-react";
 import { importWorkbench, isOfflineWorkbench } from "../api";
+import { ExcerptReview } from "../components/ExcerptReview";
 import { VoltageReview } from "../components/VoltageReview";
 import { EvidencePackageDashboard } from "../components/EvidencePackageDashboard";
 import { SavedProjects } from "../components/SavedProjects";
@@ -166,6 +167,7 @@ export function ImportView({
           待复核历史记录 {state.assessment_coverage.legacy_needs_review}。</p>
         <p>{state.assessment_coverage.boundary}</p>
       </section>}
+      {onFactsUpdated && <ExcerptReview state={state} onUpdated={onFactsUpdated} />}
       {onFactsUpdated && <VoltageReview key={state.review_decisions?.project_id} state={state} onUpdated={onFactsUpdated} />}
       <section className="current-snapshot" aria-label="当前电压确认记录">
         <strong>电压事实 · 工况 {state.voltage_facts.active_mode}</strong>

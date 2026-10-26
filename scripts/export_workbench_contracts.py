@@ -9,6 +9,7 @@ from pathlib import Path
 from pydantic import create_model
 
 from hardwise.workbench.api_contracts import ImportResponse
+from hardwise.workbench.excerpt_routes import ExcerptRequest, ExcerptResponse
 from hardwise.workbench.voltage_review_routes import (
     VoltageBatchRequest,
     VoltageReviewResponse,
@@ -39,6 +40,8 @@ def _require_serialized_response_fields(schema: dict[str, object]) -> None:
         properties = definition.get("properties")
         if isinstance(properties, dict):
             definition["required"] = sorted(properties)
+            if name in {"FieldSource", "ManualSource"}:
+                definition["required"].remove("sharing")
             # These fields are omitted on old/v1-input runs or unedited ledgers
             # via exclude_if. Do not promise keys the API does not emit.
             if name in {
@@ -71,6 +74,8 @@ def main() -> None:
         saved_project_catalog=(SavedProjectCatalog, ...),
         project_restore=(ProjectRestoreReceipt, ...),
         chat_request=(ChatRequest, ...),
+        excerpt_request=(ExcerptRequest, ...),
+        excerpts=(ExcerptResponse, ...),
         voltage_batch_request=(VoltageBatchRequest, ...),
         voltage_candidates_request=(VoltageCandidatesRequest, ...),
         voltage_review=(VoltageReviewResponse, ...),

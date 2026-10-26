@@ -9,7 +9,9 @@ from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from hardwise.ir.excerpt_edits import ExcerptEdit, apply_excerpt_edit
-from hardwise.ir.profile_review import profile_values
+from hardwise.ir.profile import DatasheetProfile
+from hardwise.ir.excerpt_sharing import sharing_status
+from hardwise.ir.profile_review import profile_values, Lifecycle
 from hardwise.workbench.context import close_workbench_context
 from hardwise.workbench.decision_fingerprints import review_project_key, review_fingerprints
 from hardwise.workbench.decision_journal import ReviewConflictError
@@ -26,6 +28,23 @@ class ExcerptRequest(BaseModel):
     expected_revision: str = Field(pattern=r"^[0-9a-f]{64}$")
     profile_name: str = Field(min_length=1, max_length=256)
     edit: ExcerptEdit
+
+
+class ExcerptProfileView(BaseModel):
+    name: str
+    lifecycle: Lifecycle
+    profile: DatasheetProfile
+    values: dict[str, object]
+    sharing_states: dict[str, str]
+
+
+class ExcerptResponse(BaseModel):
+    project_id: str
+    run_id: str
+    revision: str
+    editable: bool
+    saved_project_id: str | None
+    profiles: list[ExcerptProfileView]
 
 
 def register_excerpt_routes(app, *, journal, manager, lock, decisions, chat_service):
@@ -45,12 +64,17 @@ def register_excerpt_routes(app, *, journal, manager, lock, decisions, chat_serv
                     lifecycle=p.lifecycle,
                     profile=p.model_dump(mode="json"),
                     values=profile_values(p),
+                    sharing_states={
+                        f.pointer: sharing_status(f.source) for f in p.field_review.fields
+                    }
+                    if p.field_review
+                    else {},
                 )
                 for name, (_, p) in profiles.items()
             ],
         )
 
-    @app.get("/api/workbench/excerpts")
+    @app.get("/api/workbench/excerpts", response_model=ExcerptResponse)
     def get_excerpts():
         with lock, manager.lease() as context:
             try:
@@ -58,7 +82,7 @@ def register_excerpt_routes(app, *, journal, manager, lock, decisions, chat_serv
             except (OSError, ValueError) as exc:
                 raise HTTPException(409, "Sources changed; reload before editing") from exc
 
-    @app.post("/api/workbench/excerpts")
+    @app.post("/api/workbench/excerpts", response_model=ExcerptResponse)
     def save_excerpt(request: ExcerptRequest):
         if store is None:
             raise HTTPException(400, "Excerpt editing requires a local --review-db journal")

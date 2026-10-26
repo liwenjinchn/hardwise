@@ -1150,6 +1150,144 @@
       "title": "DatasheetCandidateView",
       "type": "object"
     },
+    "DatasheetProfile": {
+      "description": "Structured electrical limits extracted from one datasheet.",
+      "properties": {
+        "abs_max": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Abs Max",
+          "type": "object"
+        },
+        "evidence": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "object"
+        },
+        "extracted_at": {
+          "title": "Extracted At",
+          "type": "string"
+        },
+        "extracted_model": {
+          "title": "Extracted Model",
+          "type": "string"
+        },
+        "field_review": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProfileReview"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "part_number": {
+          "title": "Part Number",
+          "type": "string"
+        },
+        "part_number_aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Part Number Aliases",
+          "type": "array"
+        },
+        "pin_function": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Pin Function",
+          "type": "object"
+        },
+        "pins": {
+          "items": {
+            "$ref": "#/$defs/PinProfile"
+          },
+          "title": "Pins",
+          "type": "array"
+        },
+        "recommended": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Recommended",
+          "type": "object"
+        },
+        "review_status": {
+          "default": "needs_review",
+          "enum": [
+            "ready",
+            "needs_review"
+          ],
+          "title": "Review Status",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": "v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "storage_integrity": {
+          "default": "complete",
+          "enum": [
+            "complete",
+            "legacy_incomplete"
+          ],
+          "title": "Storage Integrity",
+          "type": "string"
+        },
+        "voltage_relations": {
+          "items": {
+            "$ref": "#/$defs/PinVoltageRelation"
+          },
+          "title": "Voltage Relations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "abs_max",
+        "evidence",
+        "extracted_at",
+        "extracted_model",
+        "field_review",
+        "part_number",
+        "part_number_aliases",
+        "pin_function",
+        "pins",
+        "recommended",
+        "review_status",
+        "schema_version",
+        "storage_integrity",
+        "voltage_relations"
+      ],
+      "title": "DatasheetProfile",
+      "type": "object"
+    },
     "DocumentCoverageView": {
       "description": "Document-index coverage for one component's BOM identity.",
       "properties": {
@@ -1931,6 +2069,280 @@
       "title": "EvidenceView",
       "type": "object"
     },
+    "ExcerptEdit": {
+      "additionalProperties": false,
+      "properties": {
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/FieldCondition"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Conditions",
+          "type": "array"
+        },
+        "declared_by": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Declared By",
+          "type": "string"
+        },
+        "identity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReviewIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "nature": {
+          "enum": [
+            "intrinsic",
+            "application_recommendation",
+            "board_policy"
+          ],
+          "title": "Nature",
+          "type": "string"
+        },
+        "pointer": {
+          "maxLength": 2000,
+          "pattern": "^/",
+          "title": "Pointer",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "identity",
+            "minimum",
+            "typical",
+            "maximum",
+            "definition",
+            "relationship"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sharing": {
+          "enum": [
+            "allow",
+            "withhold"
+          ],
+          "title": "Sharing",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/ManualSource"
+        },
+        "unit": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "conditions",
+        "declared_by",
+        "identity",
+        "nature",
+        "pointer",
+        "reason",
+        "role",
+        "sharing",
+        "source",
+        "unit"
+      ],
+      "title": "ExcerptEdit",
+      "type": "object"
+    },
+    "ExcerptProfileView": {
+      "properties": {
+        "lifecycle": {
+          "enum": [
+            "DRAFT",
+            "REVIEWED",
+            "READY",
+            "RETIRED"
+          ],
+          "title": "Lifecycle",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "profile": {
+          "$ref": "#/$defs/DatasheetProfile"
+        },
+        "sharing_states": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Sharing States",
+          "type": "object"
+        },
+        "values": {
+          "additionalProperties": true,
+          "title": "Values",
+          "type": "object"
+        }
+      },
+      "required": [
+        "lifecycle",
+        "name",
+        "profile",
+        "sharing_states",
+        "values"
+      ],
+      "title": "ExcerptProfileView",
+      "type": "object"
+    },
+    "ExcerptRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "edit": {
+          "$ref": "#/$defs/ExcerptEdit"
+        },
+        "expected_project_id": {
+          "minLength": 1,
+          "title": "Expected Project Id",
+          "type": "string"
+        },
+        "expected_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expected Revision",
+          "type": "string"
+        },
+        "expected_run_id": {
+          "minLength": 1,
+          "title": "Expected Run Id",
+          "type": "string"
+        },
+        "profile_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Profile Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "edit",
+        "expected_project_id",
+        "expected_revision",
+        "expected_run_id",
+        "profile_name"
+      ],
+      "title": "ExcerptRequest",
+      "type": "object"
+    },
+    "ExcerptResponse": {
+      "properties": {
+        "editable": {
+          "title": "Editable",
+          "type": "boolean"
+        },
+        "profiles": {
+          "items": {
+            "$ref": "#/$defs/ExcerptProfileView"
+          },
+          "title": "Profiles",
+          "type": "array"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "saved_project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Saved Project Id"
+        }
+      },
+      "required": [
+        "editable",
+        "profiles",
+        "project_id",
+        "revision",
+        "run_id",
+        "saved_project_id"
+      ],
+      "title": "ExcerptResponse",
+      "type": "object"
+    },
+    "ExcerptSharingDeclaration": {
+      "additionalProperties": false,
+      "description": "A recorded human assertion, not authentication or proof of redistribution rights.",
+      "properties": {
+        "actor": {
+          "const": "human",
+          "title": "Actor",
+          "type": "string"
+        },
+        "decision": {
+          "enum": [
+            "allow",
+            "withhold"
+          ],
+          "title": "Decision",
+          "type": "string"
+        },
+        "declared_at": {
+          "format": "date-time",
+          "title": "Declared At",
+          "type": "string"
+        },
+        "declared_by": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Declared By",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Source Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "decision",
+        "declared_at",
+        "declared_by",
+        "reason",
+        "source_sha256"
+      ],
+      "title": "ExcerptSharingDeclaration",
+      "type": "object"
+    },
     "ExplanationReview": {
       "description": "Only server-owned matching facts escape; rejected model prose/values do not.",
       "properties": {
@@ -1992,6 +2404,136 @@
         "verified_facts"
       ],
       "title": "ExplanationReview",
+      "type": "object"
+    },
+    "FieldCondition": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "unconditional",
+            "dc_relation",
+            "unsupported"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "description",
+        "kind"
+      ],
+      "title": "FieldCondition",
+      "type": "object"
+    },
+    "FieldDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "actor": {
+          "const": "human",
+          "title": "Actor",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "decision": {
+          "enum": [
+            "approved",
+            "rejected",
+            "needs_information"
+          ],
+          "title": "Decision",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "reviewed_at": {
+          "format": "date-time",
+          "title": "Reviewed At",
+          "type": "string"
+        },
+        "reviewer": {
+          "minLength": 1,
+          "title": "Reviewer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "content_sha256",
+        "decision",
+        "reason",
+        "reviewed_at",
+        "reviewer"
+      ],
+      "title": "FieldDecision",
+      "type": "object"
+    },
+    "FieldSource": {
+      "additionalProperties": false,
+      "properties": {
+        "document_revision": {
+          "minLength": 1,
+          "title": "Document Revision",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "excerpt": {
+          "minLength": 1,
+          "title": "Excerpt",
+          "type": "string"
+        },
+        "locator": {
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "sharing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExcerptSharingDeclaration"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "url": {
+          "pattern": "^https?://[^\\s]+$",
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_revision",
+        "document_sha256",
+        "excerpt",
+        "locator",
+        "page",
+        "url"
+      ],
+      "title": "FieldSource",
       "type": "object"
     },
     "ImportResponse": {
@@ -2127,6 +2669,62 @@
       "type": "object"
     },
     "JsonValue": {},
+    "ManualSource": {
+      "additionalProperties": false,
+      "properties": {
+        "document_revision": {
+          "minLength": 1,
+          "title": "Document Revision",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "excerpt": {
+          "minLength": 1,
+          "title": "Excerpt",
+          "type": "string"
+        },
+        "locator": {
+          "minLength": 1,
+          "title": "Locator",
+          "type": "string"
+        },
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "sharing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExcerptSharingDeclaration"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "url": {
+          "pattern": "^https?://[^\\s]+$",
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_revision",
+        "document_sha256",
+        "excerpt",
+        "locator",
+        "page",
+        "url"
+      ],
+      "title": "ManualSource",
+      "type": "object"
+    },
     "NetCheckView": {
       "description": "Design-level net check shown in the project summary area.",
       "properties": {
@@ -2300,6 +2898,77 @@
       "title": "OriginalDelivery",
       "type": "object"
     },
+    "PinProfile": {
+      "description": "Structured datasheet facts for one package pin.",
+      "properties": {
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "function": {
+          "title": "Function",
+          "type": "string"
+        },
+        "limits": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Limits",
+          "type": "object"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "number": {
+          "title": "Number",
+          "type": "string"
+        },
+        "recommended_topology": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Recommended Topology",
+          "type": "array"
+        },
+        "schematic_pin_aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Schematic Pin Aliases",
+          "type": "array"
+        }
+      },
+      "required": [
+        "category",
+        "evidence",
+        "function",
+        "limits",
+        "name",
+        "number",
+        "recommended_topology",
+        "schematic_pin_aliases"
+      ],
+      "title": "PinProfile",
+      "type": "object"
+    },
     "PinTableSummary": {
       "description": "Capture pin-table intake status shown beside first-class imports.",
       "properties": {
@@ -2471,6 +3140,75 @@
       "title": "PinView",
       "type": "object"
     },
+    "PinVoltageRelation": {
+      "additionalProperties": false,
+      "description": "Target pin range relative to ground, with an upper bound at another pin.",
+      "properties": {
+        "document_revision": {
+          "minLength": 1,
+          "title": "Document Revision",
+          "type": "string"
+        },
+        "document_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "evidence": {
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "ground_pin": {
+          "minLength": 1,
+          "title": "Ground Pin",
+          "type": "string"
+        },
+        "minimum_voltage": {
+          "title": "Minimum Voltage",
+          "type": "number"
+        },
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "required_package": {
+          "minLength": 1,
+          "title": "Required Package",
+          "type": "string"
+        },
+        "source_url": {
+          "minLength": 1,
+          "title": "Source Url",
+          "type": "string"
+        },
+        "supply_pin": {
+          "minLength": 1,
+          "title": "Supply Pin",
+          "type": "string"
+        },
+        "target_pin": {
+          "minLength": 1,
+          "title": "Target Pin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_revision",
+        "document_sha256",
+        "evidence",
+        "ground_pin",
+        "minimum_voltage",
+        "page",
+        "required_package",
+        "source_url",
+        "supply_pin",
+        "target_pin"
+      ],
+      "title": "PinVoltageRelation",
+      "type": "object"
+    },
     "ProfileModelSnapshot": {
       "properties": {
         "part_number": {
@@ -2513,6 +3251,59 @@
         "values"
       ],
       "title": "ProfileModelSnapshot",
+      "type": "object"
+    },
+    "ProfileReview": {
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/ReviewedField"
+          },
+          "title": "Fields",
+          "type": "array"
+        },
+        "identity": {
+          "$ref": "#/$defs/ReviewIdentity"
+        },
+        "retirement_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retirement Reason"
+        },
+        "status": {
+          "default": "DRAFT",
+          "enum": [
+            "DRAFT",
+            "REVIEWED",
+            "READY",
+            "RETIRED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "version": {
+          "const": "hardwise.profile_review.v1",
+          "default": "hardwise.profile_review.v1",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fields",
+        "identity",
+        "retirement_reason",
+        "status",
+        "version"
+      ],
+      "title": "ProfileReview",
       "type": "object"
     },
     "ProfileView": {
@@ -2999,6 +3790,39 @@
         "total"
       ],
       "title": "ReviewHistoryPage",
+      "type": "object"
+    },
+    "ReviewIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "manufacturer": {
+          "minLength": 1,
+          "title": "Manufacturer",
+          "type": "string"
+        },
+        "packages": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Packages",
+          "type": "array"
+        },
+        "part_numbers": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Part Numbers",
+          "type": "array"
+        }
+      },
+      "required": [
+        "manufacturer",
+        "packages",
+        "part_numbers"
+      ],
+      "title": "ReviewIdentity",
       "type": "object"
     },
     "ReviewPackageArtifactView": {
@@ -3687,6 +4511,95 @@
         "trust_tier"
       ],
       "title": "ReviewTaskGroup",
+      "type": "object"
+    },
+    "ReviewedField": {
+      "additionalProperties": false,
+      "properties": {
+        "conditions": {
+          "items": {
+            "$ref": "#/$defs/FieldCondition"
+          },
+          "minItems": 1,
+          "title": "Conditions",
+          "type": "array"
+        },
+        "decisions": {
+          "items": {
+            "$ref": "#/$defs/FieldDecision"
+          },
+          "title": "Decisions",
+          "type": "array"
+        },
+        "nature": {
+          "enum": [
+            "intrinsic",
+            "application_recommendation",
+            "board_policy"
+          ],
+          "title": "Nature",
+          "type": "string"
+        },
+        "pointer": {
+          "pattern": "^/",
+          "title": "Pointer",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "identity",
+            "minimum",
+            "typical",
+            "maximum",
+            "definition",
+            "relationship"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/FieldSource"
+        },
+        "subject": {
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        },
+        "unit": {
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "conditions",
+        "decisions",
+        "nature",
+        "pointer",
+        "role",
+        "source",
+        "subject",
+        "unit",
+        "value"
+      ],
+      "title": "ReviewedField",
       "type": "object"
     },
     "RiskHintView": {
@@ -5150,6 +6063,12 @@
     "component_detail": {
       "$ref": "#/$defs/ComponentDetail"
     },
+    "excerpt_request": {
+      "$ref": "#/$defs/ExcerptRequest"
+    },
+    "excerpts": {
+      "$ref": "#/$defs/ExcerptResponse"
+    },
     "import_response": {
       "$ref": "#/$defs/ImportResponse"
     },
@@ -5195,6 +6114,8 @@
     "saved_project_catalog",
     "project_restore",
     "chat_request",
+    "excerpt_request",
+    "excerpts",
     "voltage_batch_request",
     "voltage_candidates_request",
     "voltage_review",
