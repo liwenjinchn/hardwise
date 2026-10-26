@@ -540,9 +540,16 @@ def create_workbench_app(
     ):
         with review_workflow_lock:
             try:
-                result = RunProvenanceResponse.model_validate(
-                    review_decisions.run_provenance(run_id, expected_project_id)
-                )
+                from hardwise.ir.shared_excerpts import share_excerpt_projection
+                from hardwise.workbench.excerpt_exports import withheld_sources, allowed_sources
+
+                with context_manager.lease() as active_context:
+                    shared = share_excerpt_projection(
+                        review_decisions.run_provenance(run_id, expected_project_id),
+                        withheld_sources(active_context),
+                        allowed_sources(active_context),
+                    )
+                result = RunProvenanceResponse.model_validate(shared)
             except ReviewConflictError as exc:
                 raise HTTPException(status_code=409, detail=str(exc)) from exc
             except KeyError as exc:

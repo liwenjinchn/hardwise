@@ -2485,6 +2485,21 @@
           "title": "Sha256",
           "type": "string"
         },
+        "share_projection": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Share Projection"
+        },
         "values": {
           "additionalProperties": true,
           "title": "Values",

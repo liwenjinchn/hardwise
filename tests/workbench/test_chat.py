@@ -399,8 +399,8 @@ def test_snapshot_responses_include_l2_grounded_datasheet_smoke() -> None:
         responses = build_snapshot_responses(context)
 
         response = responses[C5_L2_SNAPSHOT_QUESTION]
-        assert "l78.pdf" in response.answer and "35 V" in response.answer
-        assert "来源覆盖，不认证参数" in response.answer
+        assert "35 V" not in response.answer
+        assert "分享报告省略" in response.answer
         assert not any(
             f.kind == "approved_parameter" for f in response.explanation_review.verified_facts
         )

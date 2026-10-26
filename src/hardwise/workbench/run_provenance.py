@@ -18,6 +18,10 @@ class ProfileModelSnapshot(BaseModel):
     part_number: str
     review_status: str
     values: dict[str, Any]
+    # Present only in a redacted share projection, never in original stored runs.
+    share_projection: dict[str, str] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
 
 class EmittedRuleVersion(BaseModel):

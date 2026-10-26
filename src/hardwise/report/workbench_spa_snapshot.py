@@ -68,7 +68,9 @@ def render_spa_snapshot(
         from hardwise.report.workbench_review_snapshot import attach_review_history
 
         attach_review_history(snapshot, context, state, review_history)
-    return _inline_spa_shell(snapshot, project_name=context.project_name)
+    from hardwise.workbench.excerpt_exports import share_snapshot
+
+    return _inline_spa_shell(share_snapshot(snapshot, context), project_name=context.project_name)
 
 
 def _component_details(context: WorkbenchContext) -> dict[str, object]:

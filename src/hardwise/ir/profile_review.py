@@ -21,6 +21,7 @@ from pydantic import (
 )
 
 from hardwise.ir.profile_units import declaration_problem
+from hardwise.ir.excerpt_sharing import ExcerptSharingDeclaration
 
 Lifecycle = Literal["DRAFT", "REVIEWED", "READY", "RETIRED"]
 SHA256 = r"^[a-f0-9]{64}$"
@@ -57,6 +58,10 @@ class FieldSource(BaseModel):
     page: int = Field(ge=1, strict=True)
     locator: str = Field(min_length=1)
     excerpt: str = Field(min_length=1)
+    # Keep old source serialization and historical field hashes byte-compatible.
+    sharing: ExcerptSharingDeclaration | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
 
 
 class FieldCondition(BaseModel):
@@ -111,7 +116,9 @@ class ReviewedField(BaseModel):
         return digest(
             {
                 "identity": identity.model_dump(mode="json"),
-                "field": self.model_dump(mode="json", exclude={"decisions"}),
+                "field": self.model_dump(
+                    mode="json", exclude={"decisions": True, "source": {"sharing"}}
+                ),
             }
         )
 

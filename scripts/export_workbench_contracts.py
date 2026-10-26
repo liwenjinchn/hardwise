@@ -41,11 +41,17 @@ def _require_serialized_response_fields(schema: dict[str, object]) -> None:
             definition["required"] = sorted(properties)
             # These fields are omitted on old/v1-input runs or unedited ledgers
             # via exclude_if. Do not promise keys the API does not emit.
-            if name in {"RunProvenance", "VoltageReviewDocument", "ChatResponse"}:
+            if name in {
+                "RunProvenance",
+                "VoltageReviewDocument",
+                "ChatResponse",
+                "ProfileModelSnapshot",
+            }:
                 definition["required"] = [
                     key
                     for key in definition["required"]
-                    if key not in {"voltage_review", "edits", "explanation_review"}
+                    if key
+                    not in {"voltage_review", "edits", "explanation_review", "share_projection"}
                 ]
 
 

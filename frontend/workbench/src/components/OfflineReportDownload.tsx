@@ -23,6 +23,7 @@ export function OfflineReportDownload({ state }: { state: WorkbenchState }) {
   return <section className="project-prep-card" aria-label="离线评审包">
     <div><strong>离线评审包 · 单文件 HTML</strong>
       <p>保留当前项目的检查结果、人工理由、完整处理历史和历史运行清单。只读，不包含原始 PDF，不替代项目备份。</p>
+      <p>新生成报告会省略未声明、已撤回或声明失效的资料摘录；当前与历史清单采用同一分享规则。本地完整备份仍保留原记录。</p>
       {snapshot && <p>{snapshot.review_history ? `已封存 ${snapshot.review_history.total} 条历史；可在问题清单查看。` : "当前文件未封存处理历史，请从本地服务下载含历史的离线评审包。"}</p>}
       {error && <p role="alert" className="form-error">{error}</p>}
     </div>

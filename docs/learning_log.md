@@ -5855,3 +5855,16 @@ A display string such as a locator hit's value cannot recover the field's unit, 
 - Root cause: source_audit_observed_at is legitimately refreshed by a new inspection; text IO additionally normalizes line endings. Neither implies machine findings changed.
 - Fix: use the repository interpreter, preserve original CSV bytes, parse every row/column, prove the only changed field is the observation timestamp, and require all remaining values and row counts exactly equal. Separately preserve all six events,36oldruns and original decision state.
 - Takeaway: do not silently normalize arbitrary fields or claim byte identity for a newly observed export; record the exact permitted difference. Source ZIPs remain byte-frozen; release=false remains explicit.
+
+
+### 2026-10-26 — Export projection must not pretend a redacted payload has its original hash
+
+- Symptom: profile excerpts were embedded in run receipts, nested offline history JSON and chat fact conditions/prose; hiding a card or deleting one property would not close F06.
+- Root cause: local provenance preservation and share permission are different contracts. A rendered string can duplicate data that a later dictionary walk removes. Changing a verified fact while retaining its digest also fabricates integrity.
+- Fix: typed source-bound sharing declarations preserve old source serialization and exclude only sharing metadata from electrical hashes. Redact share projections, retain original-local identity plus a separate shared-value hash, rebuild nested history strings, and withhold whole chat facts before regenerating prose. Historical export requires both the original and current effective allow; removing the current declaration/profile cannot resurrect an old allow. Explicit withholding wins; new permission never backfills old undeclared records. Retrieval snippets without manual permission are omitted from new chat snapshots.
+- Takeaway: inspect actual exported bytes and all stored rows. Initial3chat tests accidentally exercised validation because a heuristic fake did not select the locator; corrected the test model to request the real locator explicitly rather than weakening assertions or changing user-query heuristics. Synthetic declarations prove mechanics only; manual editor/persistence/independent source review remain unfinished.
+
+
+### 2026-10-26 — Pin the runtime assets as well as the imported Python source
+
+A long-running workbench imports old Python once but reads static files from disk on each request. Building a new frontend in its checkout can therefore serve new UI promises against an old backend. Back up the original journal, run the last verified source capsule with its own static directory, and compare the served JS bytes to the pinned file. Stage83 retained all6events/38oldruns/decision and added only the new startup run39. Development builds no longer change that pinned main UI. Do not infer runtime identity from the current checkout HEAD.

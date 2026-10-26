@@ -40,6 +40,7 @@ export function ProvenanceDownload({ projectId, runId, historical = false }: {
       {busy ? "正在读取清单…" : historical ? "下载该次输入与版本清单" : "下载本次输入与版本清单"}
     </button>
     {!historical && <p>清单记录文件哈希、档案/规则及复核依赖合同版本（决定哪些变动需复核），不包含原始文件，不等于项目备份。</p>}
+    <p>资料摘录只有有效允许分享声明才随清单导出；缺失项保留来源定位和省略原因。本地原内容哈希与分享后的内容哈希分别标明。</p>
     {message && <p role="status">{message}</p>}
     {error && <p role="alert" className="form-error">{error}</p>}
   </div>;

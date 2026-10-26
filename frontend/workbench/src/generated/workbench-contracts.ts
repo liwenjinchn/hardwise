@@ -336,6 +336,9 @@ export type ProfileSnapshotEncoding = "json_with_nonfinite_float_tags";
 export type PartNumber3 = string;
 export type ReviewStatus1 = string;
 export type Sha2562 = string;
+export type ShareProjection = {
+  [k: string]: string;
+} | null;
 export type Profiles = ProfileModelSnapshot[];
 export type PythonVersion = string;
 export type RawInputsArchived = false;
@@ -1162,6 +1165,7 @@ export interface ProfileModelSnapshot {
   part_number: PartNumber3;
   review_status: ReviewStatus1;
   sha256: Sha2562;
+  share_projection?: ShareProjection;
   values: Values;
 }
 export interface Values {

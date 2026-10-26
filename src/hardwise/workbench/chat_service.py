@@ -269,4 +269,8 @@ def build_snapshot_responses(context: WorkbenchContext) -> dict[str, ChatRespons
     fallback = service.fallback_response("", selected)
     fallback.suggestions.append(C5_L2_SNAPSHOT_QUESTION)
     responses["__fallback__"] = fallback
-    return responses
+    from hardwise.workbench.excerpt_exports import share_chat_response
+
+    return {
+        question: share_chat_response(response, context) for question, response in responses.items()
+    }

@@ -787,3 +787,14 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - 检查18772确实仍有旧进程后，只读备份原SQLite并副本连续升级，6events/36oldruns/decision不变；再重启已核实的自有服务并真实UI重跑，6events/38runs。所有旧行、原决定/理由、11原来源文件hash保留，另10managed文件与第75保存hash一致。17旧ZIP字节不变。主API负查询返回structured_explanation；公开白色静态别名同步。离线原历史浏览器6事件/原理由/0API。CSV仅source_audit_observed_at随实际重跑刷新，其他列相同；最初整文件比较失败未掩盖。
 - 用户已选择F06人工录入摘录并声明可否随包分享；不再pending或重新提问。需同时涵盖当前与历史清单导出，默认未声明不分享，保留本地原记录/来源版本/参数条件；不自动复制PDF或代签电气批准。该选择不授权伪造真实来源/批准/独立标签。
 - 完整产品NOT_COMPLETE，goalactive。下一按已选F06实现合同/编辑/持久化/分享投影及端到端反例；候选检查分母、生产资料真实批准、独立标签、Windows/Cadence及同行两轮仍开放，不push。证据在续接聊天outputs/Hardwise-交付82及work/hardwise-82。
+
+
+## 2026-10-26 — 第83人工摘录合同与分享出口
+
+上轮06a7135完成统一交付和原历史验证，为progress。本轮按用户已选人工摘录路线推进，不重问选择。
+
+- 完成FieldSource可选分享声明与精确sourcehash；旧源/电气fieldhash兼容，纯分享元数据从电气dependencyhash排除。人工actor/姓名/显式时间/理由均校验；只是声明，不是认证。
+- 分享投影覆盖当前/历史receipt、离线主数据及内嵌history JSON；原localhash与shared-valueshash分开。聊天涉及未许可原文的fact整项省略再生成正文，检索片段没有人工分享声明也省略，trace仍保留。历史需要旧/当前同时有效allow，withhold优先；移除当前声明/profile不可使旧allow复活，新allow不补造旧undeclared许可。
+- 新39专项通过；最终完整1949passed/7deselected/7既有坏值warnings69.25s，前端构建/typed/118unit及24E2E49.0s通过，Ruff/diff通过。独立HTTP合成allow/withhold实际导出字节不同，本地全部SQLite行/profile原值不变；浏览器withhold内嵌数据无合成摘录、存在共享hash说明、0API请求。记录不是厂商许可或真实人工批准。
+- 主18772原进程动态读取开发静态文件，构建会出现混版风险。原日志只读备份后改为固定0e77607解压源启动（fake/no-auto），HTTP静态资产逐字节匹配pin，原6events/38runs/decision保留，当前39runs。既有主入口仍第82版本，F06未宣称统一交付。
+- F06仍partial：需人工录入/修订/声明UI、原子保存/并发/受管理输入、重开/完整备份恢复和来源参数条件呈现；随后完整交付与真实独立核对。原Windows/Cadence、候选分母、生产批准、独立标签/同行两轮仍开放。goalactive NOT_COMPLETE，不push。

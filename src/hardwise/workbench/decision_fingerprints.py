@@ -119,6 +119,10 @@ def _profile(profile):
     value = profile.model_dump(
         mode="json", exclude={"extracted_at", "extracted_model", "description"}
     )
+    # Sharing declarations are administrative export metadata, not a changed
+    # electrical premise. Retain every original source dimension and approval.
+    for field in (value.get("field_review") or {}).get("fields", []):
+        field["source"].pop("sharing", None)
     return {"contract": "hardwise.profile_dependency.v1", "sha256": _digest(value)}
 
 
