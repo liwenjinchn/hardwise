@@ -5900,3 +5900,11 @@ Symptom：新增来源阅读时typecheck指出profiles可能是RunProvenanceResp
 Root cause：生成器把历史run_id映射命名为RunProvenance，真实单份内容成为RunProvenance1；旧下载类型引用前者，仅透传JSON时未显现。
 Fix：api.ts/types.ts显式引入RunProvenance1别名，逐字段阅读继续使用已过滤清单，不转回含原文的本地profile模型。
 Takeaway：生成类型名称相同不代表语义相同，读取真实成员才能验证合同；历史缺失不允许借用当前清单。
+
+
+## 2026-10-26 — 冻结交付先确认实际监听
+
+Symptom：历史记录显示主入口已启动，但第88实际18772无监听。
+Root cause：跨回合工具会话不保证服务仍存活，历史PID不能代表当前运行。
+Fix：先检查监听，备份原库并在副本验证升级，随后用解压源码恢复入口；比对HTTP资产字节、原历史行和输入hash。
+Takeaway：源码包通过、后台存活、原日志保留分别取证；本机共享依赖验证不称为干净安装或Windows通过。

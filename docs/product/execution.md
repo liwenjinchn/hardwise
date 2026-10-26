@@ -852,3 +852,14 @@ Each implementation commit records exact commands and outputs below. Passing reg
 真实浏览器：CLI allow离线报告直接展开可见合成原文及来源条件；withhold显示当前不允许分享，原文不在内嵌HTML，0API请求，760宽无水平溢出。历史事件展开后读取原run d6fe72f5-c6c2-45eb-be87-24eaae8283f4，旧allow在当前withhold后只显示省略原因，未恢复原文。前一次自动操作因历史追溯区折叠而超时；按实际结构展开后成功，非服务失败。截图已检查。
 
 验证：1976passed/7deselected/7既有坏值warnings88.23s；132前端unit、24既有E2E49.4s、构建/types/Ruff/diff通过。新增阅读流程为独立浏览器验证，不计入原24E2E覆盖。主入口仍固定0e77607，未统一升级或覆盖旧包；兼容旧报告仍不展示摘录，推荐白色单文件分享阅读。下一步冻结候选、解压复验、原日志安全升级与旧历史保留；独立真人核对及其他原验收门槛未完成，NOT_COMPLETE。
+
+
+## 第88阶段：F06冻结交付与原日志升级
+
+冻结源码c751b8463668a12ff4e9f609973ac5993a63f038，候选ZIP含987文件，SHA256为560dd26c39aced8a0cf97f0131fdd2420cd0c9fb586c69722bb3387843fb79ad。在中文和空格路径解压，VALIDATE通过；83项摘录/分享/原子编辑/备份专项通过。复验复用本机已有Python依赖，不代表全新机器安装。Windows要求、篡改、基线计数不符、覆盖旧ZIP、未登记ref五类负对照均拒绝，恢复哈希通过。
+
+原主入口18772当时无监听进程。先只读备份原SQLite，在副本执行新版本升级和再次重开：6事件、原39运行、已有处理及指纹均保留。随后用解压冻结源码恢复主入口（fake AI、自动资料候选关闭），真实原库成为40运行，6事件和review_state不变。HTTP确认手工摘录API可读、页面JS/CSS与冻结文件逐字节一致；浏览器进入导入页确认新表单可达，未向原项目写入合成摘录。原始输入hash及32个既有ZIP不变。原历史离线报告另存新编号。验收脚本初次把静态目录写成report/static而失败，修正为实际workbench/static后通过，不是产品失败。
+
+交付证据：续接任务outputs/Hardwise-交付候选88。此阶段完成F06统一软件交付；独立核对、真实Windows/Cadence、真实人工批准、独立样本和同行两轮仍未完成，product_release_accepted=false。未push。
+
+第88最终全量验证：1976passed/7deselected/7既有坏值warnings，78.65s；Ruff与diff检查通过。未更改前端实现，沿用c751b84已验证132unit/24E2E，并在恢复主入口做实际浏览器入口检查。
