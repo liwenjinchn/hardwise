@@ -87,4 +87,5 @@ def apply_voltage_selections(
         active_mode=review.active_mode,
         candidates=review.candidates,
         confirmations=(*review.confirmations, *declarations),
+        edits=review.edits,
     )

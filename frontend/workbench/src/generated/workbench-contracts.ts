@@ -350,8 +350,18 @@ export type RecordedAt = string | null;
 export type Reviewer = string;
 export type ScopeSha256 = string;
 export type Confirmations = VoltageConfirmation[];
-export type SchemaVersion3 = "hardwise.voltage_review.v1";
+export type ActiveMode1 = string;
+export type Changes = VoltageCandidateChange[];
+export type Id5 = string;
+export type InvalidatedConfirmationIds = string[];
+export type PreviousMode = string;
+export type PreviousRevision = string;
 export type Reason11 = string;
+export type RecordedAt1 = string;
+export type Reviewer1 = string;
+export type Edits = VoltageReviewEdit[];
+export type SchemaVersion3 = "hardwise.voltage_review.v1";
+export type Reason12 = string;
 export type RunId2 = string;
 export type Status18 = "recorded" | "not_recorded";
 export type Total4 = number;
@@ -369,7 +379,7 @@ export type Offset = number;
 export type ProjectId2 = string;
 export type RunId3 = string;
 export type Total5 = number;
-export type Id5 = string;
+export type Id6 = string;
 export type Name5 = string;
 export type ProjectId3 = string;
 export type Snapshot = string;
@@ -377,8 +387,8 @@ export type Projects = SavedProjectView[];
 export type ExpectedProjectId = string;
 export type ExpectedRevision = string;
 export type ExpectedRunId = string;
-export type Reason12 = string;
-export type Reviewer1 = string;
+export type Reason13 = string;
+export type Reviewer2 = string;
 /**
  * @minItems 1
  * @maxItems 1000
@@ -389,6 +399,20 @@ export type CandidateId1 = string | null;
 export type ExpectedScopeSha256 = string;
 export type Mode4 = string;
 export type Net4 = string;
+export type ActiveMode2 = string | null;
+export type ExpectedProjectId1 = string;
+export type ExpectedRevision1 = string;
+export type ExpectedRunId1 = string;
+export type Reason14 = string;
+/**
+ * @maxItems 1000
+ */
+export type RemoveIds = string[];
+export type Reviewer3 = string;
+/**
+ * @maxItems 1000
+ */
+export type Upserts = VoltageCandidate[];
 export type Editable = boolean;
 export type Nets = string[];
 export type ProjectId4 = string;
@@ -472,7 +496,7 @@ export type AffectedRefdes1 = string[];
 export type Axis = "electrical" | "evidence";
 export type Check2 = string | null;
 export type DerivedTaskCount = number;
-export type Id6 = string;
+export type Id7 = string;
 export type Identity1 = string;
 export type RawTaskCount = number;
 export type RecommendedAction3 = string;
@@ -489,7 +513,7 @@ export type AcceptedExternalCount = number;
 export type Count1 = number;
 export type ExternalStatus = string;
 export type Count2 = number;
-export type Reason13 = string;
+export type Reason15 = string;
 export type Rejected1 = RejectedRiskHintSummary[];
 export type RejectedExternalCount = number;
 export type WrappedRefdesCount1 = number;
@@ -498,7 +522,7 @@ export type Count3 = number;
 export type ExternalStatus1 = string;
 export type RejectedExternalCount1 = number;
 export type SelectedRefdes3 = string | null;
-export type ActiveMode1 = string;
+export type ActiveMode3 = string;
 export type Facts = VoltageFact[];
 export type SchemaVersion4 = "hardwise.voltage_facts.v1";
 
@@ -515,6 +539,7 @@ export interface WorkbenchContracts {
   saved_project: SavedProjectView;
   saved_project_catalog: SavedProjectCatalog;
   voltage_batch_request: VoltageBatchRequest;
+  voltage_candidates_request: VoltageCandidatesRequest;
   voltage_review: VoltageReviewResponse;
   workbench_state: WorkbenchState;
 }
@@ -1025,7 +1050,7 @@ export interface RunProvenanceResponse {
   created_at: CreatedAt1;
   project_id: ProjectId1;
   provenance: RunProvenance1 | null;
-  reason: Reason11;
+  reason: Reason12;
   run_id: RunId2;
   status: Status18;
 }
@@ -1085,6 +1110,7 @@ export interface VoltageReviewDocument {
   active_mode: ActiveMode;
   candidates: Candidates2;
   confirmations: Confirmations;
+  edits?: Edits;
   schema_version: SchemaVersion3;
 }
 export interface VoltageCandidate {
@@ -1124,6 +1150,21 @@ export interface VoltageConfirmation {
   reviewer: Reviewer;
   scope_sha256: ScopeSha256;
 }
+export interface VoltageReviewEdit {
+  active_mode: ActiveMode1;
+  changes: Changes;
+  id: Id5;
+  invalidated_confirmation_ids: InvalidatedConfirmationIds;
+  previous_mode: PreviousMode;
+  previous_revision: PreviousRevision;
+  reason: Reason11;
+  recorded_at: RecordedAt1;
+  reviewer: Reviewer1;
+}
+export interface VoltageCandidateChange {
+  after: VoltageCandidate | null;
+  before: VoltageCandidate | null;
+}
 export interface ProjectRestoreReceipt {
   journal: Journal;
   launches: Launches;
@@ -1145,7 +1186,7 @@ export interface ReviewHistoryPage {
   total: Total5;
 }
 export interface SavedProjectView {
-  id: Id5;
+  id: Id6;
   name: Name5;
   project_id: ProjectId3;
   snapshot: Snapshot;
@@ -1157,8 +1198,8 @@ export interface VoltageBatchRequest {
   expected_project_id: ExpectedProjectId;
   expected_revision: ExpectedRevision;
   expected_run_id: ExpectedRunId;
-  reason: Reason12;
-  reviewer: Reviewer1;
+  reason: Reason13;
+  reviewer: Reviewer2;
   selections: Selections;
 }
 export interface VoltageSelection {
@@ -1167,6 +1208,16 @@ export interface VoltageSelection {
   expected_scope_sha256: ExpectedScopeSha256;
   mode: Mode4;
   net: Net4;
+}
+export interface VoltageCandidatesRequest {
+  active_mode: ActiveMode2;
+  expected_project_id: ExpectedProjectId1;
+  expected_revision: ExpectedRevision1;
+  expected_run_id: ExpectedRunId1;
+  reason: Reason14;
+  remove_ids: RemoveIds;
+  reviewer: Reviewer3;
+  upserts: Upserts;
 }
 export interface VoltageReviewResponse {
   editable: Editable;
@@ -1312,7 +1363,7 @@ export interface ReviewTaskGroup {
   axis: Axis;
   check: Check2;
   derived_task_count: DerivedTaskCount;
-  id: Id6;
+  id: Id7;
   identity: Identity1;
   raw_task_count: RawTaskCount;
   recommended_action: RecommendedAction3;
@@ -1340,7 +1391,7 @@ export interface RiskHintsView {
  */
 export interface RejectedRiskHintSummary {
   count: Count2;
-  reason: Reason13;
+  reason: Reason15;
 }
 /**
  * Backward-compatible compact risk-hints summary.
@@ -1355,7 +1406,7 @@ export interface RiskHintsSummary {
  * Portable project input, validated atomically before replacing active state.
  */
 export interface VoltageFactsDocument {
-  active_mode: ActiveMode1;
+  active_mode: ActiveMode3;
   facts: Facts;
   schema_version: SchemaVersion4;
 }

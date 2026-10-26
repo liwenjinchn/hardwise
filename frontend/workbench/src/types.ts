@@ -636,6 +636,7 @@ export interface WorkbenchOfflineSnapshot {
   schema_version: string;
   mode: "snapshot";
   run_provenance?: RunProvenance;
+  voltage_review?: import("./generated/workbench-contracts").VoltageReviewResponse;
   review_history?: import("./generated/workbench-contracts").OfflineReviewHistory;
   state: WorkbenchState;
   components: Record<string, ComponentDetail>;

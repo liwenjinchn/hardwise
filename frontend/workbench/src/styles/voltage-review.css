@@ -1,0 +1,22 @@
+.voltage-review { display: grid; gap: 14px; grid-column: 1 / -1; }
+.voltage-review strong { display: inline; margin: 0; font-size: inherit; font-family: inherit; }
+.voltage-review .voltage-scope header strong { font-size: 14px; }
+.voltage-review p { margin: 4px 0; overflow-wrap: anywhere; }
+.voltage-review h3, .voltage-review h4 { margin: 0; }
+.voltage-review button { justify-self: start; }
+.voltage-metadata, .voltage-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; min-width: 0; }
+.voltage-metadata { border: 1px solid var(--line, #ddd6c8); padding: 14px; }
+.voltage-review label { display: grid; gap: 6px; font-size: 12px; min-width: 0; }
+.voltage-review input, .voltage-review select { box-sizing: border-box; max-width: 100%; width: 100%; padding: 9px; border: 1px solid var(--line,#ddd6c8); border-radius: 4px; background: #fff; color: #222; font: inherit; }
+.voltage-review input:focus, .voltage-review select:focus { outline: 2px solid #315cba; outline-offset: 1px; }
+.voltage-scopes { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.voltage-scope { border: 1px solid #dcd5c8; border-left: 3px solid #b5afa4; border-radius: 4px; padding: 14px; min-width: 0; background: #fffdf8; }
+.voltage-scope header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 12px; }
+.voltage-scope.status-conflict, .voltage-scope.status-needs_review { border-left-color: #b36d09; }
+.voltage-scope.status-confirmed { border-left-color: #187653; }
+.voltage-candidate { padding: 10px 0; border-bottom: 1px dashed #ddd6c8; margin-bottom: 10px; font-size: 12px; }
+.voltage-candidate-form { border-top: 1px solid #dcd5c8; padding-top: 16px; display: grid; gap: 14px; }
+.voltage-candidate-form form { display: grid; gap: 12px; }
+.voltage-review details { border-top: 1px solid #dcd5c8; padding-top: 12px; font-size: 12px; }
+.voltage-review :disabled { opacity: .55; cursor: not-allowed; }
+@media(max-width:850px) { .voltage-scopes,.voltage-metadata,.voltage-form-grid { grid-template-columns: minmax(0,1fr); } }

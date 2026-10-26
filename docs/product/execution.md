@@ -707,3 +707,15 @@ Each implementation commit records exact commands and outputs below. Passing reg
 -17API用例+2生命周期用例新增；50旧新针对性通过4.92s（重叠，不另加完整数）。catalog先写再抛异常验证DB整体rollback，snapshot/activation失败原context不变；过期project/run/revision、批错误、externalwriter、legacy原声明/sourcebytes、metadata拒绝均验证。真实subprocess beforecommit.exit81后全旧行相等；aftercommit/beforeswap.exit82后完整新ledger从savedproject恢复，源hash不变。原风险理由保留accepted_risk→needs_review，history1→2→2，旧receipt不回填。
 - 完整1771passed/7deselected/7existingdeliberatebadvalueserializationwarnings61.35s；为focusedtest文件拆出processcrash用例后再测routes/crashes/context25通过2.69s，内容/总数不改。生成contracts/typecheck/build通过，staticbytes未变；Ruff/diffpass。本轮未重跑UIunit/E2E，未作该主张。独立真实HTTP18780提交200、stale replay409、auto-savedID、sourceSHA不变、普通rerunhistory2；仅公开合成NoChat，无外发/批准。
 - 原生产档案/原journal/冻结包未操作。先前定向命令误用不存在test_review_decisions路径，pytest未执行；按rg定位test_decision_journal后正确运行，无产品错误。完整goalactiveNOT_COMPLETE；F06独立待答，F01不pending。nopush。证据Hardwise-批量确认接口73。
+
+
+### 2026-10-26 — 第74阶段：白色多来源候选/批量确认/撤回/工况/离线
+
+- 上轮7c26356完成atomicconfirmAPI/进程中断证明为progress；本轮继续已选F01完整路线。新增candidateedit+mode typedAPI复用同publication，保留before/after/reviewer/reason/serverdate/previousrevision及显式invalidatedconfirmationIDs。新增11model+8API tests，19专项通过；58旧新相关通过。修订/删除后改回不能复活旧确认，新confirm保留edit历史并单独生效；manualorigin编辑不能伪造legacy来源或覆盖声明history，无新SQLschema。
+- 白色ImportView新增focusedVoltageReview/CandidateForm/API/CSS，net/mode分组候选范围/source/locator/reference/典型/当前确认来源/status，批量显式confirm/unknown、新增/修订/移除、工况、完整history。0错误表单write证明min>max、typical越界、自参考非零被拦。success同步正式state/details，memory无journal只读；cryptoUUID仅候选id，server签署time/id不可客户端伪造。无AI写tool。
+- ActualUI18781publicsynthetic/NoChat，1440/760实操conflict→confirm→edit36→revert12stillneeds_review→reconfirm→revoke→sleep→addcandidate，再双页另一operator改dc，旧请求409 only1POST、draft保留、explicitrefresh才清选择；clientnetwork0/5xx停编辑要求核对保存记录。随后actualUI批量2个单一来源，不碰P12unknown，移除p24留beforedata且不批准剩余source。最终live4candidate7confirmation6edit，run0f3b7044-9360-49f0-916c-161bb9e7448f；原输入/原journal未改（独立demo日志）。
+- 导出时另一固定run为5candidate5confirmation5edit，backup/restore后原source+活动stage路径暂不可用，freshprocess独立open完整恢复；源hash改回一致。此run离线强制断网，仅1HTML/0API或外部请求，候选及10历史只读，无editcontrols；下载runID/fullledger与embeddedversion相同。阶段后续live操作不回填该离线文件，勿混合两版本counts。截图桌面/760均已看，documentwidth760。
+- 最终1790passed/7deselected/7existingdeliberatebadvaluewarnings59.77s；116unit591ms；最终24E2E43.3s（最后UI标记/表单校验后重跑）。contracts/typecheck/build、Ruff/diffpass。首轮无journalCLI误取None.run_id导致12backend/1E2E失败，保留日志，修readonlyrunid空不发明ID；初次unitfixtureTScast缺必填属性/旧passive-only文案断言已修；不是新增电气规则。CSS复核发现右列窄卡/strong继承24px，改整行跨列与局部字体后截图通过。
+- 场景2从not_met→partial，软件工作流已实现但统一交付/安全升级、真实工程输入/来源/工况主审、Windows/Cadence仍待验。F01仍partial，全goalactiveNOT_COMPLETE；F06独立选择仍pending，其他真实批准/独立标签/同行/F04语义/候选分母缺口保留。无push。证据Hardwise-白色事实确认74。
+
+- 最终前端同步复核补两项：manual candidate refresh同时fetch并校验state.project/run再applyState，避免新候选配旧header/check结果；初次GET发现运行错配亦停编辑。双页stale-final证明formalResultsRefreshed，metadata保留/清选择仅明确refresh。候选表单refresh后若所编辑对象已变化，保留draft但禁止静默rebase，需明确重新读取；双页candidate-stale实际409仅1POST，36Vdraft保留，明确reload才读16V。新增候选draft ID在未确认网络结果后保留，避免盲重试产生不同ID重复候选。最后client guard后build/typecheck、116unit657ms、24E2E49.1s通过；后端未再改，1790/59.77s有效。保留所有先前阶段日志，不合并次数。

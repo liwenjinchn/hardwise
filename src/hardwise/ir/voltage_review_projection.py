@@ -42,7 +42,10 @@ def project_voltage_review(
         selected = None
         scope_hash = review.scope_hash(net, mode)
         if latest:
-            if latest.scope_sha256 != scope_hash:
+            invalidated = any(
+                latest.id in edit.invalidated_confirmation_ids for edit in review.edits
+            )
+            if latest.scope_sha256 != scope_hash or invalidated:
                 status = "needs_review"
             elif latest.action == "unknown":
                 status = "unknown"

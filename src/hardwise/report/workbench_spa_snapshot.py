@@ -40,7 +40,14 @@ def render_spa_snapshot(
         context,
         datasheet_search_enabled=datasheet_search_enabled,
     )
+    from hardwise.workbench.voltage_review_routes import voltage_review_view
+
     snapshot = {
+        "voltage_review": voltage_review_view(
+            context,
+            run_id=(state.review_decisions.run_id if state.review_decisions else None) or "",
+            editable=False,
+        ),
         "schema_version": "hardwise.workbench.offline_snapshot.v2",
         "mode": "snapshot",
         "run_provenance": build_run_provenance(context).model_dump(mode="json"),

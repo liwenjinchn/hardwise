@@ -8,7 +8,8 @@ import sqlite3
 from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
-from hardwise.ir.voltage_review import VoltageReviewDocument
+from hardwise.ir.voltage_review import VoltageReviewDocument, VoltageCandidate
+from hardwise.ir.voltage_review_edits import edit_voltage_candidates
 from hardwise.ir.voltage_review_actions import (
     VoltageReviewConflict,
     VoltageSelection,
@@ -35,6 +36,18 @@ class VoltageBatchRequest(BaseModel):
     selections: tuple[VoltageSelection, ...] = Field(min_length=1, max_length=1000)
 
 
+class VoltageCandidatesRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_project_id: str = Field(min_length=1)
+    expected_run_id: str = Field(min_length=1)
+    expected_revision: str = Field(pattern=r"^[0-9a-f]{64}$")
+    reviewer: str = Field(min_length=1, max_length=256)
+    reason: str = Field(min_length=1, max_length=4000)
+    upserts: tuple[VoltageCandidate, ...] = Field(default=(), max_length=1000)
+    remove_ids: tuple[str, ...] = Field(default=(), max_length=1000)
+    active_mode: str | None = None
+
+
 class VoltageReviewResponse(BaseModel):
     project_id: str
     run_id: str
@@ -52,24 +65,31 @@ def review_for(context):
     )
 
 
+def voltage_review_view(context, *, run_id: str, editable: bool):
+    review = review_for(context)
+    return dict(
+        project_id=review_project_key(context),
+        run_id=run_id,
+        revision=review_revision(review),
+        editable=editable,
+        saved_project_id=context.managed_project_id,
+        review=review.model_dump(mode="json"),
+        scopes=[scope.model_dump(mode="json") for scope in project_voltage_review(review)[1]],
+        nets=sorted(
+            set(context.design.nets)
+            | {pin.net for c in context.design.components.values() for pin in c.pins if pin.net}
+        ),
+    )
+
+
 def register_voltage_review_routes(app, *, journal, manager, lock, decisions, chat_service):
     store = ManagedProjects(Path(journal)) if journal else None
 
     def view(context):
-        review = review_for(context)
-        project = review_project_key(context)
-        return dict(
-            project_id=project,
-            run_id=decisions.summary([], project=project).run_id,
-            revision=review_revision(review),
+        return voltage_review_view(
+            context,
+            run_id=decisions.summary([], project=review_project_key(context)).run_id,
             editable=store is not None,
-            saved_project_id=context.managed_project_id,
-            review=review.model_dump(mode="json"),
-            scopes=[s.model_dump(mode="json") for s in project_voltage_review(review)[1]],
-            nets=sorted(
-                set(context.design.nets)
-                | {pin.net for c in context.design.components.values() for pin in c.pins if pin.net}
-            ),
         )
 
     @app.get("/api/workbench/voltage-review", response_model=VoltageReviewResponse)
@@ -77,8 +97,7 @@ def register_voltage_review_routes(app, *, journal, manager, lock, decisions, ch
         with lock, manager.lease() as context:
             return view(context)
 
-    @app.post("/api/workbench/voltage-review/confirm", response_model=VoltageReviewResponse)
-    def confirm_voltage_review(request: VoltageBatchRequest):
+    def publish_request(request, transform):
         if store is None:
             raise HTTPException(400, "Voltage editing requires a local --review-db journal")
         with lock, manager.lease() as context:
@@ -91,15 +110,7 @@ def register_voltage_review_routes(app, *, journal, manager, lock, decisions, ch
             candidate, directory = None, None
             checkpoint = decisions.checkpoint()
             try:
-                review = apply_voltage_selections(
-                    review_for(context),
-                    request.selections,
-                    expected_revision=request.expected_revision,
-                    reviewer=request.reviewer,
-                    reason=request.reason,
-                    recorded_at=datetime.now(timezone.utc),
-                    known_nets=set(current["nets"]),
-                )
+                review = transform(review_for(context), set(current["nets"]))
                 candidate, directory, prepared, previous = stage_voltage_review(
                     store, context, review
                 )
@@ -142,3 +153,35 @@ def register_voltage_review_routes(app, *, journal, manager, lock, decisions, ch
             if hasattr(chat_service, "context"):
                 chat_service.context = candidate
             return view(candidate)
+
+    @app.post("/api/workbench/voltage-review/confirm", response_model=VoltageReviewResponse)
+    def confirm_voltage_review(request: VoltageBatchRequest):
+        return publish_request(
+            request,
+            lambda review, nets: apply_voltage_selections(
+                review,
+                request.selections,
+                expected_revision=request.expected_revision,
+                reviewer=request.reviewer,
+                reason=request.reason,
+                recorded_at=datetime.now(timezone.utc),
+                known_nets=nets,
+            ),
+        )
+
+    @app.post("/api/workbench/voltage-review/candidates", response_model=VoltageReviewResponse)
+    def edit_candidates(request: VoltageCandidatesRequest):
+        return publish_request(
+            request,
+            lambda review, nets: edit_voltage_candidates(
+                review,
+                upserts=request.upserts,
+                remove_ids=request.remove_ids,
+                active_mode=request.active_mode,
+                expected_revision=request.expected_revision,
+                reviewer=request.reviewer,
+                reason=request.reason,
+                recorded_at=datetime.now(timezone.utc),
+                known_nets=nets,
+            ),
+        )

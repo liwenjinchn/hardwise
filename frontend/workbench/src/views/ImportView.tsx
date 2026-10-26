@@ -9,6 +9,7 @@ import {
   UploadCloud
 } from "lucide-react";
 import { importWorkbench, isOfflineWorkbench } from "../api";
+import { VoltageReview } from "../components/VoltageReview";
 import { EvidencePackageDashboard } from "../components/EvidencePackageDashboard";
 import { SavedProjects } from "../components/SavedProjects";
 import type { ImportResponse, WorkbenchState } from "../types";
@@ -16,11 +17,13 @@ import type { ImportResponse, WorkbenchState } from "../types";
 export function ImportView({
   state,
   onImported,
-  onOpened
+  onOpened,
+  onFactsUpdated
 }: {
   state: WorkbenchState;
   onImported: (result: ImportResponse) => void;
   onOpened?: (state: WorkbenchState) => void;
+  onFactsUpdated?: (state: WorkbenchState) => void;
 }) {
   const [netlist, setNetlist] = useState<File | null>(null);
   const [bom, setBom] = useState<File | null>(null);
@@ -163,9 +166,10 @@ export function ImportView({
           待复核历史记录 {state.assessment_coverage.legacy_needs_review}。</p>
         <p>{state.assessment_coverage.boundary}</p>
       </section>}
+      {onFactsUpdated && <VoltageReview key={state.review_decisions?.project_id} state={state} onUpdated={onFactsUpdated} />}
       <section className="current-snapshot" aria-label="当前电压确认记录">
         <strong>电压事实 · 工况 {state.voltage_facts.active_mode}</strong>
-        <p>仅用于已支持的电容耐压和电阻 DC 功耗检查；网名与旧电压提示不能作为确认。</p>
+        <p>用于已支持的直流电压与功耗子检查；器件档案批准和适用条件另行核验，网名与旧电压提示不能作为确认。</p>
         {state.voltage_facts.facts.length === 0 ? <p>尚未提供电压确认记录。</p> :
           state.voltage_facts.facts.map((fact) => (
             <p key={`${fact.net}-${fact.mode}`}>

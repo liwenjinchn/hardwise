@@ -9,7 +9,11 @@ from pathlib import Path
 from pydantic import create_model
 
 from hardwise.workbench.api_contracts import ImportResponse
-from hardwise.workbench.voltage_review_routes import VoltageBatchRequest, VoltageReviewResponse
+from hardwise.workbench.voltage_review_routes import (
+    VoltageBatchRequest,
+    VoltageReviewResponse,
+    VoltageCandidatesRequest,
+)
 from hardwise.workbench.review_history import ReviewHistoryPage
 from hardwise.workbench.offline_history import OfflineReviewHistory
 from hardwise.workbench.run_provenance import RunProvenanceResponse
@@ -35,11 +39,11 @@ def _require_serialized_response_fields(schema: dict[str, object]) -> None:
         properties = definition.get("properties")
         if isinstance(properties, dict):
             definition["required"] = sorted(properties)
-            # This field is deliberately omitted on old/v1-input runs via
-            # Pydantic exclude_if. Do not promise a key the API does not emit.
-            if name == "RunProvenance":
+            # These fields are omitted on old/v1-input runs or unedited ledgers
+            # via exclude_if. Do not promise keys the API does not emit.
+            if name in {"RunProvenance", "VoltageReviewDocument"}:
                 definition["required"] = [
-                    key for key in definition["required"] if key != "voltage_review"
+                    key for key in definition["required"] if key not in {"voltage_review", "edits"}
                 ]
 
 
@@ -60,6 +64,7 @@ def main() -> None:
         project_restore=(ProjectRestoreReceipt, ...),
         chat_request=(ChatRequest, ...),
         voltage_batch_request=(VoltageBatchRequest, ...),
+        voltage_candidates_request=(VoltageCandidatesRequest, ...),
         voltage_review=(VoltageReviewResponse, ...),
         chat_response=(ChatResponse, ...),
         ai_disclosure=(AIDisclosure, ...),

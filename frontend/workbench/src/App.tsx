@@ -184,7 +184,7 @@ function App() {
     <main className={`app-shell view-${view}`}>
       <Header state={state} currentView={view} onNavigate={setView} />
       {view === "import" && (
-        <ImportView state={state} onImported={(result) => void handleImportComplete(result)}
+        <ImportView state={state} onImported={(result) => void handleImportComplete(result)} onFactsUpdated={applyState}
           onOpened={payload => {
             detailRequestId.current += 1;
             setDetail(null);

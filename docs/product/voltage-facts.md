@@ -101,3 +101,21 @@ manifest or complete project backup when preserving review history.
 This enables file import/readback persistence only; the planned batch-edit and
 conflict-resolution UI/API is still incomplete. See the selected
 [multi-source implementation contract](fact-confirmation-plan-v1.md).
+
+
+## White batch editor (stage74 development version)
+
+The Import page now includes source candidates grouped by net/mode. Add or revise
+explicit candidates, record source/locator/reference/envelope, choose sources or
+leave unknown, and submit selected operations with a reviewer declaration and
+reason. Changes save an independent managed source version and rerun checks.
+Original inputs and recorded runs remain intact. Reverting candidate content does
+not resurrect an earlier confirmation; an explicit new confirmation is needed.
+A project/run/revision mismatch preserves the draft and requires an explicit
+refresh and re-selection. Names alone never confirm a voltage.
+
+New offline reports carry a read-only full candidate/history view. Old snapshots
+without it retain their previous readback. Editing requires a local SQLite
+journal; reviewer text is a local user assertion, not authenticated identity or
+independent engineering approval. This stage is validated on public synthetic
+inputs and still awaits unified delivery and actual target-environment review.

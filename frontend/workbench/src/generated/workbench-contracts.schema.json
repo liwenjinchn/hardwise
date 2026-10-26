@@ -3962,6 +3962,113 @@
       "title": "VoltageCandidate",
       "type": "object"
     },
+    "VoltageCandidateChange": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VoltageCandidate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "before": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VoltageCandidate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "after",
+        "before"
+      ],
+      "title": "VoltageCandidateChange",
+      "type": "object"
+    },
+    "VoltageCandidatesRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "active_mode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Active Mode"
+        },
+        "expected_project_id": {
+          "minLength": 1,
+          "title": "Expected Project Id",
+          "type": "string"
+        },
+        "expected_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expected Revision",
+          "type": "string"
+        },
+        "expected_run_id": {
+          "minLength": 1,
+          "title": "Expected Run Id",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "remove_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Remove Ids",
+          "type": "array"
+        },
+        "reviewer": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Reviewer",
+          "type": "string"
+        },
+        "upserts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/VoltageCandidate"
+          },
+          "maxItems": 1000,
+          "title": "Upserts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "active_mode",
+        "expected_project_id",
+        "expected_revision",
+        "expected_run_id",
+        "reason",
+        "remove_ids",
+        "reviewer",
+        "upserts"
+      ],
+      "title": "VoltageCandidatesRequest",
+      "type": "object"
+    },
     "VoltageConfirmation": {
       "additionalProperties": false,
       "description": "A recorded user assertion, not authenticated identity or engineering approval.",
@@ -4218,6 +4325,14 @@
           "title": "Confirmations",
           "type": "array"
         },
+        "edits": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/VoltageReviewEdit"
+          },
+          "title": "Edits",
+          "type": "array"
+        },
         "schema_version": {
           "const": "hardwise.voltage_review.v1",
           "default": "hardwise.voltage_review.v1",
@@ -4232,6 +4347,73 @@
         "schema_version"
       ],
       "title": "VoltageReviewDocument",
+      "type": "object"
+    },
+    "VoltageReviewEdit": {
+      "additionalProperties": false,
+      "properties": {
+        "active_mode": {
+          "title": "Active Mode",
+          "type": "string"
+        },
+        "changes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/VoltageCandidateChange"
+          },
+          "title": "Changes",
+          "type": "array"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "invalidated_confirmation_ids": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Invalidated Confirmation Ids",
+          "type": "array"
+        },
+        "previous_mode": {
+          "title": "Previous Mode",
+          "type": "string"
+        },
+        "previous_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Previous Revision",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "reviewer": {
+          "minLength": 1,
+          "title": "Reviewer",
+          "type": "string"
+        }
+      },
+      "required": [
+        "active_mode",
+        "changes",
+        "id",
+        "invalidated_confirmation_ids",
+        "previous_mode",
+        "previous_revision",
+        "reason",
+        "recorded_at",
+        "reviewer"
+      ],
+      "title": "VoltageReviewEdit",
       "type": "object"
     },
     "VoltageReviewResponse": {
@@ -4717,6 +4899,9 @@
     "voltage_batch_request": {
       "$ref": "#/$defs/VoltageBatchRequest"
     },
+    "voltage_candidates_request": {
+      "$ref": "#/$defs/VoltageCandidatesRequest"
+    },
     "voltage_review": {
       "$ref": "#/$defs/VoltageReviewResponse"
     },
@@ -4736,6 +4921,7 @@
     "project_restore",
     "chat_request",
     "voltage_batch_request",
+    "voltage_candidates_request",
     "voltage_review",
     "chat_response",
     "ai_disclosure"

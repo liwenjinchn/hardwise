@@ -5809,3 +5809,8 @@ An executable-facts projection alone loses conflicts and review history. Capture
 ### 2026-10-26 — Commit the edited fact source and saved-project head with the run
 
 A successful fact-confirmation run followed by a separate failed catalog save could reopen old facts. Separate immutable snapshot preparation from catalog publication, execute catalog SQL via the same DecisionJournal transaction as state/events/run, then publish context under lifecycle lock. Failed preparation may leave unreferenced immutable snapshots but no active version. Actualprocess exits beforecommit preserve all oldrows; aftercommit/beforeswap savedproject opens complete newledger. Keep stableproject/savedID and sourcehashes, don't overwrite originals or equate free reviewer text with authenticated identity. EvidenceHardwise-批量确认接口73; white editor/candidate mutations still pending.
+
+
+### 2026-10-26 — Reverting a candidate must not resurrect its old confirmation
+
+Current-content hashes alone let a reverted candidate match its prior approval again. Keep immutable before/after edit events plus explicitly invalidated confirmation IDs; new selections retain those events, but only the new confirmation ID can reactivate a fact. FullwhiteUI tests prove edit→revert remainsneeds_review, newconfirmworks, batchleavesconflictsunknown, deletiondoesnotapprove remaining source. Dual-page409 must preserve draft without silently rebasing; uncertain network outcomes also require refresh before resubmission. Readonlysnapshot view must handle CLIstate.review_decisions=None; it has no journalrun toinvent. Initial12backend/1E2E failures caught this regression; fixedandfinal1790/116unit/24E2Epass. EvidenceHardwise-白色事实确认74.

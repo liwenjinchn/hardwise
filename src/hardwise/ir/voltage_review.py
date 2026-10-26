@@ -39,6 +39,45 @@ class VoltageCandidate(BaseModel):
         return content_hash(self.model_dump(mode="json"))
 
 
+class VoltageCandidateChange(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    before: VoltageCandidate | None = None
+    after: VoltageCandidate | None = None
+
+    @model_validator(mode="after")
+    def actual_change(self):
+        if self.before == self.after:
+            raise ValueError("candidate change must contain different before/after values")
+        if self.before and self.after and self.before.id != self.after.id:
+            raise ValueError("a candidate revision must retain its id")
+        return self
+
+
+class VoltageReviewEdit(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    id: str = Field(min_length=1)
+    reviewer: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    recorded_at: datetime
+    previous_revision: str = Field(pattern=r"^[0-9a-f]{64}$")
+    previous_mode: str
+    active_mode: str
+    changes: tuple[VoltageCandidateChange, ...] = ()
+    invalidated_confirmation_ids: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def complete_edit(self):
+        if (
+            not self.reviewer.strip()
+            or not self.reason.strip()
+            or self.recorded_at.utcoffset() is None
+        ):
+            raise ValueError("candidate edits require reviewer, reason and timezone-aware time")
+        if not self.changes and self.previous_mode == self.active_mode:
+            raise ValueError("edit must change a candidate or active mode")
+        return self
+
+
 class VoltageConfirmation(BaseModel):
     """A recorded user assertion, not authenticated identity or engineering approval."""
 
@@ -88,12 +127,13 @@ class VoltageReviewDocument(BaseModel):
     active_mode: str = Field(default="dc", min_length=1)
     candidates: tuple[VoltageCandidate, ...] = ()
     confirmations: tuple[VoltageConfirmation, ...] = ()
+    edits: tuple[VoltageReviewEdit, ...] = Field(default=(), exclude_if=lambda value: not value)
 
     @model_validator(mode="after")
     def unique_ids(self):
         if not self.active_mode.strip():
             raise ValueError("active_mode must be nonempty")
-        for items in (self.candidates, self.confirmations):
+        for items in (self.candidates, self.confirmations, self.edits):
             ids = [item.id for item in items]
             if len(ids) != len(set(ids)):
                 raise ValueError("duplicate candidate or confirmation id")

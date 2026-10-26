@@ -142,11 +142,11 @@ describe("ImportView", () => {
 });
 
 describe("Voltage facts input", () => {
-  it("shows missing confirmation and the supported passive-check scope", () => {
+  it("shows missing confirmation and the limited DC-check scope", () => {
     const html = renderToStaticMarkup(<ImportView state={makeState()} onImported={() => {}} />);
     expect(html).toContain("已确认电压事实");
     expect(html).toContain("尚未提供电压确认记录");
-    expect(html).toContain("电容耐压和电阻 DC 功耗");
+    expect(html).toContain("已支持的直流电压与功耗子检查");
   });
 
   it("displays supplied source, reference, range, mode and confirmation", () => {
