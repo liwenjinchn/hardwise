@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from hardwise.validation.topology_isolation import isolate_topology
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.diode_led_current import led_current_limit_summary
@@ -10,6 +11,7 @@ from hardwise.validation.terminal_voltage import terminal_voltage_check
 from hardwise.validation.types import ComponentValidation
 
 
+@isolate_topology
 def validate_diode(
     component: Component,
     profile: DatasheetProfile,

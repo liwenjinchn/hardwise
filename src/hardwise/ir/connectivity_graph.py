@@ -1,4 +1,4 @@
-"""Build an isolated graph for explicit consumers, without changing legacy intake."""
+"""Build the isolated graph used by Telesis and PST intake."""
 
 from hardwise.ir.connectivity import ConnectionDeclaration, project_connectivity
 from hardwise.ir.types import Design, Net, Pin
@@ -21,20 +21,21 @@ def with_connectivity(design: Design, declarations: list[ConnectionDeclaration])
         for name, nodes in projection.resolved_nets.items()
     }
     names_by_endpoint: dict[tuple[str, str], set[str]] = {}
+    by_component: dict[str, dict[str, set[str]]] = {}
     for declaration in projection.declarations:
         for refdes, number in declaration.nodes:
             if refdes not in result.components:
                 raise ValueError(f"Unknown endpoint component {refdes!r}")
-            names_by_endpoint.setdefault((refdes, number), set()).add(declaration.net_name)
+            names = names_by_endpoint.setdefault((refdes, number), set())
+            names.add(declaration.net_name)
+            by_component.setdefault(refdes, {})[number] = names
     blocked = set(projection.ambiguous_endpoints)
     for refdes, component in result.components.items():
         # A supplied pin catalog may contain unconnected pins; do not discard it.
         pins = {pin.number: pin for pin in component.pins}
         if len(pins) != len(component.pins):
             raise ValueError(f"Duplicate pin metadata for {refdes}")
-        for (owner, number), names in names_by_endpoint.items():
-            if owner != refdes:
-                continue
+        for number, names in by_component.get(refdes, {}).items():
             pin = pins.get(number) or Pin(number=number, name="", electrical_type="", is_nc=False)
             if pin.is_nc:
                 raise ValueError(

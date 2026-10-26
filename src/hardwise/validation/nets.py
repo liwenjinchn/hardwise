@@ -24,7 +24,7 @@ from __future__ import annotations
 from pydantic import Field
 
 from hardwise.ir.types import Design
-from hardwise.ir.connectivity_queries import observed_net_names
+from hardwise.ir.connectivity_queries import observed_net_names, declaration_token
 from hardwise.validation.pins import is_ground_net
 from hardwise.validation.assessment import Assessment
 
@@ -55,7 +55,9 @@ def validate_design_nets(design: Design, *, source_label: str | None = None) -> 
     observed = observed_net_names(design)
     if design.connectivity:
         for name in design.connectivity.ambiguous_net_names:
-            records = [d for d in design.connectivity.declarations if d.net_name == name]
+            records = [
+                (i, d) for i, d in enumerate(design.connectivity.declarations) if d.net_name == name
+            ]
             results.append(
                 NetValidation(
                     net_name=name,
@@ -67,7 +69,7 @@ def validate_design_nets(design: Design, *, source_label: str | None = None) -> 
                     rule_version="1.connection-isolation1",
                     summary=f"网络 {name} 的来源连接声明有歧义，相关端点已隔离；不确认成员数，不当作开路或单端网络。",
                     nodes=[],
-                    evidence=[f"netlist:{d.source}#line{d.line};net={d.net_name}" for d in records],
+                    evidence=[declaration_token(d, i) for i, d in records],
                 )
             )
     if observed and not any(is_ground_net(net_name) for net_name in observed):

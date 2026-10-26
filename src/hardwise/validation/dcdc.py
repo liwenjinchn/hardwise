@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from hardwise.validation.assessment import result_for_attention, severity_for_attention
 
+from hardwise.validation.topology_isolation import isolate_topology
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Pin
 from hardwise.validation.dcdc_paths import (
@@ -20,6 +21,7 @@ from hardwise.validation.topology import (
 from hardwise.validation.types import ComponentValidation
 
 
+@isolate_topology
 def validate_buck_topology(
     component: Component,
     profile: DatasheetProfile,
@@ -78,9 +80,7 @@ def _validate_buck_inductor(
     min_uh = _float_recommended(profile, "inductor_min_uh")
     max_uh = _float_recommended(profile, "inductor_max_uh")
     if inductance is None:
-        summary = (
-            f"Inductor {inductor.refdes} value cannot be parsed deterministically or is numerically unavailable. {path_summary}"
-        )
+        summary = f"Inductor {inductor.refdes} value cannot be parsed deterministically or is numerically unavailable. {path_summary}"
         return ComponentValidation(
             check="buck_inductor",
             rule_version="3",

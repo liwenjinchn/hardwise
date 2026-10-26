@@ -10,6 +10,7 @@ Missing facts or boundary-crossing intervals remain UNKNOWN, never assumed 0 V.
 
 from __future__ import annotations
 
+from hardwise.validation.topology_isolation import isolate_topology
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.pin_resolver import profile_pin_by_name, schematic_pin_for_profile_name
@@ -17,6 +18,7 @@ from hardwise.validation.terminal_voltage import terminal_voltage_check
 from hardwise.validation.types import ComponentValidation
 
 
+@isolate_topology
 def validate_mosfet(
     component: Component,
     profile: DatasheetProfile,

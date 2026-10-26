@@ -896,3 +896,12 @@ Each implementation commit records exact commands and outputs below. Passing reg
 主构建入口仍未切换，跨器件拓扑及指纹迁移仍待完成；2009后端/135前端单元不能作为完整导入或A11验收。未push。
 
 第91最终验证：2009passed/7deselected/7既有坏值warnings，127.97s；135前端unit、最终24E2E45.8s、生成合同/typecheck/build/Ruff/diff通过。窄屏修复后新截图已查看，760px无水平溢出、离线0API请求。静态资产更新但主入口仍固定旧解压源码，未升级或覆盖旧包。
+
+
+## 第92阶段：正式连接隔离导入
+
+正式Telesis/PST入口已切换为保留声明、隔离歧义、独立范围继续。10种拓扑家族按真实连接读取隔离本次调用，覆盖间接邻居；相关声明进入复核指纹。18个既有正常样例对比27b2e04的组件、网络、索引和指纹完全一致。实际HTTP上传、PST解析、修正重跑/重开与原SQLite事件保留均有回归。
+
+实际CLI服务（无图注入）导出离线页面，R1/R2隔离、R3引脚PASS。浏览器发现任务证据仍把空net说成未命名连接，修正并加入上传断言；760px无水平溢出，离线resource列表为空。模拟AI问网络却调用器件验证，因此聊天记录不计网络查询成功。旧3个fixture冲突改为明确普通拓扑与UNKNOWN反例分开验证。
+
+最终2028passed/7deselected/7既有warnings，83.59s；135前端单元、24E2E47.0s、合同/typecheck/build、Ruff/diff通过。证据在任务outputs/Hardwise-连接接入92。原主项目与c751b84冻结包未动；备份恢复专项和统一冻结升级接续验证，完整A11及完整产品NOT_COMPLETE。未push。

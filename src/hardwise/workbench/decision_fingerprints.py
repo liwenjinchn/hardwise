@@ -3,6 +3,7 @@
 import hashlib
 import json
 
+from hardwise.workbench.connectivity_dependencies import connectivity_premises
 from hardwise.ir.identity_sources import MPN_RECORDS, is_mpn_field, netlist_mpn_sources
 from hardwise.validation.passive_ratings import resolve_passive_rating
 from hardwise.bom.source_fields import RATING_SOURCES
@@ -169,6 +170,9 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
     }
     if design.voltage_review is not None:
         broad["voltage_review"] = design.voltage_review.model_dump(mode="json")
+    ambiguity = connectivity_premises(design)
+    if ambiguity is not None:
+        broad["connectivity_ambiguity"] = ambiguity
     broad_hash = _digest(broad)
     output = {}
     for task in tasks:
@@ -188,6 +192,9 @@ def review_fingerprints(context, tasks) -> dict[str, str]:
                 "active_mode": design.voltage_facts.active_mode,
                 "facts": local_voltage_facts(design, component),
             }
+            ambiguity = connectivity_premises(design, component)
+            if ambiguity is not None:
+                payload["connectivity_ambiguity"] = ambiguity
             review = local_voltage_review(design, component)
             if review is not None:
                 payload["voltage_review"] = review

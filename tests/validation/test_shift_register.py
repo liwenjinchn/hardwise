@@ -1,9 +1,7 @@
-
 """Tests for PISO shift-register topology validation."""
 
 from __future__ import annotations
 from tests.profile_review_fixtures import validate_with_synthetic_approval
-
 
 
 from pathlib import Path
@@ -70,7 +68,7 @@ def test_shift_register_chain_passes_through_series_resistors(tmp_path: Path) ->
     assert "U2" in checks["shift_register_serial_chain"].summary
 
 
-@pytest.mark.parametrize("name", ["OUT2", "OUT0", "OUT999", "DATA_RETURN", "GPIO_OUT12_END"])
+@pytest.mark.parametrize("name", ["OUT2", "OUT999", "DATA_RETURN", "GPIO_OUT12_END"])
 def test_output_without_peer_does_not_prove_terminal_stage(tmp_path: Path, name: str) -> None:
     design = _design_from_text(tmp_path, _nominal_netlist().replace("'OUT2'", repr(name)))
     report = validate_with_synthetic_approval(design.components["U3"], _profile(), design)
@@ -116,4 +114,17 @@ def test_missing_serial_output_remains_connection_failure(tmp_path):
     design = _design_from_text(tmp_path, _nominal_netlist().replace("  'OUT2' ; U3.9\n", ""))
     report = validate_with_synthetic_approval(design.components["U3"], _profile(), design)
     chain = next(c for c in report.component_checks if c.check == "shift_register_serial_chain")
-    assert (chain.result, chain.severity, chain.rule_version) == ("FAIL", "ERROR", "2.profile-review1")
+    assert (chain.result, chain.severity, chain.rule_version) == (
+        "FAIL",
+        "ERROR",
+        "2.profile-review1",
+    )
+
+
+def test_output_renamed_to_existing_net_is_isolated_not_a_terminal_stage(tmp_path):
+    design = _design_from_text(tmp_path, _nominal_netlist().replace("'OUT2'", "'OUT0'"))
+    report = validate_with_synthetic_approval(design.components["U3"], _profile(), design)
+    chain = next(c for c in report.component_checks if c.check == "shift_register_serial_chain")
+    assert chain.status == "UNKNOWN"
+    assert chain.rule_version == "2.connection-isolation1.profile-review1"
+    assert "OUT0" in design.connectivity.ambiguous_net_names

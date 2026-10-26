@@ -168,7 +168,15 @@ def inspect_allegro_netlist(
     typer.echo(f"type: {input_type}")
     typer.echo("scope: pre-Layout connectivity only; no .brd, boardview, or PCB geometry parsed")
     typer.echo(f"components: {len(design.components)}")
-    typer.echo(f"nets: {len(design.nets)}")
+    from hardwise.ir.connectivity_queries import observed_net_names, ambiguous_net_names
+
+    typer.echo(f"nets: {len(observed_net_names(design))}")
+    if ambiguous_net_names(design):
+        typer.echo(
+            f"resolved nets: {len(design.nets)}; ambiguous nets: {len(ambiguous_net_names(design))}"
+        )
+        for name in sorted(ambiguous_net_names(design))[:limit]:
+            typer.echo(f"{name}: UNKNOWN connectivity; source declarations quarantined")
     typer.echo(f"properties: {property_count}")
     typer.echo("")
     top = sorted(design.nets.values(), key=lambda n: (-len(n.nodes), n.name))[:limit]

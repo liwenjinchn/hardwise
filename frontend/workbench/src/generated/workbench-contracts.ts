@@ -425,7 +425,7 @@ export type NetNames = string[];
 export type Ambiguities = ConnectionAmbiguity1[];
 export type AmbiguousEndpoints = [unknown, unknown][];
 export type AmbiguousNetNames = string[];
-export type Line = number;
+export type Line = number | null;
 export type NetName = string;
 /**
  * @minItems 1

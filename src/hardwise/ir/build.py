@@ -13,12 +13,14 @@ from __future__ import annotations
 from pathlib import Path
 from urllib.parse import urlparse
 
+from hardwise.ir.connectivity import ConnectionDeclaration
+from hardwise.ir.connectivity_graph import with_connectivity
 from hardwise.ir.identity_sources import attach_mpn_sources, is_mpn_field
 from hardwise.adapters.allegro_netlist import AllegroNetlistRegistry
 from hardwise.adapters.allegro_pst import AllegroPstRegistry
 from hardwise.adapters.base import BoardRegistry, NcPinRecord
 from hardwise.ir.profile import DatasheetProfile
-from hardwise.ir.types import Component, Design, Net, Pin
+from hardwise.ir.types import Component, Design, Pin
 
 
 def _build_pin_from_nc(nc: NcPinRecord) -> Pin:
@@ -107,41 +109,21 @@ def build_design_from_netlist(registry: AllegroNetlistRegistry) -> Design:
     for refdes, component in components.items():
         components[refdes] = attach_mpn_sources(component, by_refdes.get(refdes, []))
 
-    nets: dict[str, Net] = {}
-    seen_pin_nets: dict[tuple[str, str], str] = {}
-    pins_by_refdes: dict[str, list[Pin]] = {refdes: [] for refdes in components}
-
-    for net in registry.nets:
-        nodes: list[tuple[str, str]] = []
-        for refdes, pin_number in net.nodes:
-            key = (refdes, pin_number)
-            previous_net = seen_pin_nets.get(key)
-            if previous_net is not None:
-                raise ValueError(
-                    f"{refdes}.{pin_number} appears on multiple nets: {previous_net}, {net.name}"
-                )
-            seen_pin_nets[key] = net.name
-            nodes.append(key)
-            pins_by_refdes[refdes].append(
-                Pin(
-                    number=pin_number,
-                    name="",
-                    electrical_type="",
-                    is_nc=False,
-                    net=net.name,
-                )
-            )
-        nets[net.name] = Net(name=net.name, nodes=nodes)
-
-    for refdes, pins in pins_by_refdes.items():
-        components[refdes] = components[refdes].model_copy(update={"pins": pins})
-
-    return Design(
+    base = Design(
         components=components,
-        nets=nets,
         project_path=registry.source_file.parent,
         source_eda="allegro_netlist",
     )
+    declarations = [
+        ConnectionDeclaration(
+            source=str(registry.source_file),
+            line=net.source_line,
+            net_name=net.name,
+            nodes=net.nodes,
+        )
+        for net in registry.nets
+    ]
+    return with_connectivity(base, declarations)
 
 
 def build_design_from_pst(registry: AllegroPstRegistry) -> Design:
@@ -176,42 +158,35 @@ def build_design_from_pst(registry: AllegroPstRegistry) -> Design:
         ]
         components[part.refdes] = attach_mpn_sources(components[part.refdes], records)
 
-    nets: dict[str, Net] = {}
-    seen_pin_nets: dict[tuple[str, str], str] = {}
-    pins_by_refdes: dict[str, list[Pin]] = {refdes: [] for refdes in components}
-
+    # Preserve consistent pin labels; conflicting labels are not arbitrarily chosen.
+    labels: dict[tuple[str, str], set[str]] = {}
     for net in registry.nets:
-        nodes: list[tuple[str, str]] = []
         for node in net.nodes:
-            key = (node.refdes, node.pin_number)
-            previous_net = seen_pin_nets.get(key)
-            if previous_net is not None:
-                raise ValueError(
-                    f"{node.refdes}.{node.pin_number} appears on multiple nets: "
-                    f"{previous_net}, {net.name}"
-                )
-            seen_pin_nets[key] = net.name
-            nodes.append(key)
-            pins_by_refdes[node.refdes].append(
-                Pin(
-                    number=node.pin_number,
-                    name=node.pin_name,
-                    electrical_type="",
-                    is_nc=False,
-                    net=net.name,
-                )
+            labels.setdefault((node.refdes, node.pin_number), set()).add(node.pin_name)
+    for (refdes, number), names in labels.items():
+        components[refdes].pins.append(
+            Pin(
+                number=number,
+                name=next(iter(names)) if len(names) == 1 else "",
+                electrical_type="",
+                is_nc=False,
             )
-        nets[net.name] = Net(name=net.name, nodes=nodes)
-
-    for refdes, pins in pins_by_refdes.items():
-        components[refdes] = components[refdes].model_copy(update={"pins": pins})
-
-    return Design(
+        )
+    base = Design(
         components=components,
-        nets=nets,
         project_path=registry.source_dir,
         source_eda="allegro_netlist",
     )
+    declarations = [
+        ConnectionDeclaration(
+            source=str(registry.net_file),
+            line=net.source_line,
+            net_name=net.name,
+            nodes=[(node.refdes, node.pin_number) for node in net.nodes],
+        )
+        for net in registry.nets
+    ]
+    return with_connectivity(base, declarations)
 
 
 def _try_load_profile(

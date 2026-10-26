@@ -179,9 +179,7 @@ def _parse_chip_properties(chip_file: Path) -> dict[str, dict[str, str]]:
 def _parse_nets(net_file: Path, known_refdes: set[str]) -> list[AllegroPstNet]:
     lines = _read_lines(net_file)
     nets: list[AllegroPstNet] = []
-    seen_net_names: set[str] = set()
     current: AllegroPstNet | None = None
-    seen_nodes: set[tuple[str, str]] = set()
     i = 0
 
     while i < len(lines):
@@ -192,21 +190,13 @@ def _parse_nets(net_file: Path, known_refdes: set[str]) -> list[AllegroPstNet]:
             continue
         if line == "NET_NAME":
             name, i = _read_net_name(lines, i, line_no)
-            if name in seen_net_names:
-                raise ValueError(f"line {line_no}: duplicate net {name}")
             current = AllegroPstNet(name=name, source_line=line_no)
             nets.append(current)
-            seen_net_names.add(name)
-            seen_nodes = set()
             continue
         if line.startswith("NODE_NAME"):
             if current is None:
                 raise ValueError(f"line {line_no}: NODE_NAME before NET_NAME")
             node, i = _read_node(lines, i, line_no, current.name, known_refdes)
-            key = (node.refdes, node.pin_number)
-            if key in seen_nodes:
-                raise ValueError(f"line {line_no}: duplicate node {node.refdes}.{node.pin_number}")
-            seen_nodes.add(key)
             current.nodes.append(node)
             continue
         i += 1

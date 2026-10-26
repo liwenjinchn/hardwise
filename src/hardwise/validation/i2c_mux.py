@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from hardwise.validation.topology_isolation import isolate_topology
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design, Pin
 from hardwise.validation.family_pin import family_pin_check
 from hardwise.validation.types import ComponentValidation
 
 
+@isolate_topology
 def validate_i2c_mux(
     component: Component, profile: DatasheetProfile, design: Design
 ) -> list[ComponentValidation]:

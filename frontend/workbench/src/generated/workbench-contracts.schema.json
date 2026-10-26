@@ -1012,9 +1012,17 @@
       "description": "One logical source record; continuation lines remain one declaration.",
       "properties": {
         "line": {
-          "minimum": 1,
-          "title": "Line",
-          "type": "integer"
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line"
         },
         "net_name": {
           "minLength": 1,

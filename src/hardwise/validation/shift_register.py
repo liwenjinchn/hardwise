@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from hardwise.validation.assessment import result_for_attention, severity_for_attention
 
+from hardwise.validation.topology_isolation import isolate_topology
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.control_scope import observe_control_scope, control_pin_profile
 from hardwise.validation.types import ComponentValidation
 
 
+@isolate_topology
 def validate_shift_register_piso(
     component: Component,
     profile: DatasheetProfile,

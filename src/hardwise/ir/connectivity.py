@@ -1,7 +1,7 @@
 """Lossless connection declarations and a fail-closed projection.
 
-This foundation is not yet wired into Design. Consumers must handle the
-quarantine explicitly before using resolved_nets as a connectivity graph.
+Design retains this projection separately from its resolved connectivity graph.
+Consumers must handle the quarantine explicitly, never infer missing edges.
 """
 
 from collections import defaultdict
@@ -18,7 +18,7 @@ class ConnectionDeclaration(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     source: Name
-    line: int = Field(ge=1)
+    line: int | None = Field(default=None, ge=1)
     net_name: Name
     nodes: list[Endpoint] = Field(min_length=1)
 

@@ -81,7 +81,7 @@ def test_build_design_from_pst_components_without_connected_pins() -> None:
     assert design.components["TP1"].pins == []
 
 
-def test_build_design_from_pst_rejects_pin_on_multiple_nets() -> None:
+def test_build_design_from_pst_isolates_pin_on_multiple_nets() -> None:
     registry = AllegroPstRegistry(
         source_dir=Path("/tmp/pst"),
         part_file=Path("/tmp/pst/pstxprt.dat"),
@@ -93,5 +93,8 @@ def test_build_design_from_pst_rejects_pin_on_multiple_nets() -> None:
         ],
     )
 
-    with pytest.raises(ValueError, match="U1.8.*multiple nets"):
-        build_design_from_pst(registry)
+    design = build_design_from_pst(registry)
+    assert not design.nets
+    pin = design.components["U1"].pin_by_number("8")
+    assert pin.net is None and pin.connection_ambiguity == ["GND", "VCC"]
+    assert len(design.connectivity.declarations) == 2

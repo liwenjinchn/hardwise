@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from hardwise.validation.topology_isolation import isolate_topology
 from hardwise.ir.profile import DatasheetProfile, PinProfile
 from hardwise.ir.types import Component, Design, Pin
 from hardwise.validation.family_pin import family_pin_check
@@ -9,6 +10,7 @@ from hardwise.validation.control_scope import observe_control_scope, control_pin
 from hardwise.validation.types import ComponentValidation
 
 
+@isolate_topology
 def validate_mcu_basic(
     component: Component,
     profile: DatasheetProfile,

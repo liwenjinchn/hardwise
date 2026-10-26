@@ -40,7 +40,13 @@ def render(
     lines.append(f"| BOM source | `{bom.source_file}` |")
     lines.append("| Scope | Component identity and connectivity facts only |")
     lines.append(f"| Components in design | {match_report.design_refdes_count} |")
-    lines.append(f"| Nets in design | {len(design.nets)} |")
+    from hardwise.ir.connectivity_queries import observed_net_names, ambiguous_net_names
+
+    lines.append(f"| Nets in design | {len(observed_net_names(design))} |")
+    if ambiguous_net_names(design):
+        lines.append(
+            f"| Ambiguous net names (membership unknown) | {len(ambiguous_net_names(design))} |"
+        )
     lines.append(f"| BOM items | {match_report.bom_item_count} |")
     lines.append(f"| BOM refdes rows | {match_report.bom_row_count} |")
     lines.append(f"| Matched refdes | {len(match_report.matched_refdes)} |")

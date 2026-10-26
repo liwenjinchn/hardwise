@@ -8,6 +8,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from hardwise.ir.connectivity_queries import observed_net_names, ambiguous_net_names
 from hardwise.agent.topology_tools import (
     CONTROL_NET_PATTERN,
     INTERFACE_NET_PATTERN,
@@ -220,10 +221,28 @@ def _net_summaries(
     pattern: re.Pattern[str],
     limit: int,
 ) -> list[DraftSummaryItem]:
-    nets = [net for net in context.design.nets.values() if pattern.search(net.name)]
-    nets.sort(key=lambda item: (-_net_priority(item.name), item.name))
+    names = [name for name in observed_net_names(context.design) if pattern.search(name)]
+    names.sort(key=lambda name: (-_net_priority(name), name))
     items: list[DraftSummaryItem] = []
-    for net in nets[:limit]:
+    for name in names[:limit]:
+        if name in ambiguous_net_names(context.design):
+            items.append(
+                DraftSummaryItem(
+                    kind=kind,
+                    title=f"{title_prefix} · {name}",
+                    summary="来源连接声明有歧义，已隔离；不确认成员数或供电/控制连接。",
+                    refdes=[],
+                    nets=[name],
+                    task_ids=[],
+                    evidence=_evidence_views([_net_evidence_token(context, name)], "l1"),
+                    confidence="low",
+                    uncertainty="需核对原始声明后重跑。",
+                    basis=["source_connection_ambiguity"],
+                    status_group="manual",
+                )
+            )
+            continue
+        net = context.design.nets[name]
         refdes = sorted({refdes for refdes, _pin in net.nodes}, key=sort_refdes_key)
         net_tasks = _tasks_for_refdes(tasks, refdes)
         evidence = _evidence_views([_net_evidence_token(context, net.name)], "l1")

@@ -8,6 +8,7 @@ import sqlite3
 from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
+from hardwise.ir.connectivity_queries import observed_net_names
 from hardwise.ir.voltage_review import VoltageReviewDocument, VoltageCandidate
 from hardwise.ir.voltage_review_edits import edit_voltage_candidates
 from hardwise.ir.voltage_review_actions import (
@@ -76,7 +77,7 @@ def voltage_review_view(context, *, run_id: str, editable: bool):
         review=review.model_dump(mode="json"),
         scopes=[scope.model_dump(mode="json") for scope in project_voltage_review(review)[1]],
         nets=sorted(
-            set(context.design.nets)
+            observed_net_names(context.design)
             | {pin.net for c in context.design.components.values() for pin in c.pins if pin.net}
         ),
     )

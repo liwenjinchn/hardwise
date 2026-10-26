@@ -8,7 +8,7 @@ export function ConnectivityReader({ projection }: { projection?: ConnectivityPr
     <p>隔离网络 {blocked.size} 个；下面保留原始端点声明，歧义声明不代表确定成员，也不代表开路或 NC。</p>
     {projection.declarations.map((declaration, index) => <details key={index}>
       <summary>{declaration.net_name} · {blocked.has(declaration.net_name) ? "已隔离，成员待核对" : "确定连接"} · 声明 {index + 1}</summary>
-      <p>来源：{declaration.source} · 第 {declaration.line} 行</p>
+      <p>来源：{declaration.source} · {declaration.line === null ? "行号未记录" : `第 ${declaration.line} 行`}</p>
       <p>原始端点声明：{declaration.nodes.map(([ref, pin]) => `${ref}.${pin}`).join("、")}</p>
     </details>)}
   </section>;

@@ -990,20 +990,10 @@ def test_design_validator_ui_uses_document_mpn_for_l2n7002klt1g_profile(
   ! 'SOT23' ! LOCAL_VALUE ; PQ9
   ! 'PDFN' ! LOCAL_VALUE ; Q13
 $NETS
-  'P3V3' ; PQ10.1
-  'GND' ; PQ10.2
-  'P12V' ; PQ10.3
-  'P3V3' ; PQ9.G
-  'GND' ; PQ9.S
-  'P12V' ; PQ9.D
-  'P12V' ; Q13.1
-  'P12V' ; Q13.2
-  'P12V' ; Q13.3
-  'P3V3' ; Q13.4
-  'LOAD' ; Q13.5
-  'LOAD' ; Q13.6
-  'LOAD' ; Q13.7
-  'LOAD' ; Q13.8
+  'P3V3' ; PQ10.1, PQ9.G, Q13.4
+  'GND' ; PQ10.2, PQ9.S
+  'P12V' ; PQ10.3, PQ9.D, Q13.1, Q13.2, Q13.3
+  'LOAD' ; Q13.5, Q13.6, Q13.7, Q13.8
 $END
 """,
         encoding="utf-8",

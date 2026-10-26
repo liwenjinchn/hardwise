@@ -145,6 +145,12 @@ def _topology_content(component: Component, design: Design, validation: Validati
     ]
     pin_names = {pin.pin_number: pin.pin_name for pin in validation.pin_results}
     for pin in component.pins:
+        if pin.connection_ambiguity:
+            names = escape(", ".join(pin.connection_ambiguity))
+            lines.append(
+                f'<div class="net"><b>引脚 {escape(pin.number)}：连接待核对</b><p>来源声明有歧义：{names}；不确认成员，不当作开路或NC。</p></div>'
+            )
+            continue
         net = design.nets.get(pin.net or "")
         members = sorted(net.nodes if net else [(component.refdes, pin.number)])
         rendered_members = " ".join(

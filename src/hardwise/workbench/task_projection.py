@@ -202,8 +202,12 @@ def _pin_check_tasks(row: ProjectValidationRow, validation: ValidationReport) ->
                 trust_tier="l1",
                 title=title,
                 body=(
-                    f"{pin.pin_name} 连接到 {pin.net or '未命名网络'}；"
-                    f"{validation_summary_label(pin.summary)}"
+                    (
+                        f"{pin.pin_name} 连接到 {pin.net}；"
+                        if pin.net
+                        else f"{pin.pin_name} 无确定网络；"
+                    )
+                    + f"{validation_summary_label(pin.summary)}"
                 ),
                 recommended_action=_recommended_action(pin.status, pin.summary),
                 chain=[

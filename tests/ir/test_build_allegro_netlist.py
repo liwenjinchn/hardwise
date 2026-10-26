@@ -88,7 +88,7 @@ def test_build_design_from_netlist_components_without_connected_pins() -> None:
     assert design.components["TP1"].pins == []
 
 
-def test_build_design_from_netlist_rejects_pin_on_multiple_nets() -> None:
+def test_build_design_from_netlist_isolates_pin_on_multiple_nets() -> None:
     registry = AllegroNetlistRegistry(
         source_file=Path("/tmp/example.net"),
         packages=[AllegroPackage(package_name="SOIC8", device_name="SOIC8", refdes_list=["U1"])],
@@ -98,5 +98,8 @@ def test_build_design_from_netlist_rejects_pin_on_multiple_nets() -> None:
         ],
     )
 
-    with pytest.raises(ValueError, match="U1.8.*multiple nets"):
-        build_design_from_netlist(registry)
+    design = build_design_from_netlist(registry)
+    assert not design.nets
+    pin = design.components["U1"].pin_by_number("8")
+    assert pin.net is None and pin.connection_ambiguity == ["GND", "VCC"]
+    assert len(design.connectivity.declarations) == 2

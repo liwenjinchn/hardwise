@@ -186,7 +186,6 @@ def _parse_net(record: str, line_no: int, known_refdes: set[str]) -> AllegroNet:
         raise ValueError(f"line {line_no}: net row has empty name")
 
     nodes: list[tuple[str, str]] = []
-    seen_nodes: set[tuple[str, str]] = set()
     for token in _split_items(nodes_text):
         if "." not in token:
             raise ValueError(f"line {line_no}: malformed node {token!r}")
@@ -196,9 +195,6 @@ def _parse_net(record: str, line_no: int, known_refdes: set[str]) -> AllegroNet:
         if refdes not in known_refdes:
             raise ValueError(f"line {line_no}: unknown refdes {refdes} in net {name}")
         node = (refdes, pin_number)
-        if node in seen_nodes:
-            raise ValueError(f"line {line_no}: duplicate node {token!r} in net {name}")
-        seen_nodes.add(node)
         nodes.append(node)
 
     if not nodes:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from hardwise.validation.topology_isolation import isolate_topology
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.validation.gate_driver_helpers import (
@@ -16,6 +17,7 @@ from hardwise.validation.topology import components_on_net
 from hardwise.validation.types import ComponentValidation
 
 
+@isolate_topology
 def validate_half_bridge_gate_driver(
     component: Component,
     profile: DatasheetProfile,

@@ -134,7 +134,7 @@ class NetContextFound(BaseModel):
 
 class ConnectionDeclarationSummary(BaseModel):
     source: str
-    line: int
+    line: int | None
     declared_endpoint_count: int
     observed_endpoints: list[tuple[str, str]]
 
