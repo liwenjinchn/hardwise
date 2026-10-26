@@ -736,3 +736,16 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - 证据Hardwise-输出合同76；fullgoalactiveNOT_COMPLETE。原日志/输入/档案/冻结包未改，no push。
 
 本轮文档提交前完整pytest：1790passed、7deselected、7既有刻意坏值warnings，67.45s；Ruff/diff通过。没有运行代码改动，未重跑frontend unit/E2E，不把该结果记作F04修复通过。
+
+
+### 2026-10-26 — 第77批量确认并发与独立恢复验收
+
+上轮461a876完成F04反例与方案为progress。本轮不依赖待选输出合同，增加F01既定合同的真实并发证据；goalactive NOT_COMPLETE，no push。
+
+在独立公开合成输入/SQLite和真实uvicorn HTTP进程中，10轮各10个请求同时争用同一个project/run/revision：每轮5个确认与5个候选修订，严格1个200和9个409，共10次成功/90次冲突。实际4轮确认、6轮修订赢得提交；每轮只增加1个运行和1条账本声明或修订。返回视图等于胜出完整版本；原确认/修订前缀及旧run provenance不变；保存项目ID稳定，逐轮受管理重开全账本相等，原输入hash不变。
+
+其后完整项目备份在独立中文空格目录恢复。让演练原source和journal路径都不可用，新Python进程按saved ID打开恢复副本：4候选/6确认/6修订、可执行facts和全部SQLite各表行与原副本一致（11运行）。备份SHA256 4dfacf9b2e4ad3464ec19816dce168c881a7ac24bd62d5359c293cde012cb924。
+
+范围：单工作台进程内真正同时到达的HTTP请求与新进程恢复，不证明多服务器协同写入、真实工程批准、Windows/Cadence或无限负载。原用户日志和冻结包未使用；未修改运行代码。F01/F05仍partial，真实工程来源/工况主审与目标机未验。详细请求、胜出结果及恢复证明在任务输出Hardwise-并发验收77/race-results.json和recovery-proof.json。F04、F06各自方案待答，不据此推定选择。
+
+第77文档提交前完整1790passed/7deselected/7既有刻意坏值warnings70.50s，Ruff/diff通过；未重跑frontend unit/E2E。原用户日志6事件36运行、10managed/4logicalhash及10冻结ZIP均保持不变。独立演练18783进程已正常退出，未占用原主入口。

@@ -5824,3 +5824,8 @@ Symptom: historical server handles were unavailable; initial extracted VALIDATE 
 ### 2026-10-26 — A lookup result is not authority for arbitrary prose
 
 Symptom: twelve of sixteen adversarial chat flows still displayed fabrication signoff wording. Root cause: a non-error negative lookup or unrelated positive result sets has_result, and any trace unlocks the entire model answer; token occurrence does not bind subject/value/unit/condition. Fix status: audit and two contract routes submitted for user selection; runtime unchanged. Takeaway: distinguish observed lookup outcome, scoped source facts and verified claims, preserve diagnostic misses without authorizing unrestricted claims. EvidenceHardwise-输出合同76; formal state/CSV/profile/offline isolation remains effective.
+
+
+### 2026-10-26 — Prove concurrent publication with actual competing requests
+
+Sequential stale-request tests prove rejection after a known version change, but do not exercise simultaneous arrival. Use independent synthetic data and a real HTTP service, synchronize ten submitters against the same run/revision, then compare the winning response, exact append counts, prior provenance and saved-project reopen. Ten rounds produced one complete publication each, with both confirm and edit winners; the other ninety requests returned409. Separately make original source/journal unavailable before fresh-process backup recovery and compare all rows/full ledger. Scope this proof to one workbench process and measured workload; it is not distributed-writer, engineering or target-platform certification. No runtime bug or contract change was required. EvidenceHardwise-并发验收77.
