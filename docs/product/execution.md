@@ -820,3 +820,24 @@ Each implementation commit records exact commands and outputs below. Passing reg
 独立公开fixture副本和合成原文在18785实测：页面allow保存200、状态DRAFT；另一请求重跑后旧表单409，刷新前后SYNTHETIC_CONFLICT_DRAFT_85不变，保存禁用直到重新核对；页面withhold保存200。本地原文保留，新HTML与旧allow run的分享清单无原文；离线页面0API/0编辑按钮，760宽无水平溢出。截图实际检查了滚动中部和底部；早期整块截图受父滚动容器裁切，保留但不作为完整表单可见证据。
 
 验证：1968passed/7deselected/7既有坏值warnings78.11s，125前端unit（新增7API失败/离线/请求合同测试）、24E2E46.3s、构建/types/Ruff通过。新表单浏览器流程为独立真实UI演练，不计入原24E2E覆盖范围。生产档案未补批准，主入口仍固定0e77607；F06仍待完整出口复核、可读离线资料核对与统一交付，独立真人工程核对另行验收，完整产品NOT_COMPLETE。
+
+
+## 第86阶段：出口清单与真实CLI复验
+
+| 出口 | 本轮实验证据 | 当前能力边界 |
+| --- | --- | --- |
+| 当前/历史run清单及SPA嵌套清单 | 第83/85已验证允许、撤回、旧记录无许可、原值/SQL不改 | 有声明才保留原文；旧记录不得借用新许可 |
+| 任务JSON/CSV、annotations | 新增实际HTTP遍历：allow/withhold/未声明均无合成原文 | 摘要出口原本不携带profile source，不是完整来源阅读层 |
+| 项目/器件准备包JSON、Markdown | 新增实际HTTP遍历：allow/withhold/未声明均无合成原文 | 原本只给摘要，不能据此声称展示摘录 |
+| history分页 | 新增实际HTTP遍历，SQL前后相同 | 事件摘要，不含完整profile；详细run清单另过滤 |
+| CLI --ai-snapshot | 真实命令allow/withhold各运行一次，原始HTML字符串检查 | allow有摘录、withhold无，仍需直接可读查看入口 |
+| CLI兼容HTML | 真实命令及传入带标记profile的渲染器测试 | 两种声明都不展示摘录；无泄漏不等于F06体验完成 |
+| CLI index Markdown/JSON | 四次真实命令附带输出均无合成原文 | 仅检查索引，不承担摘录呈现 |
+| 聊天快照 | 第83真实Runner核验后整项省略无许可事实，重新生成答案 | 本地实时查询与分享快照不同；不篡改事实ID |
+| 本地摘录读取/实时证据查询/完整备份 | 本地用途，保留原内容；第84真实恢复 | 不伪装分享包；不能对完整备份承诺无原文 |
+
+新增8项回归覆盖三态HTTP概要出口、CLI使用的SPA渲染器及兼容渲染器；独立真实CLI四次均退出0，共12个HTML/索引输出，证据位于续接outputs/Hardwise-出口核查86/cli-proof.json。所有样例为合成声明，无厂商原文和真实工程批准。未发现本轮已列出口新增泄漏；这不等于任意自由文本具备自动版权分类能力。
+
+明确未完成：允许分享原文目前位于清单/嵌套JSON，接收者缺少页面内直接阅读来源、单位、条件、声明与省略原因的入口；补齐这一阅读层及统一冻结交付后再评估F06软件完成度。真实独立核对仍需人完成，产品NOT_COMPLETE。
+
+第86最终验证：1976passed/7deselected/7既有坏值warnings73.39s，Ruff/diff通过。此次仅测试/文档，不改运行或前端资产；未升级主入口，未push。
