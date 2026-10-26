@@ -142,3 +142,53 @@ def test_pst_source_parser_preserves_conflicting_records_and_independent_net(tmp
     assert len(design.connectivity.declarations) == len(registry.nets) == 4
     assert design.connectivity.declarations[-1].line == len(original.splitlines()) + 1
     assert path.read_text() == original + tail
+
+
+def test_backup_restores_ambiguous_sources_and_exact_historical_projection(tmp_path):
+    import shutil
+
+    from hardwise.workbench.context import close_workbench_context
+    from hardwise.workbench.managed_projects import ManagedProjects
+    from hardwise.workbench.project_backup import backup_projects, restore_projects
+
+    source = tmp_path / "original"
+    source.mkdir()
+    inputs(source, "SIGNAL ; R1.1\nSIGNAL ; R2.1")
+    with TestClient(app(source)) as client:
+        state = client.get("/api/workbench/state").json()
+        run = state["review_decisions"]["run_id"]
+        before = client.get(f"/api/workbench/review-runs/{run}/provenance").json()
+        saved = client.post("/api/workbench/projects/save", params={"expected_run_id": run})
+        assert saved.status_code == 200, saved.text
+        project_id = saved.json()["id"]
+    archive = tmp_path / "backup.zip"
+    backup_projects(source / "review.sqlite", archive)
+    shutil.rmtree(source)
+    restored = restore_projects(archive, tmp_path / "恢复 空格")
+    journal = Path(restored["journal"])
+    context, directory = ManagedProjects(journal).open(project_id)
+    try:
+        projection = context.design.connectivity
+        assert projection.ambiguous_net_names == ["SIGNAL"]
+        assert len(projection.declarations) == 4
+        assert context.design.components["R1"].pin_by_number("1").net is None
+        assert context.design.components["R3"].pin_by_number("1").net == "OTHER"
+        application = create_workbench_app(
+            context, NoChat(), auto_datasheet_candidates=False, review_db=journal
+        )
+        with TestClient(application) as client:
+            after = client.get(f"/api/workbench/review-runs/{run}/provenance").json()
+            assert after == before
+            current = client.get("/api/workbench/state").json()["review_decisions"]
+            report = client.get(
+                "/api/workbench/offline-report",
+                params={
+                    "expected_project_id": current["project_id"],
+                    "expected_run_id": current["run_id"],
+                },
+            )
+            assert report.status_code == 200
+            assert '"ambiguous_net_names": ["SIGNAL"]' in report.text
+    finally:
+        close_workbench_context(context)
+        shutil.rmtree(directory)

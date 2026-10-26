@@ -905,3 +905,12 @@ Each implementation commit records exact commands and outputs below. Passing reg
 实际CLI服务（无图注入）导出离线页面，R1/R2隔离、R3引脚PASS。浏览器发现任务证据仍把空net说成未命名连接，修正并加入上传断言；760px无水平溢出，离线resource列表为空。模拟AI问网络却调用器件验证，因此聊天记录不计网络查询成功。旧3个fixture冲突改为明确普通拓扑与UNKNOWN反例分开验证。
 
 最终2028passed/7deselected/7既有warnings，83.59s；135前端单元、24E2E47.0s、合同/typecheck/build、Ruff/diff通过。证据在任务outputs/Hardwise-连接接入92。原主项目与c751b84冻结包未动；备份恢复专项和统一冻结升级接续验证，完整A11及完整产品NOT_COMPLETE。未push。
+
+
+## 第93阶段：连接隔离备份恢复与冻结候选
+
+新增回归：真实保存项目并备份，删除测试原始目录、SQLite及受管理输入后，从ZIP恢复到中文空格路径。隔离SIGNAL两条声明、独立OTHER连接和精确历史来源清单均保留，恢复后的离线导出可用。全量2029passed/7deselected/7既有warnings，119.69s；Ruff/diff通过。
+
+构建器登记e011834源码基线；冻结ZIP1001文件/14455210字节，SHA256 c2e36f5719dcc0674d7c78f0817ab3281508bac58e9feba2c14b9dc03db03f67。解压VALIDATE通过，64项连接/备份专项通过3.75s；非Windows、篡改、计数漂移、覆盖旧包和未登记ref负向控制均拒绝。32份旧ZIP哈希未变。新增恢复测试在交付验证提交中，未混入已冻结e011834源码。
+
+使用原日志在线备份副本连续升级两次；原6事件、40运行、受管理项及原决定/指纹不变，副本最终42运行。原主入口尚未切换，不把副本验证称作实际升级。证据outputs/Hardwise-交付候选93。完整产品仍NOT_COMPLETE，未push。
