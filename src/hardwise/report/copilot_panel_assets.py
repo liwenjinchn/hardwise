@@ -370,7 +370,22 @@ COPILOT_SCRIPT = (
     }
     pending.remove();
     const answer = response.answer || '';
-    const node = addMessage('assistant', 'AI 解释 · 参数和推断未经逐项核验，不改变确定性结果或人工决定。\\n\\n' + answer);
+    const boundary = response.response_kind === 'structured_explanation'
+      ? '本回合结构化绑定已核对；来源和条件仍需工程复核，不授予整板签核。'
+      : response.response_kind === 'insufficient_evidence'
+        ? '本回合未产生新的检查结论。'
+        : 'AI 解释 · 参数和推断未经逐项核验，不改变确定性结果或人工决定。';
+    const node = addMessage('assistant', boundary + '\\n\\n' + answer);
+    if (response.explanation_review) {
+      const details = document.createElement('details');
+      const summary = document.createElement('summary');
+      summary.textContent = '绑定核对明细（仅与本回合工具字段一致）';
+      const pre = document.createElement('pre');
+      pre.style.cssText = 'white-space:pre-wrap;overflow-wrap:anywhere;max-height:280px;overflow:auto';
+      pre.textContent = JSON.stringify(response.explanation_review, null, 2);
+      details.append(summary, pre);
+      node.appendChild(details);
+    }
     renderTrace(node, response);
     history.push({role: 'assistant', content: answer});
   };

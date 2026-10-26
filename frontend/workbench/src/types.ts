@@ -621,8 +621,9 @@ export interface ChatRequest {
 
 export interface ChatResponse {
   answer: string;
-  response_kind: "model_explanation" | "insufficient_evidence" | "offline_notice";
+  response_kind: import("./generated/workbench-contracts").ResponseKind;
   claim_verification: "unverified";
+  explanation_review?: import("./generated/workbench-contracts").ExplanationReview | null;
   mode: "fake" | "real" | "snapshot";
   selected_refdes: string | null;
   trace: EvidenceTrace[];

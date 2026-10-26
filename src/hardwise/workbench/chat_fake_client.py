@@ -121,6 +121,11 @@ class _FakeWorkbenchMessages:
         )
 
     def _answer_from_tool_result(self, blocks: list[dict[str, Any]]) -> str:
+        from hardwise.workbench.chat_fake_claims import fake_claim_answer
+
+        structured = fake_claim_answer(blocks)
+        if structured is not None:
+            return structured
         payloads = _tool_payloads(blocks)
         if not payloads:
             return _localized(

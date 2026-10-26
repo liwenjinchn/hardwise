@@ -49,7 +49,9 @@ from hardwise.agent.grounding import (
     evidence_tokens_from_datasheet_hits,
     trust_tier_for_datasheet_search,
 )
-from hardwise.agent.output_boundary import ResponseKind, constrain_model_answer, usable_tool_payload
+from hardwise.agent.output_boundary import ResponseKind, usable_tool_payload
+from hardwise.agent.claim_contract import ExplanationReview
+from hardwise.agent.claim_turn import ClaimTurn, OUTPUT_CONTRACT, render_explanation
 from hardwise.agent.prompts import build_system_blocks
 from hardwise.agent.router import ModelRouter, Tier
 from hardwise.agent.tools import (
@@ -106,9 +108,9 @@ class ToolCallTrace:
 class RunResult:
     """Outcome of one Runner.run() invocation.
 
-    `text` is the final assistant message after refdes-guard sanitization
-    and the no-tool output boundary (user-visible). Even model_explanation is
-    unverified prose and cannot create a formal assessment. `text_wrapped` counts unverified refdes that were wrapped
+    `text` is server-rendered from this turn's verified bindings and then
+    refdes-guard sanitized. Raw model prose never becomes the final answer.
+    Matching a binding does not create a formal assessment. `text_wrapped` counts unverified refdes that were wrapped
     in `text`; per-trace wraps live on each `ToolCallTrace.wrapped`.
     """
 
@@ -122,6 +124,7 @@ class RunResult:
     stopped_at_cap: bool = False
     text_wrapped: int = 0
     response_kind: ResponseKind = "insufficient_evidence"
+    explanation_review: ExplanationReview | None = None
 
 
 class Runner:
@@ -169,11 +172,14 @@ class Runner:
 
     def run(self, user_message: str) -> RunResult:
         result = RunResult(text="")
+        claim_turn = ClaimTurn(self.registry, self.design)
         messages: list[dict] = [{"role": "user", "content": user_message}]
         model = self.router.select(self.tier)
         system_blocks = (
             build_system_blocks(self.system_prompt) if self.system_prompt else build_system_blocks()
         )
+        system_blocks.append({"type": "text", "text": OUTPUT_CONTRACT})
+        system_blocks.append({"type": "text", "text": "Current scope_id: " + claim_turn.scope_id})
 
         for iteration in range(1, self.max_iterations + 1):
             response = self.client.messages.create(
@@ -188,10 +194,9 @@ class Runner:
 
             if not tool_uses:
                 raw_text = self._extract_text(response.content)
-                sanitized, wrapped = sanitize_text(raw_text, self.registry)
-                result.text, result.response_kind = constrain_model_answer(
-                    sanitized, has_tool_result=any(trace.has_result for trace in result.tool_calls)
-                )
+                result.explanation_review = claim_turn.review(raw_text)
+                rendered, result.response_kind = render_explanation(result.explanation_review)
+                result.text, wrapped = sanitize_text(rendered, self.registry)
                 result.text_wrapped = wrapped
                 result.iterations = iteration
                 return result
@@ -200,8 +205,10 @@ class Runner:
             tool_results: list[dict] = []
             for tool_use in tool_uses:
                 tool_result_block, trace = self._dispatch(tool_use)
+                claim_turn.receive(tool_use.name, dict(tool_use.input or {}), tool_result_block)
                 tool_results.append(tool_result_block)
                 result.tool_calls.append(trace)
+            tool_results.append(claim_turn.directory())
             messages.append({"role": "user", "content": tool_results})
 
         result.text = "(stopped: iteration cap reached)"

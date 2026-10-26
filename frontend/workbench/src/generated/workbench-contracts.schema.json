@@ -76,7 +76,7 @@
           "type": "string"
         },
         "version": {
-          "default": "hardwise.ai_disclosure.v1",
+          "default": "hardwise.ai_disclosure.v2",
           "title": "Version",
           "type": "string"
         }
@@ -453,6 +453,17 @@
           "title": "Datasheet Search Enabled",
           "type": "boolean"
         },
+        "explanation_review": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExplanationReview"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "mode": {
           "enum": [
             "fake",
@@ -466,6 +477,7 @@
           "default": "insufficient_evidence",
           "enum": [
             "model_explanation",
+            "structured_explanation",
             "insufficient_evidence",
             "offline_notice"
           ],
@@ -677,6 +689,30 @@
         "summary"
       ],
       "title": "CheckView",
+      "type": "object"
+    },
+    "ClaimIssue": {
+      "properties": {
+        "code": {
+          "enum": [
+            "unknown_fact",
+            "binding_mismatch",
+            "unknown_conditions",
+            "duplicate_claim"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "index": {
+          "title": "Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "code",
+        "index"
+      ],
+      "title": "ClaimIssue",
       "type": "object"
     },
     "ComponentDetail": {
@@ -1370,6 +1406,126 @@
       "title": "EvidenceClassification",
       "type": "object"
     },
+    "EvidenceFact": {
+      "additionalProperties": false,
+      "description": "Created only from dispatched server data, never accepted as model authority.\n\nThe digest detects accidental mutation/substitution; it is not a signature,\nindependent engineering review, or authentication of a datasheet field.",
+      "properties": {
+        "call_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Call Id",
+          "type": "string"
+        },
+        "conditions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Conditions",
+          "type": "object"
+        },
+        "conditions_status": {
+          "enum": [
+            "explicit",
+            "not_required",
+            "unknown"
+          ],
+          "title": "Conditions Status",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^FACT-[0-9a-f]{64}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "observation",
+            "assessment",
+            "approved_parameter",
+            "source_coverage",
+            "lookup_result"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "object_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "object_kind": {
+          "enum": [
+            "component",
+            "net",
+            "project"
+          ],
+          "title": "Object Kind",
+          "type": "string"
+        },
+        "property_key": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Property Key",
+          "type": "string"
+        },
+        "rule_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rule Version"
+        },
+        "scope_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Scope Id",
+          "type": "string"
+        },
+        "source_tokens": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Tokens",
+          "type": "array"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "call_id",
+        "conditions",
+        "conditions_status",
+        "id",
+        "kind",
+        "object_id",
+        "object_kind",
+        "property_key",
+        "rule_version",
+        "scope_id",
+        "source_tokens",
+        "unit",
+        "value"
+      ],
+      "title": "EvidenceFact",
+      "type": "object"
+    },
     "EvidencePackageLane": {
       "description": "One independent evidence input or deterministic coverage lane.",
       "properties": {
@@ -1586,6 +1742,46 @@
       "title": "EvidencePackageSummary",
       "type": "object"
     },
+    "EvidenceRequest": {
+      "additionalProperties": false,
+      "description": "Unverified follow-up proposals have no free-form verdict or numeric authority.",
+      "properties": {
+        "object_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "object_kind": {
+          "enum": [
+            "component",
+            "net",
+            "project"
+          ],
+          "title": "Object Kind",
+          "type": "string"
+        },
+        "topic": {
+          "enum": [
+            "rating",
+            "voltage_envelope",
+            "operating_condition",
+            "part_identity",
+            "connectivity",
+            "document"
+          ],
+          "title": "Topic",
+          "type": "string"
+        }
+      },
+      "required": [
+        "object_id",
+        "object_kind",
+        "topic"
+      ],
+      "title": "EvidenceRequest",
+      "type": "object"
+    },
     "EvidenceTrace": {
       "description": "UI-friendly trace row derived from one Runner tool call.",
       "properties": {
@@ -1735,6 +1931,69 @@
       "title": "EvidenceView",
       "type": "object"
     },
+    "ExplanationReview": {
+      "description": "Only server-owned matching facts escape; rejected model prose/values do not.",
+      "properties": {
+        "error": {
+          "anyOf": [
+            {
+              "enum": [
+                "invalid_envelope",
+                "stale_scope",
+                "invalid_catalog"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "issues": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ClaimIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "notices": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Notices",
+          "type": "array"
+        },
+        "requests": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceRequest"
+          },
+          "title": "Requests",
+          "type": "array"
+        },
+        "verified_facts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvidenceFact"
+          },
+          "title": "Verified Facts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "error",
+        "issues",
+        "notices",
+        "requests",
+        "verified_facts"
+      ],
+      "title": "ExplanationReview",
+      "type": "object"
+    },
     "ImportResponse": {
       "description": "Summary returned after an uploaded project becomes the active context.",
       "properties": {
@@ -1867,6 +2126,7 @@
       "title": "InputReadManifest",
       "type": "object"
     },
+    "JsonValue": {},
     "NetCheckView": {
       "description": "Design-level net check shown in the project summary area.",
       "properties": {

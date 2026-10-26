@@ -149,7 +149,7 @@ def test_runner_text_only_withholds_unverified_model_text() -> None:
     # LM7805 matches the refdes regex shape but is U3's verified part number
     # (registry value), so the guard passes it through (guards/refdes.py +
     # learning_log 2026-05-30). A genuinely unknown refdes would still wrap.
-    assert "没有获得可用的工具结果" in result.text
+    assert "未获得可展示的已核绑定" in result.text
     assert "LM7805" not in result.text
     assert result.response_kind == "insufficient_evidence"
     assert result.text_wrapped == 0
@@ -168,7 +168,7 @@ def test_runner_first_create_call_uses_cacheable_system_blocks() -> None:
 
     system = client.messages.calls[0]["system"]
     assert isinstance(system, list)
-    assert system == [
+    assert system[:1] == [
         {
             "type": "text",
             "text": SYSTEM_PROMPT,
@@ -211,8 +211,9 @@ def test_runner_single_tool_use_dispatches_then_text() -> None:
         ]
     )
     result = runner.run("U3 是什么?")
-    # LM7805 is U3's verified part number (registry value) → passes through.
-    assert result.text == "U3 是 LM7805，封装 TO-220"
+    # A valid lookup cannot authorize arbitrary prose; the new contract is mandatory.
+    assert result.response_kind == "insufficient_evidence"
+    assert "LM7805，封装" not in result.text
     assert result.text_wrapped == 0
     assert result.iterations == 2
     assert len(result.tool_calls) == 1
@@ -431,6 +432,7 @@ def test_runner_guards_chinese_and_long_refdes_in_final_model_text() -> None:
         ]
     )
     result = runner.run("核对这些对象")
-    assert result.text == "检查⟨?U999⟩以及⟨?U10000⟩，U3使用DDR4接口。"
-    assert result.text_wrapped == 2
+    assert result.response_kind == "insufficient_evidence"
+    assert "DDR4" not in result.text and "U999" not in result.text
+    assert result.text_wrapped == 0
     assert result.tool_calls[0].has_result

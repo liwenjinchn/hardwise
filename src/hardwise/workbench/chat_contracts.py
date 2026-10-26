@@ -7,6 +7,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from hardwise.agent.output_boundary import ResponseKind
+from hardwise.agent.claim_contract import ExplanationReview
 from hardwise.guards.evidence_class import EvidenceClassification
 from hardwise.trust import TrustTier
 
@@ -50,6 +51,9 @@ class ChatResponse(BaseModel):
     answer: str
     response_kind: ResponseKind = "insufficient_evidence"
     claim_verification: Literal["unverified"] = "unverified"
+    explanation_review: ExplanationReview | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     mode: ChatMode
     selected_refdes: str | None = None
     trace: list[EvidenceTrace] = Field(default_factory=list)

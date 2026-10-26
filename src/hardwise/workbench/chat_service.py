@@ -5,7 +5,6 @@ from __future__ import annotations
 from threading import RLock
 from typing import Any
 
-from hardwise.agent.output_boundary import constrain_model_answer
 from hardwise.agent.prompts import WORKBENCH_SYSTEM_PROMPT
 from hardwise.agent.router import ModelRouter, Tier
 from hardwise.agent.runner import RunResult, Runner, ToolCallTrace
@@ -152,15 +151,21 @@ class WorkbenchChatService:
         )
 
     def _response_from_result(self, result: RunResult, selected: str | None) -> ChatResponse:
+        from hardwise.agent.claim_turn import render_explanation
+        from hardwise.agent.output_boundary import INSUFFICIENT_EVIDENCE
+
         traces = [self._trace_from_runner_trace(trace) for trace in result.tool_calls]
         wrapped_count = result.text_wrapped + sum(trace.wrapped for trace in result.tool_calls)
         verified_tokens = {token for trace in traces for token in trace.evidence}
-        answer, response_kind = constrain_model_answer(
-            result.text, has_tool_result=any(trace.has_result for trace in result.tool_calls)
-        )
+        if result.explanation_review is None:
+            answer, response_kind = INSUFFICIENT_EVIDENCE, "insufficient_evidence"
+        else:
+            answer, response_kind = render_explanation(result.explanation_review)
+        answer, _ = sanitize_text(answer, self.context.registry)
         return ChatResponse(
             answer=answer,
             response_kind=response_kind,
+            explanation_review=result.explanation_review,
             mode=self.mode,
             selected_refdes=selected,
             trace=traces,

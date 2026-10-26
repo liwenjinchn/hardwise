@@ -142,6 +142,7 @@ class ExplanationReview(BaseModel):
     verified_facts: tuple[EvidenceFact, ...] = ()
     requests: tuple[EvidenceRequest, ...] = ()
     issues: tuple[ClaimIssue, ...] = ()
+    notices: tuple[str, ...] = ()
     error: Literal["invalid_envelope", "stale_scope", "invalid_catalog"] | None = None
 
 

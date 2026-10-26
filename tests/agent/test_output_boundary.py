@@ -23,7 +23,7 @@ def test_zero_tool_claim_is_withheld(claim):
     result = runner.run("是否可以投板")
     assert claim not in result.text
     assert result.response_kind == "insufficient_evidence"
-    assert "没有获得可用的工具结果" in result.text
+    assert "未获得可展示的已核绑定" in result.text
 
 
 @pytest.mark.parametrize(
@@ -56,6 +56,7 @@ def test_negative_lookup_is_a_real_tool_result_but_not_a_signoff():
         ]
     )
     result = runner.run("有 U999 吗")
-    assert result.response_kind == "model_explanation"
+    assert result.response_kind == "insufficient_evidence"
     assert result.tool_calls[0].has_result
-    assert result.text == "没有找到⟨?U999⟩。"
+    assert "U999" not in result.text
+    assert result.explanation_review.error == "invalid_envelope"

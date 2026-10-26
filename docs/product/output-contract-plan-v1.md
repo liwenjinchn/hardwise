@@ -80,3 +80,16 @@ Goal：把用户已选的完整F04合同实现为受限结构化解释，不以�
 **仍未接入Runner.run输出门禁、ChatResponse或白色UI。** evidence_locator真实工具返回中已增加可用的typed binding，但现有聊天仍可能按has_result放行全文；不能将本目录/producer通过当成F04签核漏洞已修。下一必须在每回合生成新scope，把实际dispatch目录交给结构化输出核验，服务端生成解释，再接API/UI/CLI并回放原16对抗case与新错值/条件/单位用例。不重新询问已选完整路线，不缩减为只修负查询。
 
 第80最终补充：绑定使用canonical datasheet:URL#p页引用；locator token collector同步收集实际返回绑定的来源，现有approved_tokens仅在有效READY下纳入已批准字段来源，实际对象不符时报告仍不授予reviewed来源。修复了新绑定来源被旧collector漏掉/错误归为文档索引的问题。最后44个来源/locator/chat针对性通过1.85s（与全量重叠），完整1877passed/7deselected/7既有刻意坏值warnings57.62s；Ruff/diff通过。先前全量57.80s和56.35s日志保留，不冒充最终版本。独立probe记录全部12工具实际dispatch与目录，普通DRAFT0参数；合成批准字段错unit/value/object/conditions均被纯核验拒绝。正常公开整份rows/producer/summary/coverage与第75相等，167=52PASS/0FAIL/115UNKNOWN；生产档案不变。未重跑frontend unit/E2E，Runner/API/UI新门禁仍未接。
+
+
+## 第81阶段：接入Runner/API/白色UI与静态消费者
+
+2026-10-26续接被中断的实施。每回合新建随机scope，只有实际dispatch返回的目录事实可以选择；目录最多256条，省略数量明确提示缩小查询，不冒充全板覆盖。最终envelope严格核验后由服务端渲染，ChatService不再以has_result重新放行模型原文。has_result仅保留为工具诊断信息。解析失败、错绑定和旧scope均不显示模型数值/正文；真实负查询保留查询范围与未命中说明。匹配事实不写机器结果、档案批准、人工决定或确认电压。
+
+fake客户端仍经过真实Runner和工具，只选择目录条目。新ChatResponse带explanation_review，历史快照缺该字段时不补造核验。白色与旧静态面板区分结构化解释/缺依据/旧自由解释，提供可展开的对象、值、单位、条件、来源、规则与scope/call明细。真实AI发送说明补齐可能随字段绑定发送的摘录、版本、哈希和批准声明。
+
+新增33个HTTP集成反例：14种正向/负向/未配置工具流不能授权自由签核；真ID配错对象、属性、值、单位、条件、来源、规则被逐项拒绝，混合真伪仅保留真实事实；跨回合重放拒绝；重复claim、未知ID、额外字段、重复JSON键、受限请求均有覆盖。合成批准参数通过实际locator到API，正确值保留原单位/条件/批准来源，篡改五类维度被拒绝。state/CSV/档案比较不变；不代表生产资料已人工批准。
+
+验证：首次全量1873通过/4失败，均为遗留输出或发送说明断言；修正后最终1910passed、7deselected、7既有刻意坏值warnings，105.82s。前端构建/typed检查与118单元通过；24浏览器回归通过56.3s；Ruff/diff通过。实际页面展开负查询明细；760px窗口scrollWidth=clientWidth=760。CLI离线导出成功，公开167条检查保持52PASS/0FAIL/115UNKNOWN；浏览器打开新单文件并点击负查询建议，结构化解释与未命中提示显示，resource记录中0个/api/请求。证据保存在续接聊天outputs及work/hardwise-81。
+
+F04仍partial，产品NOT_COMPLETE。当前开发分支已接入，不再把第76的自由文本泄漏描述成当前未修复；第76原始失败证据保留。真实模型遵循率、独立对抗审查、原主入口/冻结交付包升级仍待后续，不改旧包和原日志，不推送。F06仍是独立待选项。

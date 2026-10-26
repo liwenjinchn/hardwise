@@ -105,8 +105,8 @@ def _build_runner(script: list[FakeResponse]) -> tuple[Runner, FakeAnthropic]:
     return runner, client
 
 
-def test_final_assistant_text_wraps_unverified_refdes() -> None:
-    """RunResult.text — user-visible — must have unverified refdes wrapped."""
+def test_free_model_text_is_withheld_before_refdes_rendering() -> None:
+    """Free prose cannot acquire display authority through a valid lookup."""
     runner, _ = _build_runner(
         [
             FakeResponse(content=[FakeToolUseBlock("lookup", "get_component", {"refdes": "U3"})]),
@@ -115,10 +115,10 @@ def test_final_assistant_text_wraps_unverified_refdes() -> None:
     )
     result = runner.run("U999 是什么?")
 
-    assert "⟨?U999⟩" in result.text
-    assert "U3" in result.text  # verified, kept as-is
-    assert "⟨?U3⟩" not in result.text
-    assert result.text_wrapped == 1
+    assert "U999" not in result.text and "U3" not in result.text
+    assert result.explanation_review.error == "invalid_envelope"
+    assert result.response_kind == "insufficient_evidence"
+    assert result.text_wrapped == 0
 
 
 def test_tool_call_trace_input_wraps_unverified_refdes() -> None:

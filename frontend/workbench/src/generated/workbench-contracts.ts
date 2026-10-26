@@ -18,8 +18,31 @@ export type SelectedRefdes = string | null;
 export type Answer = string;
 export type ClaimVerification = "unverified";
 export type DatasheetSearchEnabled = boolean;
+export type Error = ("invalid_envelope" | "stale_scope" | "invalid_catalog") | null;
+export type Code = "unknown_fact" | "binding_mismatch" | "unknown_conditions" | "duplicate_claim";
+export type Index = number;
+export type Issues = ClaimIssue[];
+export type Notices = string[];
+export type ObjectId = string;
+export type ObjectKind = "component" | "net" | "project";
+export type Topic =
+  "rating" | "voltage_envelope" | "operating_condition" | "part_identity" | "connectivity" | "document";
+export type Requests = EvidenceRequest[];
+export type CallId = string;
+export type JsonValue = unknown;
+export type ConditionsStatus = "explicit" | "not_required" | "unknown";
+export type Id = string;
+export type Kind = "observation" | "assessment" | "approved_parameter" | "source_coverage" | "lookup_result";
+export type ObjectId1 = string;
+export type ObjectKind1 = "component" | "net" | "project";
+export type PropertyKey = string;
+export type RuleVersion = string | null;
+export type ScopeId = string;
+export type SourceTokens = string[];
+export type Unit = string | null;
+export type VerifiedFacts = EvidenceFact[];
 export type Mode1 = "fake" | "real" | "snapshot";
-export type ResponseKind = "model_explanation" | "insufficient_evidence" | "offline_notice";
+export type ResponseKind = "model_explanation" | "structured_explanation" | "insufficient_evidence" | "offline_notice";
 export type SelectedRefdes1 = string | null;
 export type Suggestions = string[];
 export type Evidence = string[];
@@ -46,7 +69,7 @@ export type MigrationState = "current" | "legacy_needs_review";
 export type NeedsReview = boolean;
 export type NotApplicableReason = string | null;
 export type Result = "PASS" | "FAIL" | "UNKNOWN" | "NOT_APPLICABLE";
-export type RuleVersion = string;
+export type RuleVersion1 = string;
 export type Severity = "ERROR" | "WARNING" | "INFO";
 /**
  * Legacy attention alias; use result/severity for new decisions.
@@ -115,7 +138,7 @@ export type Title1 = string | null;
 export type Url = string | null;
 export type Body = string;
 export type Evidence2 = EvidenceView[];
-export type Kind = string;
+export type Kind1 = string;
 export type Status5 = string;
 export type StatusGroup1 = "error" | "warn" | "pass" | "manual";
 export type Title2 = string;
@@ -152,7 +175,7 @@ export type RiskHints = RiskHintView[];
 export type Status8 = string;
 export type StatusGroup2 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel1 = string;
-export type Error = number;
+export type Error1 = number;
 export type Manual = number;
 export type PassCount = number;
 export type Total = number;
@@ -161,8 +184,8 @@ export type Body2 = string;
 export type Check = string | null;
 export type DerivedFromTaskId = string | null;
 export type EvidenceChain1 = EvidenceChainItem[];
-export type Id = string;
-export type Kind1 = string;
+export type Id1 = string;
+export type Kind2 = string;
 export type PinNumber = string | null;
 export type RecommendedAction = string;
 export type Refdes2 = string;
@@ -187,12 +210,12 @@ export type Value2 = string;
 export type BomQuantityConflicts = BomQuantityColumnConflict[] | null;
 export type ElectricalVerdict = "not_applicable";
 export type Guardrails = string[];
-export type Id1 = "netlist" | "bom" | "validation" | "documents" | "pin_table" | "review_package";
+export type Id2 = "netlist" | "bom" | "validation" | "documents" | "pin_table" | "review_package";
 export type Label1 = string;
 export type Key = string;
 export type Label2 = string;
 export type Total1 = number | null;
-export type Unit = string;
+export type Unit1 = string;
 export type Value3 = number;
 export type Metrics = EvidencePackageMetric[];
 export type RecommendedAction1 = string;
@@ -248,7 +271,7 @@ export type NetlistType = string;
 export type ProfilesDir = string;
 export type Scope1 = string;
 export type ExpectedSha256 = string | null;
-export type Kind2 = string;
+export type Kind3 = string;
 export type Name3 = string;
 export type Note = string | null;
 export type Path1 = string;
@@ -278,7 +301,7 @@ export type PassCount1 = number;
 export type UnknownCount = number;
 export type Validated = number;
 export type WarnCount = number;
-export type Error1 = number;
+export type Error2 = number;
 export type Manual2 = number;
 export type PassCount2 = number;
 export type Total3 = number;
@@ -286,7 +309,7 @@ export type Warn1 = number;
 export type CapturedAt = string;
 export type CreatedAt = string;
 export type Event = "human_decision" | "inputs_changed" | "disappeared";
-export type Id2 = number;
+export type Id3 = number;
 export type RunId = string;
 export type StableKey2 = string;
 export type Events = ReviewHistoryEvent[];
@@ -333,15 +356,15 @@ export type Net2 = string;
 export type ReferenceNet = string;
 export type Source6 = string;
 export type Typical = number | null;
-export type Unit1 = "V";
-export type Id3 = string;
+export type Unit2 = "V";
+export type Id4 = string;
 export type Locator = string;
 export type Origin = "manual" | "import" | "net_name" | "legacy_v1";
 export type Candidates2 = VoltageCandidate[];
 export type Action = "confirm" | "unknown";
 export type CandidateId = string | null;
 export type CandidateSha256 = string | null;
-export type Id4 = string;
+export type Id5 = string;
 export type Mode3 = string;
 export type Net3 = string;
 export type Origin1 = "human" | "legacy_v1";
@@ -352,7 +375,7 @@ export type ScopeSha256 = string;
 export type Confirmations = VoltageConfirmation[];
 export type ActiveMode1 = string;
 export type Changes = VoltageCandidateChange[];
-export type Id5 = string;
+export type Id6 = string;
 export type InvalidatedConfirmationIds = string[];
 export type PreviousMode = string;
 export type PreviousRevision = string;
@@ -379,7 +402,7 @@ export type Offset = number;
 export type ProjectId2 = string;
 export type RunId3 = string;
 export type Total5 = number;
-export type Id6 = string;
+export type Id7 = string;
 export type Name5 = string;
 export type ProjectId3 = string;
 export type Snapshot = string;
@@ -496,7 +519,7 @@ export type AffectedRefdes1 = string[];
 export type Axis = "electrical" | "evidence";
 export type Check2 = string | null;
 export type DerivedTaskCount = number;
-export type Id7 = string;
+export type Id8 = string;
 export type Identity1 = string;
 export type RawTaskCount = number;
 export type RecommendedAction3 = string;
@@ -577,6 +600,7 @@ export interface ChatResponse {
   answer: Answer;
   claim_verification: ClaimVerification;
   datasheet_search_enabled: DatasheetSearchEnabled;
+  explanation_review?: ExplanationReview | null;
   mode: Mode1;
   response_kind: ResponseKind;
   selected_refdes: SelectedRefdes1;
@@ -584,6 +608,52 @@ export interface ChatResponse {
   trace: Trace;
   unsupported_evidence_tokens: UnsupportedEvidenceTokens;
   wrapped_count: WrappedCount;
+}
+/**
+ * Only server-owned matching facts escape; rejected model prose/values do not.
+ */
+export interface ExplanationReview {
+  error: Error;
+  issues: Issues;
+  notices: Notices;
+  requests: Requests;
+  verified_facts: VerifiedFacts;
+}
+export interface ClaimIssue {
+  code: Code;
+  index: Index;
+}
+/**
+ * Unverified follow-up proposals have no free-form verdict or numeric authority.
+ */
+export interface EvidenceRequest {
+  object_id: ObjectId;
+  object_kind: ObjectKind;
+  topic: Topic;
+}
+/**
+ * Created only from dispatched server data, never accepted as model authority.
+ *
+ * The digest detects accidental mutation/substitution; it is not a signature,
+ * independent engineering review, or authentication of a datasheet field.
+ */
+export interface EvidenceFact {
+  call_id: CallId;
+  conditions: Conditions;
+  conditions_status: ConditionsStatus;
+  id: Id;
+  kind: Kind;
+  object_id: ObjectId1;
+  object_kind: ObjectKind1;
+  property_key: PropertyKey;
+  rule_version: RuleVersion;
+  scope_id: ScopeId;
+  source_tokens: SourceTokens;
+  unit: Unit;
+  value: JsonValue;
+}
+export interface Conditions {
+  [k: string]: JsonValue;
 }
 /**
  * UI-friendly trace row derived from one Runner tool call.
@@ -653,7 +723,7 @@ export interface Assessment {
   needs_review: NeedsReview;
   not_applicable_reason: NotApplicableReason;
   result: Result;
-  rule_version: RuleVersion;
+  rule_version: RuleVersion1;
   severity: Severity;
   status: Status1;
 }
@@ -763,7 +833,7 @@ export interface DatasheetCandidateView {
 export interface EvidenceChainItem {
   body: Body;
   evidence: Evidence2;
-  kind: Kind;
+  kind: Kind1;
   status: Status5;
   status_group: StatusGroup1;
   title: Title2;
@@ -809,7 +879,7 @@ export interface RiskHintView {
  * Task counts scoped to one component.
  */
 export interface ComponentTaskCounts {
-  error: Error;
+  error: Error1;
   manual: Manual;
   pass_count: PassCount;
   total: Total;
@@ -824,8 +894,8 @@ export interface ReviewTask {
   check: Check;
   derived_from_task_id: DerivedFromTaskId;
   evidence_chain: EvidenceChain1;
-  id: Id;
-  kind: Kind1;
+  id: Id1;
+  kind: Kind2;
   pin_number: PinNumber;
   recommended_action: RecommendedAction;
   refdes: Refdes2;
@@ -882,7 +952,7 @@ export interface EvidencePackageSummary {
  * One independent evidence input or deterministic coverage lane.
  */
 export interface EvidencePackageLane {
-  id: Id1;
+  id: Id2;
   label: Label1;
   metrics: Metrics;
   recommended_action: RecommendedAction1;
@@ -901,7 +971,7 @@ export interface EvidencePackageMetric {
   key: Key;
   label: Label2;
   total: Total1;
-  unit: Unit;
+  unit: Unit1;
   value: Value3;
 }
 export interface OriginalDelivery {
@@ -995,7 +1065,7 @@ export interface ReviewPackageSummary {
  */
 export interface ReviewPackageArtifactView {
   expected_sha256: ExpectedSha256;
-  kind: Kind2;
+  kind: Kind3;
   name: Name3;
   note: Note;
   path: Path1;
@@ -1021,7 +1091,7 @@ export interface WorkbenchSummary {
  * Stable task counts for filter chips and export summaries.
  */
 export interface ReviewTaskCounts {
-  error: Error1;
+  error: Error2;
   manual: Manual2;
   pass_count: PassCount2;
   total: Total3;
@@ -1039,7 +1109,7 @@ export interface ReviewHistoryEvent {
   created_at: CreatedAt;
   decision: ReviewDecisionView;
   event: Event;
-  id: Id2;
+  id: Id3;
   run_id: RunId;
   stable_key: StableKey2;
 }
@@ -1115,7 +1185,7 @@ export interface VoltageReviewDocument {
 }
 export interface VoltageCandidate {
   fact: VoltageFact;
-  id: Id3;
+  id: Id4;
   locator: Locator;
   origin: Origin;
 }
@@ -1132,7 +1202,7 @@ export interface VoltageFact {
   reference_net: ReferenceNet;
   source: Source6;
   typical: Typical;
-  unit: Unit1;
+  unit: Unit2;
 }
 /**
  * A recorded user assertion, not authenticated identity or engineering approval.
@@ -1141,7 +1211,7 @@ export interface VoltageConfirmation {
   action: Action;
   candidate_id: CandidateId;
   candidate_sha256: CandidateSha256;
-  id: Id4;
+  id: Id5;
   mode: Mode3;
   net: Net3;
   origin: Origin1;
@@ -1153,7 +1223,7 @@ export interface VoltageConfirmation {
 export interface VoltageReviewEdit {
   active_mode: ActiveMode1;
   changes: Changes;
-  id: Id5;
+  id: Id6;
   invalidated_confirmation_ids: InvalidatedConfirmationIds;
   previous_mode: PreviousMode;
   previous_revision: PreviousRevision;
@@ -1186,7 +1256,7 @@ export interface ReviewHistoryPage {
   total: Total5;
 }
 export interface SavedProjectView {
-  id: Id6;
+  id: Id7;
   name: Name5;
   project_id: ProjectId3;
   snapshot: Snapshot;
@@ -1363,7 +1433,7 @@ export interface ReviewTaskGroup {
   axis: Axis;
   check: Check2;
   derived_task_count: DerivedTaskCount;
-  id: Id7;
+  id: Id8;
   identity: Identity1;
   raw_task_count: RawTaskCount;
   recommended_action: RecommendedAction3;

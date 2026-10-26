@@ -302,13 +302,14 @@ def test_fake_chat_summarizes_project_topology() -> None:
             ChatRequest(question="这张板大概有哪些已验证风险和待补 profile?", selected_refdes="U8")
         )
 
-        assert "拓扑摘要只基于解析后的原理图/netlist" in response.answer
-        assert "25 个器件" in response.answer
-        assert "21 条网络" in response.answer
-        assert "已验证 22 个" in response.answer
-        assert "待人工补档案 3 个" in response.answer
-        assert "PASS/WARN/ERROR=0/0/0" in response.answer
-        assert "首个器件档案缺口: RES-10K" in response.answer
+        assert response.response_kind == "structured_explanation"
+        facts = {f.property_key: f.value for f in response.explanation_review.verified_facts}
+        assert facts["topology.component_count"] == 25
+        assert facts["topology.net_count"] == 21
+        assert facts["topology.validated_count"] == 22
+        assert facts["topology.manual_count"] == 3
+        assert facts["topology.validation_totals"]["PASS"] == 0
+        assert "RES-10K" in response.answer
         assert response.trace
         assert response.trace[0].tool == "summarize_project_topology"
         assert response.trace[0].summary == "components=25, nets=21"
@@ -327,7 +328,7 @@ def test_fake_chat_uses_document_tool_for_component_coverage(tmp_path: Path) -> 
         )
 
         assert "XL1509 public datasheet" in response.answer
-        assert "不是电气规格结论" in response.answer
+        assert "来源覆盖，不认证参数" in response.answer
         assert [trace.tool for trace in response.trace] == ["get_component_documents"]
         assert response.trace[0].summary == "status=matched"
         assert response.trace[0].evidence == ["doc:docs.csv#line2"]
@@ -349,7 +350,7 @@ def test_fake_chat_document_tool_fails_closed_without_index() -> None:
             ChatRequest(question="这个 U12 有公开资料吗?", selected_refdes="U12")
         )
 
-        assert "没有获得可用的工具结果" in response.answer
+        assert "未获得可展示的已核绑定" in response.answer
         assert response.response_kind == "insufficient_evidence"
         assert [trace.tool for trace in response.trace] == ["get_component_documents"]
         assert response.trace[0].summary == "status=not_configured"
@@ -365,8 +366,8 @@ def test_fake_chat_uses_document_summary_for_gap_question(tmp_path: Path) -> Non
 
         response = service.ask(ChatRequest(question="还有哪些 datasheet 缺口?"))
 
-        assert "资料覆盖来自已配置的公开资料索引" in response.answer
-        assert "no_result=" in response.answer
+        assert "来源覆盖，不认证参数" in response.answer
+        assert "no_result" in response.answer
         assert [trace.tool for trace in response.trace] == ["summarize_document_coverage"]
         assert response.trace[0].summary.startswith("groups=")
         assert response.trace[0].trust_tier == "l1"
@@ -398,9 +399,11 @@ def test_snapshot_responses_include_l2_grounded_datasheet_smoke() -> None:
         responses = build_snapshot_responses(context)
 
         response = responses[C5_L2_SNAPSHOT_QUESTION]
-        assert "l78.pdf 第 4 页" in response.answer
-        assert "VI 输入耐压为 35 V" in response.answer
-        assert "Absolute maximum ratings table" not in response.answer
+        assert "l78.pdf" in response.answer and "35 V" in response.answer
+        assert "来源覆盖，不认证参数" in response.answer
+        assert not any(
+            f.kind == "approved_parameter" for f in response.explanation_review.verified_facts
+        )
         assert [trace.tool for trace in response.trace] == ["search_datasheet"]
         assert response.trace[0].summary == "hits=1"
         assert response.trace[0].evidence == ["datasheet:l78.pdf#p4"]

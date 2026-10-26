@@ -777,3 +777,37 @@ it("still warns for a source event glued to Chinese prose", () => {
   const html = renderToStaticMarkup(<RichMessageText text="依据EV-FAKE" unsupportedTokens={["EV-FAKE"]} />);
   expect(html).toContain("evidence-inline unverified");
 });
+
+it("shows bounded review failures and suggestions without treating old snapshots as verified", () => {
+  const response: ChatResponse = {
+    answer: "", claim_verification: "unverified", mode: "fake", selected_refdes: null,
+    trace: [], wrapped_count: 0, suggestions: [], datasheet_search_enabled: false,
+    unsupported_evidence_tokens: [],
+    response_kind: "structured_explanation",
+    explanation_review: {
+      verified_facts: [],
+      requests: [{ object_kind: "component", object_id: "U3", topic: "rating" }],
+      issues: [{ index: 1, code: "binding_mismatch" }],
+      notices: [], error: null
+    }
+  };
+  const html = renderToStaticMarkup(<ChatBoundary response={response} />);
+  expect(html).toContain("本回合结构化绑定已核对");
+  expect(html).toContain("0 项匹配 / 1 项未核");
+  expect(html).toContain("模型数值与正文未展示");
+  expect(html).toContain("待核补资料建议：U3");
+  expect(html).toContain("不授予整板签核");
+});
+
+it("retains an envelope failure even when no claims can be displayed", () => {
+  const response: ChatResponse = {
+    answer: "", claim_verification: "unverified", mode: "fake", selected_refdes: null,
+    trace: [], wrapped_count: 0, suggestions: [], datasheet_search_enabled: false,
+    unsupported_evidence_tokens: [],
+    response_kind: "insufficient_evidence",
+    explanation_review: { verified_facts: [], requests: [], issues: [], notices: [], error: "stale_scope" }
+  };
+  const html = renderToStaticMarkup(<ChatBoundary response={response} />);
+  expect(html).toContain("本回合未产生新的检查结论");
+  expect(html).toContain("未展示模型原文：stale_scope");
+});

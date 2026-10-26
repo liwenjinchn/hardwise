@@ -102,7 +102,9 @@ test("copilot wraps unknown refdes U999 as ⟨?U999⟩", async ({ page }) => {
   await expect(page.locator(".msg.ai .mtext").last()).toContainText("⟨?U999⟩", {
     timeout: 30_000
   });
-  await expect(page.locator(".msg.ai .cop-disclaimer").last()).toContainText("参数和推断未经逐项核验");
+  await expect(page.locator(".msg.ai .cop-disclaimer").last()).toContainText("本回合结构化绑定已核对");
+  await page.locator(".msg.ai .claim-binding-detail summary").last().click();
+  await expect(page.locator(".msg.ai .claim-binding-detail").last()).toContainText("lookup.run_component_validation");
 });
 
 test("prep packet preview opens for Q12", async ({ page }) => {

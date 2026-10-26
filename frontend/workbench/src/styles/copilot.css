@@ -544,3 +544,8 @@
 .ai-disclosure label { display: flex; align-items: flex-start; gap: 8px; font-weight: 600; }
 .ai-disclosure input { margin-top: 5px; }
 .ai-disclosure [role="alert"] { color: #a32626; }
+
+.claim-binding-detail { font-size: 12px; overflow-wrap: anywhere; margin: 8px 0; }
+.claim-binding-detail summary { cursor: pointer; }
+.claim-binding-detail article { margin: 12px 0; border-top: 1px solid var(--line); padding-top: 8px; }
+.claim-binding-detail pre { max-height: 280px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; }

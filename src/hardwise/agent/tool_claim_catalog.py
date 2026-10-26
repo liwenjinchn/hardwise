@@ -140,6 +140,11 @@ def _project_result(b, name, data):
             "validated_count",
             "manual_count",
             "validation_totals",
+            "high_signal_components",
+            "power_like_nets",
+            "interface_like_nets",
+            "control_like_nets",
+            "profile_gap_groups",
         ):
             b.add("project", project, "topology." + field, data[field])
     elif name == "summarize_document_coverage":

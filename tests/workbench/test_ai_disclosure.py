@@ -63,7 +63,8 @@ def test_disclosure_and_missing_stale_requests_never_construct_sdk(configured):
     data = description.json()
     assert data["available"] and data["mode"] == "real"
     assert data["destination"] == "https://relay.invalid" and data["model"] == "synthetic-model"
-    assert len(data["data_categories"]) == 4
+    assert len(data["data_categories"]) == 5
+    assert any("批准人的声明" in category for category in data["data_categories"])
     for secret in [
         "SYNTHETIC_KEY_SENTINEL",
         "URL_USER",

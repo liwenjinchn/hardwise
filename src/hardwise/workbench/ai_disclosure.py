@@ -14,11 +14,12 @@ from hardwise.workbench.ai_config import ProviderConfig, create_provider_client,
 from hardwise.workbench.chat_client import DeferredWorkbenchClient
 from hardwise.workbench.decision_fingerprints import review_project_key
 
-DISCLOSURE_VERSION = "hardwise.ai_disclosure.v1"
+DISCLOSURE_VERSION = "hardwise.ai_disclosure.v2"
 DATA_CATEGORIES = [
     "当前问题、选中位号及最近最多6条短对话历史；系统规则、工具定义和模型标识。",
     "工具可能返回器件/BOM属性、引脚/网络/邻域/拓扑、已确认输入和确定性检查结果。",
     "可能包含来源文件定位/路径、证据token、文档元数据和已配置检索返回的资料片段。",
+    "逐字段绑定还可能包含适用条件、文档摘录/版本/哈希，以及批准人的声明、理由和批准时间。",
     "不是原文件自动上传；用户在问题或历史中输入的内容也会发送。",
 ]
 

@@ -55,7 +55,7 @@ def test_lookup_trace_does_not_borrow_profile_evidence():
         )
         assert response.trace[0].evidence == []
         assert response.unsupported_evidence_tokens == [token]
-        assert response.response_kind == "model_explanation"
+        assert response.response_kind == "insufficient_evidence"
         assert response.claim_verification == "unverified"
     finally:
         context.session.close()
@@ -76,8 +76,8 @@ def test_fabricated_parameters_with_real_object_and_token_do_not_enter_formal_ex
         )
         assert reply.status_code == 200
         payload = reply.json()
-        assert "900 V" in payload["answer"]  # prose is not semantically certified
-        assert payload["response_kind"] == "model_explanation"
+        assert "900 V" not in payload["answer"]  # free prose is withheld even with a true token
+        assert payload["response_kind"] == "insufficient_evidence"
         assert payload["claim_verification"] == "unverified"
         assert token not in payload["unsupported_evidence_tokens"]
         assert client.get("/api/workbench/state").json() == before
