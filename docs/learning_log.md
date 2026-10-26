@@ -5814,3 +5814,8 @@ A successful fact-confirmation run followed by a separate failed catalog save co
 ### 2026-10-26 — Reverting a candidate must not resurrect its old confirmation
 
 Current-content hashes alone let a reverted candidate match its prior approval again. Keep immutable before/after edit events plus explicitly invalidated confirmation IDs; new selections retain those events, but only the new confirmation ID can reactivate a fact. FullwhiteUI tests prove edit→revert remainsneeds_review, newconfirmworks, batchleavesconflictsunknown, deletiondoesnotapprove remaining source. Dual-page409 must preserve draft without silently rebasing; uncertain network outcomes also require refresh before resubmission. Readonlysnapshot view must handle CLIstate.review_decisions=None; it has no journalrun toinvent. Initial12backend/1E2E failures caught this regression; fixedandfinal1790/116unit/24E2Epass. EvidenceHardwise-白色事实确认74.
+
+
+### 2026-10-26 — Verify absent services and archive roots before delivery
+
+Symptom: historical server handles were unavailable; initial extracted VALIDATE path was absent. Root cause: prior lsof confirmed no listener, and the source ZIP has a versioned root directory. Fix: back up the original SQLite read-only, trial upgrade on a copy, then start the verified current source; resolve extracted root explicitly before validation. Takeaway: do not infer process liveness from old logs or invent a flat ZIP layout. The initial path failure is retained; corrected extracted validation and negative controls pass. Main journal retained all 6 events/34 old runs, no fabricated new approval. EvidenceHardwise-统一交付75.

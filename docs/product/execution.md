@@ -719,3 +719,11 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - 场景2从not_met→partial，软件工作流已实现但统一交付/安全升级、真实工程输入/来源/工况主审、Windows/Cadence仍待验。F01仍partial，全goalactiveNOT_COMPLETE；F06独立选择仍pending，其他真实批准/独立标签/同行/F04语义/候选分母缺口保留。无push。证据Hardwise-白色事实确认74。
 
 - 最终前端同步复核补两项：manual candidate refresh同时fetch并校验state.project/run再applyState，避免新候选配旧header/check结果；初次GET发现运行错配亦停编辑。双页stale-final证明formalResultsRefreshed，metadata保留/清选择仅明确refresh。候选表单refresh后若所编辑对象已变化，保留draft但禁止静默rebase，需明确重新读取；双页candidate-stale实际409仅1POST，36Vdraft保留，明确reload才读16V。新增候选draft ID在未确认网络结果后保留，避免盲重试产生不同ID重复候选。最后client guard后build/typecheck、116unit657ms、24E2E49.1s通过；后端未再改，1790/59.77s有效。保留所有先前阶段日志，不合并次数。
+
+
+### 2026-10-26 — 第75统一交付
+
+- 上轮dab2e91完整白色F01软件流程为progress。本轮核实18772/18769无监听，原日志只读备份6事件34运行，10受管理/4逻辑输入哈希；副本升级/重开均保留全部旧行和原理由/决定，不新增事件。安全启动现源码与浏览器重跑后6事件36运行。fake/no-auto，无真实外发或工程批准。
+- 复验包固定dab2e9149fe4dcca02c61cbcd4f0f9396ac6368b，959文件958哈希/14322539bytes，SHA256 c052429caf2c673a861ad6699379047154bb7641195c31dd57e0b34fd8f64524。中文空格路径解压VALIDATE通过；初次路径误认flat-root失败保留，修正versionroot后通过。非Windows、source篡改、语义基线不符（即使重写hash）、覆盖输出与未登记ref均拒绝，恢复hash通过。9旧包哈希保留。
+- 全量1790passed/7deselected/7existingwarnings67.71s；解压108相关专项5.83s。Ruff/diff通过；未重跑UIunit/E2E，沿用同源码第74证据并明确区分。公开fullrows/summary/coverage与第74相等，167=52PASS/0FAIL/115UNKNOWN。原历史离线浏览器强制断网1HTML/0API或外部请求，6理由、当前和历史清单保留；白色别名切换至新静态源码。
+- 本地交付不等于Windows/Cadence、真实工程来源/字段批准或同行验收。F01partial、F06独立待答，其他完整范围不缩减。goalactiveNOT_COMPLETE，no push。证据Hardwise-统一交付75。

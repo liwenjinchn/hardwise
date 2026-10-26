@@ -8,7 +8,7 @@ This is a pinned public source package for T08 target-machine validation. It is 
 uv run python scripts/build_validation_bundle.py --output /absolute/path/Hardwise-Windows-check.zip
 ```
 
-The supported source commit is `26f74fc02fb0a757f75020bb09265f3bee136d7e`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 939 source/supplement files; the manifest itself is the 940th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
+The supported source commit is `dab2e9149fe4dcca02c61cbcd4f0f9396ac6368b`. Other refs are rejected until the recorded public software baseline is updated deliberately. The package uses that Git tree, plus explicitly named verifier, public workflow helper, baseline and instructions. Its manifest hashes 958 source/supplement files; the manifest itself is the 959th file. Hashes detect accidental changes against this manifest; they are not a signature or an independent engineering correctness check. Local ignored environment, uploads, databases and generated reports are excluded by Git archive.
 
 Extract to a normal directory. In native Windows PowerShell, from the extracted root:
 
@@ -107,3 +107,8 @@ Packaging-check Python:1712 passed /7 deselected /7 deliberate malformed-profile
 SQLite backup/all-row snapshot precedes copied-journal trial and owned-process replacement. Original6events/32runs/catalog/reason/decision and10managed+4logicalinputhashes survive. The existing decision depends on unchanged generic capacitor v4, so no artificial review event is added:6→6→6 events,32→33→34 runs after startup and actual UI rerun. Separate stage68 old/new/restart profile-dependent producer migration proves1→2→2 where dependencies do change.
 
 Offline white original-reason report retains6 reasons; forced-offline browser makes1HTML and0API/external requests. Downloaded current pin producer3.profile-review1 and original historical pin2 each match their own recorded run IDs; old passive receipt3 is also preserved while current passive remains4. Old receipts are not backfilled. Live server remains running; no stopped-server/file-double-click/nativeWindows claim. Windows software=false, actual Cadence and human engineering approval unverified, release=false, full productNOT_COMPLETE. Evidence:Hardwise-端间交付69.
+
+
+### 2026-10-26 — 第75统一交付
+
+源码dab2e91已进入白色主入口与新冻结包（959文件/958哈希）。副本连续升级两次，原日志安全启动及浏览器重跑：6旧事件/34旧运行和原决定、理由均保留，最终6事件/36运行。旧v1未自动改成新人工批准。公开整份rows/summary/coverage不变；1790Python通过67.71s、解压108专项通过5.83s。离线断网仅1HTML/0API或外部请求，原6条理由及历史运行清单保留。真实Windows/Cadence/工程主审仍未完成，F01保持partial，产品NOT_COMPLETE。详见任务输出Hardwise-统一交付75。
