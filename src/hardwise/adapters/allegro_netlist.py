@@ -35,6 +35,7 @@ class AllegroNet(BaseModel):
 
     name: str
     nodes: list[tuple[str, str]] = Field(default_factory=list)
+    source_line: int | None = Field(default=None, ge=1, exclude_if=lambda v: v is None)
 
 
 class AllegroNetlistRegistry(BaseModel):
@@ -202,7 +203,7 @@ def _parse_net(record: str, line_no: int, known_refdes: set[str]) -> AllegroNet:
 
     if not nodes:
         raise ValueError(f"line {line_no}: net row has no nodes")
-    return AllegroNet(name=name, nodes=nodes)
+    return AllegroNet(name=name, nodes=nodes, source_line=line_no)
 
 
 def _split_head_items(record: str, line_no: int, kind: str) -> tuple[str, str]:

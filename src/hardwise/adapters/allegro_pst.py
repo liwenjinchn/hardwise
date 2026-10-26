@@ -37,6 +37,7 @@ class AllegroPstNet(BaseModel):
 
     name: str
     nodes: list[AllegroPstNode] = Field(default_factory=list)
+    source_line: int | None = Field(default=None, ge=1, exclude_if=lambda v: v is None)
 
 
 class AllegroPstRegistry(BaseModel):
@@ -193,7 +194,7 @@ def _parse_nets(net_file: Path, known_refdes: set[str]) -> list[AllegroPstNet]:
             name, i = _read_net_name(lines, i, line_no)
             if name in seen_net_names:
                 raise ValueError(f"line {line_no}: duplicate net {name}")
-            current = AllegroPstNet(name=name)
+            current = AllegroPstNet(name=name, source_line=line_no)
             nets.append(current)
             seen_net_names.add(name)
             seen_nodes = set()

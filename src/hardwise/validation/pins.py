@@ -6,6 +6,7 @@ import re
 
 from hardwise.ir.profile import PinProfile
 from hardwise.ir.types import Component, Design, Pin
+from hardwise.validation.connection_scope import ambiguous_pin_result
 from hardwise.validation.pin_resolver import schematic_pin_for_profile_pin
 from hardwise.validation.pin_voltage import validate_pin_voltage
 from hardwise.validation.types import PinValidation
@@ -32,6 +33,15 @@ def validate_pin(
             summary="Profiled pin is missing from the schematic/netlist component.",
             evidence=evidence,
         )
+    ambiguity = ambiguous_pin_result(
+        pin,
+        number=pin_profile.number,
+        name=pin_profile.name,
+        category=pin_profile.category,
+        evidence=evidence,
+    )
+    if ambiguity is not None:
+        return ambiguity
     if not pin.net:
         return PinValidation(
             pin_number=pin_profile.number,

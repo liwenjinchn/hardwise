@@ -26,6 +26,8 @@ def load_voltage_facts(path: Path, design: Design) -> None:
     known_nets = set(design.nets) | {
         pin.net for component in design.components.values() for pin in component.pins if pin.net
     }
+    if design.connectivity is not None:
+        known_nets.update(d.net_name for d in design.connectivity.declarations)
     # Validate even unresolved or unselected candidates, never hide foreign nets
     # by projecting them away first. The previous design remains untouched on error.
     candidates = [candidate.fact for candidate in review.candidates] if review else document.facts
@@ -53,6 +55,10 @@ class TerminalStress:
 
 def terminal_dc_stress(component: Component, design: Design) -> TerminalStress:
     """Conservative interval difference in a shared reference and selected mode."""
+    if any(pin.connection_ambiguity for pin in component.pins):
+        return TerminalStress(
+            None, "terminal connection declarations are ambiguous; not an open circuit"
+        )
     if len(component.pins) != 2 or any(not pin.net for pin in component.pins):
         return TerminalStress(None, "requires exactly two connected terminals")
     document = design.voltage_facts
@@ -63,6 +69,9 @@ def terminal_dc_stress(component: Component, design: Design) -> TerminalStress:
             None,
             "both terminal voltages require explicit confirmation; net names and voltage_hint are candidates only",
         )
+    blocked = set(design.connectivity.ambiguous_net_names) if design.connectivity else set()
+    if any(fact.net in blocked or fact.reference_net in blocked for fact in facts):
+        return TerminalStress(None, "voltage facts refer to an ambiguous connection domain")
     left, right = facts
     assert left is not None and right is not None
     evidence = tuple(

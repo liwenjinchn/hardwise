@@ -203,3 +203,30 @@ def test_quarantined_profile_is_visible_but_not_executable_in_primary_import():
         assert "DRAFT" in queue.title
     finally:
         close_workbench_context(context)
+
+
+@pytest.mark.parametrize("pin_number", ["1", "4", "5"])
+def test_relative_bound_cannot_certify_ambiguous_target_supply_or_ground(tmp_path, pin_number):
+    profile, component, design = _setup(tmp_path, (0, 0), (12, 12))
+    assert validate_voltage_relations(component, profile, design)[0].result == "PASS"
+    component.pin_by_number(pin_number).connection_ambiguity = ["conflicting-source"]
+    check = validate_voltage_relations(component, profile, design)[0]
+    assert check.result == "UNKNOWN"
+    assert "歧义" in check.summary
+
+
+def test_relative_bound_rejects_ambiguous_fact_reference_domain(tmp_path):
+    from hardwise.ir.connectivity import ConnectionDeclaration, project_connectivity
+
+    profile, component, design = _setup(tmp_path, (0, 0), (12, 12))
+    design.connectivity = project_connectivity(
+        [
+            ConnectionDeclaration(
+                source="synthetic.net", line=line, net_name="GND", nodes=[("U1", pin)]
+            )
+            for line, pin in [(1, "5"), (2, "6")]
+        ]
+    )
+    check = validate_voltage_relations(component, profile, design)[0]
+    assert check.result == "UNKNOWN"
+    assert "歧义" in check.summary

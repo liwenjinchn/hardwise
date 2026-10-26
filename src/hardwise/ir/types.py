@@ -19,6 +19,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from hardwise.ir.connectivity import ConnectivityProjection
 from hardwise.ir.voltage import VoltageFactsDocument
 from hardwise.ir.voltage_review import VoltageReviewDocument
 
@@ -41,6 +42,8 @@ class Pin(BaseModel):
     electrical_type: str
     is_nc: bool
     net: Optional[str] = None
+    # Source ambiguity is neither an open circuit nor an NC declaration.
+    connection_ambiguity: list[str] = Field(default_factory=list, exclude_if=lambda v: not v)
     datasheet_function: Optional[str] = None
     findings: list[Finding] = Field(default_factory=list)
 
@@ -120,6 +123,9 @@ class Design(BaseModel):
     nets: dict[str, Net] = Field(default_factory=dict)
     project_path: Path
     source_eda: SourceEda
+    connectivity: ConnectivityProjection | None = Field(
+        default=None, exclude_if=lambda v: v is None
+    )
     voltage_facts: VoltageFactsDocument = Field(default_factory=VoltageFactsDocument)
     # Full ledger is carried explicitly by run provenance; legacy Design JSON
     # keeps its executable-facts shape and must not masquerade as a ledger backup.

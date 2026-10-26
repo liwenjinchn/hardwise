@@ -26,6 +26,14 @@ def _relation(
         component.pin_by_number(number)
         for number in (relation.target_pin, relation.supply_pin, relation.ground_pin)
     ]
+    if any(pin and pin.connection_ambiguity for pin in pins):
+        return _output(
+            component,
+            relation,
+            "UNKNOWN",
+            "关系式端点连接声明有歧义，不能绑定电压/参考域。",
+            evidence,
+        )
     identity = component.part_number or component.value
     identity_matches = identity == profile.part_number or identity in profile.part_number_aliases
     if (
@@ -41,6 +49,9 @@ def _relation(
         if fact.mode == design.voltage_facts.active_mode
     }
     target, supply = facts.get(target_pin.net), facts.get(supply_pin.net)
+    blocked = set(design.connectivity.ambiguous_net_names) if design.connectivity else set()
+    if any(f and (f.net in blocked or f.reference_net in blocked) for f in (target, supply)):
+        return _output(component, relation, "UNKNOWN", "关系式事实引用有歧义的连接域。", evidence)
     if (
         not target
         or not supply

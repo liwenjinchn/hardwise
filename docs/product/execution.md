@@ -874,3 +874,14 @@ Each implementation commit records exact commands and outputs below. Passing reg
 刻意尚未接入Design或生产解析器，避免现有消费者把隔离后缺节点当开路。此提交不声称修复已交付，也不改变c751b84主入口。下一阶段需接解析定位、IR、依赖检查及工具/报告/历史全链路；原A11、完整产品仍NOT_COMPLETE。
 
 第89全量验证：1984passed/7deselected/7既有坏值warnings，76.79s；Ruff/diff通过。不改前端、运行入口及冻结源码包，未push。
+
+
+## 第90阶段：连接投影与本地数值检查门禁
+
+新增显式with_connectivity副本投影、Design.connectivity与Pin.connection_ambiguity，空字段不改变旧序列化。保留原始声明、隔离端点、元数据和已知组件注册表；未知组件、重复pin元数据/NC矛盾不静默吞掉。Telesis和PST补实际网络起始行定位，接受/拒绝行为暂不变。
+
+档案pin和通用被动件连接检查识别歧义并输出UNKNOWN而非开路；两端功耗/电压、DC差、关系式检查同时防御端点及事实参考域歧义。原始电压事实保留加载，独立R3及阻值/封装继续PASS。新增13个图/本地检查与行定位测试及4个关系式反例；未触碰主项目或真实批准。
+
+正式解析→Design入口尚未切换：仍需跨器件拓扑、Agent、网络检查、UI/离线/清单与指纹迁移门禁。此阶段不是整条连接隔离交付，原第89红反例在现有正式入口仍存在，完整A11和产品NOT_COMPLETE。
+
+第90最终验证：2001passed/7deselected/7既有坏值warnings，93.59s；前端合同/typecheck、Ruff/diff通过。未改前端资产、冻结包或主入口，未push。

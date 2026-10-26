@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from hardwise.validation.connection_scope import ambiguous_pin_result
 from hardwise.validation.assessment import result_for_attention, severity_for_attention
 
 import re
@@ -34,7 +35,14 @@ def _terminal_connectivity(
 ) -> list[PinValidation]:
     label = _FAMILY_LABELS[family]
     return [
-        PinValidation(
+        ambiguous_pin_result(
+            pin,
+            number=pin.number,
+            name=pin.name or f"Terminal {pin.number}",
+            category=f"generic_{family}_terminal",
+            evidence=evidence,
+        )
+        or PinValidation(
             pin_number=pin.number,
             pin_name=pin.name or f"Terminal {pin.number}",
             category=f"generic_{family}_terminal",

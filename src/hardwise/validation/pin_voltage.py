@@ -17,7 +17,7 @@ def profile_reference_pin(component: Component, profile: DatasheetProfile) -> Pi
     grounds = [
         schematic_pin_for_profile_pin(component, p) for p in profile.pins if p.category == "ground"
     ]
-    if not grounds or any(not p or not p.net for p in grounds):
+    if not grounds or any(not p or not p.net or p.connection_ambiguity for p in grounds):
         return None
     return grounds[0] if len({p.net for p in grounds}) == 1 else None
 

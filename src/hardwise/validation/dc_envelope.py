@@ -33,12 +33,17 @@ class DCDifference:
 def confirmed_dc_difference(
     design: Design, positive: Pin | None, negative: Pin | None
 ) -> DCDifference:
+    if any(pin and pin.connection_ambiguity for pin in (positive, negative)):
+        return DCDifference(reason="端点连接声明存在歧义，不能绑定直流事实；不是已确认开路。")
     if not positive or not positive.net or not negative or not negative.net:
         return DCDifference(reason="缺少两个已连接的端点，无法进行数值评估；连接问题另列。")
     facts = {
         f.net: f for f in design.voltage_facts.facts if f.mode == design.voltage_facts.active_mode
     }
     left, right = facts.get(positive.net), facts.get(negative.net)
+    blocked = set(design.connectivity.ambiguous_net_names) if design.connectivity else set()
+    if any(f and (f.net in blocked or f.reference_net in blocked) for f in (left, right)):
+        return DCDifference(reason="直流事实引用有歧义的连接域，不能绑定到当前端点。")
     evidence = tuple(
         f"voltage_fact:{f.net}#mode={f.mode};reference={f.reference_net};range={f.minimum},{f.maximum}V;source={f.source};confirmed_by={f.confirmed_by}"
         for f in (left, right)
