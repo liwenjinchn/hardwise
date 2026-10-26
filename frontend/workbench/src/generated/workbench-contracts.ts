@@ -374,6 +374,35 @@ export type Name5 = string;
 export type ProjectId3 = string;
 export type Snapshot = string;
 export type Projects = SavedProjectView[];
+export type ExpectedProjectId = string;
+export type ExpectedRevision = string;
+export type ExpectedRunId = string;
+export type Reason12 = string;
+export type Reviewer1 = string;
+/**
+ * @minItems 1
+ * @maxItems 1000
+ */
+export type Selections = [VoltageSelection, ...VoltageSelection[]];
+export type Action1 = "confirm" | "unknown";
+export type CandidateId1 = string | null;
+export type ExpectedScopeSha256 = string;
+export type Mode4 = string;
+export type Net4 = string;
+export type Editable = boolean;
+export type Nets = string[];
+export type ProjectId4 = string;
+export type Revision = string;
+export type RunId4 = string;
+export type SavedProjectId = string | null;
+export type CandidateIds = string[];
+export type ConfirmationId = string | null;
+export type Mode5 = string;
+export type Net5 = string;
+export type ScopeSha2561 = string;
+export type SelectedCandidateId = string | null;
+export type Status19 = "unconfirmed" | "conflict" | "confirmed" | "unknown" | "needs_review";
+export type Scopes = VoltageReviewScope[];
 export type Basis = "emitted_check_records";
 export type Boundary = string;
 export type CompletedChecks = number;
@@ -396,7 +425,7 @@ export type Check1 = string;
 export type Evidence4 = EvidenceView[];
 export type NetName = string;
 export type Nodes = string[];
-export type Status19 = string;
+export type Status20 = string;
 export type StatusGroup6 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel5 = string;
 export type Summary4 = string;
@@ -415,7 +444,7 @@ export type ProfilePath = string | null;
 export type ProfileStatus = string;
 export type Refdes4 = string;
 export type RiskHintCount = number;
-export type Status20 = string;
+export type Status21 = string;
 export type StatusGroup7 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel6 = string;
 export type Subtitle = string;
@@ -432,9 +461,9 @@ export type FalsePositive = number;
 export type HistoryCount = number;
 export type NeedsReview1 = number;
 export type Open = number;
-export type ProjectId4 = string | null;
+export type ProjectId5 = string | null;
 export type Resolved = number;
-export type RunId4 = string | null;
+export type RunId5 = string | null;
 export type StaleRemovedOnRerun = number;
 export type Storage = "memory" | "local_file";
 export type TotalTasks = number;
@@ -460,7 +489,7 @@ export type AcceptedExternalCount = number;
 export type Count1 = number;
 export type ExternalStatus = string;
 export type Count2 = number;
-export type Reason12 = string;
+export type Reason13 = string;
 export type Rejected1 = RejectedRiskHintSummary[];
 export type RejectedExternalCount = number;
 export type WrappedRefdesCount1 = number;
@@ -485,6 +514,8 @@ export interface WorkbenchContracts {
   run_provenance: RunProvenanceResponse;
   saved_project: SavedProjectView;
   saved_project_catalog: SavedProjectCatalog;
+  voltage_batch_request: VoltageBatchRequest;
+  voltage_review: VoltageReviewResponse;
   workbench_state: WorkbenchState;
 }
 export interface AIDisclosure {
@@ -1122,6 +1153,40 @@ export interface SavedProjectView {
 export interface SavedProjectCatalog {
   projects: Projects;
 }
+export interface VoltageBatchRequest {
+  expected_project_id: ExpectedProjectId;
+  expected_revision: ExpectedRevision;
+  expected_run_id: ExpectedRunId;
+  reason: Reason12;
+  reviewer: Reviewer1;
+  selections: Selections;
+}
+export interface VoltageSelection {
+  action: Action1;
+  candidate_id: CandidateId1;
+  expected_scope_sha256: ExpectedScopeSha256;
+  mode: Mode4;
+  net: Net4;
+}
+export interface VoltageReviewResponse {
+  editable: Editable;
+  nets: Nets;
+  project_id: ProjectId4;
+  review: VoltageReviewDocument;
+  revision: Revision;
+  run_id: RunId4;
+  saved_project_id: SavedProjectId;
+  scopes: Scopes;
+}
+export interface VoltageReviewScope {
+  candidate_ids: CandidateIds;
+  confirmation_id: ConfirmationId;
+  mode: Mode5;
+  net: Net5;
+  scope_sha256: ScopeSha2561;
+  selected_candidate_id: SelectedCandidateId;
+  status: Status19;
+}
 /**
  * Top-level SPA state returned by ``/api/workbench/state``.
  */
@@ -1185,7 +1250,7 @@ export interface NetCheckView {
   evidence: Evidence4;
   net_name: NetName;
   nodes: Nodes;
-  status: Status19;
+  status: Status20;
   status_group: StatusGroup6;
   status_label: StatusLabel5;
   summary: Summary4;
@@ -1209,7 +1274,7 @@ export interface ReviewQueueItem {
   profile_status: ProfileStatus;
   refdes: Refdes4;
   risk_hint_count: RiskHintCount;
-  status: Status20;
+  status: Status21;
   status_group: StatusGroup7;
   status_label: StatusLabel6;
   subtitle: Subtitle;
@@ -1231,9 +1296,9 @@ export interface ReviewDecisionSummary {
   history_count: HistoryCount;
   needs_review: NeedsReview1;
   open: Open;
-  project_id: ProjectId4;
+  project_id: ProjectId5;
   resolved: Resolved;
-  run_id: RunId4;
+  run_id: RunId5;
   stale_removed_on_rerun: StaleRemovedOnRerun;
   storage: Storage;
   total_tasks: TotalTasks;
@@ -1275,7 +1340,7 @@ export interface RiskHintsView {
  */
 export interface RejectedRiskHintSummary {
   count: Count2;
-  reason: Reason12;
+  reason: Reason13;
 }
 /**
  * Backward-compatible compact risk-hints summary.

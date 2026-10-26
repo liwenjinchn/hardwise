@@ -161,6 +161,17 @@ def create_workbench_app(
         chat_service=chat_service,
     )
 
+    from hardwise.workbench.voltage_review_routes import register_voltage_review_routes
+
+    register_voltage_review_routes(
+        app,
+        journal=review_db,
+        manager=context_manager,
+        lock=review_workflow_lock,
+        decisions=review_decisions,
+        chat_service=chat_service,
+    )
+
     from hardwise.workbench.offline_report_routes import register_offline_report_route
 
     register_offline_report_route(

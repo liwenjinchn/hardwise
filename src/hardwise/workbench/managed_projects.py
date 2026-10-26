@@ -84,10 +84,9 @@ class ManagedProjects:
                 )
             ]
 
-    def save(self, context, expected_run_id: str):
+    def prepare(self, context):
         if context.input_manifest is None:
             raise ValueError("Source read manifest is required")
-        project = review_project_key(context)
         args = _arguments(context)
         paths = [Path(f.path) for f in context.input_manifest.files]
         paths.extend(Path(p).absolute() for p in args.values() if p is not None)
@@ -105,6 +104,31 @@ class ManagedProjects:
             },
         )
         snapshot = self.inputs.capture(context.input_manifest)
+        return snapshot, descriptor
+
+    def publish(self, db, context, prepared, *, retained_snapshots=()):
+        """Write the catalog inside the caller's existing run transaction."""
+        snapshot, descriptor = prepared
+        descriptor = dict(descriptor)
+        project = review_project_key(context)
+        row = db.execute(
+            "SELECT id,snapshot,descriptor FROM managed_projects WHERE project=?", (project,)
+        ).fetchone()
+        identifier = row[0] if row else uuid4().hex
+        retained = list(retained_snapshots)
+        if row:
+            previous = SavedDescriptor.model_validate_json(row[2])
+            retained = [*previous.retained_snapshots, row[1], *retained]
+        descriptor["retained_snapshots"] = list(dict.fromkeys(retained))
+        db.execute(
+            "INSERT INTO managed_projects VALUES(?,?,?,?) ON CONFLICT(project) DO UPDATE SET snapshot=excluded.snapshot,descriptor=excluded.descriptor",
+            (identifier, project, snapshot, json.dumps(descriptor, ensure_ascii=False)),
+        )
+        return dict(id=identifier, project_id=project, snapshot=snapshot, name=context.project_name)
+
+    def save(self, context, expected_run_id: str):
+        project = review_project_key(context)
+        prepared = self.prepare(context)
         # A stale writer may leave an unreferenced immutable snapshot, never an active one.
         with self.journal.connect() as db:
             db.execute("BEGIN IMMEDIATE")
@@ -114,22 +138,10 @@ class ManagedProjects:
             ).fetchone()
             if not row or row[0] != expected_run_id:
                 raise ReviewConflictError("Review run changed before project save")
-            row = db.execute(
-                "SELECT id,snapshot,descriptor FROM managed_projects WHERE project=?", (project,)
-            ).fetchone()
-            identifier = row[0] if row else uuid4().hex
-            if row:
-                previous = SavedDescriptor.model_validate_json(row[2])
-                descriptor["retained_snapshots"] = list(
-                    dict.fromkeys([*previous.retained_snapshots, row[1]])
-                )
-            db.execute(
-                "INSERT INTO managed_projects VALUES(?,?,?,?) ON CONFLICT(project) DO UPDATE SET snapshot=excluded.snapshot,descriptor=excluded.descriptor",
-                (identifier, project, snapshot, json.dumps(descriptor, ensure_ascii=False)),
-            )
-        context.managed_project_id = identifier
+            result = self.publish(db, context, prepared)
+        context.managed_project_id = result["id"]
         context.managed_project_key = project
-        return dict(id=identifier, project_id=project, snapshot=snapshot, name=context.project_name)
+        return result
 
     def open(self, identifier: str):
         with self.journal.connect() as db:

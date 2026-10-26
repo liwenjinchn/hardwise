@@ -125,3 +125,27 @@ def test_swap_keeps_new_context_when_retired_cleanup_fails(
     assert manager.current is new
     assert "retired workbench context cleanup failed after swap" in caplog.text
     manager.shutdown()
+
+
+def test_publication_does_not_commit_when_lifecycle_is_already_shutdown():
+    committed = []
+    manager = WorkbenchContextManager(object(), close_context=lambda context: None)
+    manager.shutdown()
+    with pytest.raises(RuntimeError, match="shut down"):
+        manager.publish(object(), import_dir=None, commit=lambda: committed.append(True))
+    assert committed == []
+
+
+def test_failed_publication_commit_keeps_previous_context_and_lease():
+    old, new = object(), object()
+    closed = []
+    manager = WorkbenchContextManager(old, close_context=closed.append)
+
+    def fail():
+        raise OSError("synthetic commit failure")
+
+    with pytest.raises(OSError):
+        manager.publish(new, import_dir=None, commit=fail)
+    assert manager.current is old and closed == []
+    manager.shutdown()
+    assert closed == [old]

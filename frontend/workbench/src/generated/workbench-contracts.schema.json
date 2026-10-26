@@ -3875,6 +3875,57 @@
       "title": "SourceAudit",
       "type": "object"
     },
+    "VoltageBatchRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "expected_project_id": {
+          "minLength": 1,
+          "title": "Expected Project Id",
+          "type": "string"
+        },
+        "expected_revision": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expected Revision",
+          "type": "string"
+        },
+        "expected_run_id": {
+          "minLength": 1,
+          "title": "Expected Run Id",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "reviewer": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Reviewer",
+          "type": "string"
+        },
+        "selections": {
+          "items": {
+            "$ref": "#/$defs/VoltageSelection"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Selections",
+          "type": "array"
+        }
+      },
+      "required": [
+        "expected_project_id",
+        "expected_revision",
+        "expected_run_id",
+        "reason",
+        "reviewer",
+        "selections"
+      ],
+      "title": "VoltageBatchRequest",
+      "type": "object"
+    },
     "VoltageCandidate": {
       "additionalProperties": false,
       "properties": {
@@ -4183,6 +4234,185 @@
       "title": "VoltageReviewDocument",
       "type": "object"
     },
+    "VoltageReviewResponse": {
+      "properties": {
+        "editable": {
+          "title": "Editable",
+          "type": "boolean"
+        },
+        "nets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Nets",
+          "type": "array"
+        },
+        "project_id": {
+          "title": "Project Id",
+          "type": "string"
+        },
+        "review": {
+          "$ref": "#/$defs/VoltageReviewDocument"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "string"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        },
+        "saved_project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Saved Project Id"
+        },
+        "scopes": {
+          "items": {
+            "$ref": "#/$defs/VoltageReviewScope"
+          },
+          "title": "Scopes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "editable",
+        "nets",
+        "project_id",
+        "review",
+        "revision",
+        "run_id",
+        "saved_project_id",
+        "scopes"
+      ],
+      "title": "VoltageReviewResponse",
+      "type": "object"
+    },
+    "VoltageReviewScope": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Candidate Ids",
+          "type": "array"
+        },
+        "confirmation_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confirmation Id"
+        },
+        "mode": {
+          "title": "Mode",
+          "type": "string"
+        },
+        "net": {
+          "title": "Net",
+          "type": "string"
+        },
+        "scope_sha256": {
+          "title": "Scope Sha256",
+          "type": "string"
+        },
+        "selected_candidate_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected Candidate Id"
+        },
+        "status": {
+          "enum": [
+            "unconfirmed",
+            "conflict",
+            "confirmed",
+            "unknown",
+            "needs_review"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_ids",
+        "confirmation_id",
+        "mode",
+        "net",
+        "scope_sha256",
+        "selected_candidate_id",
+        "status"
+      ],
+      "title": "VoltageReviewScope",
+      "type": "object"
+    },
+    "VoltageSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "enum": [
+            "confirm",
+            "unknown"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "candidate_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Candidate Id"
+        },
+        "expected_scope_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Expected Scope Sha256",
+          "type": "string"
+        },
+        "mode": {
+          "minLength": 1,
+          "title": "Mode",
+          "type": "string"
+        },
+        "net": {
+          "minLength": 1,
+          "title": "Net",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "candidate_id",
+        "expected_scope_sha256",
+        "mode",
+        "net"
+      ],
+      "title": "VoltageSelection",
+      "type": "object"
+    },
     "WorkbenchCapabilities": {
       "description": "Feature flags surfaced to the SPA.",
       "properties": {
@@ -4484,6 +4714,12 @@
     "saved_project_catalog": {
       "$ref": "#/$defs/SavedProjectCatalog"
     },
+    "voltage_batch_request": {
+      "$ref": "#/$defs/VoltageBatchRequest"
+    },
+    "voltage_review": {
+      "$ref": "#/$defs/VoltageReviewResponse"
+    },
     "workbench_state": {
       "$ref": "#/$defs/WorkbenchState"
     }
@@ -4499,6 +4735,8 @@
     "saved_project_catalog",
     "project_restore",
     "chat_request",
+    "voltage_batch_request",
+    "voltage_review",
     "chat_response",
     "ai_disclosure"
   ],

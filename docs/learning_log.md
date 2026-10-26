@@ -5804,3 +5804,8 @@ Selecting candidate content alone misses new conflicting sources arriving later.
 ### 2026-10-26 — Preserve the full ledger and bind unresolved premises on intake
 
 An executable-facts projection alone loses conflicts and review history. Capture the full source file through existing managed inputs and include the ledger only in new run provenance, leaving old/v1 receipts unexpanded. Generated response schemas normally force defaults required; conditionally omitted ledger must remain optional to match actual payloads. Local fingerprints must include unresolved relevant candidates, otherwise changed conflicting values stillUNKNOWN would silently preserve a stale review. Tests cover unchanged independentR1 hash and changedC1 hash, raw source deletion/reopen, API backup/independent restore and original-run receipt immutability. EvidenceHardwise-事实接入72. New editor API/transactions/UI remain unfinished.
+
+
+### 2026-10-26 — Commit the edited fact source and saved-project head with the run
+
+A successful fact-confirmation run followed by a separate failed catalog save could reopen old facts. Separate immutable snapshot preparation from catalog publication, execute catalog SQL via the same DecisionJournal transaction as state/events/run, then publish context under lifecycle lock. Failed preparation may leave unreferenced immutable snapshots but no active version. Actualprocess exits beforecommit preserve all oldrows; aftercommit/beforeswap savedproject opens complete newledger. Keep stableproject/savedID and sourcehashes, don't overwrite originals or equate free reviewer text with authenticated identity. EvidenceHardwise-批量确认接口73; white editor/candidate mutations still pending.

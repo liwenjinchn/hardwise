@@ -68,8 +68,10 @@ class ReviewDecisionStore:
             del self._history[length:]
             self._runs = {key: value for key, value in self._runs.items() if key in runs}
 
-    def _save(self, items, events, *, run=None, run_id=None):
+    def _save(self, items, events, *, run=None, run_id=None, extra_write=None):
         rid = run_id or self._run_id
+        if extra_write is not None and self._journal is None:
+            raise ValueError("Atomic project publication requires a local journal")
         if self._journal:
             self._revision = self._journal.save(
                 self._project,
@@ -78,6 +80,7 @@ class ReviewDecisionStore:
                 events,
                 run,
                 expected_revision=self._revision,
+                **({"extra_write": extra_write} if extra_write is not None else {}),
             )
         else:
             for event in events:
@@ -99,6 +102,7 @@ class ReviewDecisionStore:
         *,
         tasks: list[dict] | None = None,
         provenance: dict | None = None,
+        extra_write=None,
     ) -> int:
         """Restore a project and invalidate changed facts without discarding reasons."""
         with self._lock:
@@ -138,6 +142,7 @@ class ReviewDecisionStore:
                         "created_at": self._now(),
                     },
                     run_id=rid,
+                    **({"extra_write": extra_write} if extra_write is not None else {}),
                 )
             except Exception:
                 self._project, self._revision = previous_project, previous_revision

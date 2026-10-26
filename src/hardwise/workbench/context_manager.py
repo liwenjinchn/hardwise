@@ -96,6 +96,18 @@ class WorkbenchContextManager:
                 # caller close the new active context as if publication failed.
                 LOGGER.exception("retired workbench context cleanup failed after swap")
 
+    def publish(self, context, *, import_dir, commit):
+        """Check publication ownership before committing a durable active version.
+
+        Hold the same lifecycle lock through commit and swap so shutdown cannot
+        invalidate publication after the durable transaction succeeds.
+        """
+        with self._lock:
+            if self._shutdown:
+                raise RuntimeError("workbench context manager is shut down")
+            commit()
+            self.swap(context, import_dir=import_dir)
+
     def refresh(self, context: WorkbenchContext) -> None:
         """Replace the active context while retaining its imported source directory."""
 

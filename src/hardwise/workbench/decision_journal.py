@@ -85,6 +85,7 @@ class DecisionJournal:
         events: list[dict],
         run: dict | None = None,
         expected_revision: int = 0,
+        extra_write=None,
     ):
         """State, history and a run snapshot commit together or roll back together."""
         with self.connect() as db:
@@ -110,6 +111,8 @@ class DecisionJournal:
                     "INSERT INTO review_runs VALUES(?,?,?)",
                     (run_id, project, json.dumps(run, ensure_ascii=False)),
                 )
+            if extra_write is not None:
+                extra_write(db, run_id)
             db.execute(
                 "INSERT INTO review_heads VALUES(?,?) ON CONFLICT(project) DO UPDATE SET revision=excluded.revision",
                 (project, expected_revision + 1),

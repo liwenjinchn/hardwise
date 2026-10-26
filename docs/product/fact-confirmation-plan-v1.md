@@ -42,3 +42,16 @@
 局部pin/已审component/control依赖额外记录对应active_mode网络及参考域的完整候选/声明。即使UNKNOWN结果未变，相关冲突候选值/来源改变也更换fingerprint，无关电阻不受影响。没有账本的旧v1/no-fact输入不增加该字段，正常公开报告的所有行/producer/summary/coverage完全一致。
 
 此阶段只接完整文件输入和既有保存/运行接口；没有候选增改或批量确认新路由、事务激活或图形表单。下一阶段仍须按步骤3–5完成project/run/revision保护、批量写入/失败回滚、来源候选管理、白色多选/冲突/撤回及目标交付；不能把导入一个带声明文件当作GUI批量确认已完成。
+
+
+## 第73批量确认事务接口（候选增改/白色界面仍待接）
+
+新增GET /api/workbench/voltage-review读取当前project/run/revision、候选/冲突投影、已知网络和保存项目ID。POST /api/workbench/voltage-review/confirm接整批net/mode选择或unknown撤回、确认人和理由；expected_project/run/revision及scope hash均校验，时间/声明ID由服务器生成，不能从请求伪造origin或timestamp。确认人仍是本地用户声明，不提供账户认证，也不等于工程批准。未配置SQLite时只读并拒绝编辑。
+
+提交顺序：先整批纯校验，再验证并快照旧输入，把已捕获文件复制到独立临时树写新账本，重建并完整捕获新context；在一个DecisionJournal事务内写评审状态/历史/运行和managed项目目录，保留旧输入快照。事务提交成功后在context生命周期锁内发布新context，关闭旧context的错误不撤销已发布版本。原source文件不覆盖，project/saved_project_id保持稳定；重启必须按保存项目ID打开最新版本，不能继续用旧source命令期待编辑已覆盖原文件。
+
+ManagedProjects把prepare（不可变源快照）与publish（调用者事务内写目录）分开，原save仍保留run检查。ReviewDecisionStore/DecisionJournal仅新增可选extra_write回调；常规调用不改变行为。未被引用的失败预备快照可能保留，但不能成为活跃项目。没有新增SQLite表或旧DBschema迁移。上下文锁保护commit→swap不被shutdown穿插。
+
+API专项包括整批确认/撤回、同一项目多次保存、源文件未改/原路径删除后独立open、过期project/run/revision、批内任一错误、catalog写入后异常、snapshot/激活前失败、外部writer抢先、legacy声明保留及客户端伪造元数据拒绝。真实子进程在catalog SQL写后、事务commit前退出，全部旧行保持；commit后swap前退出，保存项目可恢复完整新账本。相关accepted_risk变needs_review并保留原理由，历史1→2→2；旧run receipt不回填。独立真实HTTP200提交、旧请求409、自动保存和源hash不变也已核实。
+
+本阶段只提供对现有候选的确认/撤回，尚无候选增改/工况编辑接口、图形多选表或离线候选页面。不可用已有文件导入替代最终候选管理体验；步骤4–5、图形流程、备份/新版本统一交付仍必须完成。F01整体仍partial/场景2not_met。

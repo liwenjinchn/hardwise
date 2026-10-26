@@ -698,3 +698,12 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - Initialtargetedtest erroneously expected R1PASS tocreateissue; correctedfixturetoexistingmissingratingUNKNOWN soindependenttaskexists (notproductchange). Tennewintaketests cover fullinput/guard/provenance/persistence/restore andconditionalcontract. Earlier132targetedpass3.16s overlapsfull. No newfacteditAPI/UI, noSQLschemamigration, noAIconfirmationauthority. Nextmustcompleteatomicedit/API/UI perselectedplan, notdeclareF01done. F06separatequestionremainspending. No push.
 
 - Final1752passed/7deselected/7existingbadfixtureserializationwarnings51.41s；Ruff/diffpass。添加历史下载/conditional-contract两个测试后再次完整验证（此前1750/56.44s为中间结果，保留log不覆盖）。实际design-validator-ui --ai-snapshot读取ledger成功，白色payload4候选2声明/2可执行事实，C1UNKNOWN/R1PASS；cli-proof.json。契约生成和typecheck/build通过，staticasset bytes未变，本轮未重跑E2E或unit，未复用为本轮声称。正式batchAPI/UI仍未完成，下一按既有计划继续；goalactiveNOT_COMPLETE，no push。
+
+
+### 2026-10-26 — 第73阶段：批量确认原子发布API
+
+- 上轮6d5d637接完整账本input/provenance/managedrestore，full1752，progress；继续已选F01完整分层路线，无重复询问。GETvoltage-review和POSTconfirm typedcontracts提供project/run/revision/scope守卫、服务器声明ID/time、人工selection或unknown撤回。无SQLite只读，不信任客户端origin/time；reviewer自由文本不等于认证或真人验收。候选增改/API工况和白色表格仍待完成，不缩减原PRD。
+- 新stagehelper以已观测源snapshot构建独立copy，旧输入snapshot保留，新ledger重建/捕获后prepareimmutableownedinput；stableproject/savedID保持。ManagedProjectsprepare/publish拆分，原save沿用runcheck；DecisionJournal/ReviewDecisionStore可选extra_write把catalog与reviewstate/events/run同一transaction提交，无新表/schema迁移。ContextManagerpublish持life lock检查shutdown再commit/swap，旧lease安全退出。
+-17API用例+2生命周期用例新增；50旧新针对性通过4.92s（重叠，不另加完整数）。catalog先写再抛异常验证DB整体rollback，snapshot/activation失败原context不变；过期project/run/revision、批错误、externalwriter、legacy原声明/sourcebytes、metadata拒绝均验证。真实subprocess beforecommit.exit81后全旧行相等；aftercommit/beforeswap.exit82后完整新ledger从savedproject恢复，源hash不变。原风险理由保留accepted_risk→needs_review，history1→2→2，旧receipt不回填。
+- 完整1771passed/7deselected/7existingdeliberatebadvalueserializationwarnings61.35s；为focusedtest文件拆出processcrash用例后再测routes/crashes/context25通过2.69s，内容/总数不改。生成contracts/typecheck/build通过，staticbytes未变；Ruff/diffpass。本轮未重跑UIunit/E2E，未作该主张。独立真实HTTP18780提交200、stale replay409、auto-savedID、sourceSHA不变、普通rerunhistory2；仅公开合成NoChat，无外发/批准。
+- 原生产档案/原journal/冻结包未操作。先前定向命令误用不存在test_review_decisions路径，pytest未执行；按rg定位test_decision_journal后正确运行，无产品错误。完整goalactiveNOT_COMPLETE；F06独立待答，F01不pending。nopush。证据Hardwise-批量确认接口73。

@@ -9,6 +9,7 @@ from pathlib import Path
 from pydantic import create_model
 
 from hardwise.workbench.api_contracts import ImportResponse
+from hardwise.workbench.voltage_review_routes import VoltageBatchRequest, VoltageReviewResponse
 from hardwise.workbench.review_history import ReviewHistoryPage
 from hardwise.workbench.offline_history import OfflineReviewHistory
 from hardwise.workbench.run_provenance import RunProvenanceResponse
@@ -58,6 +59,8 @@ def main() -> None:
         saved_project_catalog=(SavedProjectCatalog, ...),
         project_restore=(ProjectRestoreReceipt, ...),
         chat_request=(ChatRequest, ...),
+        voltage_batch_request=(VoltageBatchRequest, ...),
+        voltage_review=(VoltageReviewResponse, ...),
         chat_response=(ChatResponse, ...),
         ai_disclosure=(AIDisclosure, ...),
     )
