@@ -266,6 +266,7 @@ export interface PinView {
   name: string;
   electrical_type: string;
   net: string | null;
+  connection_ambiguity?: string[];
   is_nc: boolean;
   status: string | null;
   summary: string;

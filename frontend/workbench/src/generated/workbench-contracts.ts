@@ -149,6 +149,7 @@ export type MatchReason = string;
 export type MatchStatus = string;
 export type Package = string;
 export type PartNumber1 = string;
+export type ConnectionAmbiguity = string[];
 export type ElectricalType = string;
 export type Evidence3 = EvidenceView[];
 export type IsNc = boolean;
@@ -417,6 +418,22 @@ export type ProjectId1 = string;
 export type RunId2 = string;
 export type CreatedAt1 = string | null;
 export type ProjectId2 = string;
+export type DeclarationIndices = number[];
+export type Endpoints = [unknown, unknown][];
+export type Kind5 = "duplicate_net_name" | "repeated_endpoint" | "multiple_declarations";
+export type NetNames = string[];
+export type Ambiguities = ConnectionAmbiguity1[];
+export type AmbiguousEndpoints = [unknown, unknown][];
+export type AmbiguousNetNames = string[];
+export type Line = number;
+export type NetName = string;
+/**
+ * @minItems 1
+ */
+export type Nodes = [[unknown, unknown], ...[unknown, unknown][]];
+export type Source6 = string;
+export type Declarations = ConnectionDeclaration[];
+export type SchemaVersion2 = "hardwise.connectivity.v1";
 export type EmittedRecords = number;
 export type ImplementationIdentityAssurance = "declared_rule_versions";
 export type InputCaptureStatus = "captured" | "unavailable";
@@ -428,7 +445,7 @@ export type Sha2561 = string;
 export type SizeBytes = number;
 export type Files = InputFileDigest[];
 export type ReadsetSha256 = string;
-export type SchemaVersion2 = "hardwise.input_reads.v1";
+export type SchemaVersion3 = "hardwise.input_reads.v1";
 export type StartedAt = string;
 export type VerifiedAt = string;
 export type PackageVersion = string;
@@ -448,7 +465,7 @@ export type Name6 = string;
 export type Scope2 = "pin" | "component" | "net";
 export type Version2 = string;
 export type RuleVersions = EmittedRuleVersion[];
-export type SchemaVersion3 = "hardwise.run_provenance.v1";
+export type SchemaVersion4 = "hardwise.run_provenance.v1";
 export type ActiveMode = string;
 export type Confirmed = boolean;
 export type ConfirmedBy = string;
@@ -457,7 +474,7 @@ export type Minimum = number | null;
 export type Mode2 = string;
 export type Net2 = string;
 export type ReferenceNet = string;
-export type Source6 = string;
+export type Source7 = string;
 export type Typical = number | null;
 export type Unit4 = "V";
 export type Id4 = string;
@@ -486,7 +503,7 @@ export type Reason14 = string;
 export type RecordedAt1 = string;
 export type Reviewer2 = string;
 export type Edits = VoltageReviewEdit[];
-export type SchemaVersion4 = "hardwise.voltage_review.v1";
+export type SchemaVersion5 = "hardwise.voltage_review.v1";
 export type Reason15 = string;
 export type RunId3 = string;
 export type Status19 = "recorded" | "not_recorded";
@@ -573,8 +590,8 @@ export type ReviewPackageEnabled = boolean;
 export type RiskHintsEnabled = boolean;
 export type Check1 = string;
 export type Evidence7 = EvidenceView[];
-export type NetName = string;
-export type Nodes = string[];
+export type NetName1 = string;
+export type Nodes1 = string[];
 export type Status21 = string;
 export type StatusGroup6 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel5 = string;
@@ -650,7 +667,7 @@ export type RejectedExternalCount1 = number;
 export type SelectedRefdes3 = string | null;
 export type ActiveMode3 = string;
 export type Facts = VoltageFact[];
-export type SchemaVersion5 = "hardwise.voltage_facts.v1";
+export type SchemaVersion6 = "hardwise.voltage_facts.v1";
 
 export interface WorkbenchContracts {
   ai_disclosure: AIDisclosure;
@@ -949,6 +966,7 @@ export interface EvidenceChainItem {
  */
 export interface PinView {
   assessment: Assessment | null;
+  connection_ambiguity?: ConnectionAmbiguity;
   electrical_type: ElectricalType;
   evidence: Evidence3;
   is_nc: IsNc;
@@ -1396,6 +1414,7 @@ export interface RunProvenanceResponse {
   status: Status19;
 }
 export interface RunProvenance1 {
+  connectivity?: ConnectivityProjection | null;
   emitted_records: EmittedRecords;
   implementation_identity_assurance: ImplementationIdentityAssurance;
   input_capture_status: InputCaptureStatus;
@@ -1408,14 +1427,40 @@ export interface RunProvenance1 {
   raw_inputs_archived: RawInputsArchived;
   review_dependency_contract: ReviewDependencyContract;
   rule_versions: RuleVersions;
-  schema_version: SchemaVersion3;
+  schema_version: SchemaVersion4;
   voltage_review?: VoltageReviewDocument | null;
+}
+export interface ConnectivityProjection {
+  ambiguities: Ambiguities;
+  ambiguous_endpoints: AmbiguousEndpoints;
+  ambiguous_net_names: AmbiguousNetNames;
+  declarations: Declarations;
+  resolved_nets: ResolvedNets;
+  schema_version: SchemaVersion2;
+}
+export interface ConnectionAmbiguity1 {
+  declaration_indices: DeclarationIndices;
+  endpoints: Endpoints;
+  kind: Kind5;
+  net_names: NetNames;
+}
+/**
+ * One logical source record; continuation lines remain one declaration.
+ */
+export interface ConnectionDeclaration {
+  line: Line;
+  net_name: NetName;
+  nodes: Nodes;
+  source: Source6;
+}
+export interface ResolvedNets {
+  [k: string]: [unknown, unknown][];
 }
 export interface InputReadManifest {
   assurance: Assurance;
   files: Files;
   readset_sha256: ReadsetSha256;
-  schema_version: SchemaVersion2;
+  schema_version: SchemaVersion3;
   started_at: StartedAt;
   verified_at: VerifiedAt;
 }
@@ -1453,7 +1498,7 @@ export interface VoltageReviewDocument {
   candidates: Candidates2;
   confirmations: Confirmations;
   edits?: Edits;
-  schema_version: SchemaVersion4;
+  schema_version: SchemaVersion5;
 }
 export interface VoltageCandidate {
   fact: VoltageFact;
@@ -1472,7 +1517,7 @@ export interface VoltageFact {
   mode: Mode2;
   net: Net2;
   reference_net: ReferenceNet;
-  source: Source6;
+  source: Source7;
   typical: Typical;
   unit: Unit4;
 }
@@ -1641,8 +1686,8 @@ export interface NetCheckView {
   assessment: Assessment | null;
   check: Check1;
   evidence: Evidence7;
-  net_name: NetName;
-  nodes: Nodes;
+  net_name: NetName1;
+  nodes: Nodes1;
   status: Status21;
   status_group: StatusGroup6;
   status_label: StatusLabel5;
@@ -1750,5 +1795,5 @@ export interface RiskHintsSummary {
 export interface VoltageFactsDocument {
   active_mode: ActiveMode3;
   facts: Facts;
-  schema_version: SchemaVersion5;
+  schema_version: SchemaVersion6;
 }

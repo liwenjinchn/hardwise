@@ -23,7 +23,10 @@ RESULTS = {
         | topology.TopologyNotConfigured
     ),
     "get_net_context": (
-        topology.NetContextFound | topology.NetContextNotFound | topology.TopologyNotConfigured
+        topology.NetContextFound
+        | topology.NetContextAmbiguous
+        | topology.NetContextNotFound
+        | topology.TopologyNotConfigured
     ),
     "search_nets": topology.SearchNetsResult | topology.TopologyNotConfigured,
     "summarize_project_topology": topology.ProjectTopologySummary | topology.TopologyNotConfigured,
@@ -147,6 +150,8 @@ def _project_result(b, name, data):
             "profile_gap_groups",
         ):
             b.add("project", project, "topology." + field, data[field])
+        if data.get("ambiguous_net_count"):
+            b.add("project", project, "topology.ambiguous_net_count", data["ambiguous_net_count"])
     elif name == "summarize_document_coverage":
         b.add("project", project, "documents.coverage", data, kind="source_coverage")
 
@@ -158,6 +163,8 @@ def _object_result(b, name, data, arguments):
             refdes = data["component"]["refdes"]
             for field in ("pins", "neighbors", "issues", "profile_status"):
                 b.add("component", refdes, "context." + field, data[field])
+    elif name == "get_net_context" and data.get("status") == "ambiguous":
+        b.add("net", data["net_name"], "connectivity.ambiguity", data)
     elif name == "get_net_context" and data.get("status") == "found":
         for field in ("member_count", "members"):
             b.add("net", data["net_name"], "connectivity." + field, data[field])

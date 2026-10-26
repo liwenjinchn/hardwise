@@ -241,12 +241,16 @@ def build_component_detail(
 
 
 def _pin_views(component: Component, validation: ValidationReport | None) -> list[PinView]:
+    from hardwise.validation.connection_scope import ambiguous_pin_result
+
     validation_by_pin = (
         {pin.pin_number: pin for pin in validation.pin_results} if validation else {}
     )
     views = []
     for pin in component.pins:
-        result = validation_by_pin.get(pin.number)
+        result = ambiguous_pin_result(
+            pin, number=pin.number, name=pin.name, category="source_connection", evidence=[]
+        ) or validation_by_pin.get(pin.number)
         views.append(
             PinView(
                 number=pin.number,
@@ -254,6 +258,7 @@ def _pin_views(component: Component, validation: ValidationReport | None) -> lis
                 electrical_type=pin.electrical_type,
                 net=pin.net,
                 is_nc=pin.is_nc,
+                connection_ambiguity=pin.connection_ambiguity,
                 assessment=Assessment.model_validate(result.model_dump()) if result else None,
                 status=result.status if result else None,
                 summary=validation_summary_label(result.summary) if result else "",

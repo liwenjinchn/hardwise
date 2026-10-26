@@ -517,6 +517,13 @@ describe("TaskQueueColumn", () => {
 });
 
 describe("DetailColumn", () => {
+  it("shows ambiguous source names rather than an unconnected placeholder", () => {
+    const detail = makeDetail();
+    detail.pins[0] = { ...detail.pins[0], net: null, connection_ambiguity: ["SIG_A", "SIG_B"] };
+    const html = renderToStaticMarkup(<DetailColumn detail={detail} loading={false} onAsk={() => {}} />);
+    expect(html).toContain("连接待核对（声明：SIG_A、SIG_B）");
+  });
+
   it("renders the loading and empty states", () => {
     const loading = renderToStaticMarkup(<DetailColumn detail={null} loading onAsk={() => {}} />);
     expect(loading).toContain("正在读取器件详情...");

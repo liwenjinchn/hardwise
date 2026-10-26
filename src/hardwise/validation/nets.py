@@ -24,6 +24,7 @@ from __future__ import annotations
 from pydantic import Field
 
 from hardwise.ir.types import Design
+from hardwise.ir.connectivity_queries import observed_net_names
 from hardwise.validation.pins import is_ground_net
 from hardwise.validation.assessment import Assessment
 
@@ -51,7 +52,25 @@ def validate_design_nets(design: Design, *, source_label: str | None = None) -> 
 
     label = source_label or design.project_path.name
     results: list[NetValidation] = []
-    if design.nets and not any(is_ground_net(net_name) for net_name in design.nets):
+    observed = observed_net_names(design)
+    if design.connectivity:
+        for name in design.connectivity.ambiguous_net_names:
+            records = [d for d in design.connectivity.declarations if d.net_name == name]
+            results.append(
+                NetValidation(
+                    net_name=name,
+                    check="net_connection_ambiguity",
+                    result="UNKNOWN",
+                    severity="WARNING",
+                    needs_review=True,
+                    evidence_kind="SOURCE_FACT",
+                    rule_version="1.connection-isolation1",
+                    summary=f"网络 {name} 的来源连接声明有歧义，相关端点已隔离；不确认成员数，不当作开路或单端网络。",
+                    nodes=[],
+                    evidence=[f"netlist:{d.source}#line{d.line};net={d.net_name}" for d in records],
+                )
+            )
+    if observed and not any(is_ground_net(net_name) for net_name in observed):
         results.append(
             NetValidation(
                 net_name="-",
@@ -60,13 +79,13 @@ def validate_design_nets(design: Design, *, source_label: str | None = None) -> 
                 severity="WARNING",
                 summary=(
                     f"No net in this design is a recognized ground reference "
-                    f"(checked {len(design.nets)} nets). A schematic export "
+                    f"(checked {len(observed)} nets). A schematic export "
                     "without any ground net usually means a partial or "
                     "filtered export. Reviewer to confirm the export scope "
                     "is intentional."
                 ),
                 nodes=[],
-                evidence=[f"netlist:{label}#nets={len(design.nets)}"],
+                evidence=[f"netlist:{label}#nets={len(observed)}"],
             )
         )
     for net_name in sorted(design.nets):

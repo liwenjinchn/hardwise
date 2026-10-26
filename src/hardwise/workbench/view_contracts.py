@@ -306,6 +306,7 @@ class PinView(BaseModel):
     number: str
     name: str
     electrical_type: str
+    connection_ambiguity: list[str] = Field(default_factory=list, exclude_if=lambda v: not v)
     net: str | None = None
     is_nc: bool = False
     status: str | None = None

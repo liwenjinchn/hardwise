@@ -15,11 +15,14 @@ from pydantic import BaseModel, Field
 
 from hardwise.bom.types import sort_refdes_key
 from hardwise.ir.types import Component, Design
+from hardwise.ir.connectivity_queries import observed_net_names, ambiguous_net_names
 from hardwise.validation.project_index import ProjectValidationIndex, ProjectValidationRow
 from hardwise.validation.project_index import profile_gap_groups
 
 
-POWER_NET_PATTERN = re.compile(r"(^|\b|[_+-])(VCC|VDD|VIN|VBAT|VBUS|GND|PGND|AGND|\+?\d+V\d*)", re.I)
+POWER_NET_PATTERN = re.compile(
+    r"(^|\b|[_+-])(VCC|VDD|VIN|VBAT|VBUS|GND|PGND|AGND|\+?\d+V\d*)", re.I
+)
 INTERFACE_NET_PATTERN = re.compile(
     r"(SDA|SCL|SPI|MISO|MOSI|SCK|UART|TXD?|RXD?|CAN|USB|SWD|SWCLK|SWDIO)",
     re.I,
@@ -50,6 +53,7 @@ class PinNetSummary(BaseModel):
     pin_number: str
     pin_name: str = ""
     net: str | None = None
+    connection_ambiguity: list[str] = Field(default_factory=list, exclude_if=lambda v: not v)
 
 
 class NetMemberSummary(BaseModel):
@@ -67,7 +71,10 @@ class NeighborNetSummary(BaseModel):
     """Bounded neighboring components on one component pin's net."""
 
     net_name: str
-    member_count: int
+    member_count: int | None
+    connection_status: Literal["resolved", "ambiguous"] = Field(
+        default="resolved", exclude_if=lambda v: v == "resolved"
+    )
     members: list[NetMemberSummary] = Field(default_factory=list)
 
 
@@ -125,6 +132,24 @@ class NetContextFound(BaseModel):
     members: list[NetMemberSummary] = Field(default_factory=list)
 
 
+class ConnectionDeclarationSummary(BaseModel):
+    source: str
+    line: int
+    declared_endpoint_count: int
+    observed_endpoints: list[tuple[str, str]]
+
+
+class NetContextAmbiguous(BaseModel):
+    status: Literal["ambiguous"] = "ambiguous"
+    net_name: str
+    member_count: None = None
+    reason: str = (
+        "Source declarations are ambiguous; no resolved membership or open circuit is asserted."
+    )
+    declaration_count: int
+    declarations: list[ConnectionDeclarationSummary]
+
+
 class NetContextNotFound(BaseModel):
     """Unknown net branch with closest net-name matches."""
 
@@ -142,10 +167,13 @@ class SearchNetsInput(BaseModel):
 
 
 class NetSearchHit(BaseModel):
-    """One net search result."""
+    """Source-name match; ambiguous hits do not assert network membership."""
 
     net_name: str
-    member_count: int
+    member_count: int | None
+    connection_status: Literal["resolved", "ambiguous"] = Field(
+        default="resolved", exclude_if=lambda v: v == "resolved"
+    )
     sample_members: list[NetMemberSummary] = Field(default_factory=list)
 
 
@@ -172,6 +200,7 @@ class ProjectTopologySummary(BaseModel):
     status: Literal["summarized"] = "summarized"
     component_count: int
     net_count: int
+    ambiguous_net_count: int = Field(default=0, exclude_if=lambda v: v == 0)
     bom_matched: int | None = None
     validated_count: int | None = None
     manual_count: int | None = None
@@ -201,7 +230,12 @@ def get_component_context(
         )
     row = _row_by_refdes(project_index).get(refdes) if project_index is not None else None
     pins = [
-        PinNetSummary(pin_number=pin.number, pin_name=pin.name, net=pin.net)
+        PinNetSummary(
+            pin_number=pin.number,
+            pin_name=pin.name,
+            net=pin.net,
+            connection_ambiguity=pin.connection_ambiguity,
+        )
         for pin in sorted(component.pins, key=lambda pin: _pin_sort_key(pin.number))
     ]
     return ComponentContextFound(
@@ -219,16 +253,34 @@ def get_component_context(
 def get_net_context(
     design: Design | None,
     tool_input: GetNetContextInput,
-) -> NetContextFound | NetContextNotFound | TopologyNotConfigured:
+) -> NetContextFound | NetContextAmbiguous | NetContextNotFound | TopologyNotConfigured:
     """Return exact net membership with bounded component identity facts."""
 
     if design is None:
         return TopologyNotConfigured()
+    if tool_input.net_name in ambiguous_net_names(design):
+        records = [d for d in design.connectivity.declarations if d.net_name == tool_input.net_name]
+        remaining = tool_input.member_limit
+        sample = []
+        for record in records[: tool_input.member_limit]:
+            nodes = record.nodes[:remaining]
+            remaining -= len(nodes)
+            sample.append(
+                ConnectionDeclarationSummary(
+                    source=record.source,
+                    line=record.line,
+                    declared_endpoint_count=len(record.nodes),
+                    observed_endpoints=nodes,
+                )
+            )
+        return NetContextAmbiguous(
+            net_name=tool_input.net_name, declaration_count=len(records), declarations=sample
+        )
     net = design.nets.get(tool_input.net_name)
     if net is None:
         return NetContextNotFound(
             net_name=tool_input.net_name,
-            closest_matches=_closest(tool_input.net_name, design.nets.keys()),
+            closest_matches=_closest(tool_input.net_name, observed_net_names(design)),
         )
     return NetContextFound(
         net_name=net.name,
@@ -247,7 +299,7 @@ def search_nets(
         return TopologyNotConfigured()
     tokens = _query_tokens(tool_input.query)
     scored: list[tuple[int, str]] = []
-    for name in design.nets:
+    for name in observed_net_names(design):
         score = _net_match_score(name, tokens)
         if score:
             scored.append((score, name))
@@ -260,7 +312,7 @@ def search_nets(
         found=bool(hits),
         query=tool_input.query,
         hits=hits,
-        closest_matches=[] if hits else _closest(tool_input.query, design.nets.keys()),
+        closest_matches=[] if hits else _closest(tool_input.query, observed_net_names(design)),
     )
 
 
@@ -275,12 +327,15 @@ def summarize_project_topology(
         return TopologyNotConfigured()
     return ProjectTopologySummary(
         component_count=len(design.components),
-        net_count=len(design.nets),
+        net_count=len(observed_net_names(design)),
+        ambiguous_net_count=len(ambiguous_net_names(design)),
         bom_matched=project_index.bom_matched if project_index is not None else None,
         validated_count=len(project_index.validated_rows) if project_index is not None else None,
         manual_count=len(project_index.manual_rows) if project_index is not None else None,
         validation_totals=project_index.totals if project_index is not None else {},
-        high_signal_components=_high_signal_components(design, project_index, tool_input.component_limit),
+        high_signal_components=_high_signal_components(
+            design, project_index, tool_input.component_limit
+        ),
         power_like_nets=_pattern_net_hits(design, POWER_NET_PATTERN, tool_input.net_limit),
         interface_like_nets=_pattern_net_hits(design, INTERFACE_NET_PATTERN, tool_input.net_limit),
         control_like_nets=_pattern_net_hits(design, CONTROL_NET_PATTERN, tool_input.net_limit),
@@ -365,8 +420,12 @@ def _member_summaries(
     *,
     limit: int,
 ) -> list[NetMemberSummary]:
-    sorted_nodes = sorted(nodes, key=lambda node: (sort_refdes_key(node[0]), _pin_sort_key(node[1])))
-    return [_member_summary(design, refdes, pin_number) for refdes, pin_number in sorted_nodes[:limit]]
+    sorted_nodes = sorted(
+        nodes, key=lambda node: (sort_refdes_key(node[0]), _pin_sort_key(node[1]))
+    )
+    return [
+        _member_summary(design, refdes, pin_number) for refdes, pin_number in sorted_nodes[:limit]
+    ]
 
 
 def _neighbor_summaries(
@@ -376,13 +435,20 @@ def _neighbor_summaries(
 ) -> list[NeighborNetSummary]:
     out: list[NeighborNetSummary] = []
     remaining = limit
+    uncertain = sorted({name for pin in component.pins for name in pin.connection_ambiguity})
+    out.extend(
+        NeighborNetSummary(net_name=name, member_count=None, connection_status="ambiguous")
+        for name in uncertain
+    )
     for pin in sorted(component.pins, key=lambda item: _pin_sort_key(item.number)):
-        if not pin.net:
+        if not pin.net or pin.connection_ambiguity:
             continue
         net = design.nets.get(pin.net)
         if net is None:
             continue
-        neighbor_nodes = [(refdes, number) for refdes, number in net.nodes if refdes != component.refdes]
+        neighbor_nodes = [
+            (refdes, number) for refdes, number in net.nodes if refdes != component.refdes
+        ]
         sample_limit = max(0, remaining)
         members = _member_summaries(design, neighbor_nodes, limit=sample_limit)
         out.append(
@@ -435,6 +501,8 @@ def _row_evidence(row: ProjectValidationRow | None) -> list[str]:
 
 
 def _net_search_hit(design: Design, name: str, member_sample_limit: int) -> NetSearchHit:
+    if name in ambiguous_net_names(design):
+        return NetSearchHit(net_name=name, member_count=None, connection_status="ambiguous")
     net = design.nets[name]
     return NetSearchHit(
         net_name=name,
@@ -448,7 +516,7 @@ def _pattern_net_hits(
     pattern: re.Pattern[str],
     limit: int,
 ) -> list[NetSearchHit]:
-    names = [name for name in design.nets if pattern.search(name)]
+    names = [name for name in observed_net_names(design) if pattern.search(name)]
     names.sort(key=_net_bucket_sort_key)
     return [_net_search_hit(design, name, 4) for name in names[:limit]]
 
@@ -465,7 +533,9 @@ def _high_signal_components(
                 if row.validation is not None and row.validation.status == status:
                     selected.append(row.refdes)
                     if len(selected) >= limit:
-                        return [_component_identity(design.components[refdes]) for refdes in selected]
+                        return [
+                            _component_identity(design.components[refdes]) for refdes in selected
+                        ]
     for refdes in sorted(design.components, key=sort_refdes_key):
         if refdes.startswith("U") and refdes not in selected:
             selected.append(refdes)
@@ -480,7 +550,9 @@ def _profile_gap_payload(
 ) -> list[dict[str, Any]]:
     if project_index is None or limit <= 0:
         return []
-    return [group.model_dump(mode="json") for group in profile_gap_groups(project_index, limit=limit)]
+    return [
+        group.model_dump(mode="json") for group in profile_gap_groups(project_index, limit=limit)
+    ]
 
 
 def _closest(value: str, candidates: Any) -> list[str]:

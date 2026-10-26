@@ -28,10 +28,13 @@ class ClaimTurn:
         self.scope_id = "turn-" + uuid4().hex
         self.project_id = "loaded-project"
         self.known_objects = {
-            ("project", self.project_id), *(("component", ref) for ref in registry.refdes_set)
+            ("project", self.project_id),
+            *(("component", ref) for ref in registry.refdes_set),
         }
         if design is not None:
-            self.known_objects.update(("net", net) for net in design.nets)
+            from hardwise.ir.connectivity_queries import observed_net_names
+
+            self.known_objects.update(("net", net) for net in observed_net_names(design))
         self.facts = []
         self.omitted = 0
         self.calls = 0

@@ -275,6 +275,11 @@
     border-bottom: 0;
   }
 
+  .pin-row > .net-name,
+  .pin-row > span:last-child {
+    grid-column: 1 / -1;
+  }
+
   .current-snapshot {
     grid-column: auto;
   }

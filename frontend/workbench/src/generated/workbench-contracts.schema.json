@@ -953,6 +953,191 @@
       "title": "ComponentTaskCounts",
       "type": "object"
     },
+    "ConnectionAmbiguity": {
+      "properties": {
+        "declaration_indices": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Declaration Indices",
+          "type": "array"
+        },
+        "endpoints": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minLength": 1,
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Endpoints",
+          "type": "array"
+        },
+        "kind": {
+          "enum": [
+            "duplicate_net_name",
+            "repeated_endpoint",
+            "multiple_declarations"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "net_names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Net Names",
+          "type": "array"
+        }
+      },
+      "required": [
+        "declaration_indices",
+        "endpoints",
+        "kind",
+        "net_names"
+      ],
+      "title": "ConnectionAmbiguity",
+      "type": "object"
+    },
+    "ConnectionDeclaration": {
+      "additionalProperties": false,
+      "description": "One logical source record; continuation lines remain one declaration.",
+      "properties": {
+        "line": {
+          "minimum": 1,
+          "title": "Line",
+          "type": "integer"
+        },
+        "net_name": {
+          "minLength": 1,
+          "title": "Net Name",
+          "type": "string"
+        },
+        "nodes": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minLength": 1,
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "minItems": 1,
+          "title": "Nodes",
+          "type": "array"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "line",
+        "net_name",
+        "nodes",
+        "source"
+      ],
+      "title": "ConnectionDeclaration",
+      "type": "object"
+    },
+    "ConnectivityProjection": {
+      "properties": {
+        "ambiguities": {
+          "items": {
+            "$ref": "#/$defs/ConnectionAmbiguity"
+          },
+          "title": "Ambiguities",
+          "type": "array"
+        },
+        "ambiguous_endpoints": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "minLength": 1,
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Ambiguous Endpoints",
+          "type": "array"
+        },
+        "ambiguous_net_names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Ambiguous Net Names",
+          "type": "array"
+        },
+        "declarations": {
+          "items": {
+            "$ref": "#/$defs/ConnectionDeclaration"
+          },
+          "title": "Declarations",
+          "type": "array"
+        },
+        "resolved_nets": {
+          "additionalProperties": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "title": "Resolved Nets",
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "hardwise.connectivity.v1",
+          "default": "hardwise.connectivity.v1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ambiguities",
+        "ambiguous_endpoints",
+        "ambiguous_net_names",
+        "declarations",
+        "resolved_nets",
+        "schema_version"
+      ],
+      "title": "ConnectivityProjection",
+      "type": "object"
+    },
     "DatasheetCandidateSearchView": {
       "description": "Provider lookup status embedded in component detail.",
       "properties": {
@@ -3072,6 +3257,13 @@
           ],
           "default": null
         },
+        "connection_ambiguity": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Connection Ambiguity",
+          "type": "array"
+        },
         "electrical_type": {
           "title": "Electrical Type",
           "type": "string"
@@ -4738,6 +4930,17 @@
     },
     "RunProvenance": {
       "properties": {
+        "connectivity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConnectivityProjection"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "emitted_records": {
           "title": "Emitted Records",
           "type": "integer"

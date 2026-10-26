@@ -164,7 +164,7 @@ export function DetailColumn({
               <div className="pin-row" key={`${pin.number}-${pin.name}`}>
                 <span className="mono">{pin.number}</span>
                 <span>{pin.name}</span>
-                <span className="mono net-name">{pin.net || "-"}</span>
+                <span className="mono net-name">{pin.connection_ambiguity?.length ? `连接待核对（声明：${pin.connection_ambiguity.join("、")}）` : pin.net || "-"}</span>
                 <span>{pin.status ? <StatusBadge group={statusGroup(pin.status)} label={pinStatusLabel(pin.status)} /> : "-"}<AssessmentBadges assessment={pin.assessment} /></span>
               </div>
             ))}

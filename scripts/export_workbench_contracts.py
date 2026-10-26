@@ -49,12 +49,20 @@ def _require_serialized_response_fields(schema: dict[str, object]) -> None:
                 "VoltageReviewDocument",
                 "ChatResponse",
                 "ProfileModelSnapshot",
+                "PinView",
             }:
                 definition["required"] = [
                     key
                     for key in definition["required"]
                     if key
-                    not in {"voltage_review", "edits", "explanation_review", "share_projection"}
+                    not in {
+                        "voltage_review",
+                        "edits",
+                        "explanation_review",
+                        "share_projection",
+                        "connectivity",
+                        "connection_ambiguity",
+                    }
                 ]
 
 

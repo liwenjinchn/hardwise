@@ -34,6 +34,7 @@ import yaml
 from pydantic import BaseModel, Field
 
 from hardwise.ir.types import Design
+from hardwise.ir.connectivity_queries import observed_net_names
 from hardwise.validation.nets import NetValidation
 
 CHECK_NAME_CHARSET = "net_name_charset"
@@ -87,7 +88,7 @@ def validate_net_naming(
     results: list[NetValidation] = []
     allowed = re.compile(policy.allowed_pattern)
 
-    for net_name in sorted(design.nets):
+    for net_name in sorted(observed_net_names(design)):
         reasons: list[str] = []
         if not allowed.fullmatch(net_name):
             reasons.append(
@@ -128,7 +129,7 @@ def validate_net_naming(
                 )
             )
 
-    names = set(design.nets)
+    names = observed_net_names(design)
     for positive_suffix, negative_suffix in policy.diff_pair_suffixes:
         pair_pattern = re.compile(
             rf"^(?P<stem>.+)_(?P<side>{re.escape(positive_suffix)}|{re.escape(negative_suffix)})"
