@@ -727,3 +727,12 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - 复验包固定dab2e9149fe4dcca02c61cbcd4f0f9396ac6368b，959文件958哈希/14322539bytes，SHA256 c052429caf2c673a861ad6699379047154bb7641195c31dd57e0b34fd8f64524。中文空格路径解压VALIDATE通过；初次路径误认flat-root失败保留，修正versionroot后通过。非Windows、source篡改、语义基线不符（即使重写hash）、覆盖输出与未登记ref均拒绝，恢复hash通过。9旧包哈希保留。
 - 全量1790passed/7deselected/7existingwarnings67.71s；解压108相关专项5.83s。Ruff/diff通过；未重跑UIunit/E2E，沿用同源码第74证据并明确区分。公开fullrows/summary/coverage与第74相等，167=52PASS/0FAIL/115UNKNOWN。原历史离线浏览器强制断网1HTML/0API或外部请求，6理由、当前和历史清单保留；白色别名切换至新静态源码。
 - 本地交付不等于Windows/Cadence、真实工程来源/字段批准或同行验收。F01partial、F06独立待答，其他完整范围不缩减。goalactiveNOT_COMPLETE，no push。证据Hardwise-统一交付75。
+
+
+### 2026-10-26 — 第76输出合同审查
+
+- 上轮e8311ed统一交付为progress。本轮恢复F04已知负查询签核缺口核查；16个实际Runner/ChatService/API合成case覆盖12工具，12展示签核，4无工具/未配置正确抑制。查U1断言U3、真token错900A仍展示unverified。state/CSV/档案均不变，离线不含模型marker。零模型网络调用/真实批准。
+- 定位usable_tool_payload把found=false/not_found/no_profile当可用、any结果解锁全文；trace缺有界事实账本，token出现不认证对象/属性/单位/条件。完成工具payload库存与输出合同方案，按AGENTS7提交两路线问题，尚待答，不推定选择或编辑runtime。F06独立待选仍保留。首个独立脚本PYTHONPATH缺repo根import失败保留，改src:.后复验成功。
+- 证据Hardwise-输出合同76；fullgoalactiveNOT_COMPLETE。原日志/输入/档案/冻结包未改，no push。
+
+本轮文档提交前完整pytest：1790passed、7deselected、7既有刻意坏值warnings，67.45s；Ruff/diff通过。没有运行代码改动，未重跑frontend unit/E2E，不把该结果记作F04修复通过。

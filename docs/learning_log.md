@@ -5819,3 +5819,8 @@ Current-content hashes alone let a reverted candidate match its prior approval a
 ### 2026-10-26 — Verify absent services and archive roots before delivery
 
 Symptom: historical server handles were unavailable; initial extracted VALIDATE path was absent. Root cause: prior lsof confirmed no listener, and the source ZIP has a versioned root directory. Fix: back up the original SQLite read-only, trial upgrade on a copy, then start the verified current source; resolve extracted root explicitly before validation. Takeaway: do not infer process liveness from old logs or invent a flat ZIP layout. The initial path failure is retained; corrected extracted validation and negative controls pass. Main journal retained all 6 events/34 old runs, no fabricated new approval. EvidenceHardwise-统一交付75.
+
+
+### 2026-10-26 — A lookup result is not authority for arbitrary prose
+
+Symptom: twelve of sixteen adversarial chat flows still displayed fabrication signoff wording. Root cause: a non-error negative lookup or unrelated positive result sets has_result, and any trace unlocks the entire model answer; token occurrence does not bind subject/value/unit/condition. Fix status: audit and two contract routes submitted for user selection; runtime unchanged. Takeaway: distinguish observed lookup outcome, scoped source facts and verified claims, preserve diagnostic misses without authorizing unrestricted claims. EvidenceHardwise-输出合同76; formal state/CSV/profile/offline isolation remains effective.
