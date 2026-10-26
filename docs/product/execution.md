@@ -778,3 +778,12 @@ Each implementation commit records exact commands and outputs below. Passing reg
 **仍未接入Runner.run输出门禁、ChatResponse或白色UI。** evidence_locator真实工具返回中已增加可用的typed binding，但现有聊天仍可能按has_result放行全文；不能将本目录/producer通过当成F04签核漏洞已修。下一必须在每回合生成新scope，把实际dispatch目录交给结构化输出核验，服务端生成解释，再接API/UI/CLI并回放原16对抗case与新错值/条件/单位用例。不重新询问已选完整路线，不缩减为只修负查询。
 
 第80最终补充：绑定使用canonical datasheet:URL#p页引用；locator token collector同步收集实际返回绑定的来源，现有approved_tokens仅在有效READY下纳入已批准字段来源，实际对象不符时报告仍不授予reviewed来源。修复了新绑定来源被旧collector漏掉/错误归为文档索引的问题。最后44个来源/locator/chat针对性通过1.85s（与全量重叠），完整1877passed/7deselected/7既有刻意坏值warnings57.62s；Ruff/diff通过。先前全量57.80s和56.35s日志保留，不冒充最终版本。独立probe记录全部12工具实际dispatch与目录，普通DRAFT0参数；合成批准字段错unit/value/object/conditions均被纯核验拒绝。正常公开整份rows/producer/summary/coverage与第75相等，167=52PASS/0FAIL/115UNKNOWN；生产档案不变。未重跑frontend unit/E2E，Runner/API/UI新门禁仍未接。
+
+
+## 2026-10-26 — 第81接续与第82统一交付
+
+- 上一goalturn完成0e77607结构化聊天接入和1910后端/118前端单元/24浏览器回归，为progress；目标仍完整产品验收，未缩为代码通过。
+- 本轮builder固定0e77607，新源码包969files/968hashes，SHA256077e1e7e0268785dbc1b22754027b084398423a302d48545e3f2723db6c475c0。中文空格解压完整验证通过；156解压claim/chat/disclosure专项7.86s，nativeWindows/tamper/semanticbaseline/overwrite/unregisteredref拒绝且恢复hash通过。新完整1910passed/7deselected/7既有坏值warnings75.60s，Ruff/diff通过。未改UI源码，118/24仍为第81同一UI证据，不冒充本轮重跑。
+- 检查18772确实仍有旧进程后，只读备份原SQLite并副本连续升级，6events/36oldruns/decision不变；再重启已核实的自有服务并真实UI重跑，6events/38runs。所有旧行、原决定/理由、11原来源文件hash保留，另10managed文件与第75保存hash一致。17旧ZIP字节不变。主API负查询返回structured_explanation；公开白色静态别名同步。离线原历史浏览器6事件/原理由/0API。CSV仅source_audit_observed_at随实际重跑刷新，其他列相同；最初整文件比较失败未掩盖。
+- 用户已选择F06人工录入摘录并声明可否随包分享；不再pending或重新提问。需同时涵盖当前与历史清单导出，默认未声明不分享，保留本地原记录/来源版本/参数条件；不自动复制PDF或代签电气批准。该选择不授权伪造真实来源/批准/独立标签。
+- 完整产品NOT_COMPLETE，goalactive。下一按已选F06实现合同/编辑/持久化/分享投影及端到端反例；候选检查分母、生产资料真实批准、独立标签、Windows/Cadence及同行两轮仍开放，不push。证据在续接聊天outputs/Hardwise-交付82及work/hardwise-82。

@@ -112,3 +112,10 @@ Offline white original-reason report retains6 reasons; forced-offline browser ma
 ### 2026-10-26 — 第75统一交付
 
 源码dab2e91已进入白色主入口与新冻结包（959文件/958哈希）。副本连续升级两次，原日志安全启动及浏览器重跑：6旧事件/34旧运行和原决定、理由均保留，最终6事件/36运行。旧v1未自动改成新人工批准。公开整份rows/summary/coverage不变；1790Python通过67.71s、解压108专项通过5.83s。离线断网仅1HTML/0API或外部请求，原6条理由及历史运行清单保留。真实Windows/Cadence/工程主审仍未完成，F01保持partial，产品NOT_COMPLETE。详见任务输出Hardwise-统一交付75。
+
+
+## Current 0e77607 delivery — 2026-10-26
+
+Includes scoped per-turn model claim verification in Runner/API, fake snapshots and typed white/legacy panels. Public deterministic baseline unchanged at167=52PASS/0FAIL/115UNKNOWN; no real profile approval. New archive969files/968hashes,14,365,479bytes, SHA256077e1e7e0268785dbc1b22754027b084398423a302d48545e3f2723db6c475c0. Chinese/space extraction passed full validator and156claim/chat/disclosure tests; native-Windows, source tamper, semantic baseline mismatch, archive overwrite and unregistered source controls rejected, restored hash verification passed. Existing dependencies reused, not a fresh install or Windows/Cadence acceptance.
+
+Original main journal copied before update; trial twice and real browser rerun retain6events/36oldruns/reasons, final38runs. Input hashes and17oldZIPs unchanged. CSV differs only in the expected source observation timestamp. Main API now demonstrates bounded negative-query output. Stage82 evidence is in the continuation task outputs/Hardwise-交付82 and work/hardwise-82. Complete product NOT_COMPLETE; no push.

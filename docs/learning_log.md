@@ -5847,3 +5847,11 @@ A display string such as a locator hit's value cannot recover the field's unit, 
 - Root cause: has_result was previously both diagnostic metadata and display authority. Removing that authority changes fake replies, output assertions, consent categories and presentation together. A source token alone never binds a value. Frontend contract generation also changes cwd, so relative PYTHONPATH is unreliable; use the absolute source root for validation.
 - Fix: resume the already selected routeA; per-turn actual dispatch catalogs drive strict envelopes and server-rendered replies. Preserve negative-query diagnostics and unknown-refdes wrapping, reject free prose and stale scopes, display typed binding details in both white and legacy panels, retain old snapshots as unverified. Update stale expectations rather than weakening the verifier. New UI fixtures must supply the full ChatResponse contract; casting an incomplete object failed TypeScript and was corrected.
 - Takeaway: verify the whole API path with real dispatch, mixed true/false bindings and explicit synthetic approvals, then compare state/CSV/profile content. This proves bounded software behavior, not source truth, production field approval, live provider compliance or independent engineering acceptance.
+
+
+### 2026-10-26 — Compare exported semantics while preserving the refreshed observation timestamp
+
+- Symptom: stage82 full CSV equality failed after restarting and actually rerunning the original workbench. The first standalone helper also used a Python runtime without httpx.
+- Root cause: source_audit_observed_at is legitimately refreshed by a new inspection; text IO additionally normalizes line endings. Neither implies machine findings changed.
+- Fix: use the repository interpreter, preserve original CSV bytes, parse every row/column, prove the only changed field is the observation timestamp, and require all remaining values and row counts exactly equal. Separately preserve all six events,36oldruns and original decision state.
+- Takeaway: do not silently normalize arbitrary fields or claim byte identity for a newly observed export; record the exact permitted difference. Source ZIPs remain byte-frozen; release=false remains explicit.
