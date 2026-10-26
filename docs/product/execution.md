@@ -798,3 +798,14 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - 新39专项通过；最终完整1949passed/7deselected/7既有坏值warnings69.25s，前端构建/typed/118unit及24E2E49.0s通过，Ruff/diff通过。独立HTTP合成allow/withhold实际导出字节不同，本地全部SQLite行/profile原值不变；浏览器withhold内嵌数据无合成摘录、存在共享hash说明、0API请求。记录不是厂商许可或真实人工批准。
 - 主18772原进程动态读取开发静态文件，构建会出现混版风险。原日志只读备份后改为固定0e77607解压源启动（fake/no-auto），HTTP静态资产逐字节匹配pin，原6events/38runs/decision保留，当前39runs。既有主入口仍第82版本，F06未宣称统一交付。
 - F06仍partial：需人工录入/修订/声明UI、原子保存/并发/受管理输入、重开/完整备份恢复和来源参数条件呈现；随后完整交付与真实独立核对。原Windows/Cadence、候选分母、生产批准、独立标签/同行两轮仍开放。goalactive NOT_COMPLETE，不push。
+
+
+## 第84阶段：人工摘录原子保存接口
+
+已实现GET/POST /api/workbench/excerpts。人工选择当前捕获的档案及现有参数字段，录入来源、单位、角色、性质、适用条件并明确allow/withhold、人名和理由；首次来源声明要求明确匹配器件身份。参数值和主体从原档案读取，客户端不能改值、注入批准、替换已有身份或伪造分享时间。服务端记录当前带时区时间并绑定精确source hash。
+
+分享变更保持字段原电气批准；来源或字段解释改变则保留旧批准记录但降为DRAFT，不自动签核。退休档案拒绝编辑。原始档案字节不改：先验证并复制捕获来源，构造新上下文，再在同一SQLite事务发布运行和受管理项目版本。项目/run/revision过期、源文件漂移或另一进程已写新run时拒绝；失败恢复原活动上下文和日志检查点。
+
+19项合成专项通过，覆盖旧请求409、伪造/越界拒绝、catalog写后失败/快照失败/激活失败、重开、撤回、分享与电气批准独立、完整备份恢复原文/声明/所有历史行。响应在提交前构造，避免提交后读源失败造成“未保存”的错误提示。API只在本地journal存在时可写；仍未接入人工录入页面/草稿冲突提示，未更新主入口或冻结交付；完整F06及产品保持NOT_COMPLETE。下一步接入生成式类型合同与人工表单，再验证浏览器冲突草稿、当前/历史分享与统一交付。
+
+第84最终验证：1968passed/7deselected/7既有坏值warnings，72.29s；Ruff与diff检查通过。19项为本轮新增，未改前端资产，未升级主入口，未push。

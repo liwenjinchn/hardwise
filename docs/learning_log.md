@@ -5868,3 +5868,11 @@ A display string such as a locator hit's value cannot recover the field's unit, 
 ### 2026-10-26 — Pin the runtime assets as well as the imported Python source
 
 A long-running workbench imports old Python once but reads static files from disk on each request. Building a new frontend in its checkout can therefore serve new UI promises against an old backend. Back up the original journal, run the last verified source capsule with its own static directory, and compare the served JS bytes to the pinned file. Stage83 retained all6events/38oldruns/decision and added only the new startup run39. Development builds no longer change that pinned main UI. Do not infer runtime identity from the current checkout HEAD.
+
+
+## 2026-10-26 — 摘录修改必须保持来源版本与活动运行一致
+
+Symptom：直接改profile会让内存旧值、磁盘新值与历史run错位；保存后再读文件生成响应，可能在事务已成功时返回“未保存”。
+Root cause：来源文件、运行记录、项目目录和HTTP响应属于不同生命周期，单独写文件不具备原子发布语义。
+Fix：复用受管理捕获副本，提交前构造候选与响应，锁内同一SQLite事务登记run/catalog，成功再切换上下文。拒绝过期project/run/revision与源漂移；故障测试核对所有SQL行及活动对象。
+Takeaway：完整备份需要保留本地原文/声明，分享出口才做过滤；声明不等于电气批准。19项合成专项覆盖原文件保留、重开、完整恢复及失败原子性。
