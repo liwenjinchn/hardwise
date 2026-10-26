@@ -758,3 +758,23 @@ Each implementation commit records exact commands and outputs below. Passing reg
 - 严格JSON/未知字段/重复键/非有限/深层与长payload保护，mixedtrue/false分别核、旧回合不借用；nestedmutation检测和源字典拷贝。45专项通过。本模块尚未接入Runner/ChatService/API/whiteUI，不能声称第76签核漏洞已修；完整实施顺序在output-contract-plan-v1.md，不能缩成只修负查询。原档案/日志/冻结包不动、无模型网络或真实批准，goalactiveNOT_COMPLETE，no push。
 
 第79提交前完整1835passed/7deselected/7既有刻意坏值warnings64.22s，45新增专项0.14s；Ruff/diff通过。当前模块未导入Runner/API，因此不变更前端typed契约/static，未重跑UIunit/E2E，也未复用为F04端到端修复证据。
+
+
+### 2026-10-26 — 第80实际工具输出到受限事实目录
+
+上轮51c1745纯绑定核验为progress，本轮沿用户已选F04结构化完整路线继续。goalactive NOT_COMPLETE；F06独立待答，不阻断本工作。
+
+新增 `agent/tool_claim_catalog.py`，仅接收服务器真实派发的工具结果，先按12工具各自结果模型重新校验，再生成带scope/call身份的EvidenceFact。不读取工具结果之外的index/profile补证据，也不从自然语言summary提取参数。
+
+- list/get/context产生解析身份、计数、连通关系等observation；NC空列表仅记录过滤范围内的匹配数量。
+- 未命中/no_profile保留lookup_result，主体为当前project，不凭空创建U999对象事实；未配置/工具错误/无效schema无目录授权。
+- run_component_validation逐条复制已有canonical result、rule_version、check/row/severity/needs_review/evidence_kind/档案型号和证据；UNKNOWN保持UNKNOWN，不从WARN/summary推算PASS。summary单独作为已有机器原因的引用观察，不提取数值。
+- search_datasheet/documentcoverage/旧locator显示文本仅为source_coverage。文本含900V或signoff仍不能生成approved_parameter。后续界面必须明确按kind呈现来源引用，不把其自由文本提升为已核电气结论。
+- locator生产者新增按需claim_bindings：由实际当前对象/批准档案生成，不在目录适配阶段借其他档案。参数与pin叶字段直接保留原ReviewedField.value/unit/JSONpointer、subject/role/nature、批准身份、全部原条件、source版本/hash/页/locator/原摘录和最后批准声明；不解析display value。旧空绑定字段不序列化，不回填旧运行。
+- 参数生成先检查有效READY与实际厂商/封装/精确型号身份，以及该field批准内容hash。DRAFT/缺批准、来源或单位/条件/原value变化均不能生成参数绑定。绑定描述资料字段的适用范围，不断言当前板已满足工况或通过检查。
+
+30目录测试+12批准绑定测试新增，涵盖全部12工具的实际Runner._dispatch输出、负查询/空集/no_profile、未知/未配置、错误对象与坏payload、原来源片段注入、机器UNKNOWN、无共享字典、READY合成字段与pin穿透目录。45旧绑定测试和5既有locator测试共同复验；合成批准仅验证软件机制，生产档案仍0真实批准。
+
+**仍未接入Runner.run输出门禁、ChatResponse或白色UI。** evidence_locator真实工具返回中已增加可用的typed binding，但现有聊天仍可能按has_result放行全文；不能将本目录/producer通过当成F04签核漏洞已修。下一必须在每回合生成新scope，把实际dispatch目录交给结构化输出核验，服务端生成解释，再接API/UI/CLI并回放原16对抗case与新错值/条件/单位用例。不重新询问已选完整路线，不缩减为只修负查询。
+
+第80最终补充：绑定使用canonical datasheet:URL#p页引用；locator token collector同步收集实际返回绑定的来源，现有approved_tokens仅在有效READY下纳入已批准字段来源，实际对象不符时报告仍不授予reviewed来源。修复了新绑定来源被旧collector漏掉/错误归为文档索引的问题。最后44个来源/locator/chat针对性通过1.85s（与全量重叠），完整1877passed/7deselected/7既有刻意坏值warnings57.62s；Ruff/diff通过。先前全量57.80s和56.35s日志保留，不冒充最终版本。独立probe记录全部12工具实际dispatch与目录，普通DRAFT0参数；合成批准字段错unit/value/object/conditions均被纯核验拒绝。正常公开整份rows/producer/summary/coverage与第75相等，167=52PASS/0FAIL/115UNKNOWN；生产档案不变。未重跑frontend unit/E2E，Runner/API/UI新门禁仍未接。

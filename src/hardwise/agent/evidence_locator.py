@@ -22,6 +22,8 @@ from hardwise.ir.profile import DatasheetProfile, PinProfile, ProfileValue
 from hardwise.ir.types import Component, Design
 from hardwise.validation.profile_approval import approval_reason
 from hardwise.validation.project_index import ProjectValidationIndex, ProjectValidationRow
+from hardwise.agent.claim_contract import ClaimBinding
+from hardwise.agent.profile_claim_bindings import profile_claim_bindings
 
 
 EvidenceLocatorStatus = Literal[
@@ -70,6 +72,7 @@ class EvidenceLocatorHit(BaseModel):
     pin_name: str | None = None
     evidence: list[str] = Field(default_factory=list)
     note: str = ""
+    claim_bindings: tuple[ClaimBinding, ...] = Field(default=(), exclude_if=lambda value: not value)
 
 
 class LocateComponentEvidenceResult(BaseModel):
@@ -175,7 +178,7 @@ def locate_component_evidence(
         )
 
     hits = [
-        *_profile_fact_hits(profile, normalized_topic, tool_input.pin_number),
+        *_profile_fact_hits(profile, component, normalized_topic, tool_input.pin_number),
         *_profile_pin_hits(profile, component, normalized_topic, tool_input.pin_number),
         *_validation_hits(project_index, refdes, normalized_topic),
     ]
@@ -202,7 +205,11 @@ def evidence_locator_tokens(result: LocateComponentEvidenceResult) -> list[str]:
 
     tokens: list[str] = []
     for hit in result.hits:
-        for token in hit.evidence:
+        returned_tokens = [
+            *hit.evidence,
+            *(token for binding in hit.claim_bindings for token in binding.source_tokens),
+        ]
+        for token in returned_tokens:
             if token and token not in tokens:
                 tokens.append(token)
     return tokens
@@ -262,6 +269,7 @@ def normalize_evidence_topic(topic: str | None) -> str:
 
 def _profile_fact_hits(
     profile: DatasheetProfile,
+    component: Component,
     topic: str,
     pin_number: str | None,
 ) -> list[EvidenceLocatorHit]:
@@ -290,6 +298,11 @@ def _profile_fact_hits(
                     pin_number=key if namespace == "pin_function" else None,
                     evidence=_profile_fact_evidence(profile, fact_key),
                     note="Reviewed DatasheetProfile fact; not live PDF search.",
+                    claim_bindings=profile_claim_bindings(
+                        profile,
+                        component,
+                        pointer="/" + namespace + "/" + key.replace("~", "~0").replace("/", "~1"),
+                    ),
                 )
             )
     return hits
@@ -303,7 +316,7 @@ def _profile_pin_hits(
 ) -> list[EvidenceLocatorHit]:
     schematic_pins = {pin.number: pin for pin in component.pins}
     hits: list[EvidenceLocatorHit] = []
-    for pin in profile.pins:
+    for index, pin in enumerate(profile.pins):
         if pin_number is not None and pin.number != pin_number:
             continue
         schematic_pin = schematic_pins.get(pin.number)
@@ -322,6 +335,7 @@ def _profile_pin_hits(
                 pin_name=pin.name,
                 evidence=_dedupe([*pin.evidence, profile.evidence.get(f"pins.{pin.number}", "")]),
                 note="Reviewed profile pin fact; schematic net shown only for orientation.",
+                claim_bindings=profile_claim_bindings(profile, component, prefix=f"/pins/{index}/"),
             )
         )
     return hits

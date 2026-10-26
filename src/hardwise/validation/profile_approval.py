@@ -49,4 +49,9 @@ def approved_tokens(profile):
         *profile.evidence.values(),
         *(token for pin in profile.pins for token in pin.evidence),
         *(relation.evidence for relation in profile.voltage_relations),
+        *(
+            f"datasheet:{field.source.url}#p{field.source.page}"
+            for field in profile.field_review.fields
+            if field.approved(profile.field_review.identity)
+        ),
     }

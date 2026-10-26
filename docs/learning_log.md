@@ -5834,3 +5834,8 @@ Sequential stale-request tests prove rejection after a known version change, but
 ### 2026-10-26 — Bind typed assertions to the full returned scope
 
 Symptom: a genuine source token plus an unrelated successful lookup authorized arbitrary prose. Root cause: provenance of a lookup was conflated with truth of every model assertion. Fix foundation: compare all typed dimensions against a server-owned per-turn/per-call fact catalog; source, object, property, value/type, unit, conditions and rule version all participate, with unknown applicability rejected. Duplicate JSON keys and nested mutable dictionaries need explicit protection even with frozen Pydantic models. Return only server facts and bounded follow-up requests, never rejected model prose. Integration is still pending; this module alone does not fix the live chat. EvidenceHardwise-结构化声明79; 45 new contract tests, no production approvals.
+
+
+### 2026-10-26 — Carry original approved fields through the actual evidence tool
+
+A display string such as a locator hit's value cannot recover the field's unit, role, approval scope or source revision. Attach typed bindings while the locator still owns the actual selected profile/component, check effective approval and identity there, and preserve original ReviewedField metadata without extracting numbers from prose. Tool-to-catalog adaptation then needs no access to profiles/index and cannot borrow an unqueried field. Keep retrieved snippets/document coverage and negative lookups in separate kinds; validated means a check ran, not that it passed. New actual-dispatch and synthetic approval tests pass, but Runner/API/UI output integration remains required before claiming the signoff leak is fixed. EvidenceHardwise-工具事实目录80.
