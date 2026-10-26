@@ -863,3 +863,14 @@ Each implementation commit records exact commands and outputs below. Passing reg
 交付证据：续接任务outputs/Hardwise-交付候选88。此阶段完成F06统一软件交付；独立核对、真实Windows/Cadence、真实人工批准、独立样本和同行两轮仍未完成，product_release_accepted=false。未push。
 
 第88最终全量验证：1976passed/7deselected/7既有坏值warnings，78.65s；Ruff与diff检查通过。未更改前端实现，沿用c751b84已验证132unit/24E2E，并在恢复主入口做实际浏览器入口检查。
+
+
+## 第89阶段：连接一致性红反例与局部隔离合同
+
+上一轮交付为实质进展，本轮继续原A11而非重新定义验收。e93258c合成Telesis含两条同名SIGNAL、互不重叠R1.1/R2.1：解析两条，IR仅一条且节点只剩R2.1，器件引脚仍保留两者。实际TestClient上传返回200，证明导入未隔离；原主项目未修改。反例、输入和HTTP状态保存在outputs/Hardwise-连接一致性89。
+
+用户已选择局部隔离：保留原始声明、歧义网络及依赖检查UNKNOWN、独立范围继续。完整合同与消费者实施顺序见connectivity-isolation-v1.md。新增ir/connectivity.py纯投影基础，保留来源/行/原始端点顺序，并独立输出确定连接、隔离网名/端点、问题及声明索引。重复同名/同记录、重复端点和一脚多声明均不猜测合并；限定名称精确区分。8项专项含排列不变性、独立支路、原始记录和对象不共享验证通过。
+
+刻意尚未接入Design或生产解析器，避免现有消费者把隔离后缺节点当开路。此提交不声称修复已交付，也不改变c751b84主入口。下一阶段需接解析定位、IR、依赖检查及工具/报告/历史全链路；原A11、完整产品仍NOT_COMPLETE。
+
+第89全量验证：1984passed/7deselected/7既有坏值warnings，76.79s；Ruff/diff通过。不改前端、运行入口及冻结源码包，未push。
