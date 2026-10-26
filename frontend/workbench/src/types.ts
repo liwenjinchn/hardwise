@@ -1,6 +1,6 @@
 export type { AIDisclosure } from "./generated/workbench-contracts";
 export type { ReviewHistoryPage } from "./generated/workbench-contracts";
-import type { BomQuantityColumnConflict, RunProvenance } from "./generated/workbench-contracts";
+import type { BomQuantityColumnConflict, RunProvenance1 as RunProvenance } from "./generated/workbench-contracts";
 
 export type StatusGroup = "error" | "warn" | "pass" | "manual";
 export type TrustTier = "l1" | "l2" | "l3";

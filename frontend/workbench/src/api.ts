@@ -11,7 +11,7 @@ import type {
   WorkbenchOfflineSnapshot,
   WorkbenchState
 } from "./types";
-import type { RunProvenance, RunProvenanceResponse } from "./generated/workbench-contracts";
+import type { RunProvenance1 as RunProvenance, RunProvenanceResponse } from "./generated/workbench-contracts";
 
 export type ProvenanceDownload = RunProvenanceResponse | {
   origin: "offline_export";

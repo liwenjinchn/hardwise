@@ -5892,3 +5892,11 @@ Symptom：兼容HTML和准备包在allow/withhold下都没有原文；仅看“w
 Root cause：摘要出口本身不展示profile逐字段来源，阴性搜索没有证明正向可用性。
 Fix：每个出口记录是否原本携带摘录，allow对照与withhold同时测试；真实CLI同时检查HTML和两个索引边车。
 Takeaway：安全省略、完整来源呈现、真人可核对是三项不同验收要求。第86仍保留直接可读来源查看缺口。
+
+
+## 2026-10-26 — 生成类型同名与单份清单
+
+Symptom：新增来源阅读时typecheck指出profiles可能是RunProvenanceResponse而非数组。
+Root cause：生成器把历史run_id映射命名为RunProvenance，真实单份内容成为RunProvenance1；旧下载类型引用前者，仅透传JSON时未显现。
+Fix：api.ts/types.ts显式引入RunProvenance1别名，逐字段阅读继续使用已过滤清单，不转回含原文的本地profile模型。
+Takeaway：生成类型名称相同不代表语义相同，读取真实成员才能验证合同；历史缺失不允许借用当前清单。

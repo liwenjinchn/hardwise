@@ -1,25 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchRunProvenance } from "../api";
+import { fetchRunProvenance, type ProvenanceDownload as ProvenancePayload } from "../api";
+import { SharedExcerptReader } from "./SharedExcerptReader";
 
 export function ProvenanceDownload({ projectId, runId, historical = false }: {
   projectId: string | null; runId: string | null; historical?: boolean;
 }) {
+  const [preview, setPreview] = useState<ProvenancePayload | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const generation = useRef(0);
   useEffect(() => {
     generation.current += 1;
-    setBusy(false); setMessage(""); setError("");
+    setBusy(false); setMessage(""); setError(""); setPreview(null);
     return () => { generation.current += 1; };
   }, [projectId, runId]);
-  const download = async () => {
+  const download = async (read = false) => {
     if (busy) return;
     const requestedGeneration = generation.current;
     setBusy(true); setMessage(""); setError("");
     try {
       const payload = await fetchRunProvenance(projectId, runId);
       if (requestedGeneration !== generation.current) return;
+      if (read) { setPreview(payload); return; }
       const blob = new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
@@ -39,6 +42,8 @@ export function ProvenanceDownload({ projectId, runId, historical = false }: {
     <button type="button" disabled={busy} onClick={() => void download()}>
       {busy ? "正在读取清单…" : historical ? "下载该次输入与版本清单" : "下载本次输入与版本清单"}
     </button>
+    <button type="button" disabled={busy} onClick={() => void download(true)}>{historical ? "查看该次资料来源与摘录" : "查看本次资料来源与摘录"}</button>
+    {preview && <><button type="button" onClick={() => setPreview(null)}>收起资料来源</button><SharedExcerptReader payload={preview} /></>}
     {!historical && <p>清单记录文件哈希、档案/规则及复核依赖合同版本（决定哪些变动需复核），不包含原始文件，不等于项目备份。</p>}
     <p>资料摘录只有有效允许分享声明才随清单导出；缺失项保留来源定位和省略原因。本地原内容哈希与分享后的内容哈希分别标明。</p>
     {message && <p role="status">{message}</p>}
