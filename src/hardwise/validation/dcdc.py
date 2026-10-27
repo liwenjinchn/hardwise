@@ -28,10 +28,20 @@ def validate_buck_topology(
     design: Design,
 ) -> list[ComponentValidation]:
     """Validate the selected component as a buck converter."""
+    return _validate_buck(component, profile, design, complete=False)
+
+
+@isolate_topology
+def validate_buck_topology_complete(component, profile, design):
+    """Candidate path includes the output prerequisite and blocked children."""
+    return _validate_buck(component, profile, design, complete=True)
+
+
+def _validate_buck(component, profile, design, *, complete):
 
     output_pin = _switch_output_pin(component, profile)
     if output_pin is None or not output_pin.net:
-        return [
+        results = [
             ComponentValidation(
                 check="buck_output_topology",
                 result="FAIL",
@@ -40,10 +50,35 @@ def validate_buck_topology(
                 evidence=_profile_evidence(profile, "recommended.output_topology"),
             )
         ]
+        if complete:
+            for check, version in (("buck_inductor", "3"), ("buck_freewheel_diode", "2")):
+                results.append(
+                    ComponentValidation(
+                        check=check,
+                        rule_version=version,
+                        refdes=component.refdes,
+                        result="UNKNOWN",
+                        severity="INFO",
+                        summary="缺少已连接的开关输出脚，无法检查该外围拓扑前提。",
+                    )
+                )
+        return results
 
     neighbors = components_on_net(design, output_pin.net, exclude_refdes=component.refdes)
     inductor = first_by_prefixes(neighbors, ("L", "PL"))
-    checks = [_validate_buck_inductor(inductor, component, profile, design, output_pin.net)]
+    checks = []
+    if complete:
+        checks.append(
+            ComponentValidation(
+                check="buck_output_topology",
+                refdes=component.refdes,
+                result="PASS",
+                severity="INFO",
+                summary="开关输出脚已连接；仅确认此拓扑检查的连接前提，不证明转换器功能。",
+                evidence=_profile_evidence(profile, "recommended.output_topology"),
+            )
+        )
+    checks.append(_validate_buck_inductor(inductor, component, profile, design, output_pin.net))
     if _external_freewheel_diode_required(profile):
         checks.append(
             _validate_buck_diode(

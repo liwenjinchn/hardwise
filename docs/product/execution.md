@@ -961,3 +961,9 @@ Each implementation commit records exact commands and outputs below. Passing reg
 14新增专项+4既有连接器测试通过；2既有公开/合成设计2实例计数守恒/JSON往返通过，实例未执行0。PYTHONPATH=src uv run pytest -q：2094 passed / 7 deselected / 7既有warnings，96.41s；Ruff/diff通过。此前第99前端合同检查通过，本阶段未再改公开字段模型。证据：2026-10-27续接任务outputs/Hardwise-连接器目录100/full-pytest.txt及fixture-proof.json。
 
 已接通十类拓扑中的connector；下一步仍按目录先枚举其余9类（buck、half_bridge_gate_driver、mcu_basic、i2c_mux、diode、mosfet、bjt、shift_register_piso、i2c_level_shift_repeater），再项目合并/全出口/历史与冻结回归。未向运行中的原工作台部署，未push；完整产品NOT_COMPLETE。
+
+## 第101阶段：剩余九类拓扑目录
+
+按已选目录路线完成剩余九类固定/档案分支规则，显式生产者版本和作用域；连接器目录沿用第100。Buck完整路径补前提检查，缺输出时外围候选保留UNKNOWN；LED明确豁免才N/A，隔离暂停仍未知。分组I2C通道检查明确粒度，不冒充逐脚功能验证。来源邻居位号需注册，owner与scope/version严格绑定。
+
+55专项通过；16既有公开/合成设计59实例（8类），另1类repeater专项输入，关联/计数守恒/JSON往返通过，实例未执行0。全量PYTHONPATH=src uv run pytest -q：2149passed/7deselected/7既有warnings，105.93s；Ruff/diff通过。证据：2026-10-27续接任务outputs/Hardwise-拓扑目录101。十类已有独立候选入口，但尚未合并项目/接通全出口/历史/冻结升级；真实批准、独立标签与目标机/同行证据仍缺，完整产品NOT_COMPLETE，未push。
