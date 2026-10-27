@@ -128,7 +128,14 @@ def test_canonical_axes_survive_api_export_and_human_decision():
         coverage = state["assessment_coverage"]
         assert coverage["legacy_needs_review"] == 0
         assert sum(coverage["result_counts"].values()) == coverage["generated_checks"]
-        assert coverage["full_candidate_count"] is None
+        candidates = state["candidate_coverage"]
+        counts = candidates["counts"]
+        assert candidates["basis"] == "enumerated_rule_instances"
+        assert coverage["full_candidate_count"] == counts["candidate_count"]
+        assert (
+            counts["candidate_count"]
+            == counts["completed_count"] + counts["unknown_count"] + counts["not_applicable_count"]
+        )
         task = next(task for task in state["review_tasks"] if task["refdes"] == "R1")
         before = task["assessment"]
         assert before["result"] == "UNKNOWN"

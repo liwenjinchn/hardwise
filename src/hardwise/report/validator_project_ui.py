@@ -10,6 +10,7 @@ from hardwise.bom.types import BomMatchReport, sort_refdes_key
 from hardwise.ir.profile import DatasheetProfile
 from hardwise.ir.types import Component, Design
 from hardwise.report.component_validation_details import trust_label_html
+from hardwise.report.candidate_coverage_html import render_candidate_coverage
 from hardwise.report.validator_project_risk_hints import render_project_risk_hints
 from hardwise.report.validator_multi_ui import (
     ValidatorUiResult,
@@ -100,6 +101,7 @@ def render_project_workbench(
           <div class="metric pending"><span>NOT_APPLICABLE</span><strong>{counts["NOT_APPLICABLE"]}</strong></div>
         </div>
       </header>
+      {render_candidate_coverage(index.candidate_summary)}
       <section class="workspace">
         <div class="left-stack" aria-label="器件与验证摘要">
           <aside class="verify" aria-label="验证">

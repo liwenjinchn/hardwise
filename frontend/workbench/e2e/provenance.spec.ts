@@ -121,3 +121,25 @@ test("real single-file export downloads embedded evidence with zero API requests
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("candidate coverage agrees across the real API, import view and persisted manifest", async ({ page, request }, testInfo) => {
+  const state = await (await request.get("/api/workbench/state")).json();
+  const summary = state.candidate_coverage;
+  expect(summary.basis).toBe("enumerated_rule_instances");
+  const c = summary.counts;
+  expect(c.candidate_count).toBe(c.completed_count + c.unknown_count + c.not_applicable_count);
+  await page.goto("/");
+  await page.getByRole("button", { name: "导入", exact: true }).click();
+  const section = page.getByRole("region", { name: "目录候选检查范围", exact: true });
+  await expect(section).toContainText(`目录候选检查 ${c.candidate_count} 项`);
+  await expect(section).toContainText(`未知中有 ${c.unexecuted_count} 项未执行`);
+  await section.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("candidate-coverage.png") });
+  await page.setViewportSize({ width: 760, height: 900 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const run = state.review_decisions.run_id;
+  const payload = await (await request.get(`/api/workbench/review-runs/${run}/provenance`)).json();
+  expect(payload.provenance.candidate_coverage.candidates).toHaveLength(c.candidate_count);
+  expect(payload.provenance.candidate_records).toHaveLength(c.candidate_count);
+  expect(payload.provenance.candidate_records.filter((r: { result: string }) => r.result === "UNKNOWN")).toHaveLength(c.unknown_count);
+});

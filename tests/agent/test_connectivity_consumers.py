@@ -108,11 +108,14 @@ def test_run_provenance_roundtrip_preserves_raw_declarations_and_no_legacy_inven
         design=design,
         validation_targets={},
         input_manifest=None,
-        index=SimpleNamespace(validated_rows=[], net_checks=validate_design_nets(design)),
+        index=SimpleNamespace(
+            validated_rows=[], net_checks=validate_design_nets(design), candidate_coverage=None
+        ),
     )
     run = build_run_provenance(context)
     restored = RunProvenance.model_validate_json(run.model_dump_json())
     assert restored.connectivity == design.connectivity
+    assert restored.candidate_coverage is None and restored.candidate_records is None
     old = run.model_dump(mode="json")
     del old["connectivity"]
     assert RunProvenance.model_validate(old).connectivity is None

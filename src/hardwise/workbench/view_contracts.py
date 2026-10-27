@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from hardwise.ir.voltage import VoltageFactsDocument
 from hardwise.bom.types import BomQuantityColumnConflict
 from hardwise.validation.assessment import Assessment, CheckCoverage
+from hardwise.validation.candidate_summary import CandidateCoverageSummary
 
 from hardwise.workbench.evidence_package import EvidencePackageSummary
 from hardwise.workbench.evidence_delivery import SourceAudit, OriginalDelivery
@@ -445,6 +446,7 @@ class WorkbenchState(BaseModel):
     """Top-level SPA state returned by ``/api/workbench/state``."""
 
     assessment_coverage: CheckCoverage | None = None
+    candidate_coverage: CandidateCoverageSummary | None = None
     voltage_facts: VoltageFactsDocument = Field(default_factory=VoltageFactsDocument)
 
     project: WorkbenchProject

@@ -39,6 +39,35 @@ def render(index: ProjectValidationIndex, *, manual_limit: int = 50) -> str:
     lines.append("")
 
     coverage = index.assessment_coverage
+    candidate_summary = index.candidate_summary
+    if candidate_summary is not None:
+        counts = candidate_summary.counts
+        lines.extend(
+            [
+                "## Enumerated candidate coverage",
+                "",
+                f"Catalog: {candidate_summary.catalog_version}; candidates: {counts.candidate_count}; "
+                f"completed: {counts.completed_count}; UNKNOWN: {counts.unknown_count}; "
+                f"NOT_APPLICABLE: {counts.not_applicable_count}; unexecuted (subset of UNKNOWN): "
+                f"{counts.unexecuted_count}; unsupported scopes: {counts.unsupported_scope_count}.",
+                candidate_summary.boundary,
+                "",
+                "| Registered rule | Candidates | Completed | Unknown | N/A | Unexecuted |",
+                "|---|---|---|---|---|---|",
+            ]
+        )
+        for rule, c in candidate_summary.by_rule.items():
+            lines.append(
+                f"| {rule} | {c.candidate_count} | {c.completed_count} | {c.unknown_count} | {c.not_applicable_count} | {c.unexecuted_count} |"
+            )
+        lines.append("")
+    else:
+        lines.extend(
+            [
+                "Candidate coverage was not recorded; no denominator is reconstructed from emitted checks.",
+                "",
+            ]
+        )
     lines.extend(
         [
             "## Check result contract",

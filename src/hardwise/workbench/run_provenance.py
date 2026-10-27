@@ -8,10 +8,12 @@ import math
 import platform
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from hardwise.ir.connectivity import ConnectivityProjection
 from hardwise.ir.voltage_review import VoltageReviewDocument
 from hardwise.input_provenance import InputReadManifest
+from hardwise.validation.candidate_coverage import CandidateSnapshot
+from hardwise.validation.candidate_summary import CandidateRecord, candidate_records
 
 
 class ProfileModelSnapshot(BaseModel):
@@ -55,6 +57,18 @@ class RunProvenance(BaseModel):
         default=None, exclude_if=lambda v: v is None
     )
     emitted_records: int
+    candidate_coverage: CandidateSnapshot | None = Field(
+        default=None, exclude_if=lambda v: v is None
+    )
+
+    @computed_field
+    @property
+    def candidate_records(self) -> list[CandidateRecord] | None:
+        return (
+            candidate_records(self.candidate_coverage)
+            if self.candidate_coverage is not None
+            else None
+        )
 
 
 class RunProvenanceResponse(BaseModel):
@@ -106,6 +120,7 @@ def build_run_provenance(context) -> RunProvenance:
     from hardwise.workbench.decision_fingerprints import REVIEW_DEPENDENCY_CONTRACT
 
     return RunProvenance(
+        candidate_coverage=context.index.candidate_coverage,
         review_dependency_contract=REVIEW_DEPENDENCY_CONTRACT,
         voltage_review=context.design.voltage_review,
         connectivity=context.design.connectivity,

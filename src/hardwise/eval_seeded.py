@@ -15,6 +15,7 @@ from hardwise.eval_seeded_matrix import (
     materialize_seeded_fixture,
 )
 from hardwise.workbench.context import build_workbench_context, close_workbench_context
+from hardwise.validation.candidate_summary import CandidateCoverageSummary
 
 DEFAULT_FIXTURE = Path("tests/fixtures/allegro/pst")
 DEFAULT_FIXTURES_ROOT = Path("tests/fixtures/allegro")
@@ -34,6 +35,8 @@ class SeededDefectCaseResult(BaseModel):
     expected: SeededFindingSignature
     new_issues: list[SeededFindingSignature] = Field(default_factory=list)
     false_positives: list[SeededFindingSignature] = Field(default_factory=list)
+    baseline_candidate_coverage: CandidateCoverageSummary | None = None
+    candidate_coverage: CandidateCoverageSummary | None = None
 
 
 class SeededDefectFamilySummary(BaseModel):
@@ -82,24 +85,38 @@ def run_seeded_defect_benchmark(
     with tempfile.TemporaryDirectory(prefix="hardwise-seeded-defects-") as tmp:
         tmp_root = Path(tmp)
         baselines: dict[tuple[Path, Path | None, Path | None], set[tuple[str, str, str, str]]] = {}
+        baseline_coverages = {}
         results: list[SeededDefectCaseResult] = []
         for case in cases:
             baseline_key = (case.fixture.netlist, case.fixture.bom, case.fixture.voltage_facts)
             baseline = baselines.get(baseline_key)
             if baseline is None:
+                clean_coverage = []
                 clean = materialize_seeded_fixture(
                     case.fixture,
                     tmp_root / f"clean-{len(baselines)}-{case.fixture.name}",
                 )
                 baseline = _issue_keys(
-                    _run_validation(clean.netlist, clean.bom, profiles, clean.voltage_facts)
+                    _run_validation(
+                        clean.netlist,
+                        clean.bom,
+                        profiles,
+                        clean.voltage_facts,
+                        candidate_summaries=clean_coverage,
+                    )
                 )
                 baselines[baseline_key] = baseline
+                baseline_coverages[baseline_key] = clean_coverage[0]
 
             workspace = materialize_seeded_fixture(case.fixture, tmp_root / case.name)
             case.mutate(workspace)
+            mutated_coverage = []
             issues = _run_validation(
-                workspace.netlist, workspace.bom, profiles, workspace.voltage_facts
+                workspace.netlist,
+                workspace.bom,
+                profiles,
+                workspace.voltage_facts,
+                candidate_summaries=mutated_coverage,
             )
             new_issues = [issue for issue in issues if issue.key not in baseline]
             detected = case.expected.key in {issue.key for issue in new_issues}
@@ -117,6 +134,8 @@ def run_seeded_defect_benchmark(
                     expected=case.expected,
                     new_issues=new_issues,
                     false_positives=false_positives,
+                    baseline_candidate_coverage=baseline_coverages[baseline_key],
+                    candidate_coverage=mutated_coverage[0],
                 )
             )
 
@@ -145,7 +164,12 @@ def write_seeded_defect_summary(summary: SeededDefectSummary, output: Path) -> N
 
 
 def _run_validation(
-    project: Path, bom: Path, profiles: Path, voltage_facts: Path | None = None
+    project: Path,
+    bom: Path,
+    profiles: Path,
+    voltage_facts: Path | None = None,
+    *,
+    candidate_summaries: list[CandidateCoverageSummary | None] | None = None,
 ) -> list[SeededFindingSignature]:
     context = build_workbench_context(
         netlist_path=project,
@@ -155,6 +179,8 @@ def _run_validation(
         voltage_facts=voltage_facts,
     )
     try:
+        if candidate_summaries is not None:
+            candidate_summaries.append(context.index.candidate_summary)
         issues: list[SeededFindingSignature] = []
         for row in context.index.validated_rows:
             if row.validation is None:

@@ -42,6 +42,15 @@ def test_seeded_defect_benchmark_reports_recall_and_false_positives() -> None:
     capacitor = next(case for case in summary.cases if case.name == "capacitor_low_voltage")
     assert capacitor.voltage_facts == "tests/fixtures/allegro/pst_dc_voltage_facts.json"
     assert all(case.false_positives == [] for case in summary.cases)
+    for case in summary.cases:
+        for coverage in (case.baseline_candidate_coverage, case.candidate_coverage):
+            assert coverage is not None
+            counts = coverage.counts
+            assert (
+                counts.candidate_count
+                == counts.completed_count + counts.unknown_count + counts.not_applicable_count
+            )
+            assert coverage.basis == "enumerated_rule_instances"
     assert all(
         case.new_issues == ([case.expected] if case.detected else []) for case in summary.cases
     )

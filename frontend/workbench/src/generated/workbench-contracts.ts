@@ -418,6 +418,44 @@ export type ProjectId1 = string;
 export type RunId2 = string;
 export type CreatedAt1 = string | null;
 export type ProjectId2 = string;
+export type Applicability = "applicable" | "unknown" | "not_applicable";
+export type CatalogVersion = string;
+export type Evidence7 = string[];
+export type Instance = [unknown, unknown][];
+export type ObjectId2 = string;
+export type ObjectKind2 = "project" | "component" | "pin" | "net" | "relation";
+export type Reason13 = string;
+export type RuleId1 = string;
+export type RuleVersion2 = string;
+export type Candidates2 = Candidate[];
+export type ObjectKind3 = "project" | "component" | "pin" | "net" | "relation";
+export type RuleId2 = string;
+export type Scope2 = string;
+export type Version2 = string;
+export type Rules = RuleDefinition[];
+export type Version3 = string;
+export type CandidateId = string;
+export type Evidence8 = string[];
+export type Reason14 = string;
+export type Result1 = "PASS" | "FAIL" | "UNKNOWN" | "NOT_APPLICABLE";
+export type Outcomes = CandidateOutcome[];
+export type SchemaVersion2 = "hardwise.candidate_coverage.v1";
+export type ObjectId3 = string;
+export type ObjectKind4 = "project" | "component" | "pin" | "net" | "relation";
+export type Reason15 = string;
+export type Scope3 = string;
+export type Unsupported = UnsupportedScope[];
+export type CandidateRecords = CandidateRecord[] | null;
+export type Applicability1 = string;
+export type ApplicabilityReason = string;
+export type CandidateId1 = string;
+export type Executed = boolean;
+export type Instance1 = [unknown, unknown][];
+export type ObjectId4 = string;
+export type ObjectKind5 = string;
+export type Reason16 = string;
+export type Result2 = "PASS" | "FAIL" | "UNKNOWN" | "NOT_APPLICABLE";
+export type RuleId3 = string;
 export type DeclarationIndices = number[];
 export type Endpoints = [unknown, unknown][];
 export type Kind5 = "duplicate_net_name" | "repeated_endpoint" | "multiple_declarations";
@@ -433,7 +471,7 @@ export type NetName = string;
 export type Nodes = [[unknown, unknown], ...[unknown, unknown][]];
 export type Source6 = string;
 export type Declarations = ConnectionDeclaration[];
-export type SchemaVersion2 = "hardwise.connectivity.v1";
+export type SchemaVersion3 = "hardwise.connectivity.v1";
 export type EmittedRecords = number;
 export type ImplementationIdentityAssurance = "declared_rule_versions";
 export type InputCaptureStatus = "captured" | "unavailable";
@@ -445,7 +483,7 @@ export type Sha2561 = string;
 export type SizeBytes = number;
 export type Files = InputFileDigest[];
 export type ReadsetSha256 = string;
-export type SchemaVersion3 = "hardwise.input_reads.v1";
+export type SchemaVersion4 = "hardwise.input_reads.v1";
 export type StartedAt = string;
 export type VerifiedAt = string;
 export type PackageVersion = string;
@@ -462,10 +500,10 @@ export type RawInputsArchived = false;
 export type ReviewDependencyContract = string | null;
 export type EmittedCount = number;
 export type Name6 = string;
-export type Scope2 = "pin" | "component" | "net";
-export type Version2 = string;
+export type Scope4 = "pin" | "component" | "net";
+export type Version4 = string;
 export type RuleVersions = EmittedRuleVersion[];
-export type SchemaVersion4 = "hardwise.run_provenance.v1";
+export type SchemaVersion5 = "hardwise.run_provenance.v1";
 export type ActiveMode = string;
 export type Confirmed = boolean;
 export type ConfirmedBy = string;
@@ -480,15 +518,15 @@ export type Unit4 = "V";
 export type Id4 = string;
 export type Locator2 = string;
 export type Origin = "manual" | "import" | "net_name" | "legacy_v1";
-export type Candidates2 = VoltageCandidate[];
+export type Candidates3 = VoltageCandidate[];
 export type Action = "confirm" | "unknown";
-export type CandidateId = string | null;
+export type CandidateId2 = string | null;
 export type CandidateSha256 = string | null;
 export type Id5 = string;
 export type Mode3 = string;
 export type Net3 = string;
 export type Origin1 = "human" | "legacy_v1";
-export type Reason13 = string;
+export type Reason17 = string;
 export type RecordedAt = string | null;
 export type Reviewer1 = string;
 export type ScopeSha256 = string;
@@ -499,12 +537,12 @@ export type Id6 = string;
 export type InvalidatedConfirmationIds = string[];
 export type PreviousMode = string;
 export type PreviousRevision = string;
-export type Reason14 = string;
+export type Reason18 = string;
 export type RecordedAt1 = string;
 export type Reviewer2 = string;
 export type Edits = VoltageReviewEdit[];
-export type SchemaVersion5 = "hardwise.voltage_review.v1";
-export type Reason15 = string;
+export type SchemaVersion6 = "hardwise.voltage_review.v1";
+export type Reason19 = string;
 export type RunId3 = string;
 export type Status19 = "recorded" | "not_recorded";
 export type Total4 = number;
@@ -530,7 +568,7 @@ export type Projects = SavedProjectView[];
 export type ExpectedProjectId1 = string;
 export type ExpectedRevision1 = string;
 export type ExpectedRunId1 = string;
-export type Reason16 = string;
+export type Reason20 = string;
 export type Reviewer3 = string;
 /**
  * @minItems 1
@@ -538,7 +576,7 @@ export type Reviewer3 = string;
  */
 export type Selections = [VoltageSelection, ...VoltageSelection[]];
 export type Action1 = "confirm" | "unknown";
-export type CandidateId1 = string | null;
+export type CandidateId3 = string | null;
 export type ExpectedScopeSha256 = string;
 export type Mode4 = string;
 export type Net4 = string;
@@ -546,7 +584,7 @@ export type ActiveMode2 = string | null;
 export type ExpectedProjectId2 = string;
 export type ExpectedRevision2 = string;
 export type ExpectedRunId2 = string;
-export type Reason17 = string;
+export type Reason21 = string;
 /**
  * @maxItems 1000
  */
@@ -581,6 +619,17 @@ export type NotApplicableChecks = number;
 export type RuleSetVersion = string;
 export type UnknownChecks = number;
 export type UnsupportedComponents = number;
+export type Basis1 = "enumerated_rule_instances";
+export type Boundary1 = string;
+export type ApplicabilityUnknownCount = number;
+export type ApplicableCount = number;
+export type CandidateCount = number;
+export type CompletedCount = number;
+export type NotApplicableCount1 = number;
+export type UnexecutedCount = number;
+export type UnknownCount1 = number;
+export type UnsupportedScopeCount = number;
+export type CatalogVersion1 = string;
 export type Chat = boolean;
 export type DatasheetCandidateLookupEnabled = boolean;
 export type DatasheetSearchEnabled1 = boolean;
@@ -589,7 +638,7 @@ export type PinTableEnabled = boolean;
 export type ReviewPackageEnabled = boolean;
 export type RiskHintsEnabled = boolean;
 export type Check1 = string;
-export type Evidence7 = EvidenceView[];
+export type Evidence9 = EvidenceView[];
 export type NetName1 = string;
 export type Nodes1 = string[];
 export type Status21 = string;
@@ -656,7 +705,7 @@ export type AcceptedExternalCount = number;
 export type Count1 = number;
 export type ExternalStatus = string;
 export type Count2 = number;
-export type Reason18 = string;
+export type Reason22 = string;
 export type Rejected1 = RejectedRiskHintSummary[];
 export type RejectedExternalCount = number;
 export type WrappedRefdesCount1 = number;
@@ -667,7 +716,7 @@ export type RejectedExternalCount1 = number;
 export type SelectedRefdes3 = string | null;
 export type ActiveMode3 = string;
 export type Facts = VoltageFact[];
-export type SchemaVersion6 = "hardwise.voltage_facts.v1";
+export type SchemaVersion7 = "hardwise.voltage_facts.v1";
 
 export interface WorkbenchContracts {
   ai_disclosure: AIDisclosure;
@@ -1409,11 +1458,13 @@ export interface RunProvenanceResponse {
   created_at: CreatedAt1;
   project_id: ProjectId2;
   provenance: RunProvenance1 | null;
-  reason: Reason15;
+  reason: Reason19;
   run_id: RunId3;
   status: Status19;
 }
 export interface RunProvenance1 {
+  candidate_coverage: CandidateSnapshot | null;
+  candidate_records: CandidateRecords;
   connectivity?: ConnectivityProjection | null;
   emitted_records: EmittedRecords;
   implementation_identity_assurance: ImplementationIdentityAssurance;
@@ -1427,8 +1478,60 @@ export interface RunProvenance1 {
   raw_inputs_archived: RawInputsArchived;
   review_dependency_contract: ReviewDependencyContract;
   rule_versions: RuleVersions;
-  schema_version: SchemaVersion4;
+  schema_version: SchemaVersion5;
   voltage_review?: VoltageReviewDocument | null;
+}
+export interface CandidateSnapshot {
+  candidates: Candidates2;
+  catalog: RuleCatalog;
+  outcomes: Outcomes;
+  schema_version: SchemaVersion2;
+  unsupported: Unsupported;
+}
+export interface Candidate {
+  applicability: Applicability;
+  catalog_version: CatalogVersion;
+  evidence: Evidence7;
+  instance: Instance;
+  object_id: ObjectId2;
+  object_kind: ObjectKind2;
+  reason: Reason13;
+  rule_id: RuleId1;
+  rule_version: RuleVersion2;
+}
+export interface RuleCatalog {
+  rules: Rules;
+  version: Version3;
+}
+export interface RuleDefinition {
+  object_kind: ObjectKind3;
+  rule_id: RuleId2;
+  scope: Scope2;
+  version: Version2;
+}
+export interface CandidateOutcome {
+  candidate_id: CandidateId;
+  evidence: Evidence8;
+  reason: Reason14;
+  result: Result1;
+}
+export interface UnsupportedScope {
+  object_id: ObjectId3;
+  object_kind: ObjectKind4;
+  reason: Reason15;
+  scope: Scope3;
+}
+export interface CandidateRecord {
+  applicability: Applicability1;
+  applicability_reason: ApplicabilityReason;
+  candidate_id: CandidateId1;
+  executed: Executed;
+  instance: Instance1;
+  object_id: ObjectId4;
+  object_kind: ObjectKind5;
+  reason: Reason16;
+  result: Result2;
+  rule_id: RuleId3;
 }
 export interface ConnectivityProjection {
   ambiguities: Ambiguities;
@@ -1436,7 +1539,7 @@ export interface ConnectivityProjection {
   ambiguous_net_names: AmbiguousNetNames;
   declarations: Declarations;
   resolved_nets: ResolvedNets;
-  schema_version: SchemaVersion2;
+  schema_version: SchemaVersion3;
 }
 export interface ConnectionAmbiguity1 {
   declaration_indices: DeclarationIndices;
@@ -1460,7 +1563,7 @@ export interface InputReadManifest {
   assurance: Assurance;
   files: Files;
   readset_sha256: ReadsetSha256;
-  schema_version: SchemaVersion3;
+  schema_version: SchemaVersion4;
   started_at: StartedAt;
   verified_at: VerifiedAt;
 }
@@ -1487,18 +1590,18 @@ export interface Values1 {
 export interface EmittedRuleVersion {
   emitted_count: EmittedCount;
   name: Name6;
-  scope: Scope2;
-  version: Version2;
+  scope: Scope4;
+  version: Version4;
 }
 /**
  * Input order is audit order; latest declaration per net/mode supersedes old ones.
  */
 export interface VoltageReviewDocument {
   active_mode: ActiveMode;
-  candidates: Candidates2;
+  candidates: Candidates3;
   confirmations: Confirmations;
   edits?: Edits;
-  schema_version: SchemaVersion5;
+  schema_version: SchemaVersion6;
 }
 export interface VoltageCandidate {
   fact: VoltageFact;
@@ -1526,13 +1629,13 @@ export interface VoltageFact {
  */
 export interface VoltageConfirmation {
   action: Action;
-  candidate_id: CandidateId;
+  candidate_id: CandidateId2;
   candidate_sha256: CandidateSha256;
   id: Id5;
   mode: Mode3;
   net: Net3;
   origin: Origin1;
-  reason: Reason13;
+  reason: Reason17;
   recorded_at: RecordedAt;
   reviewer: Reviewer1;
   scope_sha256: ScopeSha256;
@@ -1544,7 +1647,7 @@ export interface VoltageReviewEdit {
   invalidated_confirmation_ids: InvalidatedConfirmationIds;
   previous_mode: PreviousMode;
   previous_revision: PreviousRevision;
-  reason: Reason14;
+  reason: Reason18;
   recorded_at: RecordedAt1;
   reviewer: Reviewer2;
 }
@@ -1585,13 +1688,13 @@ export interface VoltageBatchRequest {
   expected_project_id: ExpectedProjectId1;
   expected_revision: ExpectedRevision1;
   expected_run_id: ExpectedRunId1;
-  reason: Reason16;
+  reason: Reason20;
   reviewer: Reviewer3;
   selections: Selections;
 }
 export interface VoltageSelection {
   action: Action1;
-  candidate_id: CandidateId1;
+  candidate_id: CandidateId3;
   expected_scope_sha256: ExpectedScopeSha256;
   mode: Mode4;
   net: Net4;
@@ -1601,7 +1704,7 @@ export interface VoltageCandidatesRequest {
   expected_project_id: ExpectedProjectId2;
   expected_revision: ExpectedRevision2;
   expected_run_id: ExpectedRunId2;
-  reason: Reason17;
+  reason: Reason21;
   remove_ids: RemoveIds;
   reviewer: Reviewer4;
   upserts: Upserts;
@@ -1630,6 +1733,7 @@ export interface VoltageReviewScope {
  */
 export interface WorkbenchState {
   assessment_coverage: CheckCoverage | null;
+  candidate_coverage: CandidateCoverageSummary | null;
   capabilities: WorkbenchCapabilities;
   evidence_package: EvidencePackageSummary;
   net_checks: NetChecks;
@@ -1667,6 +1771,26 @@ export interface CheckCoverage {
 export interface ResultCounts {
   [k: string]: number;
 }
+export interface CandidateCoverageSummary {
+  basis: Basis1;
+  boundary: Boundary1;
+  by_rule: ByRule;
+  catalog_version: CatalogVersion1;
+  counts: CandidateCounts;
+}
+export interface ByRule {
+  [k: string]: CandidateCounts;
+}
+export interface CandidateCounts {
+  applicability_unknown_count: ApplicabilityUnknownCount;
+  applicable_count: ApplicableCount;
+  candidate_count: CandidateCount;
+  completed_count: CompletedCount;
+  not_applicable_count: NotApplicableCount1;
+  unexecuted_count: UnexecutedCount;
+  unknown_count: UnknownCount1;
+  unsupported_scope_count: UnsupportedScopeCount;
+}
 /**
  * Feature flags surfaced to the SPA.
  */
@@ -1685,7 +1809,7 @@ export interface WorkbenchCapabilities {
 export interface NetCheckView {
   assessment: Assessment | null;
   check: Check1;
-  evidence: Evidence7;
+  evidence: Evidence9;
   net_name: NetName1;
   nodes: Nodes1;
   status: Status21;
@@ -1778,7 +1902,7 @@ export interface RiskHintsView {
  */
 export interface RejectedRiskHintSummary {
   count: Count2;
-  reason: Reason18;
+  reason: Reason22;
 }
 /**
  * Backward-compatible compact risk-hints summary.
@@ -1795,5 +1919,5 @@ export interface RiskHintsSummary {
 export interface VoltageFactsDocument {
   active_mode: ActiveMode3;
   facts: Facts;
-  schema_version: SchemaVersion6;
+  schema_version: SchemaVersion7;
 }

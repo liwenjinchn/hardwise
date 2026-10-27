@@ -1,4 +1,5 @@
 import { ConnectivityReader } from "./ConnectivityReader";
+import { CandidateCoverageReader } from "./CandidateCoverageReader";
 import type { ProvenanceDownload } from "../api";
 import { display, excerptRows, record } from "../shared-excerpt-view";
 
@@ -9,6 +10,7 @@ export function SharedExcerptReader({ payload }: { payload: ProvenanceDownload }
     <p>仅显示此份分享清单已包含的内容。分享声明不等于电气批准；参数是否适用仍需结合器件身份、条件和复核记录核对。</p>
     {"run_id" in payload && <p>运行：{payload.run_id}</p>}
     <ConnectivityReader projection={payload.provenance?.connectivity} />
+    <CandidateCoverageReader records={payload.provenance?.candidate_records} catalogVersion={payload.provenance?.candidate_coverage?.catalog.version} />
     {!payload.provenance ? <p>{"reason" in payload ? payload.reason : "该运行未记录清单。"} 不使用当前资料补造历史。</p> : !rows.length ? <p>该清单未记录逐字段来源与摘录，不能据此确认参数。</p> : rows.map(row => <details key={row.key}>
       <summary>{row.part} · {row.refs || "未记录绑定器件"} · {display(row.field.pointer)} · {row.excerpt === null ? "原文已省略" : "含允许分享的原文"}</summary>
       <div className="excerpt-current">

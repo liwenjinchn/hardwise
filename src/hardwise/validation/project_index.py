@@ -26,6 +26,9 @@ from hardwise.validation.nets import NetValidation, validate_design_nets
 from hardwise.validation.profile_candidates import ProfileCandidateReport
 from hardwise.validation.types import ValidationReport
 from hardwise.validation.assessment import CheckCoverage, check_coverage
+from hardwise.validation.candidate_coverage import CandidateSnapshot
+from hardwise.validation.candidate_summary import summarize_candidates
+from hardwise.validation.project_candidate_coverage import evaluate_project_candidates
 
 
 def _zero_counts() -> dict[str, int]:
@@ -79,6 +82,9 @@ class ProjectValidationIndex(BaseModel):
     component_groups: list[ProjectComponentGroup] = Field(default_factory=list)
     net_checks: list[NetValidation] = Field(default_factory=list)
     voltage_facts: VoltageFactsDocument = Field(default_factory=VoltageFactsDocument)
+    candidate_coverage: CandidateSnapshot | None = Field(
+        default=None, exclude_if=lambda v: v is None
+    )
 
     @computed_field
     @property
@@ -89,7 +95,23 @@ class ProjectValidationIndex(BaseModel):
             if row.validation is not None
             for check in [*row.validation.pin_results, *row.validation.component_checks]
         ]
-        return check_coverage([*checks, *self.net_checks], len(self.manual_rows))
+        emitted = check_coverage([*checks, *self.net_checks], len(self.manual_rows))
+        if self.candidate_coverage is not None:
+            emitted = emitted.model_copy(
+                update={
+                    "full_candidate_count": len(self.candidate_coverage.candidates),
+                    "boundary": "此处仅为已生成记录的兼容统计；目录候选与漏执行另列，两个口径不相加，也不能互换为覆盖率。",
+                }
+            )
+        return emitted
+
+    @property
+    def candidate_summary(self):
+        return (
+            summarize_candidates(self.candidate_coverage)
+            if self.candidate_coverage is not None
+            else None
+        )
 
     @property
     def validated_rows(self) -> list[ProjectValidationRow]:
@@ -131,6 +153,14 @@ def build_project_validation_index(
     candidates = {candidate.refdes: candidate for candidate in candidate_report.candidates}
     validation_targets = validation_targets_from_candidates(candidate_report)
     passive_families = _generic_passive_families(bom)
+    candidate_coverage = evaluate_project_candidates(
+        design,
+        {ref: p for ref, p in validation_targets.items() if ref in design.components},
+        {ref: f for ref, f in passive_families.items() if ref in design.components},
+        bom_report.rows_by_refdes,
+        naming_policy=naming_policy,
+        source_label=Path(netlist_source).name,
+    )
     rows: list[ProjectValidationRow] = []
     for component in sorted(design.components.values(), key=lambda c: sort_refdes_key(c.refdes)):
         bom_row = bom_report.rows_by_refdes.get(component.refdes)
@@ -197,6 +227,7 @@ def build_project_validation_index(
     )
 
     return ProjectValidationIndex(
+        candidate_coverage=candidate_coverage,
         voltage_facts=design.voltage_facts,
         project_name=project_name,
         generated_at=generated_at,

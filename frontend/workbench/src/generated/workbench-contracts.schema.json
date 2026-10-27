@@ -366,6 +366,353 @@
       "title": "BomView",
       "type": "object"
     },
+    "Candidate": {
+      "additionalProperties": false,
+      "properties": {
+        "applicability": {
+          "enum": [
+            "applicable",
+            "unknown",
+            "not_applicable"
+          ],
+          "title": "Applicability",
+          "type": "string"
+        },
+        "catalog_version": {
+          "minLength": 1,
+          "title": "Catalog Version",
+          "type": "string"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "instance": {
+          "default": [],
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Instance",
+          "type": "array"
+        },
+        "object_id": {
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "object_kind": {
+          "enum": [
+            "project",
+            "component",
+            "pin",
+            "net",
+            "relation"
+          ],
+          "title": "Object Kind",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "rule_id": {
+          "minLength": 1,
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "rule_version": {
+          "minLength": 1,
+          "title": "Rule Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "applicability",
+        "catalog_version",
+        "evidence",
+        "instance",
+        "object_id",
+        "object_kind",
+        "reason",
+        "rule_id",
+        "rule_version"
+      ],
+      "title": "Candidate",
+      "type": "object"
+    },
+    "CandidateCounts": {
+      "properties": {
+        "applicability_unknown_count": {
+          "minimum": 0,
+          "title": "Applicability Unknown Count",
+          "type": "integer"
+        },
+        "applicable_count": {
+          "minimum": 0,
+          "title": "Applicable Count",
+          "type": "integer"
+        },
+        "candidate_count": {
+          "minimum": 0,
+          "title": "Candidate Count",
+          "type": "integer"
+        },
+        "completed_count": {
+          "minimum": 0,
+          "title": "Completed Count",
+          "type": "integer"
+        },
+        "not_applicable_count": {
+          "minimum": 0,
+          "title": "Not Applicable Count",
+          "type": "integer"
+        },
+        "unexecuted_count": {
+          "minimum": 0,
+          "title": "Unexecuted Count",
+          "type": "integer"
+        },
+        "unknown_count": {
+          "minimum": 0,
+          "title": "Unknown Count",
+          "type": "integer"
+        },
+        "unsupported_scope_count": {
+          "minimum": 0,
+          "title": "Unsupported Scope Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "applicability_unknown_count",
+        "applicable_count",
+        "candidate_count",
+        "completed_count",
+        "not_applicable_count",
+        "unexecuted_count",
+        "unknown_count",
+        "unsupported_scope_count"
+      ],
+      "title": "CandidateCounts",
+      "type": "object"
+    },
+    "CandidateCoverageSummary": {
+      "properties": {
+        "basis": {
+          "const": "enumerated_rule_instances",
+          "default": "enumerated_rule_instances",
+          "title": "Basis",
+          "type": "string"
+        },
+        "boundary": {
+          "default": "候选数仅属于本版本目录的限定规则，含身份/清单核对及明确标注的分组检查，不代表所有工程检查或整板功能。未执行属于未知，不重复相加；不支持范围单列。",
+          "title": "Boundary",
+          "type": "string"
+        },
+        "by_rule": {
+          "additionalProperties": {
+            "$ref": "#/$defs/CandidateCounts"
+          },
+          "title": "By Rule",
+          "type": "object"
+        },
+        "catalog_version": {
+          "title": "Catalog Version",
+          "type": "string"
+        },
+        "counts": {
+          "$ref": "#/$defs/CandidateCounts"
+        }
+      },
+      "required": [
+        "basis",
+        "boundary",
+        "by_rule",
+        "catalog_version",
+        "counts"
+      ],
+      "title": "CandidateCoverageSummary",
+      "type": "object"
+    },
+    "CandidateOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "minLength": 1,
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN",
+            "NOT_APPLICABLE"
+          ],
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "evidence",
+        "reason",
+        "result"
+      ],
+      "title": "CandidateOutcome",
+      "type": "object"
+    },
+    "CandidateRecord": {
+      "properties": {
+        "applicability": {
+          "title": "Applicability",
+          "type": "string"
+        },
+        "applicability_reason": {
+          "title": "Applicability Reason",
+          "type": "string"
+        },
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "executed": {
+          "title": "Executed",
+          "type": "boolean"
+        },
+        "instance": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Instance",
+          "type": "array"
+        },
+        "object_id": {
+          "title": "Object Id",
+          "type": "string"
+        },
+        "object_kind": {
+          "title": "Object Kind",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN",
+            "NOT_APPLICABLE"
+          ],
+          "title": "Result",
+          "type": "string"
+        },
+        "rule_id": {
+          "title": "Rule Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "applicability",
+        "applicability_reason",
+        "candidate_id",
+        "executed",
+        "instance",
+        "object_id",
+        "object_kind",
+        "reason",
+        "result",
+        "rule_id"
+      ],
+      "title": "CandidateRecord",
+      "type": "object"
+    },
+    "CandidateSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/Candidate"
+          },
+          "title": "Candidates",
+          "type": "array"
+        },
+        "catalog": {
+          "$ref": "#/$defs/RuleCatalog"
+        },
+        "outcomes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CandidateOutcome"
+          },
+          "title": "Outcomes",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "hardwise.candidate_coverage.v1",
+          "default": "hardwise.candidate_coverage.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "unsupported": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/UnsupportedScope"
+          },
+          "title": "Unsupported",
+          "type": "array"
+        }
+      },
+      "required": [
+        "candidates",
+        "catalog",
+        "outcomes",
+        "schema_version",
+        "unsupported"
+      ],
+      "title": "CandidateSnapshot",
+      "type": "object"
+    },
     "ChatMessage": {
       "description": "One browser-held chat message sent back for short context.",
       "properties": {
@@ -4936,8 +5283,96 @@
       "title": "RiskHintsView",
       "type": "object"
     },
+    "RuleCatalog": {
+      "additionalProperties": false,
+      "properties": {
+        "rules": {
+          "items": {
+            "$ref": "#/$defs/RuleDefinition"
+          },
+          "title": "Rules",
+          "type": "array"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rules",
+        "version"
+      ],
+      "title": "RuleCatalog",
+      "type": "object"
+    },
+    "RuleDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "object_kind": {
+          "enum": [
+            "project",
+            "component",
+            "pin",
+            "net",
+            "relation"
+          ],
+          "title": "Object Kind",
+          "type": "string"
+        },
+        "rule_id": {
+          "minLength": 1,
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "scope": {
+          "minLength": 1,
+          "title": "Scope",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "object_kind",
+        "rule_id",
+        "scope",
+        "version"
+      ],
+      "title": "RuleDefinition",
+      "type": "object"
+    },
     "RunProvenance": {
       "properties": {
+        "candidate_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CandidateSnapshot"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "candidate_records": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CandidateRecord"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "readOnly": true,
+          "title": "Candidate Records"
+        },
         "connectivity": {
           "anyOf": [
             {
@@ -5049,6 +5484,8 @@
         }
       },
       "required": [
+        "candidate_coverage",
+        "candidate_records",
         "emitted_records",
         "implementation_identity_assurance",
         "input_capture_status",
@@ -5272,6 +5709,45 @@
         "unchecked_tokens"
       ],
       "title": "SourceAudit",
+      "type": "object"
+    },
+    "UnsupportedScope": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "object_kind": {
+          "enum": [
+            "project",
+            "component",
+            "pin",
+            "net",
+            "relation"
+          ],
+          "title": "Object Kind",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "scope": {
+          "minLength": 1,
+          "title": "Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "object_id",
+        "object_kind",
+        "reason",
+        "scope"
+      ],
+      "title": "UnsupportedScope",
       "type": "object"
     },
     "VoltageBatchRequest": {
@@ -6101,6 +6577,17 @@
           ],
           "default": null
         },
+        "candidate_coverage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CandidateCoverageSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "capabilities": {
           "$ref": "#/$defs/WorkbenchCapabilities"
         },
@@ -6184,6 +6671,7 @@
       },
       "required": [
         "assessment_coverage",
+        "candidate_coverage",
         "capabilities",
         "evidence_package",
         "net_checks",

@@ -967,3 +967,15 @@ Each implementation commit records exact commands and outputs below. Passing reg
 按已选目录路线完成剩余九类固定/档案分支规则，显式生产者版本和作用域；连接器目录沿用第100。Buck完整路径补前提检查，缺输出时外围候选保留UNKNOWN；LED明确豁免才N/A，隔离暂停仍未知。分组I2C通道检查明确粒度，不冒充逐脚功能验证。来源邻居位号需注册，owner与scope/version严格绑定。
 
 55专项通过；16既有公开/合成设计59实例（8类），另1类repeater专项输入，关联/计数守恒/JSON往返通过，实例未执行0。全量PYTHONPATH=src uv run pytest -q：2149passed/7deselected/7既有warnings，105.93s；Ruff/diff通过。证据：2026-10-27续接任务outputs/Hardwise-拓扑目录101。十类已有独立候选入口，但尚未合并项目/接通全出口/历史/冻结升级；真实批准、独立标签与目标机/同行证据仍缺，完整产品NOT_COMPLETE，未push。
+
+## 第102阶段：项目候选快照与消费者贯通
+
+新增项目目录合并，81个显式定义，先枚举整个项目后执行各族；原子身份保留source_catalog具名角色。未知器件只记来源身份核对与未支持功能，不造电气候选。索引保存完整快照，当前/历史RunProvenance投影稳定候选ID、适用性、是否执行与结果；旧快照缺失保持空。CLI/索引JSON/MD、白色API/页面/离线、兼容HTML和seeded评测JSON使用同一口径，旧emitted统计独立保留，不改变原机器判断与人工处理。
+
+新增5后端、2前端、1浏览器测试。18既有公开/合成设计183器件关联/守恒/JSON往返通过。公开混合例319候选=182完成+116未知+21N/A，未执行0，不支持34范围条目；原167发出记录=52PASS+115UNKNOWN。目录含身份/清单和分组核对，不能据此声称全功能覆盖或独立正确率。既有seeded仍3/7；干净和变异输入各自保存同目录摘要，不提高批准或质量宣称。
+
+首轮全量2153pass/1fail为旧测试替身未声明新增可空字段，保留失败日志，补None明确未记录；未放宽生产校验。最终PYTHONPATH=src uv run pytest -q：2154passed/7deselected/7既有warnings，118.24s；137前端unit、25E2E51.3s、最终文案1E2E5.7s、合同/typecheck/build/Ruff/diff通过。桌面截图已查看；760px无横向溢出；既有实际离线下载0API路径继续通过。
+
+真实旧42cf67e与开发版独立进程对临时合成SQLite迁移：旧运行原始行字节、accepted_risk状态和公开合成理由保留；旧清单候选缺失，新清单319项。初次手工探针误用export?format=html被拒绝，改用已有offline-report路由后导出成功；不是用户原库升级。机器小样例3次交替构建原始时间已留证，无目标机退化预算，不作人工提效结论。证据：2026-10-27续接任务outputs/Hardwise-项目覆盖102（两个全量日志、前端日志、迁移/计数/性能JSON及离线HTML、截图、CLI/评测输出）。
+
+本轮实查原18772端口无监听；没有覆盖原冻结包或部署原入口。交付仍固定e011834，统一冻结、备份恢复、原日志升级及完整身份/条件软件缺口继续；真实字段批准、独立样本、Windows/Cadence和同行两轮待对应真实证据。完整产品NOT_COMPLETE，目标保持active，未push。

@@ -160,6 +160,21 @@ export function ImportView({
           {busy ? "正在导入" : "导入并解析"}
         </button>
       </form>
+      {state.candidate_coverage ? <section className="current-snapshot" aria-label="目录候选检查范围">
+        <strong>目录候选检查 {state.candidate_coverage.counts.candidate_count} 项</strong>
+        <p>已完成 {state.candidate_coverage.counts.completed_count}，未知 {state.candidate_coverage.counts.unknown_count}，
+          不适用 {state.candidate_coverage.counts.not_applicable_count}；
+          未知中有 {state.candidate_coverage.counts.unexecuted_count} 项未执行。
+          未支持范围 {state.candidate_coverage.counts.unsupported_scope_count} 项。</p>
+        <p>{state.candidate_coverage.boundary}</p>
+        <details><summary>查看各规则范围</summary><p>目录版本：{state.candidate_coverage.catalog_version}</p>
+          {Object.entries(state.candidate_coverage.by_rule).map(([rule, c]) => <p key={rule}>
+            {rule}：候选 {c.candidate_count}，完成 {c.completed_count}，未知 {c.unknown_count}，不适用 {c.not_applicable_count}，未执行 {c.unexecuted_count}
+          </p>)}
+        </details>
+      </section> : <section className="current-snapshot" aria-label="候选范围未记录">
+        <p>该记录未保存目录候选快照；不从已生成记录推算候选总数。</p>
+      </section>}
       {state.assessment_coverage && <section className="current-snapshot" aria-label="已生成检查范围">
         <strong>已生成检查 {state.assessment_coverage.generated_checks} 项</strong>
         <p>已完成 {state.assessment_coverage.completed_checks}，未知 {state.assessment_coverage.unknown_checks}，

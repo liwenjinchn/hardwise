@@ -171,6 +171,15 @@ def register_design_validator_commands(app: typer.Typer) -> None:
             f"legacy-needs-review={coverage.legacy_needs_review}; scope=emitted_check_records"
         )
         totals = context.index.totals
+        if context.index.candidate_summary is not None:
+            summary = context.index.candidate_summary
+            counts = summary.counts
+            typer.echo(
+                f"candidate-coverage: catalog={summary.catalog_version}, candidates={counts.candidate_count}, "
+                f"completed={counts.completed_count}, unknown={counts.unknown_count}, "
+                f"not-applicable={counts.not_applicable_count}, unexecuted={counts.unexecuted_count}, "
+                f"unsupported-scopes={counts.unsupported_scope_count}; scope=enumerated_rule_instances"
+            )
         typer.echo(f"selected-netlist: {display_path(context.netlist_source)}")
         typer.echo(f"selected-bom: {display_path(context.bom.source_file)}")
         evidence_package = build_evidence_package_summary(context)

@@ -396,6 +396,7 @@ export interface DatasheetCandidateSearchView {
 }
 
 export interface WorkbenchState {
+  candidate_coverage: import("./generated/workbench-contracts").CandidateCoverageSummary | null;
   assessment_coverage: import("./generated/workbench-contracts").CheckCoverage | null;
   voltage_facts: import("./generated/workbench-contracts").VoltageFactsDocument;
   project: WorkbenchProject;

@@ -88,6 +88,7 @@ def build_workbench_state(
 
     return WorkbenchState(
         assessment_coverage=context.index.assessment_coverage,
+        candidate_coverage=context.index.candidate_summary,
         voltage_facts=context.design.voltage_facts,
         project=_project_view(context),
         summary=WorkbenchSummary(
