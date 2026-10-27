@@ -953,3 +953,11 @@ Each implementation commit records exact commands and outputs below. Passing reg
 14项专项、18个既有公开/合成设计70个档案实例计数守恒/JSON往返通过，实例未执行0。PYTHONPATH=src uv run pytest -q：2080 passed / 7 deselected / 7既有warnings，103.99s；Ruff、diff和前端合同检查通过。直接uv run pytest时本地包不在路径，收集失败已记录，使用当前源码路径完成回归。证据：2026-10-27续接任务outputs/Hardwise-档案目录99/full-pytest.txt及fixture-proof.json。
 
 此阶段未增加真实批准，未接入十类拓扑目录、项目合并、页面/历史及其它出口，不声称完整工程覆盖；完整产品NOT_COMPLETE，未push。
+
+## 第100阶段：连接器逐脚拓扑候选
+
+按档案供电/地/GPIO脚在执行前枚举，并在生产者输出时附pin实例，连接隔离不会丢掉实例身份。同名规则多脚分开关联，缺脚、缺电压、DRAFT和身份冲突保留未知/未执行。空清单保留未知；不支持类别及完整连接器功能明确在目录边界之外。当前独立入口，默认生产报告形状不变。
+
+14新增专项+4既有连接器测试通过；2既有公开/合成设计2实例计数守恒/JSON往返通过，实例未执行0。PYTHONPATH=src uv run pytest -q：2094 passed / 7 deselected / 7既有warnings，96.41s；Ruff/diff通过。此前第99前端合同检查通过，本阶段未再改公开字段模型。证据：2026-10-27续接任务outputs/Hardwise-连接器目录100/full-pytest.txt及fixture-proof.json。
+
+已接通十类拓扑中的connector；下一步仍按目录先枚举其余9类（buck、half_bridge_gate_driver、mcu_basic、i2c_mux、diode、mosfet、bjt、shift_register_piso、i2c_level_shift_repeater），再项目合并/全出口/历史与冻结回归。未向运行中的原工作台部署，未push；完整产品NOT_COMPLETE。

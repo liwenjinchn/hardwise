@@ -16,6 +16,18 @@ def validate_connector(
     design: Design,
 ) -> list[ComponentValidation]:
     """Validate a connector against structured power, ground, and signal pins."""
+    return _validate_connector(component, profile, design, include_instances=False)
+
+
+@isolate_topology
+def validate_connector_instances(
+    component: Component, profile: DatasheetProfile, design: Design
+) -> list[ComponentValidation]:
+    """Explicit candidate path; tag endpoints before connection isolation."""
+    return _validate_connector(component, profile, design, include_instances=True)
+
+
+def _validate_connector(component, profile, design, *, include_instances):
 
     checks: list[ComponentValidation] = []
     power_pins = [pin for pin in profile.pins if pin.category == "power_input"]
@@ -23,12 +35,23 @@ def validate_connector(
     signal_pins = [pin for pin in profile.pins if pin.category == "gpio"]
 
     for pin_profile in power_pins:
-        checks.append(_validate_power_pin(component, profile, pin_profile.number, design))
+        check = _validate_power_pin(component, profile, pin_profile.number, design)
+        checks.append(_endpoint(check, pin_profile, include_instances))
     for pin_profile in ground_pins:
-        checks.append(_validate_ground_pin(component, profile, pin_profile.number, design))
+        check = _validate_ground_pin(component, profile, pin_profile.number, design)
+        checks.append(_endpoint(check, pin_profile, include_instances))
     for pin_profile in signal_pins:
-        checks.append(_validate_signal_pin(component, profile, pin_profile.number))
+        check = _validate_signal_pin(component, profile, pin_profile.number)
+        checks.append(_endpoint(check, pin_profile, include_instances))
     return checks
+
+
+def _endpoint(check, pin_profile, include_instances):
+    return (
+        check.model_copy(update={"instance": (("pin", pin_profile.number),)})
+        if include_instances
+        else check
+    )
 
 
 def _validate_power_pin(
