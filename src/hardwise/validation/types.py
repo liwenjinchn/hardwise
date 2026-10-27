@@ -35,6 +35,7 @@ class PinValidation(Assessment):
 class ComponentValidation(Assessment):
     """Validation outcome for one component-level topology/peripheral check."""
 
+    instance: tuple[tuple[str, str], ...] = Field(default=(), exclude_if=lambda v: not v)
     check: str
     summary: str
     evidence: list[str] = Field(default_factory=list)

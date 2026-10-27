@@ -945,3 +945,11 @@ Each implementation commit records exact commands and outputs below. Passing reg
 独立目录先枚举固定家族检查、观察端点及身份/端点清单，后绑定执行结果。参数缺失和连接歧义保留候选；身份冲突提前退出时保留适用性未知/未执行。无端点保留清单UNKNOWN，不发明脚号。电感/磁珠额定token解析与实际电流/纹波/饱和适用性分开，未支持功能明确单列。规则版本、位号、重复输出严格核验。
 
 11专项通过；9个既有设计68个实例（16阻/39容/10感/3磁珠）计数守恒，未执行0。第一次全量包含新fixture缺Pin必填字段的失败，已保留失败日志并补齐fixture；最终2066passed/7deselected/7既有warnings，86.56s，Ruff/diff通过。证据outputs/Hardwise-被动件目录98。生产入口和原人工记录未改，尚待档案/引脚/关系式/拓扑及全出口接入，完整产品NOT_COMPLETE，未push。
+
+## 第99阶段：档案引脚与关系式基础目录（中断后收尾）
+
+先按匹配档案枚举身份/批准/声明清单、每个引脚和每条直流关系，再关联显式执行结果。DRAFT保留未知、缺图纸引脚仍保留候选、身份早退保留未执行；同目标脚不同关系按完整源记录和端点身份分开。默认报告省略实例字段，生产入口保持既有格式。续接修复profile_identity_conflict门控遗漏，显式拒绝未来生产者版本、外来档案、重复门控、截断候选与枚举后作用域变化。
+
+14项专项、18个既有公开/合成设计70个档案实例计数守恒/JSON往返通过，实例未执行0。PYTHONPATH=src uv run pytest -q：2080 passed / 7 deselected / 7既有warnings，103.99s；Ruff、diff和前端合同检查通过。直接uv run pytest时本地包不在路径，收集失败已记录，使用当前源码路径完成回归。证据：2026-10-27续接任务outputs/Hardwise-档案目录99/full-pytest.txt及fixture-proof.json。
+
+此阶段未增加真实批准，未接入十类拓扑目录、项目合并、页面/历史及其它出口，不声称完整工程覆盖；完整产品NOT_COMPLETE，未push。

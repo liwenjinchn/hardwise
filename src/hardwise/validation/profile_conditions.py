@@ -7,11 +7,32 @@ from hardwise.validation.types import ComponentValidation
 
 
 def validate_voltage_relations(
-    component: Component, profile: DatasheetProfile, design: Design
+    component: Component,
+    profile: DatasheetProfile,
+    design: Design,
+    *,
+    include_instances: bool = False,
 ) -> list[ComponentValidation]:
-    return [
-        _relation(component, profile, design, relation) for relation in profile.voltage_relations
-    ]
+    results = []
+    for relation in profile.voltage_relations:
+        result = _relation(component, profile, design, relation)
+        if include_instances:
+            result = result.model_copy(update={"instance": relation_instance(relation)})
+        results.append(result)
+    return results
+
+
+def relation_instance(relation):
+    import hashlib
+    import json
+
+    payload = json.dumps(relation.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+    return (
+        ("relation_sha256", hashlib.sha256(payload.encode()).hexdigest()),
+        ("target", relation.target_pin),
+        ("supply", relation.supply_pin),
+        ("ground", relation.ground_pin),
+    )
 
 
 def _relation(

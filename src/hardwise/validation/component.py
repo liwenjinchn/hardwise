@@ -20,6 +20,9 @@ def validate_component_against_profile(
     component: Component,
     profile: DatasheetProfile,
     design: Design,
+    *,
+    include_topology: bool = True,
+    include_candidate_instances: bool = False,
 ) -> ValidationReport:
     """Validate one component's schematic pins against a structured pin profile."""
 
@@ -47,9 +50,12 @@ def validate_component_against_profile(
     ]
     component_checks = [
         *_validate_profile_review_status(component, profile, reason),
-        *validate_voltage_relations(component, profile, design),
+        *validate_voltage_relations(
+            component, profile, design, include_instances=include_candidate_instances
+        ),
         *scope_topology_identities(
-            _validate_component_topology(component, profile, design), design
+            _validate_component_topology(component, profile, design) if include_topology else [],
+            design,
         ),
     ]
     results = [scope_result(item, reason) for item in results]
