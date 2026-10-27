@@ -72,7 +72,11 @@ def load_naming_policy(yaml_path: Path) -> NamingPolicy:
 
 
 def validate_net_naming(
-    design: Design, *, policy: NamingPolicy | None = None, source_label: str | None = None
+    design: Design,
+    *,
+    policy: NamingPolicy | None = None,
+    source_label: str | None = None,
+    include_complete: bool = False,
 ) -> list[NetValidation]:
     """Run name-policy checks over ``design.nets`` keys.
 
@@ -113,6 +117,17 @@ def validate_net_naming(
                     evidence=[f"netlist:{label}#net={net_name}"],
                 )
             )
+        elif include_complete:
+            results.append(
+                NetValidation(
+                    net_name=net_name,
+                    check=CHECK_NAME_CHARSET,
+                    result="PASS",
+                    severity="INFO",
+                    summary="Net name satisfies the configured character policy; no electrical claim.",
+                    evidence=[f"netlist:{label}#net={net_name}"],
+                )
+            )
         if len(net_name) > policy.max_length:
             results.append(
                 NetValidation(
@@ -128,6 +143,17 @@ def validate_net_naming(
                     evidence=[f"netlist:{label}#net={net_name}"],
                 )
             )
+        elif include_complete:
+            results.append(
+                NetValidation(
+                    net_name=net_name,
+                    check=CHECK_NAME_LENGTH,
+                    result="PASS",
+                    severity="INFO",
+                    summary=f"Net name length is within the configured limit {policy.max_length}.",
+                    evidence=[f"netlist:{label}#net={net_name}"],
+                )
+            )
 
     names = observed_net_names(design)
     for positive_suffix, negative_suffix in policy.diff_pair_suffixes:
@@ -137,16 +163,43 @@ def validate_net_naming(
         )
         for net_name in sorted(names):
             match = pair_pattern.match(net_name)
+            instance = (("positive_suffix", positive_suffix), ("negative_suffix", negative_suffix))
             if match is None:
+                if include_complete:
+                    results.append(
+                        NetValidation(
+                            net_name=net_name,
+                            check=CHECK_DIFF_PAIR,
+                            instance=instance,
+                            result="NOT_APPLICABLE",
+                            severity="INFO",
+                            not_applicable_reason="Net name does not match this configured differential suffix pair.",
+                            summary="Differential name-pair rule is not applicable to this name and suffix pair.",
+                            evidence=[f"netlist:{label}#net={net_name}"],
+                        )
+                    )
                 continue
             mate_side = negative_suffix if match["side"] == positive_suffix else positive_suffix
             mate = f"{match['stem']}_{mate_side}{match['index']}"
             if mate in names:
+                if include_complete:
+                    results.append(
+                        NetValidation(
+                            net_name=net_name,
+                            check=CHECK_DIFF_PAIR,
+                            instance=instance,
+                            result="PASS",
+                            severity="INFO",
+                            summary=f"Name mate {mate} exists; differential electrical behavior is not verified.",
+                            evidence=[f"netlist:{label}#net={net_name}"],
+                        )
+                    )
                 continue
             results.append(
                 NetValidation(
                     net_name=net_name,
                     check=CHECK_DIFF_PAIR,
+                    instance=instance if include_complete else (),
                     result="FAIL",
                     severity="WARNING",
                     summary=(

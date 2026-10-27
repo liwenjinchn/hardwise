@@ -35,6 +35,7 @@ CHECK_MISSING_GROUND = "design_missing_ground_net"
 class NetValidation(Assessment):
     """Validation outcome for one design-level net check."""
 
+    instance: tuple[tuple[str, str], ...] = Field(default=(), exclude_if=lambda v: not v)
     net_name: str
     check: str
     summary: str
@@ -42,7 +43,9 @@ class NetValidation(Assessment):
     evidence: list[str] = Field(default_factory=list)
 
 
-def validate_design_nets(design: Design, *, source_label: str | None = None) -> list[NetValidation]:
+def validate_design_nets(
+    design: Design, *, source_label: str | None = None, include_complete: bool = False
+) -> list[NetValidation]:
     """Run net-level connectivity checks over ``design.nets``.
 
     ``source_label`` names the netlist source in evidence tokens; it
@@ -90,6 +93,67 @@ def validate_design_nets(design: Design, *, source_label: str | None = None) -> 
                 evidence=[f"netlist:{label}#nets={len(observed)}"],
             )
         )
+    if include_complete:
+        blocked = set(design.connectivity.ambiguous_net_names) if design.connectivity else set()
+        for name in sorted(observed):
+            evidence = [f"netlist:{label}#net={name}"]
+            if name not in blocked:
+                results.append(
+                    NetValidation(
+                        net_name=name,
+                        check="net_connection_ambiguity",
+                        result="PASS" if design.connectivity is not None else "UNKNOWN",
+                        severity="INFO",
+                        evidence_kind="SOURCE_FACT",
+                        summary=(
+                            "No conflicting connection declaration in the imported graph; not electrical approval."
+                            if design.connectivity is not None
+                            else "Original connection declarations were not recorded; consistency cannot be verified."
+                        ),
+                        evidence=evidence,
+                    )
+                )
+            net = design.nets.get(name)
+            if name in blocked or net is None or not net.nodes:
+                results.append(
+                    NetValidation(
+                        net_name=name,
+                        check=CHECK_SINGLE_ENDPOINT,
+                        result="UNKNOWN",
+                        severity="WARNING",
+                        evidence_kind="SOURCE_FACT",
+                        summary="Endpoint cardinality is unknown: ambiguous or absent connection facts.",
+                        evidence=evidence,
+                    )
+                )
+            elif len(net.nodes) > 1:
+                results.append(
+                    NetValidation(
+                        net_name=name,
+                        check=CHECK_SINGLE_ENDPOINT,
+                        result="PASS",
+                        severity="INFO",
+                        evidence_kind="SOURCE_FACT",
+                        summary="Imported net has multiple endpoints; this does not establish a functional current path.",
+                        evidence=evidence,
+                    )
+                )
+        if not observed or any(is_ground_net(name) for name in observed):
+            results.append(
+                NetValidation(
+                    net_name="-",
+                    check=CHECK_MISSING_GROUND,
+                    result="PASS" if observed else "UNKNOWN",
+                    severity="INFO",
+                    evidence_kind="SOURCE_FACT",
+                    summary=(
+                        "A recognized ground name exists; voltage and equipotential are not verified."
+                        if observed
+                        else "No observed nets; ground-name presence cannot be assessed."
+                    ),
+                    evidence=[f"netlist:{label}#nets={len(observed)}"],
+                )
+            )
     for net_name in sorted(design.nets):
         net = design.nets[net_name]
         if len(net.nodes) != 1:

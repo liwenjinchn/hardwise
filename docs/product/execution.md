@@ -933,3 +933,9 @@ Each implementation commit records exact commands and outputs below. Passing reg
 新增candidate_coverage独立模块：版本化目录、结构化对象/具名实例身份、适用性与原子结果分离；严格拒绝目录错配、重复候选/结果、孤立结果和适用性矛盾。缺结果仍留分母，未执行为未知子集；不支持范围单列，空集不造完成率。普通JSON往返验证通过。17新测试覆盖状态变换、身份顺序/端点差异、目录/关联错误与不支持/空集；全量2046passed/7deselected/7既有warnings，74.92s，Ruff/diff通过。
 
 合成合同证据outputs/Hardwise-候选合同96。尚未建立正式规则目录、逐族枚举器或接入CLI/API/页面/历史，当前full_candidate_count仍为空；原e011834交付/主入口未改。完整产品NOT_COMPLETE，未push。
+
+## 第97阶段：网络候选与完整执行记录
+
+6条网络目录规则在执行前按原始网名/政策枚举，完整路径输出正常/异常/未知/不适用，旧默认异常列表保持兼容。结构化差分后缀区分规则实例，命名政策哈希进入候选身份；无原始声明时一致性UNKNOWN。缺结果继续保留候选，重复/孤立结果拒绝。9新专项、20个既有公开/合成网表候选结果关联与计数守恒通过；后者不是独立工程标签。
+
+2055passed/7deselected/7既有warnings，94.97s；前端合同检查、Ruff/diff通过。证据outputs/Hardwise-网络目录97。该入口仍为网络目录专用，组件/引脚/关系式/拓扑及项目出口未完成，不改变主入口e011834或原full_candidate_count。完整产品NOT_COMPLETE，未push。
