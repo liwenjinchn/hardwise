@@ -927,3 +927,9 @@ Each implementation commit records exact commands and outputs below. Passing reg
 ## 第95阶段：规则目录接入盘点
 
 按已选路线实证网络“只输出异常”导致分母0→2，并定位连接器同名检查和关系式实例标识不足。[接入盘点](candidate-coverage-inventory-v1.md)记录各族枚举/输出映射；静态87处check调用（47字面量/40动态）只作源码索引，明确不当规则数或候选数。运行口径尚未改变。下一步建立候选身份/关联合同后逐族接入，不以部分目录提前关闭PRD要求。
+
+## 第96阶段：候选身份与结果关联合同
+
+新增candidate_coverage独立模块：版本化目录、结构化对象/具名实例身份、适用性与原子结果分离；严格拒绝目录错配、重复候选/结果、孤立结果和适用性矛盾。缺结果仍留分母，未执行为未知子集；不支持范围单列，空集不造完成率。普通JSON往返验证通过。17新测试覆盖状态变换、身份顺序/端点差异、目录/关联错误与不支持/空集；全量2046passed/7deselected/7既有warnings，74.92s，Ruff/diff通过。
+
+合成合同证据outputs/Hardwise-候选合同96。尚未建立正式规则目录、逐族枚举器或接入CLI/API/页面/历史，当前full_candidate_count仍为空；原e011834交付/主入口未改。完整产品NOT_COMPLETE，未push。
