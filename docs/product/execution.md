@@ -939,3 +939,9 @@ Each implementation commit records exact commands and outputs below. Passing reg
 6条网络目录规则在执行前按原始网名/政策枚举，完整路径输出正常/异常/未知/不适用，旧默认异常列表保持兼容。结构化差分后缀区分规则实例，命名政策哈希进入候选身份；无原始声明时一致性UNKNOWN。缺结果继续保留候选，重复/孤立结果拒绝。9新专项、20个既有公开/合成网表候选结果关联与计数守恒通过；后者不是独立工程标签。
 
 2055passed/7deselected/7既有warnings，94.97s；前端合同检查、Ruff/diff通过。证据outputs/Hardwise-网络目录97。该入口仍为网络目录专用，组件/引脚/关系式/拓扑及项目出口未完成，不改变主入口e011834或原full_candidate_count。完整产品NOT_COMPLETE，未push。
+
+## 第98阶段：四类被动件候选目录
+
+独立目录先枚举固定家族检查、观察端点及身份/端点清单，后绑定执行结果。参数缺失和连接歧义保留候选；身份冲突提前退出时保留适用性未知/未执行。无端点保留清单UNKNOWN，不发明脚号。电感/磁珠额定token解析与实际电流/纹波/饱和适用性分开，未支持功能明确单列。规则版本、位号、重复输出严格核验。
+
+11专项通过；9个既有设计68个实例（16阻/39容/10感/3磁珠）计数守恒，未执行0。第一次全量包含新fixture缺Pin必填字段的失败，已保留失败日志并补齐fixture；最终2066passed/7deselected/7既有warnings，86.56s，Ruff/diff通过。证据outputs/Hardwise-被动件目录98。生产入口和原人工记录未改，尚待档案/引脚/关系式/拓扑及全出口接入，完整产品NOT_COMPLETE，未push。
