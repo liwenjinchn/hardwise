@@ -51,7 +51,7 @@ class AllegroNetlistRegistry(BaseModel):
         return {refdes for package in self.packages for refdes in package.refdes_list}
 
 
-def parse_allegro_netlist(path: Path) -> AllegroNetlistRegistry:
+def parse_allegro_netlist(path: Path, *, encoding: str = "utf-8") -> AllegroNetlistRegistry:
     """Parse an Allegro/Telesis third-party ASCII netlist.
 
     The supported subset is intentionally scoped to pre-Layout review:
@@ -61,7 +61,7 @@ def parse_allegro_netlist(path: Path) -> AllegroNetlistRegistry:
     rejected instead of being fabricated downstream.
     """
 
-    text = read_input_text(path, role="netlist")
+    text = read_input_text(path, role="netlist", encoding=encoding)
     records = _section_records(text)
 
     packages = [_parse_package(record, line_no) for line_no, record in records["$PACKAGES"]]

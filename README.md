@@ -1,21 +1,40 @@
-# Hardwise — a production-grade AI agent for real engineering workflows
+# Hardwise — schematic revision review
 
 [English](README.md) · [中文 README](README.zh-CN.md)
 
-**What it is:** a from-scratch AI agent that is *mechanically* unable to make
-things up. Every answer is forced through tool calls and an evidence ledger, so
-the model can only conclude from real data — and has to say "not found" when it
-can't. That guarantee is the whole point: in any serious B2B setting, a
-confident wrong answer is worse than no answer.
+**Current mainline:** import two revisions of the same schematic design (Telesis
+netlist + CSV/TSV BOM), then list component additions/removals, attribute and
+pin-connection changes by exact refdes. Missing declarations, source conflicts
+and unmatchable items are kept separate. It does not decide whether a change is
+correct or call a board safe; it aims to reduce the manual hunt through two export
+folders. Actual workflow value still needs a small user trial.
 
-I deliberately ran it on the most unforgiving workflow I know — **hardware
-schematic review**, where one missed call scraps a board worth tens of
-thousands. So this isn't a toy demo; it's grounded in a real workflow and backed
-by **715 tests + GitHub Actions CI**.
+```bash
+# Offline revision report: no AI, database or datasheet approval required.
+mkdir -p reports
+PYTHONPATH=src uv run hardwise compare before.net before.csv after.net after.csv \
+  --output reports/revision.html --json-output reports/revision.json
+
+# Or open the local two-version comparison page.
+PYTHONPATH=src uv run hardwise serve-compare --open
+```
+
+The first slice accepts only UTF-8 Telesis `.net/.txt` plus CSV/TSV BOM (an optional UTF-8 BOM is accepted). PST,
+automatic renumber matching, electrical correctness and full cross-net impact
+are not promised. See [`docs/architecture.md`](docs/architecture.md) and
+[`docs/product/prd-v1.md`](docs/product/prd-v1.md).
+
+## Legacy single-revision workbench (kept compatible)
+
+The original AI-assisted review workbench remains in this repository. Its
+answer path is forced through tool calls and an evidence ledger, so the model
+can only conclude from real data and must say "not found" when it cannot. It
+was the starting point; it is no longer the task list for expanding whole-board
+automatic review.
 
 [![Hardwise review workbench — component queue, validation detail, and Copilot panel](docs/assets/hardwise-workbench-snapshot.png)](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
 
-**See it in 3 links — no install:**
+**Legacy entry points — no install:**
 
 - ▶ **[50-second product tour](https://github.com/liwenjinchn/hardwise/raw/main/docs/assets/hardwise-promo.mp4)**
 - ▶ **[Click-through demo in your browser](https://liwenjinchn.github.io/hardwise/hardware-demo.html)**

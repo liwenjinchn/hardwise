@@ -8,6 +8,7 @@ from pathlib import Path
 
 from pydantic import create_model
 
+from hardwise.revision.models import ComparisonResult
 from hardwise.workbench.api_contracts import ImportResponse
 from hardwise.workbench.excerpt_routes import ExcerptRequest, ExcerptResponse
 from hardwise.workbench.voltage_review_routes import (
@@ -89,6 +90,7 @@ def main() -> None:
         voltage_review=(VoltageReviewResponse, ...),
         chat_response=(ChatResponse, ...),
         ai_disclosure=(AIDisclosure, ...),
+        comparison_result=(ComparisonResult, ...),
     )
     schema = bundle.model_json_schema(mode="serialization")
     _require_serialized_response_fields(schema)

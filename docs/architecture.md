@@ -1,5 +1,38 @@
 # Hardwise Architecture
 
+## 当前主线：独立的改版对比边界
+
+产品主线是两版原理图导出之间的复核，不是自动判断整板正确。保留旧解析器、IR、单版检查和评审记录；不把旧 `WorkbenchContext` 构建两次作为比较引擎，也不迁移或删除旧日志。
+
+```text
+旧版 Telesis + CSV/TSV BOM ─┐
+                           ├─ revision/intake.py → 两份 RevisionSnapshot
+新版 Telesis + CSV/TSV BOM ─┘                       │
+                                                  ▼
+                                  revision/engine.py（确定性差异）
+                                                  │
+                                       一个 ComparisonResult
+                                        /         |         \
+                                 CLI / JSON    比较页面    离线 HTML
+```
+
+- `revision/models.py` 定义版本、来源、属性观察、网络端点、差异和未知项的独立合同。结果没有 PASS/FAIL 电气结论，`electrical_verdict=not_evaluated`。
+- `revision/intake.py` 复用 Telesis 解析、BOM 解析及身份冲突检测，不加载档案、不运行验证器、不创建数据库或模型客户端。BOM 与网表分别保留，空值不以另一来源补齐；记录实际读取文件的哈希和逻辑定位，不暴露临时绝对路径。
+- `revision/bom_fields.py` 去除行号、数量、位号等导出组织字段，并对已识别的同义表头归一；其余属性逐字段做文本比较。重复且不同的声明是未知，不以列顺序取胜。不进行阻容单位等价或替代兼容性推断。
+- `revision/connections.py` 对每个网络的完整端点集合建立一次索引。网名变化与端点变化分开；每个纯改名网络只列一次。缺引脚声明不是明确开路，重复网络/端点不被误判为断开。
+- `revision/engine.py` 是快照到结果的纯比较边界：位号增删、属性差异、连接差异、网络改名、未知项。精确位号是关联前提，不猜重编号；直接同网器件只提供复查线索，不传播完整电气影响。
+- `revision/server.py` 与 `cli_compare.py` 提供无旧项目、无档案的独立入口。两版上传分目录，请求完成即释放临时输入；比较不修改旧评审的活动项目或处理理由。
+- `frontend/workbench/src/revision/` 独立挂载比较界面，API 类型仍由 Pydantic 生成；旧 App 继续承载单版评审，不让新的比较页面触发旧 state/AI 初始化。
+- `revision/report.py` 和页面导出只消费同一结果，保留来源、前后值、完整网络端点与限制。任何无变化结论只针对已比较的声明范围。
+
+首版只承诺 Telesis `.net/.txt` + UTF-8 CSV/TSV BOM。旧入口的 PST 支持不自动意味着新比较入口已经支持 PST。资料PDF、原理图几何、自动重编号匹配、全功能影响推断、工程签核均不属于本次架构的前置条件或输出。
+
+验收重点：人为改动能定位、重排不产生假变化、歧义可见、前后证据可离线读、旧工作流保持兼容。源码回归不代替实际使用节省时间的证据。
+
+## 旧版单版评审架构（兼容保留）
+
+以下记录已有机制及其历史边界，不作为继续扩展全板自动评审的任务清单。
+
 > v2.1 — V3.10 adds an STM32G030 MCU basic family template on top of the design-validator workbench. Allegro netlists provide topology; BOM rows provide component identity by refdes join; an optional CSV/TSV document index maps BOM item identity to public datasheet/document links; profile JSON carries per-pin name/category/function/limits/recommended-topology/evidence facts plus profile-level recommended family limits; `validation/component.py` remains the single validation entry point; `validation/targets.py` parses explicit refdes-to-profile assignments from positional CLI targets or YAML; `validation/profile_candidates.py` suggests candidate refdes-to-profile assignments from BOM MPN/value, reviewed document MPNs, BOM text that embeds a reviewed public MPN, and local profile `part_number`/aliases; `report/validator_ui.py` renders one selected result; `report/validator_multi_ui.py` renders multiple selected `ValidationReport`s in a three-column component index, validation summary, and report-detail artifact. `.brd`, boardview, placement, routing, PCB geometry, live supplier lookup, lifecycle/pricing/availability, hosted app state, automatic validation, firmware, full MCU alternate-function matrices, and PLM-grade BOM governance remain out of scope.
 
 ## Data flow

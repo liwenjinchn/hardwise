@@ -1062,6 +1062,195 @@
       "title": "ClaimIssue",
       "type": "object"
     },
+    "ComparisonIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SourceEvidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        },
+        "refdes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Refdes"
+        },
+        "side": {
+          "enum": [
+            "before",
+            "after",
+            "both"
+          ],
+          "title": "Side",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "evidence",
+        "explanation",
+        "refdes",
+        "side"
+      ],
+      "title": "ComparisonIssue",
+      "type": "object"
+    },
+    "ComparisonResult": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "$ref": "#/$defs/RevisionView"
+        },
+        "before": {
+          "$ref": "#/$defs/RevisionView"
+        },
+        "changes": {
+          "items": {
+            "$ref": "#/$defs/RevisionChange"
+          },
+          "title": "Changes",
+          "type": "array"
+        },
+        "comparison_id": {
+          "title": "Comparison Id",
+          "type": "string"
+        },
+        "electrical_verdict": {
+          "const": "not_evaluated",
+          "default": "not_evaluated",
+          "title": "Electrical Verdict",
+          "type": "string"
+        },
+        "input_format": {
+          "const": "telesis_csv_v1",
+          "default": "telesis_csv_v1",
+          "title": "Input Format",
+          "type": "string"
+        },
+        "issues": {
+          "items": {
+            "$ref": "#/$defs/ComparisonIssue"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "hardwise.revision.v1",
+          "default": "hardwise.revision.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope": {
+          "default": [
+            "仅比较 Telesis 网表和 CSV/TSV BOM 中实际声明的器件、属性及引脚连接。",
+            "按精确位号关联；位号重编号显示为增删，不自动认定同一物理器件。",
+            "BOM 与网表分别比较，不用某个来源覆盖另一个；字段采用文本比较，不推断单位等价。",
+            "未声明引脚不等于开路；网络改名不等于连接变化。未知和冲突单列。",
+            "直接同网器件仅为复查线索，不代表完整电气影响；不判断改动正确性或整板安全。",
+            "仅记录源文件名、哈希和定位；报告不包含原理图几何，不需要规格书、AI或档案批准。"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Scope",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "differences",
+            "no_observed_difference",
+            "needs_review"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/ComparisonSummary"
+        }
+      },
+      "required": [
+        "after",
+        "before",
+        "changes",
+        "comparison_id",
+        "electrical_verdict",
+        "input_format",
+        "issues",
+        "schema_version",
+        "scope",
+        "status",
+        "summary"
+      ],
+      "title": "ComparisonResult",
+      "type": "object"
+    },
+    "ComparisonSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "added": {
+          "title": "Added",
+          "type": "integer"
+        },
+        "attribute_changes": {
+          "title": "Attribute Changes",
+          "type": "integer"
+        },
+        "changed_components": {
+          "title": "Changed Components",
+          "type": "integer"
+        },
+        "connection_changes": {
+          "title": "Connection Changes",
+          "type": "integer"
+        },
+        "net_renames": {
+          "title": "Net Renames",
+          "type": "integer"
+        },
+        "removed": {
+          "title": "Removed",
+          "type": "integer"
+        },
+        "unchanged_components": {
+          "title": "Unchanged Components",
+          "type": "integer"
+        },
+        "unresolved": {
+          "title": "Unresolved",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "added",
+        "attribute_changes",
+        "changed_components",
+        "connection_changes",
+        "net_renames",
+        "removed",
+        "unchanged_components",
+        "unresolved"
+      ],
+      "title": "ComparisonSummary",
+      "type": "object"
+    },
     "ComponentDetail": {
       "description": "Full component detail consumed by the SPA.",
       "properties": {
@@ -1968,6 +2157,25 @@
         "version"
       ],
       "title": "EmittedRuleVersion",
+      "type": "object"
+    },
+    "Endpoint": {
+      "additionalProperties": false,
+      "properties": {
+        "pin": {
+          "title": "Pin",
+          "type": "string"
+        },
+        "refdes": {
+          "title": "Refdes",
+          "type": "string"
+        }
+      },
+      "required": [
+        "pin",
+        "refdes"
+      ],
+      "title": "Endpoint",
       "type": "object"
     },
     "EvidenceChainItem": {
@@ -3336,6 +3544,81 @@
         "summary"
       ],
       "title": "NetCheckView",
+      "type": "object"
+    },
+    "NetworkView": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguous": {
+          "default": false,
+          "title": "Ambiguous",
+          "type": "boolean"
+        },
+        "endpoints": {
+          "items": {
+            "$ref": "#/$defs/Endpoint"
+          },
+          "title": "Endpoints",
+          "type": "array"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SourceEvidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ambiguous",
+        "endpoints",
+        "evidence",
+        "name"
+      ],
+      "title": "NetworkView",
+      "type": "object"
+    },
+    "Observation": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/SourceEvidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "state": {
+          "default": "known",
+          "enum": [
+            "known",
+            "missing",
+            "ambiguous"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "values": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evidence",
+        "state",
+        "values"
+      ],
+      "title": "Observation",
       "type": "object"
     },
     "OfflineReviewHistory": {
@@ -5149,6 +5432,144 @@
       "title": "ReviewedField",
       "type": "object"
     },
+    "RevisionChange": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Observation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "before": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Observation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        },
+        "field": {
+          "title": "Field",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "component_added",
+            "component_removed",
+            "attribute_changed",
+            "connection_changed",
+            "net_renamed"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "pin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pin"
+        },
+        "refdes": {
+          "title": "Refdes",
+          "type": "string"
+        },
+        "related_count": {
+          "default": 0,
+          "title": "Related Count",
+          "type": "integer"
+        },
+        "related_refdes": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Related Refdes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "after",
+        "before",
+        "explanation",
+        "field",
+        "id",
+        "kind",
+        "pin",
+        "refdes",
+        "related_count",
+        "related_refdes"
+      ],
+      "title": "RevisionChange",
+      "type": "object"
+    },
+    "RevisionView": {
+      "additionalProperties": false,
+      "properties": {
+        "bom_row_count": {
+          "title": "Bom Row Count",
+          "type": "integer"
+        },
+        "component_count": {
+          "title": "Component Count",
+          "type": "integer"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "net_count": {
+          "title": "Net Count",
+          "type": "integer"
+        },
+        "networks": {
+          "items": {
+            "$ref": "#/$defs/NetworkView"
+          },
+          "title": "Networks",
+          "type": "array"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/SourceDigest"
+          },
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "bom_row_count",
+        "component_count",
+        "label",
+        "net_count",
+        "networks",
+        "sources"
+      ],
+      "title": "RevisionView",
+      "type": "object"
+    },
     "RiskHintView": {
       "description": "Registry-verified external hint for read-only display.",
       "properties": {
@@ -5709,6 +6130,63 @@
         "unchecked_tokens"
       ],
       "title": "SourceAudit",
+      "type": "object"
+    },
+    "SourceDigest": {
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "title": "File",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "netlist",
+            "bom"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "file",
+        "role",
+        "sha256",
+        "size_bytes"
+      ],
+      "title": "SourceDigest",
+      "type": "object"
+    },
+    "SourceEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "title": "File",
+          "type": "string"
+        },
+        "locator": {
+          "title": "Locator",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "locator",
+        "sha256"
+      ],
+      "title": "SourceEvidence",
       "type": "object"
     },
     "UnsupportedScope": {
@@ -6759,6 +7237,9 @@
     "chat_response": {
       "$ref": "#/$defs/ChatResponse"
     },
+    "comparison_result": {
+      "$ref": "#/$defs/ComparisonResult"
+    },
     "component_detail": {
       "$ref": "#/$defs/ComponentDetail"
     },
@@ -6819,7 +7300,8 @@
     "voltage_candidates_request",
     "voltage_review",
     "chat_response",
-    "ai_disclosure"
+    "ai_disclosure",
+    "comparison_result"
   ],
   "title": "WorkbenchContracts",
   "type": "object"

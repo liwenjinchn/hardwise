@@ -62,6 +62,58 @@ export type Wrapped = number;
 export type Trace = EvidenceTrace[];
 export type UnsupportedEvidenceTokens = string[];
 export type WrappedCount = number;
+export type BomRowCount = number;
+export type ComponentCount = number;
+export type Label = string;
+export type NetCount = number;
+export type Ambiguous = boolean;
+export type Pin = string;
+export type Refdes = string;
+export type Endpoints = Endpoint[];
+export type File = string;
+export type Locator = string;
+export type Sha256 = string;
+export type Evidence1 = SourceEvidence[];
+export type Name = string;
+export type Networks = NetworkView[];
+export type File1 = string;
+export type Role1 = "netlist" | "bom";
+export type Sha2561 = string;
+export type SizeBytes = number;
+export type Sources = SourceDigest[];
+export type Evidence2 = SourceEvidence[];
+export type State = "known" | "missing" | "ambiguous";
+export type Values = string[];
+export type Explanation = string;
+export type Field = string;
+export type Id1 = string;
+export type Kind1 =
+  "component_added" | "component_removed" | "attribute_changed" | "connection_changed" | "net_renamed";
+export type Pin1 = string | null;
+export type Refdes1 = string;
+export type RelatedCount = number;
+export type RelatedRefdes = string[];
+export type Changes = RevisionChange[];
+export type ComparisonId = string;
+export type ElectricalVerdict = "not_evaluated";
+export type InputFormat = "telesis_csv_v1";
+export type Code1 = string;
+export type Evidence3 = SourceEvidence[];
+export type Explanation1 = string;
+export type Refdes2 = string | null;
+export type Side = "before" | "after" | "both";
+export type Issues1 = ComparisonIssue[];
+export type SchemaVersion = "hardwise.revision.v1";
+export type Scope = string[];
+export type Status1 = "differences" | "no_observed_difference" | "needs_review";
+export type Added = number;
+export type AttributeChanges = number;
+export type ChangedComponents = number;
+export type ConnectionChanges = number;
+export type NetRenames = number;
+export type Removed = number;
+export type UnchangedComponents = number;
+export type Unresolved = number;
 export type ContractVersion = "hardwise.assessment.v1";
 export type EvidenceKind = "SOURCE_FACT" | "DERIVED" | "HYPOTHESIS";
 export type LegacyStatus = ("PASS" | "WARN" | "ERROR" | "UNKNOWN" | "NOT_APPLICABLE") | null;
@@ -74,7 +126,7 @@ export type Severity = "ERROR" | "WARNING" | "INFO";
 /**
  * Legacy attention alias; use result/severity for new decisions.
  */
-export type Status1 = "PASS" | "WARN" | "ERROR" | "UNKNOWN" | "NOT_APPLICABLE";
+export type Status2 = "PASS" | "WARN" | "ERROR" | "UNKNOWN" | "NOT_APPLICABLE";
 export type Description = string;
 export type ItemNumber = string | null;
 export type Manufacturer = string;
@@ -82,7 +134,7 @@ export type PartNumber = string;
 export type ItemNumber1 = string | null;
 export type RefdesList = string[];
 export type Column = number;
-export type Name = string;
+export type Name1 = string;
 export type Value = string;
 export type SourceFields = BomSourceField[];
 export type SourceFile = string;
@@ -91,14 +143,14 @@ export type Source = string;
 export type SourceLine1 = number | null;
 export type Value1 = string;
 export type AuditStatus1 = string;
-export type Label = string;
+export type Label1 = string;
 export type LocalSource1 = string | null;
 export type Reason1 = string;
 export type SourceClass1 = string;
 export type Token1 = string;
 export type TrustTier1 = "l1" | "l2" | "l3";
-export type Evidence1 = EvidenceView[];
-export type Status2 = string;
+export type Evidence4 = EvidenceView[];
+export type Status3 = string;
 export type StatusGroup = "error" | "warn" | "pass" | "manual";
 export type StatusLabel = string;
 export type Subject = string;
@@ -125,21 +177,21 @@ export type Provider = string;
 export type Query = string;
 export type Reason2 = string | null;
 export type RemainingMonth = number | null;
-export type Status3 = string;
+export type Status4 = string;
 export type Candidates1 = number;
 export type GroupId = string | null;
 export type Identity = string;
 export type IdentityKind = string;
 export type Reason3 = string;
 export type Source2 = string | null;
-export type Status4 = string;
+export type Status5 = string;
 export type SuggestedFamily = string;
 export type Title1 = string | null;
 export type Url = string | null;
 export type Body = string;
-export type Evidence2 = EvidenceView[];
-export type Kind1 = string;
-export type Status5 = string;
+export type Evidence5 = EvidenceView[];
+export type Kind2 = string;
+export type Status6 = string;
 export type StatusGroup1 = "error" | "warn" | "pass" | "manual";
 export type Title2 = string;
 export type TrustTier2 = "l1" | "l2" | "l3";
@@ -151,12 +203,12 @@ export type Package = string;
 export type PartNumber1 = string;
 export type ConnectionAmbiguity = string[];
 export type ElectricalType = string;
-export type Evidence3 = EvidenceView[];
+export type Evidence6 = EvidenceView[];
 export type IsNc = boolean;
-export type Name1 = string;
+export type Name2 = string;
 export type Net = string | null;
 export type Number = string;
-export type Status6 = string | null;
+export type Status7 = string | null;
 export type Summary2 = string;
 export type Pins = PinView[];
 export type LegacyReviewStatus = string | null;
@@ -164,16 +216,16 @@ export type Lifecycle = string | null;
 export type PartNumber2 = string;
 export type Path = string | null;
 export type Reason4 = string;
-export type Status7 = string;
+export type Status8 = string;
 export type ProfilePartNumber = string;
-export type Refdes = string;
+export type Refdes3 = string;
 export type Body1 = string;
-export type Refdes1 = string;
+export type Refdes4 = string;
 export type Severity1 = string | null;
 export type Title3 = string;
 export type WrappedRefdesCount = number;
 export type RiskHints = RiskHintView[];
-export type Status8 = string;
+export type Status9 = string;
 export type StatusGroup2 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel1 = string;
 export type Error1 = number;
@@ -185,21 +237,22 @@ export type Body2 = string;
 export type Check = string | null;
 export type DerivedFromTaskId = string | null;
 export type EvidenceChain1 = EvidenceChainItem[];
-export type Id1 = string;
-export type Kind2 = string;
+export type Id2 = string;
+export type Kind3 = string;
 export type PinNumber = string | null;
 export type RecommendedAction = string;
-export type Refdes2 = string;
+export type Refdes5 = string;
 export type CurrentFingerprint = string | null;
 export type Fingerprint = string | null;
 export type PreviousStatus = ("open" | "accepted_risk" | "false_positive" | "resolved" | "accepted" | "waived") | null;
 export type Reason5 = string;
 export type StableKey = string;
-export type Status9 = "open" | "accepted_risk" | "false_positive" | "resolved" | "accepted" | "waived" | "needs_review";
+export type Status10 =
+  "open" | "accepted_risk" | "false_positive" | "resolved" | "accepted" | "waived" | "needs_review";
 export type UpdatedAt = string;
 export type SourceClasses = string[];
 export type StableKey1 = string;
-export type Status10 = string;
+export type Status11 = string;
 export type StatusGroup3 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel2 = string;
 export type Subject1 = string | null;
@@ -214,7 +267,7 @@ export type Value2 = string;
  */
 export type Conditions1 = [FieldCondition, ...FieldCondition[]];
 export type Description2 = string;
-export type Kind3 = "unconditional" | "dc_relation" | "unsupported";
+export type Kind4 = "unconditional" | "dc_relation" | "unsupported";
 export type DeclaredBy = string;
 export type Manufacturer3 = string;
 /**
@@ -228,12 +281,12 @@ export type PartNumbers = [string, ...string[]];
 export type Nature = "intrinsic" | "application_recommendation" | "board_policy";
 export type Pointer = string;
 export type Reason6 = string;
-export type Role1 = "identity" | "minimum" | "typical" | "maximum" | "definition" | "relationship";
+export type Role2 = "identity" | "minimum" | "typical" | "maximum" | "definition" | "relationship";
 export type Sharing = "allow" | "withhold";
 export type DocumentRevision = string;
 export type DocumentSha256 = string;
 export type Excerpt = string;
-export type Locator = string;
+export type Locator1 = string;
 export type Page = number;
 export type Actor = "human";
 export type Decision = "allow" | "withhold";
@@ -249,7 +302,7 @@ export type ExpectedRunId = string;
 export type ProfileName = string;
 export type Editable = boolean;
 export type Lifecycle1 = "DRAFT" | "REVIEWED" | "READY" | "RETIRED";
-export type Name2 = string;
+export type Name3 = string;
 export type ExtractedAt = string;
 export type ExtractedModel = string;
 /**
@@ -265,11 +318,11 @@ export type Reviewer = string;
 export type Decisions = FieldDecision[];
 export type Nature1 = "intrinsic" | "application_recommendation" | "board_policy";
 export type Pointer1 = string;
-export type Role2 = "identity" | "minimum" | "typical" | "maximum" | "definition" | "relationship";
+export type Role3 = "identity" | "minimum" | "typical" | "maximum" | "definition" | "relationship";
 export type DocumentRevision1 = string;
 export type DocumentSha2561 = string;
 export type Excerpt1 = string;
-export type Locator1 = string;
+export type Locator2 = string;
 export type Page1 = number;
 export type Url2 = string;
 export type Subject2 = string;
@@ -277,24 +330,24 @@ export type Unit2 = string;
 export type Value3 = boolean | number | string;
 export type Fields = ReviewedField[];
 export type RetirementReason = string | null;
-export type Status11 = "DRAFT" | "REVIEWED" | "READY" | "RETIRED";
+export type Status12 = "DRAFT" | "REVIEWED" | "READY" | "RETIRED";
 export type Version1 = "hardwise.profile_review.v1";
 export type PartNumber3 = string;
 export type PartNumberAliases = string[];
 export type Category = string;
-export type Evidence5 = string[];
+export type Evidence8 = string[];
 export type Function = string;
-export type Name3 = string;
+export type Name4 = string;
 export type Number1 = string;
 export type RecommendedTopology = string[];
 export type SchematicPinAliases = string[];
 export type Pins1 = PinProfile[];
 export type ReviewStatus1 = "ready" | "needs_review";
-export type SchemaVersion = string;
+export type SchemaVersion1 = string;
 export type StorageIntegrity = "complete" | "legacy_incomplete";
 export type DocumentRevision2 = string;
 export type DocumentSha2562 = string;
-export type Evidence6 = string;
+export type Evidence9 = string;
 export type GroundPin = string;
 export type MinimumVoltage = number;
 export type Page2 = number;
@@ -309,12 +362,12 @@ export type Revision = string;
 export type RunId = string;
 export type SavedProjectId = string | null;
 export type BomQuantityConflicts = BomQuantityColumnConflict[] | null;
-export type ElectricalVerdict = "not_applicable";
+export type ElectricalVerdict1 = "not_applicable";
 export type Guardrails = string[];
-export type Id2 = "netlist" | "bom" | "validation" | "documents" | "pin_table" | "review_package";
-export type Label1 = string;
-export type Key = string;
+export type Id3 = "netlist" | "bom" | "validation" | "documents" | "pin_table" | "review_package";
 export type Label2 = string;
+export type Key = string;
+export type Label3 = string;
 export type Total1 = number | null;
 export type Unit3 = string;
 export type Value4 = number;
@@ -322,7 +375,7 @@ export type Metrics = EvidencePackageMetric[];
 export type RecommendedAction1 = string;
 export type Source3 = string | null;
 export type SourceToken = string | null;
-export type Status12 = "present" | "partial" | "gap" | "not_configured";
+export type Status13 = "present" | "partial" | "gap" | "not_configured";
 export type StatusGroup4 = "pass" | "warn" | "manual";
 export type StatusLabel3 = string;
 export type Summary3 = string;
@@ -333,20 +386,20 @@ export type CitedTokens = string[];
 export type ExportAllowed = boolean;
 export type MissingTokens = string[];
 export type Reason9 = string;
-export type Status13 = "not_attached" | "no_pdf_citations" | "unknown";
-export type SchemaVersion1 = string;
-export type Scope = string;
+export type Status14 = "not_attached" | "no_pdf_citations" | "unknown";
+export type SchemaVersion2 = string;
+export type Scope1 = string;
 export type AffectedTasks = number;
 export type MissingLocalSources = number;
 export type MissingTokens1 = string[];
 export type Reason10 = string;
 export type SignoffReady = boolean;
-export type Status14 = "ready" | "blocked";
+export type Status15 = "ready" | "blocked";
 export type LocallyPresentTokens = string[];
 export type MissingTokens2 = string[];
 export type ObservedAt = string | null;
 export type Reason11 = string;
-export type Status15 = "observed" | "unknown";
+export type Status16 = "observed" | "unknown";
 export type UncheckedTokens = string[];
 export type Ok = boolean;
 export type AcceptedFindings = number;
@@ -357,28 +410,28 @@ export type Message = string;
 export type Net1 = string | null;
 export type PinNumber1 = string | null;
 export type Reason12 = string;
-export type Refdes3 = string | null;
+export type Refdes6 = string | null;
 export type RuleId = string;
 export type Rejected = RejectedPinTableFindingView[];
 export type RejectedFindings = number;
 export type RejectedUnknownRefdes = string[];
 export type Source4 = string | null;
-export type Status16 = "loaded" | "not_configured";
+export type Status17 = "loaded" | "not_configured";
 export type BomSource = string;
 export type GeneratedAt = string;
-export type Name4 = string;
+export type Name5 = string;
 export type NetlistSource = string;
 export type NetlistType = string;
 export type ProfilesDir = string;
-export type Scope1 = string;
+export type Scope2 = string;
 export type ExpectedSha256 = string | null;
-export type Kind4 = string;
-export type Name5 = string;
+export type Kind5 = string;
+export type Name6 = string;
 export type Note = string | null;
 export type Path1 = string;
 export type Required = boolean;
-export type Sha256 = string | null;
-export type Status17 = string;
+export type Sha2562 = string | null;
+export type Status18 = string;
 export type Artifacts = ReviewPackageArtifactView[];
 export type HashMismatch = number;
 export type ManualGapCount = number;
@@ -388,7 +441,7 @@ export type PackageStatus = "not_configured" | "complete" | "optional_gap" | "mi
 export type Present = number;
 export type RecommendedAction2 = string;
 export type Source5 = string | null;
-export type Status18 = "loaded" | "not_configured";
+export type Status19 = "loaded" | "not_configured";
 export type StatusGroup5 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel4 = string;
 export type Total2 = number;
@@ -410,7 +463,7 @@ export type Warn1 = number;
 export type CapturedAt = string;
 export type CreatedAt = string;
 export type Event = "human_decision" | "inputs_changed" | "disappeared";
-export type Id3 = number;
+export type Id4 = number;
 export type RunId1 = string;
 export type StableKey2 = string;
 export type Events = ReviewHistoryEvent[];
@@ -420,7 +473,7 @@ export type CreatedAt1 = string | null;
 export type ProjectId2 = string;
 export type Applicability = "applicable" | "unknown" | "not_applicable";
 export type CatalogVersion = string;
-export type Evidence7 = string[];
+export type Evidence10 = string[];
 export type Instance = [unknown, unknown][];
 export type ObjectId2 = string;
 export type ObjectKind2 = "project" | "component" | "pin" | "net" | "relation";
@@ -430,20 +483,20 @@ export type RuleVersion2 = string;
 export type Candidates2 = Candidate[];
 export type ObjectKind3 = "project" | "component" | "pin" | "net" | "relation";
 export type RuleId2 = string;
-export type Scope2 = string;
+export type Scope3 = string;
 export type Version2 = string;
 export type Rules = RuleDefinition[];
 export type Version3 = string;
 export type CandidateId = string;
-export type Evidence8 = string[];
+export type Evidence11 = string[];
 export type Reason14 = string;
 export type Result1 = "PASS" | "FAIL" | "UNKNOWN" | "NOT_APPLICABLE";
 export type Outcomes = CandidateOutcome[];
-export type SchemaVersion2 = "hardwise.candidate_coverage.v1";
+export type SchemaVersion3 = "hardwise.candidate_coverage.v1";
 export type ObjectId3 = string;
 export type ObjectKind4 = "project" | "component" | "pin" | "net" | "relation";
 export type Reason15 = string;
-export type Scope3 = string;
+export type Scope4 = string;
 export type Unsupported = UnsupportedScope[];
 export type CandidateRecords = CandidateRecord[] | null;
 export type Applicability1 = string;
@@ -457,8 +510,8 @@ export type Reason16 = string;
 export type Result2 = "PASS" | "FAIL" | "UNKNOWN" | "NOT_APPLICABLE";
 export type RuleId3 = string;
 export type DeclarationIndices = number[];
-export type Endpoints = [unknown, unknown][];
-export type Kind5 = "duplicate_net_name" | "repeated_endpoint" | "multiple_declarations";
+export type Endpoints1 = [unknown, unknown][];
+export type Kind6 = "duplicate_net_name" | "repeated_endpoint" | "multiple_declarations";
 export type NetNames = string[];
 export type Ambiguities = ConnectionAmbiguity1[];
 export type AmbiguousEndpoints = [unknown, unknown][];
@@ -471,7 +524,7 @@ export type NetName = string;
 export type Nodes = [[unknown, unknown], ...[unknown, unknown][]];
 export type Source6 = string;
 export type Declarations = ConnectionDeclaration[];
-export type SchemaVersion3 = "hardwise.connectivity.v1";
+export type SchemaVersion4 = "hardwise.connectivity.v1";
 export type EmittedRecords = number;
 export type ImplementationIdentityAssurance = "declared_rule_versions";
 export type InputCaptureStatus = "captured" | "unavailable";
@@ -479,18 +532,18 @@ export type Assurance = "observed_readset_verified";
 export type Path2 = string;
 export type ResolvedPath = string;
 export type Roles = string[];
-export type Sha2561 = string;
-export type SizeBytes = number;
+export type Sha2563 = string;
+export type SizeBytes1 = number;
 export type Files = InputFileDigest[];
 export type ReadsetSha256 = string;
-export type SchemaVersion4 = "hardwise.input_reads.v1";
+export type SchemaVersion5 = "hardwise.input_reads.v1";
 export type StartedAt = string;
 export type VerifiedAt = string;
 export type PackageVersion = string;
 export type ProfileSnapshotEncoding = "json_with_nonfinite_float_tags";
 export type PartNumber4 = string;
 export type ReviewStatus2 = string;
-export type Sha2562 = string;
+export type Sha2564 = string;
 export type ShareProjection = {
   [k: string]: string;
 } | null;
@@ -499,11 +552,11 @@ export type PythonVersion = string;
 export type RawInputsArchived = false;
 export type ReviewDependencyContract = string | null;
 export type EmittedCount = number;
-export type Name6 = string;
-export type Scope4 = "pin" | "component" | "net";
+export type Name7 = string;
+export type Scope5 = "pin" | "component" | "net";
 export type Version4 = string;
 export type RuleVersions = EmittedRuleVersion[];
-export type SchemaVersion5 = "hardwise.run_provenance.v1";
+export type SchemaVersion6 = "hardwise.run_provenance.v1";
 export type ActiveMode = string;
 export type Confirmed = boolean;
 export type ConfirmedBy = string;
@@ -515,14 +568,14 @@ export type ReferenceNet = string;
 export type Source7 = string;
 export type Typical = number | null;
 export type Unit4 = "V";
-export type Id4 = string;
-export type Locator2 = string;
+export type Id5 = string;
+export type Locator3 = string;
 export type Origin = "manual" | "import" | "net_name" | "legacy_v1";
 export type Candidates3 = VoltageCandidate[];
 export type Action = "confirm" | "unknown";
 export type CandidateId2 = string | null;
 export type CandidateSha256 = string | null;
-export type Id5 = string;
+export type Id6 = string;
 export type Mode3 = string;
 export type Net3 = string;
 export type Origin1 = "human" | "legacy_v1";
@@ -532,8 +585,8 @@ export type Reviewer1 = string;
 export type ScopeSha256 = string;
 export type Confirmations = VoltageConfirmation[];
 export type ActiveMode1 = string;
-export type Changes = VoltageCandidateChange[];
-export type Id6 = string;
+export type Changes1 = VoltageCandidateChange[];
+export type Id7 = string;
 export type InvalidatedConfirmationIds = string[];
 export type PreviousMode = string;
 export type PreviousRevision = string;
@@ -541,10 +594,10 @@ export type Reason18 = string;
 export type RecordedAt1 = string;
 export type Reviewer2 = string;
 export type Edits = VoltageReviewEdit[];
-export type SchemaVersion6 = "hardwise.voltage_review.v1";
+export type SchemaVersion7 = "hardwise.voltage_review.v1";
 export type Reason19 = string;
 export type RunId3 = string;
-export type Status19 = "recorded" | "not_recorded";
+export type Status20 = "recorded" | "not_recorded";
 export type Total4 = number;
 export type Journal = string;
 export type CommandPosix = string;
@@ -560,8 +613,8 @@ export type Offset = number;
 export type ProjectId3 = string;
 export type RunId4 = string;
 export type Total5 = number;
-export type Id7 = string;
-export type Name7 = string;
+export type Id8 = string;
+export type Name8 = string;
 export type ProjectId4 = string;
 export type Snapshot = string;
 export type Projects = SavedProjectView[];
@@ -606,7 +659,7 @@ export type Mode5 = string;
 export type Net5 = string;
 export type ScopeSha2561 = string;
 export type SelectedCandidateId = string | null;
-export type Status20 = "unconfirmed" | "conflict" | "confirmed" | "unknown" | "needs_review";
+export type Status21 = "unconfirmed" | "conflict" | "confirmed" | "unknown" | "needs_review";
 export type Scopes = VoltageReviewScope[];
 export type Basis = "emitted_check_records";
 export type Boundary = string;
@@ -638,10 +691,10 @@ export type PinTableEnabled = boolean;
 export type ReviewPackageEnabled = boolean;
 export type RiskHintsEnabled = boolean;
 export type Check1 = string;
-export type Evidence9 = EvidenceView[];
+export type Evidence12 = EvidenceView[];
 export type NetName1 = string;
 export type Nodes1 = string[];
-export type Status21 = string;
+export type Status22 = string;
 export type StatusGroup6 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel5 = string;
 export type Summary4 = string;
@@ -658,9 +711,9 @@ export type PartNumber5 = string;
 export type PinTableTaskCount = number;
 export type ProfilePath = string | null;
 export type ProfileStatus = string;
-export type Refdes4 = string;
+export type Refdes7 = string;
 export type RiskHintCount = number;
-export type Status22 = string;
+export type Status23 = string;
 export type StatusGroup7 = "error" | "warn" | "pass" | "manual";
 export type StatusLabel6 = string;
 export type Subtitle = string;
@@ -688,7 +741,7 @@ export type AffectedRefdes1 = string[];
 export type Axis = "electrical" | "evidence";
 export type Check2 = string | null;
 export type DerivedTaskCount = number;
-export type Id8 = string;
+export type Id9 = string;
 export type Identity1 = string;
 export type RawTaskCount = number;
 export type RecommendedAction3 = string;
@@ -716,12 +769,13 @@ export type RejectedExternalCount1 = number;
 export type SelectedRefdes3 = string | null;
 export type ActiveMode3 = string;
 export type Facts = VoltageFact[];
-export type SchemaVersion7 = "hardwise.voltage_facts.v1";
+export type SchemaVersion8 = "hardwise.voltage_facts.v1";
 
 export interface WorkbenchContracts {
   ai_disclosure: AIDisclosure;
   chat_request: ChatRequest;
   chat_response: ChatResponse;
+  comparison_result: ComparisonResult;
   component_detail: ComponentDetail;
   excerpt_request: ExcerptRequest;
   excerpts: ExcerptResponse;
@@ -853,6 +907,82 @@ export interface EvidenceClassification1 {
 export interface Input {
   [k: string]: unknown;
 }
+export interface ComparisonResult {
+  after: RevisionView;
+  before: RevisionView;
+  changes: Changes;
+  comparison_id: ComparisonId;
+  electrical_verdict: ElectricalVerdict;
+  input_format: InputFormat;
+  issues: Issues1;
+  schema_version: SchemaVersion;
+  scope: Scope;
+  status: Status1;
+  summary: ComparisonSummary;
+}
+export interface RevisionView {
+  bom_row_count: BomRowCount;
+  component_count: ComponentCount;
+  label: Label;
+  net_count: NetCount;
+  networks: Networks;
+  sources: Sources;
+}
+export interface NetworkView {
+  ambiguous: Ambiguous;
+  endpoints: Endpoints;
+  evidence: Evidence1;
+  name: Name;
+}
+export interface Endpoint {
+  pin: Pin;
+  refdes: Refdes;
+}
+export interface SourceEvidence {
+  file: File;
+  locator: Locator;
+  sha256: Sha256;
+}
+export interface SourceDigest {
+  file: File1;
+  role: Role1;
+  sha256: Sha2561;
+  size_bytes: SizeBytes;
+}
+export interface RevisionChange {
+  after: Observation | null;
+  before: Observation | null;
+  explanation: Explanation;
+  field: Field;
+  id: Id1;
+  kind: Kind1;
+  pin: Pin1;
+  refdes: Refdes1;
+  related_count: RelatedCount;
+  related_refdes: RelatedRefdes;
+}
+export interface Observation {
+  evidence: Evidence2;
+  state: State;
+  values: Values;
+}
+export interface ComparisonIssue {
+  code: Code1;
+  evidence: Evidence3;
+  explanation: Explanation1;
+  refdes: Refdes2;
+  side: Side;
+}
+export interface ComparisonSummary {
+  added: Added;
+  attribute_changes: AttributeChanges;
+  changed_components: ChangedComponents;
+  connection_changes: ConnectionChanges;
+  net_renames: NetRenames;
+  removed: Removed;
+  unchanged_components: UnchangedComponents;
+  unresolved: Unresolved;
+}
 /**
  * Full component detail consumed by the SPA.
  */
@@ -873,9 +1003,9 @@ export interface ComponentDetail {
   pins: Pins;
   profile: ProfileView | null;
   profile_part_number: ProfilePartNumber;
-  refdes: Refdes;
+  refdes: Refdes3;
   risk_hints: RiskHints;
-  status: Status8;
+  status: Status9;
   status_group: StatusGroup2;
   status_label: StatusLabel1;
   task_counts: ComponentTaskCounts;
@@ -896,7 +1026,7 @@ export interface Assessment {
   result: Result;
   rule_version: RuleVersion1;
   severity: Severity;
-  status: Status1;
+  status: Status2;
 }
 /**
  * BOM identity shown in detail and prep packet views.
@@ -926,7 +1056,7 @@ export interface BomQuantityColumnConflict {
  */
 export interface BomSourceField {
   column: Column;
-  name: Name;
+  name: Name1;
   value: Value;
 }
 /**
@@ -934,8 +1064,8 @@ export interface BomSourceField {
  */
 export interface CheckView {
   assessment: Assessment | null;
-  evidence: Evidence1;
-  status: Status2;
+  evidence: Evidence4;
+  status: Status3;
   status_group: StatusGroup;
   status_label: StatusLabel;
   subject: Subject;
@@ -946,7 +1076,7 @@ export interface CheckView {
  */
 export interface EvidenceView {
   audit_status: AuditStatus1;
-  label: Label;
+  label: Label1;
   local_source: LocalSource1;
   reason: Reason1;
   source_class: SourceClass1;
@@ -964,7 +1094,7 @@ export interface DocumentCoverageView {
   identity_kind: IdentityKind;
   reason: Reason3;
   source: Source2;
-  status: Status4;
+  status: Status5;
   suggested_family: SuggestedFamily;
   title: Title1;
   url: Url;
@@ -981,7 +1111,7 @@ export interface DatasheetCandidateSearchView {
   query: Query;
   reason: Reason2;
   remaining_month: RemainingMonth;
-  status: Status3;
+  status: Status4;
 }
 /**
  * One provider candidate shown as reviewer-only data.
@@ -1003,9 +1133,9 @@ export interface DatasheetCandidateView {
  */
 export interface EvidenceChainItem {
   body: Body;
-  evidence: Evidence2;
-  kind: Kind1;
-  status: Status5;
+  evidence: Evidence5;
+  kind: Kind2;
+  status: Status6;
   status_group: StatusGroup1;
   title: Title2;
   trust_tier: TrustTier2;
@@ -1017,12 +1147,12 @@ export interface PinView {
   assessment: Assessment | null;
   connection_ambiguity?: ConnectionAmbiguity;
   electrical_type: ElectricalType;
-  evidence: Evidence3;
+  evidence: Evidence6;
   is_nc: IsNc;
-  name: Name1;
+  name: Name2;
   net: Net;
   number: Number;
-  status: Status6;
+  status: Status7;
   summary: Summary2;
 }
 /**
@@ -1034,14 +1164,14 @@ export interface ProfileView {
   part_number: PartNumber2;
   path: Path;
   reason: Reason4;
-  status: Status7;
+  status: Status8;
 }
 /**
  * Registry-verified external hint for read-only display.
  */
 export interface RiskHintView {
   body: Body1;
-  refdes: Refdes1;
+  refdes: Refdes4;
   severity: Severity1;
   source: EvidenceView | null;
   title: Title3;
@@ -1066,15 +1196,15 @@ export interface ReviewTask {
   check: Check;
   derived_from_task_id: DerivedFromTaskId;
   evidence_chain: EvidenceChain1;
-  id: Id1;
-  kind: Kind2;
+  id: Id2;
+  kind: Kind3;
   pin_number: PinNumber;
   recommended_action: RecommendedAction;
-  refdes: Refdes2;
+  refdes: Refdes5;
   review_decision: ReviewDecisionView | null;
   source_classes: SourceClasses;
   stable_key: StableKey1;
-  status: Status10;
+  status: Status11;
   status_group: StatusGroup3;
   status_label: StatusLabel2;
   subject: Subject1;
@@ -1090,7 +1220,7 @@ export interface ReviewDecisionView {
   previous_status: PreviousStatus;
   reason: Reason5;
   stable_key: StableKey;
-  status: Status9;
+  status: Status10;
   updated_at: UpdatedAt;
 }
 export interface ExcerptRequest {
@@ -1107,14 +1237,14 @@ export interface ExcerptEdit {
   nature: Nature;
   pointer: Pointer;
   reason: Reason6;
-  role: Role1;
+  role: Role2;
   sharing: Sharing;
   source: ManualSource;
   unit: Unit1;
 }
 export interface FieldCondition {
   description: Description2;
-  kind: Kind3;
+  kind: Kind4;
 }
 export interface ReviewIdentity {
   manufacturer: Manufacturer3;
@@ -1125,7 +1255,7 @@ export interface ManualSource {
   document_revision: DocumentRevision;
   document_sha256: DocumentSha256;
   excerpt: Excerpt;
-  locator: Locator;
+  locator: Locator1;
   page: Page;
   sharing?: ExcerptSharingDeclaration | null;
   url: Url1;
@@ -1151,17 +1281,17 @@ export interface ExcerptResponse {
 }
 export interface ExcerptProfileView {
   lifecycle: Lifecycle1;
-  name: Name2;
+  name: Name3;
   profile: DatasheetProfile;
   sharing_states: SharingStates;
-  values: Values;
+  values: Values1;
 }
 /**
  * Structured electrical limits extracted from one datasheet.
  */
 export interface DatasheetProfile {
   abs_max: AbsMax;
-  evidence: Evidence4;
+  evidence: Evidence7;
   extracted_at: ExtractedAt;
   extracted_model: ExtractedModel;
   field_review: ProfileReview | null;
@@ -1171,21 +1301,21 @@ export interface DatasheetProfile {
   pins: Pins1;
   recommended: Recommended;
   review_status: ReviewStatus1;
-  schema_version: SchemaVersion;
+  schema_version: SchemaVersion1;
   storage_integrity: StorageIntegrity;
   voltage_relations: VoltageRelations;
 }
 export interface AbsMax {
   [k: string]: boolean | number | string;
 }
-export interface Evidence4 {
+export interface Evidence7 {
   [k: string]: string;
 }
 export interface ProfileReview {
   fields: Fields;
   identity: ReviewIdentity;
   retirement_reason: RetirementReason;
-  status: Status11;
+  status: Status12;
   version: Version1;
 }
 export interface ReviewedField {
@@ -1193,7 +1323,7 @@ export interface ReviewedField {
   decisions: Decisions;
   nature: Nature1;
   pointer: Pointer1;
-  role: Role2;
+  role: Role3;
   source: FieldSource;
   subject: Subject2;
   unit: Unit2;
@@ -1211,7 +1341,7 @@ export interface FieldSource {
   document_revision: DocumentRevision1;
   document_sha256: DocumentSha2561;
   excerpt: Excerpt1;
-  locator: Locator1;
+  locator: Locator2;
   page: Page1;
   sharing?: ExcerptSharingDeclaration | null;
   url: Url2;
@@ -1224,10 +1354,10 @@ export interface PinFunction {
  */
 export interface PinProfile {
   category: Category;
-  evidence: Evidence5;
+  evidence: Evidence8;
   function: Function;
   limits: Limits;
-  name: Name3;
+  name: Name4;
   number: Number1;
   recommended_topology: RecommendedTopology;
   schematic_pin_aliases: SchematicPinAliases;
@@ -1244,7 +1374,7 @@ export interface Recommended {
 export interface PinVoltageRelation {
   document_revision: DocumentRevision2;
   document_sha256: DocumentSha2562;
-  evidence: Evidence6;
+  evidence: Evidence9;
   ground_pin: GroundPin;
   minimum_voltage: MinimumVoltage;
   page: Page2;
@@ -1256,7 +1386,7 @@ export interface PinVoltageRelation {
 export interface SharingStates {
   [k: string]: string;
 }
-export interface Values {
+export interface Values1 {
   [k: string]: unknown;
 }
 /**
@@ -1277,12 +1407,12 @@ export interface ImportResponse {
  */
 export interface EvidencePackageSummary {
   bom_quantity_conflicts: BomQuantityConflicts;
-  electrical_verdict: ElectricalVerdict;
+  electrical_verdict: ElectricalVerdict1;
   guardrails: Guardrails;
   lanes: Lanes;
   original_delivery: OriginalDelivery;
-  schema_version: SchemaVersion1;
-  scope: Scope;
+  schema_version: SchemaVersion2;
+  scope: Scope1;
   signoff_readiness: SignoffReadiness;
   source_audit: SourceAudit;
 }
@@ -1290,13 +1420,13 @@ export interface EvidencePackageSummary {
  * One independent evidence input or deterministic coverage lane.
  */
 export interface EvidencePackageLane {
-  id: Id2;
-  label: Label1;
+  id: Id3;
+  label: Label2;
   metrics: Metrics;
   recommended_action: RecommendedAction1;
   source: Source3;
   source_token: SourceToken;
-  status: Status12;
+  status: Status13;
   status_group: StatusGroup4;
   status_label: StatusLabel3;
   summary: Summary3;
@@ -1307,7 +1437,7 @@ export interface EvidencePackageLane {
  */
 export interface EvidencePackageMetric {
   key: Key;
-  label: Label2;
+  label: Label3;
   total: Total1;
   unit: Unit3;
   value: Value4;
@@ -1318,7 +1448,7 @@ export interface OriginalDelivery {
   export_allowed: ExportAllowed;
   missing_tokens: MissingTokens;
   reason: Reason9;
-  status: Status13;
+  status: Status14;
 }
 /**
  * Deprecated compatibility field; never certifies signoff or original delivery.
@@ -1329,14 +1459,14 @@ export interface SignoffReadiness {
   missing_tokens: MissingTokens1;
   reason: Reason10;
   signoff_ready: SignoffReady;
-  status: Status14;
+  status: Status15;
 }
 export interface SourceAudit {
   locally_present_tokens: LocallyPresentTokens;
   missing_tokens: MissingTokens2;
   observed_at: ObservedAt;
   reason: Reason11;
-  status: Status15;
+  status: Status16;
   unchecked_tokens: UncheckedTokens;
 }
 /**
@@ -1352,7 +1482,7 @@ export interface PinTableSummary {
   rejected_findings: RejectedFindings;
   rejected_unknown_refdes: RejectedUnknownRefdes;
   source: Source4;
-  status: Status16;
+  status: Status17;
 }
 export interface Checks1 {
   [k: string]: number;
@@ -1365,7 +1495,7 @@ export interface RejectedPinTableFindingView {
   net: Net1;
   pin_number: PinNumber1;
   reason: Reason12;
-  refdes: Refdes3;
+  refdes: Refdes6;
   rule_id: RuleId;
 }
 /**
@@ -1374,11 +1504,11 @@ export interface RejectedPinTableFindingView {
 export interface WorkbenchProject {
   bom_source: BomSource;
   generated_at: GeneratedAt;
-  name: Name4;
+  name: Name5;
   netlist_source: NetlistSource;
   netlist_type: NetlistType;
   profiles_dir: ProfilesDir;
-  scope: Scope1;
+  scope: Scope2;
 }
 /**
  * Review-package manifest status; not an electrical conclusion.
@@ -1393,7 +1523,7 @@ export interface ReviewPackageSummary {
   present: Present;
   recommended_action: RecommendedAction2;
   source: Source5;
-  status: Status18;
+  status: Status19;
   status_group: StatusGroup5;
   status_label: StatusLabel4;
   total: Total2;
@@ -1403,13 +1533,13 @@ export interface ReviewPackageSummary {
  */
 export interface ReviewPackageArtifactView {
   expected_sha256: ExpectedSha256;
-  kind: Kind4;
-  name: Name5;
+  kind: Kind5;
+  name: Name6;
   note: Note;
   path: Path1;
   required: Required;
-  sha256: Sha256;
-  status: Status17;
+  sha256: Sha2562;
+  status: Status18;
 }
 /**
  * Count summary for the current workbench run.
@@ -1447,7 +1577,7 @@ export interface ReviewHistoryEvent {
   created_at: CreatedAt;
   decision: ReviewDecisionView;
   event: Event;
-  id: Id3;
+  id: Id4;
   run_id: RunId1;
   stable_key: StableKey2;
 }
@@ -1460,7 +1590,7 @@ export interface RunProvenanceResponse {
   provenance: RunProvenance1 | null;
   reason: Reason19;
   run_id: RunId3;
-  status: Status19;
+  status: Status20;
 }
 export interface RunProvenance1 {
   candidate_coverage: CandidateSnapshot | null;
@@ -1478,20 +1608,20 @@ export interface RunProvenance1 {
   raw_inputs_archived: RawInputsArchived;
   review_dependency_contract: ReviewDependencyContract;
   rule_versions: RuleVersions;
-  schema_version: SchemaVersion5;
+  schema_version: SchemaVersion6;
   voltage_review?: VoltageReviewDocument | null;
 }
 export interface CandidateSnapshot {
   candidates: Candidates2;
   catalog: RuleCatalog;
   outcomes: Outcomes;
-  schema_version: SchemaVersion2;
+  schema_version: SchemaVersion3;
   unsupported: Unsupported;
 }
 export interface Candidate {
   applicability: Applicability;
   catalog_version: CatalogVersion;
-  evidence: Evidence7;
+  evidence: Evidence10;
   instance: Instance;
   object_id: ObjectId2;
   object_kind: ObjectKind2;
@@ -1506,12 +1636,12 @@ export interface RuleCatalog {
 export interface RuleDefinition {
   object_kind: ObjectKind3;
   rule_id: RuleId2;
-  scope: Scope2;
+  scope: Scope3;
   version: Version2;
 }
 export interface CandidateOutcome {
   candidate_id: CandidateId;
-  evidence: Evidence8;
+  evidence: Evidence11;
   reason: Reason14;
   result: Result1;
 }
@@ -1519,7 +1649,7 @@ export interface UnsupportedScope {
   object_id: ObjectId3;
   object_kind: ObjectKind4;
   reason: Reason15;
-  scope: Scope3;
+  scope: Scope4;
 }
 export interface CandidateRecord {
   applicability: Applicability1;
@@ -1539,12 +1669,12 @@ export interface ConnectivityProjection {
   ambiguous_net_names: AmbiguousNetNames;
   declarations: Declarations;
   resolved_nets: ResolvedNets;
-  schema_version: SchemaVersion3;
+  schema_version: SchemaVersion4;
 }
 export interface ConnectionAmbiguity1 {
   declaration_indices: DeclarationIndices;
-  endpoints: Endpoints;
-  kind: Kind5;
+  endpoints: Endpoints1;
+  kind: Kind6;
   net_names: NetNames;
 }
 /**
@@ -1563,7 +1693,7 @@ export interface InputReadManifest {
   assurance: Assurance;
   files: Files;
   readset_sha256: ReadsetSha256;
-  schema_version: SchemaVersion4;
+  schema_version: SchemaVersion5;
   started_at: StartedAt;
   verified_at: VerifiedAt;
 }
@@ -1571,8 +1701,8 @@ export interface InputFileDigest {
   path: Path2;
   resolved_path: ResolvedPath;
   roles: Roles;
-  sha256: Sha2561;
-  size_bytes: SizeBytes;
+  sha256: Sha2563;
+  size_bytes: SizeBytes1;
 }
 export interface ProfileBindings {
   [k: string]: string;
@@ -1580,17 +1710,17 @@ export interface ProfileBindings {
 export interface ProfileModelSnapshot {
   part_number: PartNumber4;
   review_status: ReviewStatus2;
-  sha256: Sha2562;
+  sha256: Sha2564;
   share_projection?: ShareProjection;
-  values: Values1;
+  values: Values2;
 }
-export interface Values1 {
+export interface Values2 {
   [k: string]: unknown;
 }
 export interface EmittedRuleVersion {
   emitted_count: EmittedCount;
-  name: Name6;
-  scope: Scope4;
+  name: Name7;
+  scope: Scope5;
   version: Version4;
 }
 /**
@@ -1601,12 +1731,12 @@ export interface VoltageReviewDocument {
   candidates: Candidates3;
   confirmations: Confirmations;
   edits?: Edits;
-  schema_version: SchemaVersion6;
+  schema_version: SchemaVersion7;
 }
 export interface VoltageCandidate {
   fact: VoltageFact;
-  id: Id4;
-  locator: Locator2;
+  id: Id5;
+  locator: Locator3;
   origin: Origin;
 }
 /**
@@ -1631,7 +1761,7 @@ export interface VoltageConfirmation {
   action: Action;
   candidate_id: CandidateId2;
   candidate_sha256: CandidateSha256;
-  id: Id5;
+  id: Id6;
   mode: Mode3;
   net: Net3;
   origin: Origin1;
@@ -1642,8 +1772,8 @@ export interface VoltageConfirmation {
 }
 export interface VoltageReviewEdit {
   active_mode: ActiveMode1;
-  changes: Changes;
-  id: Id6;
+  changes: Changes1;
+  id: Id7;
   invalidated_confirmation_ids: InvalidatedConfirmationIds;
   previous_mode: PreviousMode;
   previous_revision: PreviousRevision;
@@ -1676,8 +1806,8 @@ export interface ReviewHistoryPage {
   total: Total5;
 }
 export interface SavedProjectView {
-  id: Id7;
-  name: Name7;
+  id: Id8;
+  name: Name8;
   project_id: ProjectId4;
   snapshot: Snapshot;
 }
@@ -1726,7 +1856,7 @@ export interface VoltageReviewScope {
   net: Net5;
   scope_sha256: ScopeSha2561;
   selected_candidate_id: SelectedCandidateId;
-  status: Status20;
+  status: Status21;
 }
 /**
  * Top-level SPA state returned by ``/api/workbench/state``.
@@ -1809,10 +1939,10 @@ export interface WorkbenchCapabilities {
 export interface NetCheckView {
   assessment: Assessment | null;
   check: Check1;
-  evidence: Evidence9;
+  evidence: Evidence12;
   net_name: NetName1;
   nodes: Nodes1;
-  status: Status21;
+  status: Status22;
   status_group: StatusGroup6;
   status_label: StatusLabel5;
   summary: Summary4;
@@ -1834,9 +1964,9 @@ export interface ReviewQueueItem {
   pin_table_task_count: PinTableTaskCount;
   profile_path: ProfilePath;
   profile_status: ProfileStatus;
-  refdes: Refdes4;
+  refdes: Refdes7;
   risk_hint_count: RiskHintCount;
-  status: Status22;
+  status: Status23;
   status_group: StatusGroup7;
   status_label: StatusLabel6;
   subtitle: Subtitle;
@@ -1874,7 +2004,7 @@ export interface ReviewTaskGroup {
   axis: Axis;
   check: Check2;
   derived_task_count: DerivedTaskCount;
-  id: Id8;
+  id: Id9;
   identity: Identity1;
   raw_task_count: RawTaskCount;
   recommended_action: RecommendedAction3;
@@ -1919,5 +2049,5 @@ export interface RiskHintsSummary {
 export interface VoltageFactsDocument {
   active_mode: ActiveMode3;
   facts: Facts;
-  schema_version: SchemaVersion7;
+  schema_version: SchemaVersion8;
 }

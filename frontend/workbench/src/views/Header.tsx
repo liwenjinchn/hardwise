@@ -56,6 +56,9 @@ export function Header({
         ))}
       </nav>
       <div className="topbar-right">
+        {typeof window !== "undefined" && window.location.protocol !== "file:" && (
+          <a className="compare-link" href="/compare">改版对比</a>
+        )}
         <div className="project-pill" title={`${state.project.netlist_type} · ${state.project.netlist_source}`}>
           <span className="dot" />
           <span>{state.project.name}</span>

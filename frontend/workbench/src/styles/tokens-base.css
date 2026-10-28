@@ -289,6 +289,20 @@ p {
   padding: 0 14px;
 }
 
+.compare-link {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid var(--line, #d8d5cc);
+  border-radius: 5px;
+  color: var(--ink-muted, #5f5b52);
+  font-size: 12px;
+  text-decoration: none;
+}
+.compare-link:hover {
+  border-color: var(--ink, #26231e);
+  color: var(--ink, #26231e);
+}
+
 .project-pill {
   display: flex;
   align-items: center;

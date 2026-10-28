@@ -146,6 +146,9 @@ def create_workbench_app(
         context_manager.shutdown()
 
     app = FastAPI(title="Hardwise Workbench", docs_url=None, redoc_url=None, lifespan=lifespan)
+    from hardwise.revision.server import router as compare_router
+
+    app.include_router(compare_router)
     app.state.workbench_context = context_manager
     current_context = context_manager
     from hardwise.workbench.managed_project_routes import register_managed_project_routes

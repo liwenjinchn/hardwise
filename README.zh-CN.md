@@ -1,23 +1,48 @@
-# Hardwise —— 给真实工程流程做的 AI Agent 工作台
+# Hardwise —— 原理图改版复核
 
 [English](README.md) · [中文](README.zh-CN.md)
 
-**这是什么：** 我独立从 0 做的一个 AI Agent，它在机制上**没法编造**——每个回答都被
-强制走工具调用 + 证据账本，模型只能基于真实数据下结论，查不到就必须说"查不到"。
-这个保证就是全部重点：在任何严肃的 to B 场景里，一个自信的错误答案比"没有答案"更
-危险。
+**当前主线：** 导入同一原理图设计的两个版本（Telesis 网表 + CSV/TSV BOM），按精确
+位号列出器件增删、参数和引脚连接变化，并把缺声明、来源冲突和无法匹配的内容单列。
+它不判断改动是否正确，也不宣称整板安全；目标是让工程师少在两套导出文件之间反复找
+差异，实际使用价值仍待一次小范围试用验证。
 
-我故意把它跑在一个最不容错的流程上——**硬件原理图评审**，评审漏一条就报废一块几
-万块的板。所以它不是玩具 demo，是扎在真实流程上、有 **715 条测试 + GitHub Actions
-CI** 兜底的工程。
+**为什么转向：** 整板自动审查需要大量器件资料、工况和人工批准，输入成本可能超过
+收益。改版复核把问题收窄为“这次到底改了什么，哪些地方值得再看”，输入更轻，结果
+可以直接核对。原有的 AI 单版评审工作台保留为兼容路径。
+
+```bash
+# 生成离线改版清单（无 AI、无数据库、无规格书）
+mkdir -p reports
+PYTHONPATH=src uv run hardwise compare before.net before.csv after.net after.csv \
+  --output reports/revision.html --json-output reports/revision.json
+
+# 或启动本地双版本对照页面
+PYTHONPATH=src uv run hardwise serve-compare --open
+```
+
+首版只接受 UTF-8 Telesis `.net/.txt` 和 CSV/TSV BOM，可带 UTF-8 BOM 标记。PST、自动重编号匹配、电气
+正确性和跨网络完整影响不在首版承诺内。设计与边界见
+[`docs/architecture.md`](docs/architecture.md) 和
+[`docs/product/prd-v1.md`](docs/product/prd-v1.md)。
+
+## 旧版单版评审工作台（兼容保留）
+
+原有的 AI Agent / 工作台仍是同一个仓库的一部分，来源与信任机制如下；它不再作为
+继续扩张全板自动评审的任务清单。
+
+**旧版能力：** 每个回答强制走工具调用 + 证据账本，模型只能基于真实数据下结论，
+查不到就说"查不到"。它跑在 **pre-layout 硬件原理图评审** 这一节点上，配套
+tool-calling agent loop、Refdes Guard、Evidence Ledger、prompt caching、分层模型
+路由和 GitHub Actions CI。
 
 [![Hardwise 评审工作台——器件队列、验证明细与 Copilot 面板](docs/assets/hardwise-workbench-snapshot.png)](https://liwenjinchn.github.io/hardwise/hardware-demo.html)
 
-**3 个链接看懂——都不用装：**
+**3 个旧版入口——都不用装：**
 
 - ▶ **[50 秒产品短片](https://github.com/liwenjinchn/hardwise/raw/main/docs/assets/hardwise-promo.mp4)**
 - ▶ **[浏览器直接点的 demo](https://liwenjinchn.github.io/hardwise/hardware-demo.html)**
-- 🧩 **技术亮点：** tool-calling agent loop（12 个工具）· Refdes Guard 防幻觉 · Evidence Ledger 证据账本 · prompt caching · 分层模型路由 · 715 测试 + CI
+- 🧩 **技术亮点：** tool-calling agent loop（12 个工具）· Refdes Guard 防幻觉 · Evidence Ledger 证据账本 · prompt caching · 分层模型路由 · GitHub Actions CI
 
 **我是谁：** 5 年一线硬件研发，现在把"懂真实工程流程"和"能造能上线的 AI 工具"接在
 一起。找 AI 产品 / AI 应用落地 / 研发效能方向。
