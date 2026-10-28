@@ -178,3 +178,7 @@
   .revision-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .revision-preview code { display: block; overflow: visible; }
 }
+
+.revision-format{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;font-size:14px}
+.revision-format select{font:inherit;padding:8px 12px;border:1px solid #d2dcd9;border-radius:6px;background:white;max-width:100%}
+.revision-format span{color:#586b68;font-size:12px}

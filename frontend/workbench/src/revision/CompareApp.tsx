@@ -3,7 +3,7 @@ import { ArrowRight, FileDiff, Loader2 } from "lucide-react";
 import type { ComparisonResult } from "../generated/workbench-contracts";
 import { compareFiles, loadDemo } from "./api";
 import { ComparisonResults } from "./ComparisonResults";
-import { compareReducer, fileSize, initialState, UPLOAD_KEYS, validateFile, type UploadKey } from "./state";
+import { compareReducer, fileSize, initialState, requiredKeys, selectPstFiles, validateFile, type UploadKey, type InputMode, type UploadFiles } from "./state";
 import "./compare.css";
 
 function UploadSlot({ name, file, error, onChange }: {
@@ -30,6 +30,35 @@ function UploadSlot({ name, file, error, onChange }: {
       }}>移除</button></> : <span>每个文件最多 10 MiB；不接受空文件</span>}
     </div>
     {error && <p className="revision-file-error" id={`${name}-error`} role="alert">{error}</p>}
+  </div>;
+}
+
+function PstUploadGroup({ side, files, errors, onChange }: {
+  side: "before" | "after"; files: UploadFiles; errors: Partial<Record<UploadKey, string>>;
+  onChange: (key: UploadKey, file: File | null, error?: string) => void;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const keys = requiredKeys("pst").filter(key => key.startsWith(side) && !key.endsWith("bom"));
+  const label = `${side === "before" ? "旧版" : "新版"} PST 文件组`;
+  const replace = (selected: File[]) => {
+    const selection = selectPstFiles(side, selected);
+    for (const item of selection) onChange(item.key, item.file, item.error);
+    if (selection.some(item => item.error) && input.current) input.current.value = "";
+  };
+  return <div className="revision-upload">
+    <label htmlFor={`${side}-pst`}><strong>Cadence PST 文件组</strong><span>三个 .dat 文件</span></label>
+    <input ref={input} id={`${side}-pst`} type="file" multiple accept=".dat" aria-label={label}
+      aria-describedby={`${side}-pst-help`} aria-invalid={keys.some(key => !!errors[key])}
+      onChange={event => replace(Array.from(event.currentTarget.files ?? []))} />
+    <p id={`${side}-pst-help`} className="revision-muted">一次选中同次导出的 pstxnet.dat、pstxprt.dat、pstchip.dat。每文件最多 10 MiB。</p>
+    {keys.map(key => <div key={key} className="revision-file-meta">
+      <span>{key.split("_")[1]}.dat · {files[key] ? fileSize(files[key]!.size) : "未选择"}</span>
+      {errors[key] && <span role="alert" className="revision-file-error">{errors[key]}</span>}
+    </div>)}
+    {keys.some(key => files[key]) && <button type="button" aria-label={`移除${label}`} onClick={() => {
+      if (input.current) input.current.value = "";
+      replace([]);
+    }}>移除文件组</button>}
   </div>;
 }
 
@@ -67,9 +96,9 @@ export default function CompareApp() {
     document.title = "Hardwise 改版复核";
     return () => controller.current?.abort();
   }, []);
-  const onFile = (key: UploadKey, file: File | null) => {
+  const onFile = (key: UploadKey, file: File | null, suppliedError?: string) => {
     controller.current?.abort();
-    const error = file ? validateFile(key, file) : null;
+    const error = suppliedError ?? (file ? validateFile(key, file) : null);
     dispatch({ type: "file", key, file: error ? null : file, error: error ?? undefined });
   };
   const run = async (source: "files" | "demo") => {
@@ -79,14 +108,14 @@ export default function CompareApp() {
     const requestId = ++requestSequence.current;
     dispatch({ type: "start", requestId, source });
     try {
-      const result = await (source === "demo" ? loadDemo(activeController.signal) : compareFiles(state.files, activeController.signal));
+      const result = await (source === "demo" ? loadDemo(activeController.signal) : compareFiles(state.files, activeController.signal, state.mode));
       dispatch({ type: "success", requestId, result });
     } catch (error) {
       if (!activeController.signal.aborted) dispatch({ type: "failure", requestId,
         error: error instanceof Error ? error.message : "无法连接对比服务，请检查本地服务后重试。" });
     }
   };
-  const ready = UPLOAD_KEYS.every(key => state.files[key] && !state.fileErrors[key]);
+  const ready = requiredKeys(state.mode).every(key => state.files[key] && !state.fileErrors[key]);
   return <main className="revision-app">
     <header className="revision-topbar"><div className="revision-wordmark"><FileDiff size={19} aria-hidden="true" /><span>Hard<b>wise</b></span></div>
       <span className="revision-topbar-label">改版复核 / 双版本对照</span><span className="revision-neutral-badge">确定性对比 · 无需 AI</span></header>
@@ -96,9 +125,17 @@ export default function CompareApp() {
         <div className="revision-intro-note">不审整板，不判断改动对错。<br />无需规格书、引脚表或档案批准。</div>
       </section>
       <form className="revision-intake" onSubmit={event => { event.preventDefault(); if (ready && !state.busy) void run("files"); }} aria-busy={!!state.busy}>
+        <label className="revision-format">网表格式
+          <select value={state.mode} onChange={event => {
+            controller.current?.abort();
+            dispatch({ type: "mode", mode: event.currentTarget.value as InputMode });
+          }}><option value="pst">Cadence PST 文件组</option><option value="telesis">Telesis 文本网表</option></select>
+          <span>两版使用同一种格式，BOM 为 CSV / TSV。</span>
+        </label>
         <div className="revision-pair revision-upload-pair">{(["before", "after"] as const).map(side => <fieldset className={`revision-version revision-${side}`} key={side}>
           <legend><span className="revision-version-index">{side === "before" ? "01" : "02"}</span>{side === "before" ? "旧版" : "新版"}<small>{side === "before" ? "对比基准" : "待复核版本"}</small></legend>
-          <UploadSlot name={`${side}_netlist`} file={state.files[`${side}_netlist`]} error={state.fileErrors[`${side}_netlist`]} onChange={onFile} />
+          {state.mode === "pst" ? <PstUploadGroup key={`${state.mode}-${side}`} side={side} files={state.files} errors={state.fileErrors} onChange={onFile} />
+            : <UploadSlot name={`${side}_netlist`} file={state.files[`${side}_netlist`]} error={state.fileErrors[`${side}_netlist`]} onChange={onFile} />}
           <UploadSlot name={`${side}_bom`} file={state.files[`${side}_bom`]} error={state.fileErrors[`${side}_bom`]} onChange={onFile} />
         </fieldset>)}</div>
         <div className="revision-run-bar"><p>仅选取文件不会发送。开始后上传至当前服务；请仅使用公开或合成资料。</p>
@@ -106,7 +143,7 @@ export default function CompareApp() {
           <button className="revision-button revision-primary" type="submit" disabled={!ready || !!state.busy}>
             {state.busy === "files" ? <Loader2 size={16} className="revision-spin" aria-hidden="true" /> : <ArrowRight size={16} aria-hidden="true" />}开始对比
           </button></div>
-        <p className="revision-intake-hint">{ready ? "四个文件已就绪。修改任一输入会清除旧结果。" : "选择旧版与新版各一份网表、一份 BOM；也可先加载内置合成示例。"}</p>
+        <p className="revision-intake-hint">{ready ? "所需文件已就绪。修改任一输入会清除旧结果。" : "选择两版各一组网表和一份 BOM；也可先加载内置合成示例。"}</p>
       </form>
       <div className="revision-feedback" aria-live="polite">
         {state.busy && <p className="revision-busy" role="status"><Loader2 size={18} className="revision-spin" aria-hidden="true" />

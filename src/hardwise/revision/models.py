@@ -101,14 +101,14 @@ class ComparisonResult(Contract):
     changes: tuple[RevisionChange, ...]
     issues: tuple[ComparisonIssue, ...]
     scope: tuple[str, ...] = (
-        "仅比较 Telesis 网表和 CSV/TSV BOM 中实际声明的器件、属性及引脚连接。",
+        "仅比较 Telesis/PST 网表和 CSV/TSV BOM 中实际声明的器件、属性及引脚连接。",
         "按精确位号关联；位号重编号显示为增删，不自动认定同一物理器件。",
         "BOM 与网表分别比较，不用某个来源覆盖另一个；字段采用文本比较，不推断单位等价。",
         "未声明引脚不等于开路；网络改名不等于连接变化。未知和冲突单列。",
         "直接同网器件仅为复查线索，不代表完整电气影响；不判断改动正确性或整板安全。",
         "仅记录源文件名、哈希和定位；报告不包含原理图几何，不需要规格书、AI或档案批准。",
     )
-    input_format: Literal["telesis_csv_v1"] = "telesis_csv_v1"
+    input_format: Literal["telesis_csv_v1", "pst_csv_v1"] = "telesis_csv_v1"
     electrical_verdict: Literal["not_evaluated"] = "not_evaluated"
 
 
@@ -120,6 +120,7 @@ class SnapshotComponent(Contract):
 
 
 class RevisionSnapshot(Contract):
+    input_format: Literal["telesis_csv_v1", "pst_csv_v1"] = "telesis_csv_v1"
     view: RevisionView
     components: dict[str, SnapshotComponent]
     issues: tuple[ComparisonIssue, ...] = ()

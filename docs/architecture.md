@@ -25,7 +25,7 @@
 - `frontend/workbench/src/revision/` 独立挂载比较界面，API 类型仍由 Pydantic 生成；旧 App 继续承载单版评审，不让新的比较页面触发旧 state/AI 初始化。
 - `revision/report.py` 和页面导出只消费同一结果，保留来源、前后值、完整网络端点与限制。任何无变化结论只针对已比较的声明范围。
 
-首版只承诺 Telesis `.net/.txt` + UTF-8 CSV/TSV BOM。旧入口的 PST 支持不自动意味着新比较入口已经支持 PST。资料PDF、原理图几何、自动重编号匹配、全功能影响推断、工程签核均不属于本次架构的前置条件或输出。
+比较入口接受 Telesis `.net/.txt` 或完整 PST 文件组，配 UTF-8 CSV/TSV BOM，两版必须同格式。`revision/netlist_source.py` 直接复用 PST/Telesis 解析与 IR，向比较层提供各自原文件、声明属性和定位。PST 要求 pstxnet.dat、pstxprt.dat、pstchip.dat 齐全，逐文件严格 UTF-8 检查及原字节哈希；primitive 名称、VALUE 和封装分别保留，不用库名补造缺少的参数。页面每版一次多选三个 PST 文件，再选择 BOM；`/api/compare/pst` 严格要求八个上传角色，旧 `/api/compare` 的四文件协议保持兼容。缺文件、角色重复、错误文件名、空文件及超过每文件 10 MiB 的请求拒绝，临时文件在请求结束后释放。资料PDF、原理图几何、自动重编号匹配、全功能影响推断、工程签核均不属于本次架构的前置条件或输出。
 
 验收重点：人为改动能定位、重排不产生假变化、歧义可见、前后证据可离线读、旧工作流保持兼容。源码回归不代替实际使用节省时间的证据。
 

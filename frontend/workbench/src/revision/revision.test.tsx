@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ComparisonResult, RevisionChange } from "../generated/workbench-contracts";
 import { ChangeRow } from "./ChangeList";
 import { buildComparisonHtml } from "./report";
-import { compareReducer, filterChanges, initialState, validateFile, type CompareState } from "./state";
+import { compareReducer, filterChanges, initialState, validateFile, requiredKeys, selectPstFiles, type CompareState } from "./state";
 
 const evidence = [{ file: "<img src=x onerror=alert(1)>.net", locator: "line 3; <script>alert(1)</script>", sha256: "a".repeat(64) }];
 const observation = { state: "known", values: ["<script>alert(1)</script>"], evidence };
@@ -46,6 +46,41 @@ describe("revision comparison client", () => {
     expect(validateFile("after_netlist", { name: "board.dsn", size: 1 })).toContain(".net");
     expect(validateFile("before_bom", { name: "b.csv", size: 0 })).toContain("为空");
     expect(validateFile("before_bom", { name: "b.csv", size: 10 * 1024 * 1024 + 1 })).toContain("10 MiB");
+  });
+
+  it("requires eight PST roles and keeps same-named files separated by version", () => {
+    const files = ["pstxnet.dat", "pstxprt.dat", "pstchip.dat"].map(name => ({ name, size: 12 }) as File);
+    const selection = selectPstFiles("before", files);
+    expect(requiredKeys("pst")).toHaveLength(8);
+    expect(selection.every(item => item.file && !item.error)).toBe(true);
+    expect(selection.map(item => item.key)).toEqual(["before_pstxnet", "before_pstxprt", "before_pstchip"]);
+    expect(selectPstFiles("after", files)[0].key).toBe("after_pstxnet");
+    expect(selectPstFiles("before", files.slice(0, 2))[2].error).toContain("pstchip.dat");
+    expect(selectPstFiles("before", [...files, files[0]])[0].error).toContain("一次");
+    expect(selectPstFiles("before", [...files, { name: "unknown.dat", size: 12 } as File])[0].error).toBeTruthy();
+  });
+
+  it("clears files/results on format switch and ignores responses from the old mode", () => {
+    const running = compareReducer({ ...initialState, result }, { type: "start", requestId: 7, source: "files" });
+    const changed = compareReducer(running, { type: "mode", mode: "telesis" });
+    expect(changed.result).toBeNull();
+    expect(changed.busy).toBeNull();
+    expect(Object.values(changed.files).every(file => file === null)).toBe(true);
+    expect(compareReducer(changed, { type: "success", requestId: 7, result })).toEqual(changed);
+    expect(requiredKeys(changed.mode)).toHaveLength(4);
+  });
+
+  it("exports all PST source hashes and raw file locators in readonly HTML", () => {
+    const pst = { ...result, input_format: "pst_csv_v1", before: { ...view,
+      sources: ["pstxnet.dat", "pstxprt.dat", "pstchip.dat", "bom.csv"].map((file, i) => ({
+        file, role: i === 3 ? "bom" : "netlist", sha256: String(i).repeat(64), size_bytes: 12
+      })) } } as ComparisonResult;
+    const html = buildComparisonHtml(pst);
+    expect(html).toContain("Cadence PST 文件组");
+    for (const source of pst.before.sources) {
+      expect(html).toContain(source.file);
+      expect(html).toContain(source.sha256);
+    }
   });
 
   it("filters by kind and refdes without changing server results", () => {

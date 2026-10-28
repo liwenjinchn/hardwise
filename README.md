@@ -2,8 +2,8 @@
 
 [English](README.md) · [中文 README](README.zh-CN.md)
 
-**Current mainline:** import two revisions of the same schematic design (Telesis
-netlist + CSV/TSV BOM), then list component additions/removals, attribute and
+**Current mainline:** import two revisions of the same schematic design (Cadence PST file set or Telesis
+netlist, plus CSV/TSV BOM), then list component additions/removals, attribute and
 pin-connection changes by exact refdes. Missing declarations, source conflicts
 and unmatchable items are kept separate. It does not decide whether a change is
 correct or call a board safe; it aims to reduce the manual hunt through two export
@@ -12,6 +12,11 @@ folders. Actual workflow value still needs a small user trial.
 ```bash
 # Offline revision report: no AI, database or datasheet approval required.
 mkdir -p reports
+# Each PST directory must contain pstxnet.dat, pstxprt.dat and pstchip.dat.
+PYTHONPATH=src uv run hardwise compare before-pst before.csv after-pst after.csv \
+  --output reports/pst-revision.html --json-output reports/pst-revision.json
+
+# Telesis remains available.
 PYTHONPATH=src uv run hardwise compare before.net before.csv after.net after.csv \
   --output reports/revision.html --json-output reports/revision.json
 
@@ -19,9 +24,16 @@ PYTHONPATH=src uv run hardwise compare before.net before.csv after.net after.csv
 PYTHONPATH=src uv run hardwise serve-compare --open
 ```
 
-The first slice accepts only UTF-8 Telesis `.net/.txt` plus CSV/TSV BOM (an optional UTF-8 BOM is accepted). PST,
-automatic renumber matching, electrical correctness and full cross-net impact
-are not promised. See [`docs/architecture.md`](docs/architecture.md) and
+The comparison page defaults to PST: select all three `.dat` files together for
+each revision and then its CSV/TSV BOM (eight files total). The CLI accepts a PST
+directory or a Telesis `.net/.txt` file. Both revisions must use the same format.
+Only UTF-8 is accepted (an optional UTF-8 BOM is supported); invalid encoding,
+missing PST files and duplicate upload roles are rejected. Every original file
+retains its own SHA-256 and source locator; no Telesis conversion is performed.
+The app cannot establish that selected files came from the same export run.
+Automated coverage uses synthetic PST exports, not a live Windows/Capture version
+certification. Automatic renumber matching, electrical correctness and complete
+cross-net impact are not promised. See [`docs/architecture.md`](docs/architecture.md) and
 [`docs/product/prd-v1.md`](docs/product/prd-v1.md).
 
 ## Legacy single-revision workbench (kept compatible)

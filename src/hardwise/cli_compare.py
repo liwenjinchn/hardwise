@@ -48,9 +48,9 @@ def register_compare_commands(app: typer.Typer) -> None:
         before_netlist: Path = typer.Argument(
             ...,
             exists=True,
-            dir_okay=False,
+            dir_okay=True,
             readable=True,
-            help="改版前 Telesis 网表 (.net/.txt)。",
+            help="改版前 Telesis 网表或完整 PST 目录。",
         ),
         before_bom: Path = typer.Argument(
             ...,
@@ -62,9 +62,9 @@ def register_compare_commands(app: typer.Typer) -> None:
         after_netlist: Path = typer.Argument(
             ...,
             exists=True,
-            dir_okay=False,
+            dir_okay=True,
             readable=True,
-            help="改版后 Telesis 网表 (.net/.txt)。",
+            help="改版后 Telesis 网表或完整 PST 目录。",
         ),
         after_bom: Path = typer.Argument(
             ...,
@@ -84,18 +84,21 @@ def register_compare_commands(app: typer.Typer) -> None:
         inputs = (before_netlist, before_bom, after_netlist, after_bom)
         outputs = [output] + ([json_output] if json_output is not None else [])
         try:
-            _check_outputs(inputs, outputs)
+            from hardwise.revision.netlist_source import netlist_files
+
+            sources = (
+                *netlist_files(before_netlist),
+                before_bom,
+                *netlist_files(after_netlist),
+                after_bom,
+            )
+            _check_outputs(sources, outputs)
             if output.suffix.lower() not in {".html", ".htm"}:
                 raise ValueError("--output 必须使用 .html 或 .htm 路径。")
-            for path, suffixes in zip(
-                inputs,
-                ({".net", ".txt"}, {".csv", ".tsv"}) * 2,
-                strict=True,
-            ):
-                if path.suffix.lower() not in suffixes:
-                    raise ValueError(
-                        f"不支持的输入格式: {path.name}；仅 Telesis .net/.txt 和 CSV/TSV BOM。"
-                    )
+            for path in (before_bom, after_bom):
+                if path.suffix.lower() not in {".csv", ".tsv"}:
+                    raise ValueError(f"不支持的 BOM 格式: {path.name}；仅 CSV/TSV。")
+            for path in sources:
                 if path.stat().st_size == 0:
                     raise ValueError(f"输入文件为空: {path.name}")
             from hardwise.revision.engine import compare_files

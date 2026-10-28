@@ -1,5 +1,5 @@
 import type { ComparisonResult } from "../generated/workbench-contracts";
-import { UPLOAD_KEYS, validateFile, type UploadFiles } from "./state";
+import { requiredKeys, validateFile, type UploadFiles, type InputMode } from "./state";
 
 async function readResult(response: Response): Promise<ComparisonResult> {
   if (!response.ok) {
@@ -18,7 +18,7 @@ async function readResult(response: Response): Promise<ComparisonResult> {
   try { result = await response.json(); }
   catch { throw new Error("服务未返回有效 JSON；请确认已连接改版对比服务。"); }
   if (!result || result.schema_version !== "hardwise.revision.v1" ||
-    result.electrical_verdict !== "not_evaluated" || result.input_format !== "telesis_csv_v1" ||
+    result.electrical_verdict !== "not_evaluated" || !["telesis_csv_v1", "pst_csv_v1"].includes(result.input_format) ||
     typeof result.comparison_id !== "string" ||
     !["differences", "no_observed_difference", "needs_review"].includes(result.status) ||
     !result.summary || !Array.isArray(result.before?.sources) || !Array.isArray(result.after?.sources) ||
@@ -29,16 +29,16 @@ async function readResult(response: Response): Promise<ComparisonResult> {
   return result;
 }
 
-export async function compareFiles(files: UploadFiles, signal?: AbortSignal): Promise<ComparisonResult> {
+export async function compareFiles(files: UploadFiles, signal?: AbortSignal, mode: InputMode = "telesis"): Promise<ComparisonResult> {
   const body = new FormData();
-  for (const key of UPLOAD_KEYS) {
+  for (const key of requiredKeys(mode)) {
     const file = files[key];
-    if (!file) throw new Error("请先选择旧版和新版的网表、BOM，共四个文件。");
+    if (!file) throw new Error("请先选齐旧版和新版所需的网表文件与 BOM。");
     const error = validateFile(key, file);
     if (error) throw new Error(`${file.name}：${error}`);
     body.append(key, file);
   }
-  return readResult(await fetch("/api/compare", { method: "POST", body, signal }));
+  return readResult(await fetch(mode === "pst" ? "/api/compare/pst" : "/api/compare", { method: "POST", body, signal }));
 }
 
 export async function loadDemo(signal?: AbortSignal): Promise<ComparisonResult> {

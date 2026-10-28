@@ -42,6 +42,8 @@ def _component_observation(component):
 
 def compare_revisions(before: RevisionSnapshot, after: RevisionSnapshot) -> ComparisonResult:
     """Compare exact refdes and declared net memberships; do not infer design intent."""
+    if before.input_format != after.input_format:
+        raise ValueError("两版必须使用相同的网表格式；不跨 Telesis/PST 猜测字段对应。")
     left, right = ConnectionIndex(before), ConnectionIndex(after)
     old_refs, new_refs = set(before.components), set(after.components)
     added, removed = new_refs - old_refs, old_refs - new_refs
@@ -189,6 +191,7 @@ def compare_revisions(before: RevisionSnapshot, after: RevisionSnapshot) -> Comp
     )
     return ComparisonResult(
         comparison_id=comparison_id,
+        input_format=before.input_format,
         status="needs_review" if issues else "differences" if changes else "no_observed_difference",
         before=before.view,
         after=after.view,

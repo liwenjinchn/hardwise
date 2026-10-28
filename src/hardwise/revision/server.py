@@ -17,6 +17,11 @@ from hardwise.revision.models import ComparisonResult
 STATIC_DIR = Path(__file__).parent.parent / "workbench" / "static"
 MAX_FILE_BYTES = 10 * 1024 * 1024
 ROLES = ("before_netlist", "before_bom", "after_netlist", "after_bom")
+PST_ROLES = tuple(
+    f"{side}_{name}"
+    for side in ("before", "after")
+    for name in ("pstxnet", "pstxprt", "pstchip", "bom")
+)
 router = APIRouter()
 
 
@@ -33,6 +38,11 @@ def _basename(filename: str, role: str) -> str:
         or len(name.encode("utf-8")) > 240
     ):
         raise MultiPartException(f"{role}: 文件名无效。")
+    if role.rsplit("_", 1)[-1] in {"pstxnet", "pstxprt", "pstchip"}:
+        expected = role.rsplit("_", 1)[-1] + ".dat"
+        if name != expected:
+            raise MultiPartException(f"{role}: 文件名必须是 {expected}。")
+        return name
     suffixes = {".net", ".txt"} if role.endswith("netlist") else {".csv", ".tsv"}
     if Path(name).suffix.lower() not in suffixes:
         raise MultiPartException(f"{role}: 格式不支持；仅接受 {' / '.join(sorted(suffixes))}。")
@@ -42,8 +52,11 @@ def _basename(filename: str, role: str) -> str:
 class _CompareMultipartParser(MultiPartParser):
     """Bound file bytes while streaming, not merely the in-memory spool size."""
 
-    def __init__(self, request: Request) -> None:
-        super().__init__(request.headers, self._bounded_stream(request), max_files=4, max_fields=0)
+    def __init__(self, request: Request, roles=ROLES) -> None:
+        self.expected_roles = roles
+        super().__init__(
+            request.headers, self._bounded_stream(request), max_files=len(roles), max_fields=0
+        )
         self.uploads: list[UploadFile] = []
         self.roles: set[str] = set()
         self.part_bytes = 0
@@ -53,19 +66,21 @@ class _CompareMultipartParser(MultiPartParser):
         total = 0
         async for chunk in request.stream():
             total += len(chunk)
-            if total > 4 * MAX_FILE_BYTES + 64 * 1024:
-                raise _UploadTooLarge("请求过大；每文件上限 10 MiB，最多四个文件。")
+            if total > len(self.expected_roles) * MAX_FILE_BYTES + 64 * 1024:
+                raise _UploadTooLarge("请求过大；每文件上限 10 MiB。")
             yield chunk
 
     def on_headers_finished(self) -> None:
         super().on_headers_finished()
         part = self._current_part
         if part.file is None:
-            raise MultiPartException("仅接受四个文件字段，不接受客户端路径或其他表单字段。")
+            raise MultiPartException("仅接受指定文件字段，不接受客户端路径或其他表单字段。")
         self.uploads.append(part.file)
         role = part.field_name
-        if role not in ROLES:
-            raise MultiPartException(f"非法上传 role: {role}；仅允许 {', '.join(ROLES)}。")
+        if role not in self.expected_roles:
+            raise MultiPartException(
+                f"非法上传 role: {role}；仅允许 {', '.join(self.expected_roles)}。"
+            )
         if role in self.roles:
             raise MultiPartException(f"重复上传 role: {role}；每个 role 必须且只能有一个文件。")
         self.roles.add(role)
@@ -93,11 +108,17 @@ def _compare_uploads(uploads: dict[str, UploadFile]) -> ComparisonResult:
     from hardwise.revision.engine import compare_files
 
     with TemporaryDirectory(prefix="hardwise-compare-") as temporary:
-        paths: list[Path] = []
-        for role in ROLES:
+        roles = PST_ROLES if "before_pstxnet" in uploads else ROLES
+        paths: dict[str, Path] = {}
+        for role in roles:
             upload = uploads[role]
-            directory = Path(temporary) / role
-            directory.mkdir()
+            side, kind = role.split("_", 1)
+            directory = (
+                Path(temporary) / side / ("pst" if kind.startswith("pst") else kind)
+                if roles == PST_ROLES
+                else Path(temporary) / role
+            )
+            directory.mkdir(parents=True, exist_ok=True)
             path = directory / _basename(upload.filename or "", role)
             size = 0
             nonblank = False
@@ -110,46 +131,69 @@ def _compare_uploads(uploads: dict[str, UploadFile]) -> ComparisonResult:
                     output.write(chunk)
             if not nonblank:
                 raise HTTPException(status_code=400, detail=f"{role}: 文件为空或仅含空白。")
-            paths.append(path)
+            paths[role] = path
         try:
-            return compare_files(*paths)
+            if roles == PST_ROLES:
+                return compare_files(
+                    paths["before_pstxnet"].parent,
+                    paths["before_bom"],
+                    paths["after_pstxnet"].parent,
+                    paths["after_bom"],
+                )
+            return compare_files(*(paths[role] for role in ROLES))
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=f"无法比较输入: {exc}") from exc
 
 
-_MULTIPART_SCHEMA = {
-    "requestBody": {
-        "required": True,
-        "content": {
-            "multipart/form-data": {
-                "schema": {
-                    "type": "object",
-                    "required": list(ROLES),
-                    "additionalProperties": False,
-                    "properties": {role: {"type": "string", "format": "binary"} for role in ROLES},
+def _multipart_schema(roles):
+    return {
+        "requestBody": {
+            "required": True,
+            "content": {
+                "multipart/form-data": {
+                    "schema": {
+                        "type": "object",
+                        "required": list(roles),
+                        "additionalProperties": False,
+                        "properties": {
+                            role: {"type": "string", "format": "binary"} for role in roles
+                        },
+                    }
                 }
-            }
-        },
+            },
+        }
     }
-}
 
 
-@router.post("/api/compare", response_model=ComparisonResult, openapi_extra=_MULTIPART_SCHEMA)
+@router.post(
+    "/api/compare", response_model=ComparisonResult, openapi_extra=_multipart_schema(ROLES)
+)
 async def compare_uploads(request: Request) -> ComparisonResult:
+    return await _receive_compare(request, ROLES)
+
+
+@router.post(
+    "/api/compare/pst", response_model=ComparisonResult, openapi_extra=_multipart_schema(PST_ROLES)
+)
+async def compare_pst_uploads(request: Request) -> ComparisonResult:
+    return await _receive_compare(request, PST_ROLES)
+
+
+async def _receive_compare(request: Request, roles) -> ComparisonResult:
     if (
         request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
         != "multipart/form-data"
     ):
-        raise HTTPException(status_code=415, detail="请使用 multipart/form-data 上传四个文件。")
-    parser = _CompareMultipartParser(request)
+        raise HTTPException(status_code=415, detail="请使用 multipart/form-data 上传文件。")
+    parser = _CompareMultipartParser(request, roles)
     try:
         form = await parser.parse()
         if not parser.finished:
             raise MultiPartException("multipart 上传不完整，缺少结束边界。")
-        if parser.roles != set(ROLES):
-            missing = ", ".join(role for role in ROLES if role not in parser.roles)
+        if parser.roles != set(roles):
+            missing = ", ".join(role for role in roles if role not in parser.roles)
             raise MultiPartException(f"缺少文件 role: {missing}。")
-        uploads = {role: form[role] for role in ROLES}
+        uploads = {role: form[role] for role in roles}
         return await run_in_threadpool(_compare_uploads, uploads)
     except _UploadTooLarge as exc:
         raise HTTPException(status_code=413, detail=exc.message) from exc

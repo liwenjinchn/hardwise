@@ -21,6 +21,7 @@ export function ComparisonResults({ result, readOnly = false }: { result: Compar
         <span className="revision-neutral-badge">不评估电气正确性</span>
       </div>
       <p className="revision-result-id">对比 ID <code>{result.comparison_id}</code> · {result.schema_version}</p>
+      <p className="revision-muted">网表来源：{result.input_format === "pst_csv_v1" ? "Cadence PST 文件组" : "Telesis 文本网表"}</p>
       {result.status === "no_observed_difference" && <p className="revision-boundary">
         仅限两版输入实际声明的器件、属性和连接；未声明内容未比较，不代表整板一致或安全。
       </p>}

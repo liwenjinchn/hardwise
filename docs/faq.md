@@ -1,5 +1,9 @@
 # Hardwise 常见技术问题
 
+### 改版复核能直接用 Cadence PST 吗？
+
+可以选择每版的 pstxnet.dat、pstxprt.dat、pstchip.dat，再加 CSV/TSV BOM，共八份文件；命令行也可传两版 PST 目录。三份 PST 缺一份会拒绝比较，每份原文件单独保留哈希，参数定位到 primitive 属性，连接定位到 NET_NAME。当前只接受 UTF-8（可带 BOM 标记）；用合成 PST 验证的软件链路不等于实机 Capture 版本认证或人工省时验收。两版不能混用 PST 与 Telesis。
+
 ### CSV BOM 的位号表头必须手改成 Reference 吗？
 
 不必。CSV/TSV 的位号列接受 Reference、References、Refdes、Designator 和 KiCad 导出使用的 Refs，保留原始列名、单元格和行号。多个位号列互相冲突时隔离全部候选；改变位号列别名或把同参数分组行拆开，不计为器件参数变化。这只说明 BOM 表头兼容，不代表改版入口已支持 KiCad 网表；该入口仍要求 Telesis 网表。

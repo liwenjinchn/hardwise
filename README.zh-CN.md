@@ -2,7 +2,7 @@
 
 [English](README.md) · [中文](README.zh-CN.md)
 
-**当前主线：** 导入同一原理图设计的两个版本（Telesis 网表 + CSV/TSV BOM），按精确
+**当前主线：** 导入同一原理图设计的两个版本（Cadence PST 文件组或 Telesis 网表，另加 CSV/TSV BOM），按精确
 位号列出器件增删、参数和引脚连接变化，并把缺声明、来源冲突和无法匹配的内容单列。
 它不判断改动是否正确，也不宣称整板安全；目标是让工程师少在两套导出文件之间反复找
 差异，实际使用价值仍待一次小范围试用验证。
@@ -14,6 +14,11 @@
 ```bash
 # 生成离线改版清单（无 AI、无数据库、无规格书）
 mkdir -p reports
+# 每版 PST 目录含 pstxnet.dat、pstxprt.dat、pstchip.dat
+PYTHONPATH=src uv run hardwise compare before-pst before.csv after-pst after.csv \
+  --output reports/pst-revision.html --json-output reports/pst-revision.json
+
+# Telesis 入口仍可用
 PYTHONPATH=src uv run hardwise compare before.net before.csv after.net after.csv \
   --output reports/revision.html --json-output reports/revision.json
 
@@ -21,8 +26,11 @@ PYTHONPATH=src uv run hardwise compare before.net before.csv after.net after.csv
 PYTHONPATH=src uv run hardwise serve-compare --open
 ```
 
-首版只接受 UTF-8 Telesis `.net/.txt` 和 CSV/TSV BOM，可带 UTF-8 BOM 标记。PST、自动重编号匹配、电气
-正确性和跨网络完整影响不在首版承诺内。设计与边界见
+页面默认选择 **Cadence PST 文件组**：每版一次选中三个 `.dat` 文件，再选择该版 CSV/TSV BOM，共八个文件。命令行接受 PST 目录或 Telesis `.net/.txt`，两版必须使用相同格式。仅接受 UTF-8（可带 BOM 标记）；缺文件、重复上传角色或无效编码会明确拒绝。
+
+直接解析 PST 原件，不做 Telesis 中转，每个文件分别记录 SHA-256 和来源定位。请使用同次导出的文件组；工具无法单凭文件名证明三个文件属于同一次导出。当前自动验证使用合成 PST，尚未验证实际 Windows/Capture 版本导出流程。
+
+自动重编号匹配、电气正确性和跨网络完整影响仍不在承诺内。设计与边界见
 [`docs/architecture.md`](docs/architecture.md) 和
 [`docs/product/prd-v1.md`](docs/product/prd-v1.md)。
 

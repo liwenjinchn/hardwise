@@ -1140,8 +1140,11 @@
           "type": "string"
         },
         "input_format": {
-          "const": "telesis_csv_v1",
           "default": "telesis_csv_v1",
+          "enum": [
+            "telesis_csv_v1",
+            "pst_csv_v1"
+          ],
           "title": "Input Format",
           "type": "string"
         },
@@ -1160,7 +1163,7 @@
         },
         "scope": {
           "default": [
-            "仅比较 Telesis 网表和 CSV/TSV BOM 中实际声明的器件、属性及引脚连接。",
+            "仅比较 Telesis/PST 网表和 CSV/TSV BOM 中实际声明的器件、属性及引脚连接。",
             "按精确位号关联；位号重编号显示为增删，不自动认定同一物理器件。",
             "BOM 与网表分别比较，不用某个来源覆盖另一个；字段采用文本比较，不推断单位等价。",
             "未声明引脚不等于开路；网络改名不等于连接变化。未知和冲突单列。",

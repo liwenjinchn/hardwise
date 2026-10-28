@@ -5,7 +5,7 @@
 
 ## What Hardwise is
 
-A pre-layout schematic review trust layer. **Current mainline: deterministic revision comparison** — ingest two revisions of a Telesis netlist + CSV/TSV BOM, then report component additions/removals, source attributes, pin-connection changes and unresolved declarations. It never decides whether a change is electrically correct, never calls a board safe, and does not require profiles, datasheets, AI or human field approval. The original single-revision Allegro/KiCad workbench and its validators remain supported for compatibility, not as the default expansion target.
+A pre-layout schematic review trust layer. **Current mainline: deterministic revision comparison** — ingest two revisions of a native Cadence PST file set (pstxnet.dat, pstxprt.dat, pstchip.dat) or Telesis netlist, plus CSV/TSV BOM, then report component additions/removals, source attributes, pin-connection changes and unresolved declarations. It never decides whether a change is electrically correct, never calls a board safe, and does not require profiles, datasheets, AI or human field approval. The original single-revision Allegro/KiCad workbench and its validators remain supported for compatibility, not as the default expansion target.
 
 Legacy capability: ingest Cadence/Allegro exported netlist/PST + BOM + optional Capture pin table + public datasheet/profile evidence, run deterministic validators and a tool-use loop, then output a review workbench/report where every claim carries a source token and every reference designator is registry-verified.
 

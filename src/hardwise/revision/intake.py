@@ -4,13 +4,12 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Literal
 
-from hardwise.adapters.allegro_netlist import parse_allegro_netlist
+from hardwise.revision.netlist_source import read_netlist, netlist_files
 from hardwise.bom.conflicts import group_bom_rows
 from hardwise.bom.matcher import match_bom_to_design
 from hardwise.bom.identity_fields import row_identity_conflicts
 from hardwise.bom.parser import parse_bom
 from hardwise.input_provenance import capture_input_reads, read_input_text
-from hardwise.ir.build import build_design_from_netlist
 from hardwise.ir.identity_sources import is_mpn_field
 from hardwise.revision.bom_fields import bom_observations
 from hardwise.revision.models import (
@@ -32,23 +31,24 @@ def load_revision(
     *,
     side: Literal["before", "after"],
 ) -> RevisionSnapshot:
-    """The first slice accepts Telesis text plus CSV/TSV, never guessed PST/DSN inputs."""
-    if netlist.suffix.lower() not in {".net", ".txt"} or not netlist.is_file():
-        raise ValueError("改版对比首版仅接受 Telesis .net/.txt 文本网表；PST/DSN 尚未接入。")
+    """Load native Telesis/PST declarations and CSV/TSV BOM with original evidence."""
+    files = netlist_files(netlist)
     if bom_path.suffix.lower() not in {".csv", ".tsv"} or not bom_path.is_file():
         raise ValueError("改版对比首版仅接受 CSV/TSV BOM。")
-    if netlist.resolve() == bom_path.resolve():
+    if bom_path.resolve() in {p.resolve() for p in files}:
         raise ValueError("网表与 BOM 必须是两个独立文件。")
     with capture_input_reads() as collector:
         # Reject invalid encoding instead of silently comparing replacement characters.
         read_input_text(bom_path, role="bom", encoding="utf-8-sig", errors="strict")
-        registry = parse_allegro_netlist(netlist, encoding="utf-8-sig")
-        design = build_design_from_netlist(registry)
+        source_input = read_netlist(netlist)
+        design = source_input.design
         bom = parse_bom(bom_path)
         match = match_bom_to_design(bom, design)
         manifest = collector.finish()
     digests = {item.resolved_path: item for item in manifest.files}
-    net_digest, bom_digest = digests[str(netlist.resolve())], digests[str(bom_path.resolve())]
+    part_file, net_file = source_input.part_file, source_input.net_file
+    part_digest = digests[str(part_file.resolve())]
+    net_digest, bom_digest = digests[str(net_file.resolve())], digests[str(bom_path.resolve())]
     issues = []
 
     def evidence(path, digest, locator):
@@ -66,28 +66,49 @@ def load_revision(
         )
 
     raw_properties = defaultdict(lambda: defaultdict(list))
-    for prop in registry.properties:
-        for ref in prop.targets:
-            source = evidence(netlist, net_digest, f"$A_PROPERTIES; {prop.name}; refdes={ref}")
-            if ref not in design.components:
-                issue(
-                    "unknown_property_target",
-                    "网表属性指向未声明位号，未将其补造为器件。",
-                    ref,
-                    (source,),
-                )
-                continue
-            raw_properties[ref][prop.name].append((prop.value, source))
+    for ref, name, value, path, locator in source_input.properties:
+        source = evidence(path, digests[str(path.resolve())], locator)
+        if ref not in design.components:
+            issue(
+                "unknown_property_target",
+                "网表属性指向未声明位号，未将其补造为器件。",
+                ref,
+                (source,),
+            )
+            continue
+        raw_properties[ref][name].append((value, source))
     rows = group_bom_rows(bom.rows)
     components = {}
     for ref, component in sorted(design.components.items()):
-        source = evidence(netlist, net_digest, f"$PACKAGES; refdes={ref}")
+        source = evidence(part_file, part_digest, f"{source_input.part_section}; refdes={ref}")
+        package_source = evidence(
+            source_input.package_file,
+            digests[str(source_input.package_file.resolve())],
+            f"package/JEDEC_TYPE; {source_input.devices[ref]}; refdes={ref}",
+        )
+        if source_input.input_format == "telesis_csv_v1":
+            package_source = source
+        else:
+            missing = [
+                name
+                for name in ("VALUE", "JEDEC_TYPE")
+                if not any(value.strip() for value, _ in raw_properties[ref].get(name, []))
+            ]
+            if missing:
+                issue(
+                    "pst_attribute_missing",
+                    "PST primitive 未声明非空 "
+                    + "、".join(missing)
+                    + "；不将 primitive 名称推断成参数或封装。",
+                    ref,
+                    (package_source,),
+                )
         attributes = {
-            "netlist.device": Observation(values=(component.value,), evidence=(source,)),
+            "netlist.device": Observation(values=(source_input.devices[ref],), evidence=(source,)),
             "netlist.package": Observation(
                 state="known" if component.package else "missing",
                 values=(component.package,) if component.package else (),
-                evidence=(source,),
+                evidence=(package_source,),
             ),
         }
         for name, entries in sorted(raw_properties[ref].items()):
@@ -186,7 +207,8 @@ def load_revision(
             for ref, pin in sorted({node for r in records for node in r.nodes})
         )
         sources = tuple(
-            evidence(netlist, net_digest, f"line {r.line}; $NETS; {name}") for r in records
+            evidence(net_file, net_digest, f"line {r.line}; {source_input.net_section}; {name}")
+            for r in records
         )
         networks.append(
             NetworkView(name=name, endpoints=endpoints, ambiguous=name in blocked, evidence=sources)
@@ -210,17 +232,21 @@ def load_revision(
             )
 
     return RevisionSnapshot(
+        input_format=source_input.input_format,
         view=RevisionView(
             label="旧版" if side == "before" else "新版",
             component_count=len(components),
             net_count=len(networks),
             bom_row_count=len(bom.rows),
             sources=(
-                SourceDigest(
-                    file=netlist.name,
-                    role="netlist",
-                    sha256=net_digest.sha256,
-                    size_bytes=net_digest.size_bytes,
+                *(
+                    SourceDigest(
+                        file=p.name,
+                        role="netlist",
+                        sha256=digests[str(p.resolve())].sha256,
+                        size_bytes=digests[str(p.resolve())].size_bytes,
+                    )
+                    for p in files
                 ),
                 SourceDigest(
                     file=bom_path.name,

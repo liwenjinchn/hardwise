@@ -220,7 +220,7 @@ def test_bom_column_order_aliases_and_whitespace_are_ignored(tmp_path):
 def test_unregistered_formats_and_invalid_input_fail_explicitly(tmp_path):
     old = inputs(tmp_path, "before")
     new = inputs(tmp_path, "after")
-    with pytest.raises(ValueError, match="PST/DSN"):
+    with pytest.raises(ValueError, match="缺少.*pstxnet.dat"):
         compare_files(tmp_path, old[1], *new)
     new[0].write_text("not a netlist")
     with pytest.raises(ValueError):

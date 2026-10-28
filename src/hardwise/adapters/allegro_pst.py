@@ -282,7 +282,7 @@ def _parse_words(text: str) -> list[str]:
 
 
 def _read_lines(path: Path) -> list[str]:
-    return read_input_text(path, role="pst", errors="replace").splitlines()
+    return read_input_text(path, role="pst", encoding="utf-8-sig", errors="replace").splitlines()
 
 
 def _validate_unique_refdes(parts: list[AllegroPstPart]) -> None:
