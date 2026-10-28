@@ -89,7 +89,7 @@ def _parse_delimited_bom(path: Path, text: str, delimiter: str) -> list[BomItem]
     if reader.fieldnames is None:
         raise BomParseError(f"{path}: missing BOM header")
     fields = {_normalize_header(name): name for name in reader.fieldnames}
-    refdes_field = _find_field(fields, ["reference", "references", "refdes", "designator"])
+    refdes_field = _find_field(fields, ["reference", "references", "refdes", "designator", "refs"])
     if refdes_field is None:
         raise BomParseError(f"{path}: missing Reference/refdes column")
     value_field = _find_field(fields, ["value", "part"])

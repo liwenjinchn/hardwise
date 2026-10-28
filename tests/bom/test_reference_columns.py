@@ -38,6 +38,25 @@ def design(tmp_path):
     )
 
 
+def test_kicad_refs_header_preserves_source_cells(tmp_path):
+    path = tmp_path / "kicad.csv"
+    path.write_text('Refs,Value,Footprint,Qty,DNP\n"C1,C2",100nF,C_0402,2,\n')
+    bom = parse_bom(path)
+    assert bom.items[0].refdes_list == ["C1", "C2"]
+    assert bom.items[0].quantity == 2
+    assert bom.items[0].source_line == 2
+    assert bom.items[0].source_fields[0].name == "Refs"
+    assert bom.items[0].source_fields[0].value == "C1,C2"
+
+
+def test_refs_and_reference_conflict_quarantines_both_candidates(tmp_path):
+    path = tmp_path / "conflict.csv"
+    path.write_text("Refs,Reference,Value,Qty\nU1,C1,UNTRUSTED,1\n")
+    report = match_bom_to_design(parse_bom(path), design(tmp_path))
+    assert set(report.identity_conflicts) == {"U1", "C1"}
+    assert report.rows_by_refdes == {}
+
+
 @pytest.mark.parametrize("suffix", [".csv", ".tsv", ".xlsx"])
 @pytest.mark.parametrize("duplicate", [False, True])
 def test_every_candidate_is_quarantined_without_copying_bom_fields(tmp_path, suffix, duplicate):

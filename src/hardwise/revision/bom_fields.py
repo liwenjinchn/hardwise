@@ -12,6 +12,7 @@ STRUCTURAL_COLUMNS = {
     "reference",
     "references",
     "refdes",
+    "refs",
     "designator",
     "位号",
     "quantity",

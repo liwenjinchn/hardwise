@@ -13,7 +13,7 @@ def reference_columns(fields: list[BomSourceField]) -> list[BomSourceField]:
         and (
             field.name.strip() == "位号"
             or re.sub(r"[^a-z0-9]+", "_", field.name.strip().lower()).strip("_")
-            in {"reference", "references", "refdes", "designator"}
+            in {"reference", "references", "refdes", "designator", "refs"}
         )
     ]
 

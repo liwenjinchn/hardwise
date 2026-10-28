@@ -69,6 +69,15 @@ def test_one_resistor_value_change_is_one_sourced_change(tmp_path):
     assert result.summary.unchanged_components == 2
 
 
+def test_refs_alias_grouping_and_header_change_are_not_parameter_changes(tmp_path):
+    old = 'Refs,Value,Footprint,Qty,DNP\n"R1,R2",10k,0603,2,\nU1,IC,SOT23,1,\n'
+    new = 'Reference,Value,Footprint,Qty,DNP\nR2,10k,0603,1,\nU1,IC,SOT23,1,\nR1,10k,0603,1,\n'
+    result = compare_files(*inputs(tmp_path, "before", bom=old), *inputs(tmp_path, "after", bom=new))
+    assert result.status == "no_observed_difference"
+    assert result.changes == ()
+    assert result.issues == ()
+
+
 @pytest.mark.parametrize(
     "old,new,field",
     [

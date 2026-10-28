@@ -1,5 +1,9 @@
 # Hardwise 常见技术问题
 
+### CSV BOM 的位号表头必须手改成 Reference 吗？
+
+不必。CSV/TSV 的位号列接受 Reference、References、Refdes、Designator 和 KiCad 导出使用的 Refs，保留原始列名、单元格和行号。多个位号列互相冲突时隔离全部候选；改变位号列别名或把同参数分组行拆开，不计为器件参数变化。这只说明 BOM 表头兼容，不代表改版入口已支持 KiCad 网表；该入口仍要求 Telesis 网表。
+
 > 这份 FAQ 回答关于 Hardwise 设计取舍的六个高频问题。所有数字都可以用
 > README 里的命令在公开数据上复现。
 
