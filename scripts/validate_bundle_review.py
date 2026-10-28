@@ -19,6 +19,8 @@ from hardwise.workbench.decision_fingerprints import review_fingerprints, review
 from hardwise.workbench.review_decisions import ReviewDecisionStore
 from hardwise.workbench.run_provenance import build_run_provenance
 from hardwise.workbench.task_projection import build_review_tasks
+from hardwise.workbench.decision_journal import DecisionJournal
+from hardwise.validation.candidate_summary import candidate_records
 c, directory = ManagedProjects(Path(sys.argv[1])).open(sys.argv[2])
 try:
     tasks = build_review_tasks(c)
@@ -30,6 +32,10 @@ try:
         decisions={t.stable_key: t.review_decision.model_dump(mode='json')
             for t in store.apply(tasks, fingerprints=fps) if t.review_decision},
         history=store.history(),
+        candidate_summary=c.index.candidate_summary.model_dump(mode='json'),
+        candidate_states=sorted((r.candidate_id, r.applicability, r.executed, r.result)
+            for r in candidate_records(c.index.candidate_coverage)),
+        original_provenance=DecisionJournal(Path(sys.argv[1])).run_data(review_project_key(c), sys.argv[3])['provenance'],
     ), ensure_ascii=False))
 finally:
     close_workbench_context(c)
@@ -51,6 +57,8 @@ def probe(root: Path, prefix: Path) -> dict:
     from hardwise.workbench.context import build_workbench_context, close_workbench_context
     from hardwise.workbench.project_backup import restore_projects
     from hardwise.workbench.server import create_workbench_app
+    from hardwise.workbench.decision_journal import DecisionJournal
+    from hardwise.validation.candidate_summary import candidate_records
 
     work = prefix.with_name(prefix.name + "-review")
     source = work / "source"
@@ -73,6 +81,13 @@ def probe(root: Path, prefix: Path) -> dict:
         with TestClient(app) as client:
             initial = client.get("/api/workbench/state").json()
             ids = initial["review_decisions"]
+            initial_provenance = DecisionJournal(journal).run_data(
+                ids["project_id"], ids["run_id"]
+            )["provenance"]
+            initial_candidate_states = sorted(
+                (r.candidate_id, r.applicability, r.executed, r.result)
+                for r in candidate_records(context.index.candidate_coverage)
+            )
             expected = {}
             for refdes, status in [("C1", "accepted_risk"), ("C2", "false_positive")]:
                 task = next(t for t in initial["review_tasks"] if t["refdes"] == refdes)
@@ -117,6 +132,15 @@ def probe(root: Path, prefix: Path) -> dict:
             match = re.search(r"window\.__HARDWISE_OFFLINE_SNAPSHOT__ = (.*);\n", html)
             require(match is not None, "Offline payload is missing")
             snapshot = json.loads(match[1])
+            require(
+                snapshot["state"]["candidate_coverage"] == initial["candidate_coverage"],
+                "Offline candidate summary changed",
+            )
+            require(
+                snapshot["run_provenance"]["candidate_coverage"]
+                == initial_provenance["candidate_coverage"],
+                "Offline candidate snapshot changed",
+            )
             history = snapshot["review_history"]
             require(history["total"] == 2, "Offline history did not preserve both actions")
             require(
@@ -139,10 +163,11 @@ def probe(root: Path, prefix: Path) -> dict:
         close_workbench_context(context)
     # Preserve original bytes, but make all original logical paths unavailable.
     source.rename(work / "original-source-retained")
+    journal.parent.rename(work / "original-active-retained")
     restored = restore_projects(archive, work / "restored")
     env = dict(os.environ, PYTHONPATH=str(root / "src"), PYTHONUTF8="1")
     process = subprocess.run(
-        [sys.executable, "-c", RESTART, restored["journal"], saved.json()["id"]],
+        [sys.executable, "-c", RESTART, restored["journal"], saved.json()["id"], ids["run_id"]],
         cwd=root,
         env=env,
         capture_output=True,
@@ -162,6 +187,18 @@ def probe(root: Path, prefix: Path) -> dict:
         "Restored reasons changed",
     )
     require(len(reopened["history"]) == 2, "Unchanged restore manufactured review events")
+    require(
+        reopened["candidate_summary"] == initial["candidate_coverage"],
+        "Restored candidate summary changed",
+    )
+    require(
+        reopened["candidate_states"] == [list(r) for r in initial_candidate_states],
+        "Restored candidate identities or results changed",
+    )
+    require(
+        reopened["original_provenance"] == initial_provenance,
+        "Stored original run provenance changed during restore",
+    )
     return dict(
         passed=True,
         fixture="public synthetic L78",
@@ -172,6 +209,10 @@ def probe(root: Path, prefix: Path) -> dict:
         offline_history_count=history["total"],
         fresh_process_restored_history_count=len(reopened["history"]),
         original_source_paths_available=source.exists(),
+        original_journal_path_available=journal.exists(),
+        candidate_snapshot_restored=True,
+        original_provenance_preserved=True,
+        candidate_counts=initial["candidate_coverage"]["counts"],
         offline_report=str(offline),
         backup=str(archive),
         restored_journal=restored["journal"],

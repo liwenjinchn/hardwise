@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 import subprocess
 import zipfile
 
-BASELINE_COMMIT = "e011834f33f6a95171f00f6b33f50ea5cd4c1221"
+BASELINE_COMMIT = "ee0824d24dc67afa483f64f360a1df4afe536d1c"
 
 BASELINE = {
     "component_summary": {
@@ -36,8 +36,22 @@ BASELINE = {
         "needs_review_checks": 91,
         "result_counts": {"PASS": 52, "FAIL": 0, "UNKNOWN": 115, "NOT_APPLICABLE": 0},
         "unsupported_components": 3,
-        "full_candidate_count": None,
-        "boundary": "只统计已生成的检查记录；尚未建立全板候选检查集合，不代表全板覆盖率。",
+        "full_candidate_count": 319,
+        "boundary": "此处仅为已生成记录的兼容统计；目录候选与漏执行另列，两个口径不相加，也不能互换为覆盖率。",
+    },
+    "candidate_coverage": {
+        "catalog_version": "hardwise.project_candidates.v1",
+        "counts": {
+            "candidate_count": 319,
+            "applicable_count": 215,
+            "applicability_unknown_count": 83,
+            "completed_count": 182,
+            "unknown_count": 116,
+            "not_applicable_count": 21,
+            "unexecuted_count": 0,
+            "unsupported_scope_count": 34,
+        },
+        "identity_state_sha256": "01e6c68ca2f6400292a0f3010d042cf1912548d60d91304d30296da7785cf95b",
     },
 }
 

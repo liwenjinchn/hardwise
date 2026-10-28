@@ -28,6 +28,19 @@ def verify_files(root, manifest):
     return len(manifest["files"])
 
 
+def candidate_baseline(snapshot):
+    outcomes = {o.candidate_id: o.result for o in snapshot.outcomes}
+    rows = sorted(
+        (c.candidate_id, c.applicability, outcomes.get(c.candidate_id)) for c in snapshot.candidates
+    )
+    payload = json.dumps(rows, ensure_ascii=False, separators=(",", ":"))
+    return dict(
+        catalog_version=snapshot.catalog.version,
+        counts=snapshot.counts(),
+        identity_state_sha256=hashlib.sha256(payload.encode()).hexdigest(),
+    )
+
+
 def probe(root, result, prefix):
     # Configuration isolation applies to this check process and its child only.
     os.environ["PYTHON_DOTENV_DISABLED"] = "1"
@@ -52,7 +65,10 @@ def probe(root, result, prefix):
         observed = dict(
             component_summary=state.summary.model_dump(mode="json"),
             assessment_coverage=state.assessment_coverage.model_dump(mode="json"),
+            candidate_coverage=candidate_baseline(context.index.candidate_coverage),
         )
+        if state.candidate_coverage.counts.model_dump() != observed["candidate_coverage"]["counts"]:
+            raise ValueError("Candidate summary differs from its recorded snapshot")
         if observed != expected["observed_software_baseline"]:
             raise ValueError(
                 "Public-fixture counts/coverage differ from the pinned software baseline"
